@@ -3,17 +3,31 @@ project(2DPIC)
 #set(CMAKE_SYSTEM_NAME CrayLinuxEnvironment)
 #set(CRAYPE_LINK_TYPE "dynamic")
 
-set(CMAKE_C_COMPILER "cc")
-set(CMAKE_C_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
-set(CMAKE_CXX_COMPILER "CC")
-set(CMAKE_CXX_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
-set(CMAKE_Fortran_COMPILER "ftn")
-set(CMAKE_Fortran_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
-
+# options
 option(BUILD_FOR_HOST "Build for the login node" ON)
 
-if(BUILD_FOR_HOST)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
+# check host
+message("CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    set(HOME "$ENV{USERPROFILE}")
+    set(CMAKE_SUPPRESS_REGENERATION true)
+endif()
+message("HOME              = ${HOME}")
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
+    #set(CMAKE_C_COMPILER "cc")
+    #set(CMAKE_C_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+    set(CMAKE_CXX_COMPILER "CC")
+    set(CMAKE_CXX_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+    #set(CMAKE_Fortran_COMPILER "ftn")
+    #set(CMAKE_Fortran_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+
+    if(BUILD_FOR_HOST)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
+    endif()
+else()
+    # Flags for Local build
+    set(CMAKE_CXX_FLAGS "-O2")
 endif()
 
 # -- check C++11 --
@@ -31,10 +45,10 @@ endif()
 # -----------------
 
 # Eigen3
-#INCLUDE_DIRECTORIES("~/local/include/eigen3")
+#INCLUDE_DIRECTORIES("${HOME}/local/include/eigen3")
 
 # Boost
-INCLUDE_DIRECTORIES("~/local/include")
+INCLUDE_DIRECTORIES("${HOME}/local/include")
 
 set(SRCS
     "src/main.cpp"
