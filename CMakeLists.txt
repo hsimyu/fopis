@@ -1,33 +1,39 @@
 cmake_minimum_required(VERSION 2.8)
 project(2DPIC)
-#set(CMAKE_SYSTEM_NAME CrayLinuxEnvironment)
-#set(CRAYPE_LINK_TYPE "dynamic")
 
 # options
 option(BUILD_FOR_HOST "Build for the login node" ON)
+option(DEBUG          "Build in Debug Mode"      OFF)
 
 # check host
-message("CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG = ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(HOME "$ENV{USERPROFILE}")
     set(CMAKE_SUPPRESS_REGENERATION true)
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+    set(HOME "$ENV{HOME}")
+    find_package( Boost REQUIRED )
+    include_directories( ${Boost_INCLUDE_DIRS} )
 endif()
-message("HOME              = ${HOME}")
+message(STATUS "HOME              = ${HOME}")
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
-    #set(CMAKE_C_COMPILER "cc")
-    #set(CMAKE_C_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+    #set(CRAYPE_LINK_TYPE "dynamic")
     set(CMAKE_CXX_COMPILER "CC")
-    set(CMAKE_CXX_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
-    #set(CMAKE_Fortran_COMPILER "ftn")
-    #set(CMAKE_Fortran_FLAGS "-O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
-
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
     if(BUILD_FOR_HOST)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
     endif()
 else()
     # Flags for Local build
-    set(CMAKE_CXX_FLAGS "-O2")
+    if(${DEBUG})
+        set(CMAKE_BUILD_TYPE Debug)
+        set(CMAKE_CXX_FLAGS "-O0 -g -Wall")
+    else()
+        set(CMAKE_BUILD_TYPE Release)
+        set(CMAKE_CXX_FLAGS "-O2")
+    endif()
 endif()
 
 # -- check C++11 --
@@ -44,10 +50,7 @@ else()
 endif()
 # -----------------
 
-# Eigen3
-#INCLUDE_DIRECTORIES("${HOME}/local/include/eigen3")
-
-# Boost
+# add include
 INCLUDE_DIRECTORIES("${HOME}/local/include")
 
 set(SRCS

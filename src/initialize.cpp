@@ -8,11 +8,11 @@ namespace Initializer {
 
     void setFieldPointers(FieldPointers* field, int cx, int cy, int cz){
         auto extents = boost::extents[cx][cy][cz];
-        threeD_array phi(extents);
-        threeD_array rho(extents);
+        threeD_array* phi = new threeD_array(extents);
+        threeD_array* rho = new threeD_array(extents);
 
-        (*field).setPhi(&phi);
-        (*field).setRho(&rho);
+        field->setPhi(phi);
+        field->setRho(rho);
     }
 }
 
