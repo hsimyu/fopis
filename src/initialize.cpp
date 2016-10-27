@@ -1,5 +1,5 @@
 #include <math.h>
-#include "2dpic.h"
+#include "tdpic.h"
 
 namespace Initializer {
     double getSizeOfSuperParticle(int nr, double density, const double dx){
@@ -13,6 +13,22 @@ namespace Initializer {
 
         field->setPhi(phi);
         field->setRho(rho);
+
+        threeD_array* ex = new threeD_array(boost::extents[cx-1][cy][cz]);
+        threeD_array* ey = new threeD_array(boost::extents[cx][cy-1][cz]);
+        threeD_array* ez = new threeD_array(boost::extents[cx][cy][cz-1]);
+
+        field->setEx(ex);
+        field->setEy(ey);
+        field->setEz(ez);
+
+        threeD_array* bx = new threeD_array(boost::extents[cx][cy-1][cz-1]);
+        threeD_array* by = new threeD_array(boost::extents[cx-1][cy][cz-1]);
+        threeD_array* bz = new threeD_array(boost::extents[cx-1][cy-1][cz]);
+
+        field->setBx(bx);
+        field->setBy(by);
+        field->setBz(bz);
     }
 }
 

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "2dpic.h"
+#include "tdpic.h"
 
 using std::cout;
 using std::endl;

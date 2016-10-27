@@ -1,7 +1,7 @@
 #include <iostream>
 #include <math.h>
 #include <boost/multi_array.hpp>
-#include "2dpic.h"
+#include "tdpic.h"
 
 using std::cout;
 using std::endl;
@@ -27,25 +27,11 @@ int main(int argc, char* argv[]){
     // threeD_array phi(boost::extents[cell_x][cell_y][cell_z]);
     // threeD_array phi(boost::extents[cell_x][cell_y][cell_z]);
 
-    // // global variables
-    // MatrixXd phi(cell_x, cell_y, cell_z), rho(cell_x, cell_y, cell_z);
-    // MatrixXd ex(cell_x - 1, cell_y, cell_z), ey(cell_x, cell_y - 1, cell_z), ez(cell_x, cell_y, cell_z - 1);
-    // MatrixXd bx(cell_x, cell_y - 1, cell_z - 1), by(cell_x - 1, cell_y, cell_z - 1), bz(cell_x - 1, cell_y - 1, cell_z);
-    // phi = MatrixXd::Zero(cell_x, cell_y, cell_z);
-    // rho = MatrixXd::Zero(cell_x, cell_y, cell_z);
-
-    // ex = MatrixXd::Zero(cell_x - 1, cell_y, cell_z);
-    // ey = MatrixXd::Zero(cell_x, cell_y - 1, cell_z);
-    // ez = MatrixXd::Zero(cell_x, cell_y, cell_z - 1);
-
-    // bx = MatrixXd::Zero(cell_x, cell_y - 1, cell_z - 1);
-    // by = MatrixXd::Zero(cell_x - 1, cell_y, cell_z - 1);
-    // bz = MatrixXd::Zero(cell_x - 1, cell_y - 1, cell_z);
     // cout << "-- phi --" << endl << phi << endl;
     // cout << "-- rho --" << endl << rho << endl;
     //(*field.getRho)[0][0][0] = 1.0;
-    Utils::print3DArray( field.getPhi() );
-    //Utils::print3DArray( field.getRho() );
+    // Utils::print3DArray( field.getPhi() );
+    Utils::print3DArray( field.getRho() );
     // Utils::print3DArray(rho);
 
     return 0;

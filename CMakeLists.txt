@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(2DPIC)
+project(TDPIC)
 
 # options
 option(BUILD_FOR_HOST "Build for the login node" ON)
@@ -55,10 +55,10 @@ INCLUDE_DIRECTORIES("${HOME}/local/include")
 
 set(SRCS
     "src/main.cpp"
-    "src/2dpic.cpp"
+    "src/field.cpp"
     "src/initialize.cpp"
     "src/utils.cpp"
 )
 
-add_executable(2dpic ${SRCS})
-target_link_libraries(2dpic ${Boost_LIBRARIES})
+add_executable(tdpic ${SRCS})
+target_link_libraries(tdpic ${Boost_LIBRARIES})
