@@ -38,14 +38,67 @@ class FieldPointers {
         void setBz(threeD_array*);
 };
 
+class Velocity {
+    private:
+        double vx, vy, vz;
+    public:
+        Velocity();
+        ~Velocity();
+        void set(double, double, double);
+        double getVX(void) const;
+        double getVY(void) const;
+        double getVZ(void) const;
+};
+
+class Position {
+    private:
+        double x, y, z;
+    public:
+        Position();
+        ~Position();
+        void set(double, double, double);
+        double getX(void) const;
+        double getY(void) const;
+        double getZ(void) const;
+};
+
+class Particle {
+    private:
+        // 8byte * 6 = 48 byte
+        double x, y, z;
+        double vx, vy, vz;
+    public:
+        Particle();
+        ~Particle();
+
+        void setPosition(const Position&);
+        void setPosition(double, double, double);
+
+        void setVelocity(const Velocity&);
+        void setVelocity(double, double, double);
+        Position getPosition();
+        Velocity getVelocity();
+
+        double getX(void) const;
+        double getY(void) const;
+        double getZ(void) const;
+        double getVX(void) const;
+        double getVY(void) const;
+        double getVZ(void) const;
+};
+
 class ParticleInfo {
+    private:
+        int sizeOfSuperParticle;
     public:
         ParticleInfo();
-        int sizeOfSuperParticle;
+        void setParticleSize(int);
+        int getParticleSize();
 };
 
 namespace Initializer {
     double getSizeOfSuperParticle(int, double, double);
+    void setParticleInfo(ParticleInfo*);
     void setFieldPointers(FieldPointers*, int, int, int);
 }
 

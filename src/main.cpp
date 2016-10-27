@@ -23,16 +23,10 @@ int main(int argc, char* argv[]){
     // TODO: これは全体の長さなのであとで各領域ごとの長さにする
     FieldPointers field;
     Initializer::setFieldPointers(&field, cell_x, cell_y, cell_z);
-    // threeD_array ex(boost::extents[cell_x][cell_y][cell_z]);
-    // threeD_array phi(boost::extents[cell_x][cell_y][cell_z]);
-    // threeD_array phi(boost::extents[cell_x][cell_y][cell_z]);
-
-    // cout << "-- phi --" << endl << phi << endl;
-    // cout << "-- rho --" << endl << rho << endl;
-    //(*field.getRho)[0][0][0] = 1.0;
-    // Utils::print3DArray( field.getPhi() );
     Utils::print3DArray( field.getRho() );
-    // Utils::print3DArray(rho);
+
+    // ParticleInfo pinfo;
+    // Initializer::setParticleInfo(&pinfo);
 
     return 0;
 }

@@ -55,6 +55,9 @@ INCLUDE_DIRECTORIES("${HOME}/local/include")
 
 set(SRCS
     "src/main.cpp"
+    "src/particle.cpp"
+    "src/position.cpp"
+    "src/velocity.cpp"
     "src/field.cpp"
     "src/initialize.cpp"
     "src/utils.cpp"
