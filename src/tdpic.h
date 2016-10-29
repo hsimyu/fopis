@@ -1,6 +1,11 @@
 #ifndef __TDPIC_H_INCLUDED__
 #define __TDPIC_H_INCLUDED__
 #include <boost/multi_array.hpp>
+#include <iostream>
+#include <string>
+#include <math.h>
+#include <memory>
+#include <boost/multi_array.hpp>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -64,9 +69,11 @@ class Position {
 
 class Particle {
     private:
-        // 8byte * 6 = 48 byte
+        // 8byte * 6
+        // + 2byte   = 50 byte
         double x, y, z;
         double vx, vy, vz;
+        unsigned short int id;
     public:
         Particle();
         ~Particle();
@@ -87,13 +94,27 @@ class Particle {
         double getVZ(void) const;
 };
 
-class ParticleInfo {
+class ParticleType {
     private:
-        int sizeOfSuperParticle;
+        int id;
+        std::string name;
+
+        // plasma info
+        double charge;
+        double mass;
+        double density;
+        double temperature;
+        int size;
+
+        // for computation
+        int particle_per_cell;
+        int totalNumber;
     public:
-        ParticleInfo();
-        void setParticleSize(int);
-        int getParticleSize();
+        ParticleType();
+        void setSize(int);
+        int getSize() const;
+        int getTotalNumber() const;
+        int calcTotalNumber(int, int, int, int);
 };
 
 namespace Initializer {
@@ -104,5 +125,7 @@ namespace Initializer {
 
 namespace Utils {
     void print3DArray(threeD_array*);
+    void printTotalMemory(const ParticleInfo&);
+    void printParticleMemory(const ParticleInfo&);
 }
 #endif
