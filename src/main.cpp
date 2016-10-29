@@ -23,11 +23,17 @@ int main(int argc, char* argv[]){
     Initializer::setFieldPointers(&field, cell_x, cell_y, cell_z);
     Utils::print3DArray( field.getRho() );
 
+    std::string name_array[3] = {"electron", "proton", "beam"};
     ParticleType ptype[3];
-    ptype.calcTotalNumber(cell_x, cell_y, cell_z, nr);
-    Utils::printTotalMemory(ptype);
+    for(int i=0; i<3; i++){
+        ptype[i].setId(i);
+        ptype[i].setName(name_array[i]);
+        ptype[i].calcTotalNumber(cell_x, cell_y, cell_z, nr);
+        cout << ptype[i];
+        Utils::printTotalMemory(ptype[i]);
+    }
 
-    std::unique_ptr<Particle[]> particles(new Particle[ptype.getTotalNumber()]);
+    // std::unique_ptr<Particle[]> particles(new Particle[ptype.getTotalNumber()]);
     // Initializer::setParticleInfo(&pinfo);
 
     cout << "--  End Initializing  --" << endl;

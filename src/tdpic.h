@@ -111,21 +111,41 @@ class ParticleType {
         int totalNumber;
     public:
         ParticleType();
+
+        void setId(int);
+        void setCharge(double);
+        void setMass(double);
+        void setDensity(double);
+        void setTemperature(double);
         void setSize(int);
+        void setName(std::string);
+        void setTotalNumber(int);
+        void setPcell(int);
+
+        int getId() const;
+        std::string getName() const;
+        double getCharge() const;
+        double getMass() const;
+        double getDensity() const;
+        double getTemperature() const;
         int getSize() const;
         int getTotalNumber() const;
+        int getPcell() const;
+
         int calcTotalNumber(int, int, int, int);
+
+        friend std::ostream& operator<<(std::ostream&, const ParticleType&);
+        friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
 
 namespace Initializer {
     double getSizeOfSuperParticle(int, double, double);
-    void setParticleInfo(ParticleInfo*);
     void setFieldPointers(FieldPointers*, int, int, int);
 }
 
 namespace Utils {
     void print3DArray(threeD_array*);
-    void printTotalMemory(const ParticleInfo&);
-    void printParticleMemory(const ParticleInfo&);
+    void printTotalMemory(const ParticleType&);
+    void printParticleMemory(const ParticleType&);
 }
 #endif
