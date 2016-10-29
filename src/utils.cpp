@@ -1,4 +1,3 @@
-#include <iostream>
 #include "tdpic.h"
 
 using std::cout;
@@ -48,5 +47,11 @@ namespace Utils {
 
         cout << "    Particle[" << pinfo.getTotalNumber() << "]:";
         cout << computeMemory(pmem) << endl;
+    }
+
+    boost::property_tree::ptree readInputFile(const std::string& filename){
+        boost::property_tree::ptree t;
+        boost::property_tree::json_parser::read_json(filename, t);
+        return t;
     }
 }

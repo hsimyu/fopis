@@ -13,6 +13,8 @@ int main(int argc, char* argv[]){
 
     // TODO: Input parameter from the file
     int nx = 8, ny = 8, nz = 1;
+    //auto inputs = Utils::readInputFile("input.json");
+    //cout << inputs.get<int>("Image.Width") << endl;
 
     int proc_x = 1, proc_y = 1, proc_z = 1;
     // TODO: get domain decomposition size

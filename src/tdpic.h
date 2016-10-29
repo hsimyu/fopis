@@ -1,11 +1,12 @@
 #ifndef __TDPIC_H_INCLUDED__
 #define __TDPIC_H_INCLUDED__
-#include <boost/multi_array.hpp>
 #include <iostream>
 #include <string>
 #include <math.h>
 #include <memory>
 #include <boost/multi_array.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -147,5 +148,6 @@ namespace Utils {
     void print3DArray(threeD_array*);
     void printTotalMemory(const ParticleType&);
     void printParticleMemory(const ParticleType&);
+    boost::property_tree::ptree readInputFile(const std::string&);
 }
 #endif
