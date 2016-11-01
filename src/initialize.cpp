@@ -6,7 +6,12 @@ namespace Initializer {
         return pow(dx, 2.0) * density / nr;
     }
 
-    void setFieldPointers(FieldPointers* field, int cx, int cy, int cz){
+    Field* initializeField(const Environment* env){
+        Field* field = new Field;
+
+        const int cx = env->cell_x;
+        const int cy = env->cell_y;
+        const int cz = env->cell_z;
         auto extents = boost::extents[cx][cy][cz];
         threeD_array* phi = new threeD_array(extents);
         threeD_array* rho = new threeD_array(extents);
@@ -29,6 +34,74 @@ namespace Initializer {
         field->setBx(bx);
         field->setBy(by);
         field->setBz(bz);
+
+        return field;
+    }
+
+    Environment* loadEnvironment(picojson::object& inputs){
+        Environment* env = new Environment;
+        auto env_inputs = inputs["Environment"].get<picojson::object>();
+
+        for(auto it = env_inputs.begin();
+                 it != env_inputs.end();
+                 ++it){
+            // string で switch したい...
+            if(it->first == "nx"){
+                env->nx = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "ny"){
+                env->ny = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "nz"){
+                env->nz = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "proc_x"){
+                env->proc_x = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "proc_y"){
+                env->proc_y = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "proc_z"){
+                env->proc_z = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "dt"){
+                env->dt = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "dx"){
+                env->dx = static_cast<int>(it->second.get<double>());
+            } else {
+                std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
+            }
+        }
+
+        // のりしろ1セルを両側においておく
+        env->cell_x = env->nx/env->proc_x + 2;
+        env->cell_y = env->ny/env->proc_y + 2;
+        env->cell_z = env->nz/env->proc_z + 2;
+
+        return env;
+    }
+
+    ParticleType* loadParticleType(picojson::object& inputs, const Environment* env){
+        auto plasma_inputs = inputs["Plasma"].get<picojson::object>();
+        int particle_types = 0;
+        for(auto i = plasma_inputs.begin(); i != plasma_inputs.end(); ++i){
+            ++particle_types;
+        }
+        ParticleType* ptype = new ParticleType[particle_types];
+        int ii = 0;
+        for(auto it = plasma_inputs.begin(); it != plasma_inputs.end(); ++it){
+            std::string name = it->first;
+            auto plasma = it->second.get<picojson::object>();
+            ptype[ii].setId(ii);
+            ptype[ii].setName(name);
+
+            ptype[ii].setMass( plasma["mass"].get<double>() );
+            ptype[ii].setCharge( plasma["charge"].get<double>() );
+            ptype[ii].setTemperature( plasma["temperature"].get<double>() );
+            ptype[ii].setDensity( plasma["density"].get<double>() );
+            ptype[ii].setPcell( static_cast<int>((plasma["particle_per_cell"].get<double>() )) );
+
+            ptype[ii].calcTotalNumber( env, ptype[ii].getPcell() );
+            std::cout << ptype[ii];
+            Utils::printTotalMemory(ptype[ii]);
+            ++ii;
+        }
+
+        return ptype;
     }
 }
 

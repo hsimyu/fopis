@@ -5,14 +5,26 @@
 #include <math.h>
 #include <memory>
 #include <boost/multi_array.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <picojson.h>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
 typedef boost::multi_array<double, 3> threeD_array;
 
-class FieldPointers {
+struct Environment {
+    public:
+        int particle_types;
+        double dx;
+        double dt;
+        int nx, ny, nz;
+        int proc_x, proc_y, proc_z;
+        int cell_x, cell_y, cell_z;
+        friend std::ostream& operator<<(std::ostream&, const Environment&);
+        friend std::ostream& operator<<(std::ostream&, const Environment*);
+        friend std::istream& operator<<(std::istream&, const Environment&);
+};
+
+class Field {
     private:
         threeD_array* pPhi;
         threeD_array* pRho;
@@ -133,7 +145,7 @@ class ParticleType {
         int getTotalNumber() const;
         int getPcell() const;
 
-        int calcTotalNumber(int, int, int, int);
+        int calcTotalNumber(const Environment*, int);
 
         friend std::ostream& operator<<(std::ostream&, const ParticleType&);
         friend std::istream& operator<<(std::istream&, const ParticleType&);
@@ -141,13 +153,16 @@ class ParticleType {
 
 namespace Initializer {
     double getSizeOfSuperParticle(int, double, double);
-    void setFieldPointers(FieldPointers*, int, int, int);
+    Environment* loadEnvironment(picojson::object&);
+    ParticleType* loadParticleType(picojson::object&, const Environment*);
+    Field* initializeField(const Environment*);
 }
 
 namespace Utils {
     void print3DArray(threeD_array*);
     void printTotalMemory(const ParticleType&);
     void printParticleMemory(const ParticleType&);
-    boost::property_tree::ptree readInputFile(const std::string&);
+    std::string readFile(const std::string&);
+    picojson::value::object readJSONFile(const std::string&);
 }
 #endif

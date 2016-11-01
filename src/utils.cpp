@@ -1,4 +1,5 @@
 #include "tdpic.h"
+#include <fstream>
 
 using std::cout;
 using std::endl;
@@ -24,12 +25,22 @@ namespace Utils {
 
     void print3DArray(threeD_array* data){
         double* it = data->origin();
-        for ( int i = 0 ; i < data->shape()[0] ; ++i ) {
-            cout << "[" << i << "]" << endl;
-            for ( int j = 0 ; j < data->shape()[1] ; ++j ) {
-                for ( int k = 0 ; k < data->shape()[2] ; ++k, ++it ) {
-                    cout << *it << " ";
+        for ( int i = 1 ; i < data->shape()[0] - 1 ; ++i ) {
+            cout << "[x:" << i << "] " << endl;
+            for ( int j = 1 ; j < data->shape()[1] - 1; ++j ) {
+
+                    if(j == 1) {
+                        cout << "     [y/z]";
+                        for ( int k = 1 ; k < data->shape()[2] - 1; ++k ) {
+                            cout << "[" << k << "]";
+                        }
+                        cout << endl;
+                    }
+                    cout << "     [" << j << "]  ";
+                for ( int k = 1 ; k < data->shape()[2] - 1; ++k, ++it ) {
+                    cout << " " << (*data)[i][j][k] << " ";
                 }
+                cout << endl;
             }
             cout << endl;
         }
@@ -49,9 +60,29 @@ namespace Utils {
         cout << computeMemory(pmem) << endl;
     }
 
-    boost::property_tree::ptree readInputFile(const std::string& filename){
-        boost::property_tree::ptree t;
-        boost::property_tree::json_parser::read_json(filename, t);
-        return t;
+    std::string readFile(const std::string& filename){
+        std::ifstream ifs;
+        std::string res;
+        std::string ifs_buffer;
+
+        ifs.open(filename, std::ios::in);
+
+        while(!ifs.eof()){
+            std::getline(ifs, ifs_buffer);
+            res += ifs_buffer;
+        }
+
+        return res;
+
+    }
+
+    picojson::value::object readJSONFile(const std::string& filename){
+        std::string json = readFile(filename);
+
+        picojson::value v;
+        std::string error = picojson::parse(v, json);
+        picojson::value::object& o = v.get<picojson::object>();
+
+        return o;
     }
 }

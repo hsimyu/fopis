@@ -6,7 +6,6 @@ option(BUILD_FOR_HOST "Build for the login node" ON)
 option(DEBUG          "Build in Debug Mode"      OFF)
 
 # check host
-message(STATUS "CMAKE_CXX_FLAGS_DEBUG = ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(HOME "$ENV{USERPROFILE}")
@@ -56,6 +55,9 @@ endif()
 # add include
 INCLUDE_DIRECTORIES("${HOME}/local/include")
 
+# add submodules
+include_directories("./picojson")
+
 set(SRCS
     "src/main.cpp"
     "src/particle.cpp"
@@ -63,8 +65,20 @@ set(SRCS
     "src/velocity.cpp"
     "src/field.cpp"
     "src/initialize.cpp"
+    "src/environment.cpp"
     "src/utils.cpp"
 )
 
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${Boost_LIBRARIES})
+
+add_custom_command(
+    OUTPUT copy_json
+    COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/src/input.json.sample" "${CMAKE_BINARY_DIR}/input.json"
+)
+add_custom_target(copy_sample_input DEPENDS copy_json)
+add_dependencies(tdpic copy_sample_input)
+
+# compiler info
+message(STATUS "CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
+message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")

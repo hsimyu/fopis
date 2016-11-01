@@ -62,8 +62,8 @@ int ParticleType::getPcell() const { return particle_per_cell; }
 int ParticleType::getSize() const { return size; }
 int ParticleType::getTotalNumber() const { return totalNumber; }
 
-int ParticleType::calcTotalNumber(int cx, int cy, int cz, int nr){
-    totalNumber = cx*cy*cz*nr;
+int ParticleType::calcTotalNumber(const Environment* env, int nr){
+    totalNumber = env->cell_x * env->cell_y * env->cell_z * nr;
     return totalNumber;
 }
 

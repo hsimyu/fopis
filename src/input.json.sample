@@ -1,0 +1,32 @@
+{
+    "Simulation": {
+        "max_iteration": 100,
+        "job_type": "new"
+    },
+    "Environment": {
+        "nx": 4,
+        "ny": 4,
+        "nz": 2,
+        "proc_x": 2,
+        "proc_y": 1,
+        "proc_z": 1,
+        "dx": 0.2,
+        "dt": 1e-8
+    },
+    "Plasma": {
+        "Electron": {
+            "mass": 1.0,
+            "charge": -1.0,
+            "density": 1.0e6,
+            "temperature": 12.0,
+            "particle_per_cell": 20
+        },
+        "Proton": {
+            "mass": 1836.0,
+            "charge": 1.0,
+            "density": 1.0e6,
+            "temperature": 12.0,
+            "particle_per_cell": 20
+        }
+    }
+}

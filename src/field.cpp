@@ -1,61 +1,61 @@
 #include "tdpic.h"
 
 // potential
-void FieldPointers::setPhi(threeD_array* _phi){
+void Field::setPhi(threeD_array* _phi){
     pPhi = _phi;
 }
-threeD_array* FieldPointers::getPhi(){
+threeD_array* Field::getPhi(){
     return pPhi;
 }
 
 // charge density
-void FieldPointers::setRho(threeD_array* _rho){
+void Field::setRho(threeD_array* _rho){
     pRho = _rho;
 }
-threeD_array* FieldPointers::getRho(){
+threeD_array* Field::getRho(){
     return pRho;
 }
 
 // electric fields
-void FieldPointers::setEx(threeD_array* _ex){
+void Field::setEx(threeD_array* _ex){
     pEx = _ex;
 }
-threeD_array* FieldPointers::getEx(){
+threeD_array* Field::getEx(){
     return pEx;
 }
 
-void FieldPointers::setEy(threeD_array* _ey){
+void Field::setEy(threeD_array* _ey){
     pEy = _ey;
 }
-threeD_array* FieldPointers::getEy(){
+threeD_array* Field::getEy(){
     return pEy;
 }
 
-void FieldPointers::setEz(threeD_array* _ez){
+void Field::setEz(threeD_array* _ez){
     pEz = _ez;
 }
-threeD_array* FieldPointers::getEz(){
+threeD_array* Field::getEz(){
     return pEz;
 }
 
 // magnetic fields
-void FieldPointers::setBx(threeD_array* _bx){
+void Field::setBx(threeD_array* _bx){
     pBx = _bx;
 }
-threeD_array* FieldPointers::getBx(){
+threeD_array* Field::getBx(){
     return pBx;
 }
 
-void FieldPointers::setBy(threeD_array* _by){
+void Field::setBy(threeD_array* _by){
     pBy = _by;
 }
-threeD_array* FieldPointers::getBy(){
+threeD_array* Field::getBy(){
     return pBy;
 }
 
-void FieldPointers::setBz(threeD_array* _bz){
+void Field::setBz(threeD_array* _bz){
     pBz = _bz;
 }
-threeD_array* FieldPointers::getBz(){
+threeD_array* Field::getBz(){
     return pBz;
 }
