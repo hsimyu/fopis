@@ -9,6 +9,7 @@ int main(int argc, char* argv[]){
 
     std::string filename = "input.json";
 
+    // load parameter from json
     auto inputs = Utils::readJSONFile(filename);
     Environment* env = Initializer::loadEnvironment(inputs);
     cout << env << endl;

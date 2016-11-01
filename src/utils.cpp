@@ -1,8 +1,10 @@
 #include "tdpic.h"
 #include <fstream>
+#include <boost/format.hpp>
 
 using std::cout;
 using std::endl;
+using boost::format;
 
 namespace Utils {
     static std::string computeMemory(double mem){
@@ -20,7 +22,7 @@ namespace Utils {
             suffix = "GB";
         }
 
-        return std::to_string(mem) + suffix;
+        return (format("%6.2f") % mem).str() + suffix;
     }
 
     void print3DArray(threeD_array* data){
