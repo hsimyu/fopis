@@ -154,7 +154,7 @@ class ParticleType {
 namespace Initializer {
     double getSizeOfSuperParticle(int, double, double);
     Environment* loadEnvironment(picojson::object&);
-    ParticleType* loadParticleType(picojson::object&, const Environment*);
+    ParticleType* loadParticleType(picojson::object&, Environment*);
     Field* initializeField(const Environment*);
 }
 

@@ -75,12 +75,13 @@ namespace Initializer {
         return env;
     }
 
-    ParticleType* loadParticleType(picojson::object& inputs, const Environment* env){
+    ParticleType* loadParticleType(picojson::object& inputs, Environment* env){
         auto plasma_inputs = inputs["Plasma"].get<picojson::object>();
         int particle_types = 0;
         for(auto i = plasma_inputs.begin(); i != plasma_inputs.end(); ++i){
             ++particle_types;
         }
+        env->particle_types = particle_types;
         ParticleType* ptype = new ParticleType[particle_types];
         int ii = 0;
         for(auto it = plasma_inputs.begin(); it != plasma_inputs.end(); ++it){
