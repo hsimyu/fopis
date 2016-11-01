@@ -47,12 +47,14 @@ void ParticleType::setMass(double _mass){ mass = _mass; }
 void ParticleType::setDensity(double _density){ density = _density; }
 void ParticleType::setTemperature(double _temp){ temperature = _temp; }
 void ParticleType::setName(std::string _name){ name = _name; }
+void ParticleType::setType(std::string _type){ type = _type; }
 void ParticleType::setSize(int _size){ size = _size; }
 void ParticleType::setTotalNumber(int _num){ totalNumber = _num; }
 void ParticleType::setPcell(int _pcell){ particle_per_cell = _pcell; }
 
 // getter
 int ParticleType::getId() const { return id; }
+std::string ParticleType::getType() const { return type; }
 std::string ParticleType::getName() const { return name; }
 double ParticleType::getCharge() const { return charge; }
 double ParticleType::getMass() const { return mass; }
@@ -71,6 +73,7 @@ int ParticleType::calcTotalNumber(const Environment* env, int nr){
 std::ostream& operator<<(std::ostream& ost, const ParticleType& ptype){
     ost << "[Particle  : " << ptype.getName() << "]" << std::endl;
     ost << "         id: " << ptype.getId() << std::endl;
+    ost << "       type: " << ptype.getType() << std::endl;
     ost << "       mass: " << ptype.getMass() << std::endl;
     ost << "     charge: " << ptype.getCharge() << std::endl;
     ost << "    density: " << ptype.getDensity() << std::endl;

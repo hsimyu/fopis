@@ -15,6 +15,7 @@
     },
     "Plasma": {
         "Electron": {
+            "type": "ambient",
             "mass": 1.0,
             "charge": -1.0,
             "density": 1.0e6,
@@ -22,6 +23,7 @@
             "particle_per_cell": 20
         },
         "Proton": {
+            "type": "ambient",
             "mass": 1836.0,
             "charge": 1.0,
             "density": 1.0e6,

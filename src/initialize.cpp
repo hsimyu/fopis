@@ -90,6 +90,7 @@ namespace Initializer {
             ptype[ii].setId(ii);
             ptype[ii].setName(name);
 
+            ptype[ii].setType( plasma["type"].to_str() );
             ptype[ii].setMass( plasma["mass"].get<double>() );
             ptype[ii].setCharge( plasma["charge"].get<double>() );
             ptype[ii].setTemperature( plasma["temperature"].get<double>() );

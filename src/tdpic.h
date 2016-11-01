@@ -115,6 +115,7 @@ class ParticleType {
         std::string name;
 
         // plasma info
+        std::string type;
         double charge;
         double mass;
         double density;
@@ -134,10 +135,12 @@ class ParticleType {
         void setTemperature(double);
         void setSize(int);
         void setName(std::string);
+        void setType(std::string);
         void setTotalNumber(int);
         void setPcell(int);
 
         int getId() const;
+        std::string getType() const;
         std::string getName() const;
         double getCharge() const;
         double getMass() const;
