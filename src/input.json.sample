@@ -1,9 +1,7 @@
 {
-    "Simulation": {
-        "max_iteration": 100,
-        "job_type": "new"
-    },
     "Environment": {
+        "max_iteration": 100,
+        "job_type": "new",
         "nx": 4,
         "ny": 4,
         "nz": 2,
