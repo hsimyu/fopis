@@ -35,6 +35,8 @@ class Field {
         threeD_array* pBy;
         threeD_array* pBz;
     public:
+        ~Field();
+
         threeD_array* getPhi();
         void setPhi(threeD_array*);
 

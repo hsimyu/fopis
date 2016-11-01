@@ -59,3 +59,15 @@ void Field::setBz(threeD_array* _bz){
 threeD_array* Field::getBz(){
     return pBz;
 }
+
+// destructor
+Field::~Field(){
+    delete [] pPhi;
+    delete [] pRho;
+    delete [] pEx;
+    delete [] pEy;
+    delete [] pEz;
+    delete [] pBx;
+    delete [] pBy;
+    delete [] pBz;
+}
