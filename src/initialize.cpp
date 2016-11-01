@@ -59,9 +59,9 @@ namespace Initializer {
             } else if(it->first == "proc_z"){
                 env->proc_z = static_cast<int>(it->second.get<double>());
             } else if(it->first == "dt"){
-                env->dt = static_cast<int>(it->second.get<double>());
+                env->dt = it->second.get<double>();
             } else if(it->first == "dx"){
-                env->dx = static_cast<int>(it->second.get<double>());
+                env->dx = it->second.get<double>();
             } else if(it->first == "max_iteration"){
                 env->max_iteration = static_cast<int>(it->second.get<double>());
             } else if(it->first == "job_type"){
@@ -101,7 +101,8 @@ namespace Initializer {
             ptype[ii].setDensity( plasma["density"].get<double>() );
             ptype[ii].setPcell( static_cast<int>((plasma["particle_per_cell"].get<double>() )) );
 
-            ptype[ii].calcTotalNumber( env, ptype[ii].getPcell() );
+            ptype[ii].calcTotalNumber(env);
+            ptype[ii].calcSize(env);
             std::cout << ptype[ii];
             Utils::printTotalMemory(ptype[ii]);
             ++ii;

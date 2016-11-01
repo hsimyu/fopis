@@ -153,7 +153,8 @@ class ParticleType {
         int getTotalNumber() const;
         int getPcell() const;
 
-        int calcTotalNumber(const Environment*, int);
+        int calcSize(const Environment*);
+        int calcTotalNumber(const Environment*);
 
         friend std::ostream& operator<<(std::ostream&, const ParticleType&);
         friend std::istream& operator<<(std::istream&, const ParticleType&);
