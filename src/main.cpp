@@ -16,9 +16,11 @@ int main(int argc, char* argv[]){
 
     ParticleType* ptype;
     Field* field;
+    Grid* root_grid;
     if(env->jobtype == "new") {
         ptype = Initializer::loadParticleType(inputs, env);
         field = Initializer::initializeField(env);
+        root_grid = Initializer::initilizeGrid(env);
     } else {
         // load ptype?
         // load particle
@@ -27,7 +29,6 @@ int main(int argc, char* argv[]){
     }
     Utils::print3DArray( field->getRho() );
 
-    // std::unique_ptr<Particle[]> particles(new Particle[ptype.getTotalNumber()]);
     // Initializer::setParticleInfo(&pinfo);
 
     cout << "--  End Initializing  --" << endl;

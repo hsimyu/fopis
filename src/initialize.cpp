@@ -110,5 +110,9 @@ namespace Initializer {
 
         return ptype;
     }
+
+    Grid* initilizeGrid(const Environment* env){
+        return new Grid(env);
+    }
 }
 

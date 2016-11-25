@@ -14,6 +14,23 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(HOME "$ENV{HOME}")
     find_package( Boost REQUIRED )
     include_directories( ${Boost_INCLUDE_DIRS} )
+
+    # Doxygen
+    FIND_PACKAGE(Doxygen)
+    IF(DOXYGEN_FOUND)
+        SET(DOXYGEN_CONF_FILE "doxygen.conf")
+        SET(DOXYGEN_CONF_PATH ${CMAKE_CURRENT_BINARY_DIR}/${DOXYGEN_CONF_FILE})
+        SET(DOXYGEN_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+        SET(DOXYGEN_TARGET "doc" )
+
+        CONFIGURE_FILE(${DOXYGEN_CONF_FILE}.in ${DOXYGEN_CONF_PATH})
+
+        ADD_CUSTOM_TARGET(${DOXYGEN_TARGET}
+            ${DOXYGEN_EXECUTABLE} ${DOXYGEN_CONF_PATH}
+            DEPENDS  ${DOXYGEN_CONF_PATH})
+    ELSE(DOXYGEN_FOUND)
+        MESSAGE (WARNING "Doxygen binary couldn't be found")
+    ENDIF(DOXYGEN_FOUND)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(HOME "$ENV{HOME}")
 endif()
@@ -82,3 +99,4 @@ add_dependencies(tdpic copy_sample_input)
 # compiler info
 message(STATUS "CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")
+

@@ -160,11 +160,55 @@ class ParticleType {
         friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
 
+class Grid {
+    private:
+        Grid* parent;
+        std::vector< std::unique_ptr<Grid*> > children;
+
+        //! 親のどの座標にくっついているか
+        //! @{
+        int base_x;
+        int base_y;
+        int base_z;
+        //! @}
+
+        int nx, ny, nz;
+        int level;
+
+        //! 各vectorは、粒子種ごとのParticle配列へのユニークポインタを保持する
+        std::vector< std::unique_ptr<Particle[]> > particles;
+    public:
+        Grid(const Environment*);
+        ~Grid();
+
+        //! 親のX座標を設定します.
+        void setBaseX(int);
+        //! 親のY座標を設定します.
+        void setBaseY(int);
+        //! 親のZ座標を設定します.
+        void setBaseZ(int);
+
+        int  getBaseX();
+        int  getBaseY();
+        int  getBaseZ();
+
+        void setLevel(int);
+        void setParent(Grid*);
+        void addChild(Grid*);
+        int getLevel();
+        Grid* getParent();
+        std::vector< std::unique_ptr<Grid*> > getChildren();
+
+        // void removeChild();
+        // std::unique_ptr<Particle[]> particles(new Particle[ptype.getTotalNumber()]);
+};
+
 namespace Initializer {
     double getSizeOfSuperParticle(int, double, double);
     Environment* loadEnvironment(picojson::object&);
     ParticleType* loadParticleType(picojson::object&, Environment*);
     Field* initializeField(const Environment*);
+    Grid* initializeGrid(const Environment*);
 }
 
 namespace Utils {
