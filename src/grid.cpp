@@ -4,9 +4,9 @@ Grid::Grid(const Environment* env){
     //! - コンストラクタにEnvironmentクラスが渡された場合、
     //! レベル0のGridを作成します.
     level = 0;
-    base_x = 0;
-    base_y = 0;
-    base_z = 0;
+    base_x = 0.0;
+    base_y = 0.0;
+    base_z = 0.0;
 
     /*
     // particles = new Particle[env->particle_types];
