@@ -25,7 +25,9 @@ Grid::Grid(const Environment* env, const ParticleType* ptype){
     std::uniform_real_distribution<> dist_y(base_y, max_y);
     std::uniform_real_distribution<> dist_z(base_z, max_z);
 
-    // std::vector< Particle[] > particle_arrays;
+    // particle types 分だけreserve
+    particles.reserve(env->particle_types);
+
     for(int id = 0; id < env->particle_types; ++id){
         //! 各粒子種の配列を保持するためのvector
         //! ここで一度に確保しておけば連続になる？
@@ -48,6 +50,9 @@ Grid::~Grid(){
     //! delete all particles
     //! vector内のparticleはunique_ptrなので自動削除される
     particles.erase(particles.begin(), particles.end());
+
+    // reserveしてあった分を削除する
+    particles.shrink_to_fit();
 }
 
 void Grid::setBaseX(int _x){ base_x = _x; }
