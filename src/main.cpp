@@ -27,9 +27,10 @@ int main(int argc, char* argv[]){
         // load grid
         // load field
     }
-    Utils::print3DArray( field->getRho() );
 
-    // Initializer::setParticleInfo(&pinfo);
+#ifdef DEBUG
+    Utils::print3DArray( field->getRho() );
+#endif
 
     cout << "--  End Initializing  --" << endl;
     return 0;

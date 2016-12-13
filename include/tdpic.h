@@ -183,11 +183,8 @@ class Grid {
         Grid(const Environment*, const ParticleType*);
         ~Grid();
 
-        //! 親のX座標を設定します.
         void setBaseX(int);
-        //! 親のY座標を設定します.
         void setBaseY(int);
-        //! 親のZ座標を設定します.
         void setBaseZ(int);
 
         int  getBaseX();

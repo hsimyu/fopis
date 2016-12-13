@@ -7,7 +7,7 @@ namespace {
         return x + y;
     }
 
-    TEST(AddTest, Test1)
+    TEST(AddTest, ParticleTest)
     {
         ASSERT_EQ(2, add(1, 1));
         ASSERT_EQ(10, add(-1, 11));

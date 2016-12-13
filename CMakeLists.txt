@@ -51,21 +51,34 @@ message(STATUS "HOME              = ${HOME}")
 
 # if(${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+
     #set(CRAYPE_LINK_TYPE "dynamic")
     set(CMAKE_CXX_COMPILER "CC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+
+    if(${DEBUG})
+        set(CMAKE_BUILD_TYPE Debug)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -Wall -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+        add_definitions(-DDEBUG)
+    else()
+        set(CMAKE_BUILD_TYPE Release)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+    endif()
+
     if(BUILD_FOR_HOST)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
     endif()
+
 else()
     # Flags for Local build
     if(${DEBUG})
         set(CMAKE_BUILD_TYPE Debug)
         set(CMAKE_CXX_FLAGS "-O0 -g -Wall")
+        add_definitions(-DDEBUG)
     else()
         set(CMAKE_BUILD_TYPE Release)
         set(CMAKE_CXX_FLAGS "-O2")
     endif()
+
 endif()
 
 # -- check C++11 --
