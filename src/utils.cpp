@@ -25,29 +25,6 @@ namespace Utils {
         return (format("%6.2f") % mem).str() + suffix;
     }
 
-    void print3DArray(threeD_array* data){
-        double* it = data->origin();
-        for ( int i = 1 ; i < data->shape()[0] - 1 ; ++i ) {
-            cout << "[x:" << i << "] " << endl;
-            for ( int j = 1 ; j < data->shape()[1] - 1; ++j ) {
-
-                    if(j == 1) {
-                        cout << "     [y/z]";
-                        for ( int k = 1 ; k < data->shape()[2] - 1; ++k ) {
-                            cout << "[" << k << "]";
-                        }
-                        cout << endl;
-                    }
-                    cout << "     [" << j << "]  ";
-                for ( int k = 1 ; k < data->shape()[2] - 1; ++k, ++it ) {
-                    cout << " " << (*data)[i][j][k] << " ";
-                }
-                cout << endl;
-            }
-            cout << endl;
-        }
-    }
-
     void printTotalMemory(const ParticleType& pinfo){
         cout << "Memory Info:" << endl;
         printParticleMemory(pinfo);

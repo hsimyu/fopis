@@ -107,6 +107,7 @@ set(SRCS
     "src/environment.cpp"
     "src/utils.cpp"
     "src/grid.cpp"
+    "src/dataio.cpp"
 )
 
 add_executable(tdpic ${SRCS})

@@ -29,7 +29,8 @@ int main(int argc, char* argv[]){
     }
 
 #ifdef DEBUG
-    Utils::print3DArray( field->getRho() );
+    IO::print3DArray( field->getRho() );
+    IO::outputParticlePositions( env, root_grid->particles );
 #endif
 
     cout << "--  End Initializing  --" << endl;

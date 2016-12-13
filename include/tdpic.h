@@ -161,6 +161,8 @@ class ParticleType {
         friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
 
+typedef std::vector< std::vector<Particle> > ParticleArray;
+
 class Grid {
     private:
         Grid* parent;
@@ -176,9 +178,6 @@ class Grid {
         int nx, ny, nz;
         int level;
 
-        //! 粒子種ごとのParticle配列を格納したstd::vectorへのunique_ptrを保持する
-        //! vector< unique_ptr<> > はpublicにすべき？
-        std::vector< std::unique_ptr<Particle[]> > particles;
     public:
         Grid(const Environment*, const ParticleType*);
         ~Grid();
@@ -200,6 +199,9 @@ class Grid {
         void addChild(Grid*);
         std::vector< std::unique_ptr<Grid*> > getChildren();
         void removeChild();
+
+        //! Particleを格納したstd::vectorを、粒子種ごとに保持したstd::vector
+        ParticleArray particles;
 };
 
 namespace Initializer {
@@ -211,10 +213,14 @@ namespace Initializer {
 }
 
 namespace Utils {
-    void print3DArray(threeD_array*);
     void printTotalMemory(const ParticleType&);
     void printParticleMemory(const ParticleType&);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
+}
+
+namespace IO {
+    void print3DArray(threeD_array*);
+    void outputParticlePositions(const Environment*, const ParticleArray&);
 }
 #endif

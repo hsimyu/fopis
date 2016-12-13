@@ -10,7 +10,7 @@ Grid::Grid(const Environment* env, const ParticleType* ptype){
     base_z = 0.0;
 
     // 粒子数は自動算出する
-    const int particle_number = 40;
+    const int particle_number = 4;
     const float max_x = env->nx * env->dx, max_y = env->ny * env->dx, max_z = env->nz * env->dx;
 
     // std::random_device rnd;
@@ -26,23 +26,17 @@ Grid::Grid(const Environment* env, const ParticleType* ptype){
     std::uniform_real_distribution<> dist_z(base_z, max_z);
 
     // particle types 分だけreserve
-    particles.reserve(env->particle_types);
+    // particlesは空のstd::vector< std::vector<Particle> >として宣言されている
+    particles.resize(env->particle_types);
 
     for(int id = 0; id < env->particle_types; ++id){
-        //! 各粒子種の配列を保持するためのvector
-        //! ここで一度に確保しておけば連続になる？
-        // std::unique_ptr<Particle[]> local_particles(new Particle[ptype[id]->getTotalNumber()]);
-        std::unique_ptr<Particle[]> local_particles(new Particle[particle_number]);
+        //! particle_number分のコンストラクタが呼ばれる
+        particles[id].resize(particle_number);
 
         //! - 粒子はレベル0グリッドにのみ所属します
-        // particles[id] = new Particle[particle_number]();
-
         for(int i = 0; i < particle_number; ++i){
-            local_particles[i].setPosition(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
+            particles[id][i].setPosition(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
         }
-
-        //! std::moveするとcopy-constructorが呼ばれない
-        particles.push_back(std::move(local_particles));
     }
 }
 
