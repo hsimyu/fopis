@@ -4,6 +4,19 @@ project(TDPIC)
 # options
 option(BUILD_FOR_HOST "Build for the login node" ON)
 option(DEBUG          "Build in Debug Mode"      OFF)
+option(WITH_TEST      "Build with Test"          ON)
+
+
+# add submodules
+include_directories(${CMAKE_SOURCE_DIR}/picojson)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+if(${WITH_TEST})
+    enable_testing()
+    add_subdirectory(${CMAKE_SOURCE_DIR}/googletest)
+    include_directories(${CMAKE_SOURCE_DIR}/googletest/googletest/include)
+    add_subdirectory(test)
+endif()
 
 # check host
 message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
@@ -71,10 +84,6 @@ endif()
 
 # add include
 INCLUDE_DIRECTORIES("${HOME}/local/include")
-
-# add submodules
-include_directories("./picojson")
-
 set(SRCS
     "src/main.cpp"
     "src/particle.cpp"
@@ -84,6 +93,7 @@ set(SRCS
     "src/initialize.cpp"
     "src/environment.cpp"
     "src/utils.cpp"
+    "src/grid.cpp"
 )
 
 add_executable(tdpic ${SRCS})

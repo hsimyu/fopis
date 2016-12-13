@@ -1,5 +1,5 @@
 #include <math.h>
-#include "tdpic.h"
+#include <tdpic.h>
 
 namespace Initializer {
     double getSizeOfSuperParticle(int nr, double density, const double dx){
@@ -111,7 +111,7 @@ namespace Initializer {
         return ptype;
     }
 
-    Grid* initilizeGrid(const Environment* env){
+    Grid* initializeGrid(const Environment* env){
         return new Grid(env);
     }
 }

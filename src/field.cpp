@@ -1,4 +1,4 @@
-#include "tdpic.h"
+#include <tdpic.h>
 
 // potential
 void Field::setPhi(threeD_array* _phi){
