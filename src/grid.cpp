@@ -45,7 +45,8 @@ Grid::Grid(const Environment* env, const ParticleType* ptype){
 }
 
 Grid::~Grid(){
-    // delete all particles
+    //! delete all particles
+    //! vector内のparticleはunique_ptrなので自動削除される
     particles.erase(particles.begin(), particles.end());
 }
 
