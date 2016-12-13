@@ -177,10 +177,9 @@ class Grid {
         int level;
 
         //! 粒子種ごとのParticle配列を格納したstd::vectorへのunique_ptrを保持する
-        // std::vector< Particle[] > particles;
-    public:
         //! vector< unique_ptr<> > はpublicにすべき？
         std::vector< std::unique_ptr<Particle[]> > particles;
+    public:
         Grid(const Environment*, const ParticleType*);
         ~Grid();
 
@@ -196,14 +195,14 @@ class Grid {
         int  getBaseZ();
 
         void setLevel(int);
-        void setParent(Grid*);
-        void addChild(Grid*);
         int getLevel();
-        Grid* getParent();
-        std::vector< std::unique_ptr<Grid*> > getChildren();
 
-        // void removeChild();
-        // std::unique_ptr<Particle[]> particles(new Particle[ptype.getTotalNumber()]);
+        void setParent(Grid*);
+        Grid* getParent();
+
+        void addChild(Grid*);
+        std::vector< std::unique_ptr<Grid*> > getChildren();
+        void removeChild();
 };
 
 namespace Initializer {

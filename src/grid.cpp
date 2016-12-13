@@ -48,3 +48,16 @@ Grid::~Grid(){
     // delete all particles
     particles.erase(particles.begin(), particles.end());
 }
+
+void Grid::setBaseX(int _x){ base_x = _x; }
+void Grid::setBaseY(int _y){ base_y = _y; }
+void Grid::setBaseZ(int _z){ base_z = _z; }
+int Grid::getBaseX(void){ return base_x; }
+int Grid::getBaseY(void){ return base_y; }
+int Grid::getBaseZ(void){ return base_z; }
+
+void Grid::setLevel(int l){ level = l; }
+int Grid::getLevel(void){ return level; }
+
+void Grid::setParent(Grid* g){ parent = g; }
+Grid* Grid::getParent(void){ return parent; }
