@@ -6,6 +6,7 @@
 #include <memory>
 #include <boost/multi_array.hpp>
 #include <picojson.h>
+#include <vector>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -175,10 +176,12 @@ class Grid {
         int nx, ny, nz;
         int level;
 
-        //! 各vectorは、粒子種ごとのParticle配列へのユニークポインタを保持する
-        std::vector< std::unique_ptr<Particle[]> > particles;
+        //! 粒子種ごとのParticle配列を格納したstd::vectorへのunique_ptrを保持する
+        // std::vector< Particle[] > particles;
     public:
-        Grid(const Environment*);
+        //! vector< unique_ptr<> > はpublicにすべき？
+        std::vector< std::unique_ptr<Particle[]> > particles;
+        Grid(const Environment*, const ParticleType*);
         ~Grid();
 
         //! 親のX座標を設定します.
@@ -208,7 +211,7 @@ namespace Initializer {
     Environment* loadEnvironment(picojson::object&);
     ParticleType* loadParticleType(picojson::object&, Environment*);
     Field* initializeField(const Environment*);
-    Grid* initializeGrid(const Environment*);
+    Grid* initializeGrid(const Environment*, const ParticleType*);
 }
 
 namespace Utils {

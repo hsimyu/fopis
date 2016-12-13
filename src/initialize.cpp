@@ -111,8 +111,8 @@ namespace Initializer {
         return ptype;
     }
 
-    Grid* initializeGrid(const Environment* env){
-        return new Grid(env);
+    Grid* initializeGrid(const Environment* env, const ParticleType* ptype){
+        return new Grid(env, ptype);
     }
 }
 
