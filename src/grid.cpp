@@ -73,9 +73,9 @@ Field* Grid::getField(void){ return field; }
 void Grid::updateRho(const Environment* env) {
     threeD_array* rho = field->getRho();
 
+    ParticleType* ptype = env->ptype;
     for(int id = 0; id < env->num_of_particle_types; ++id){
-        int pnum = env->ptype[id].getTotalNumber();
-        ParticleType* ptype = env->ptype;
+        int pnum = ptype[id].getTotalNumber();
 
         for(int i = 0; i < pnum; ++i){
             double x = particles[id][i].getX();
@@ -97,10 +97,7 @@ void Grid::updateRho(const Environment* env) {
             // glue cell分を考慮
             gx_lower += 1; gy_lower += 1; gz_lower += 1;
 
-            double q = ptype->getCharge();
-            std::cout << "id = " << id << ", q = " << q << std::endl;
-            std::cout << format("gx = %f, gy = %f, gz = %f") % delta_gx % delta_gy % delta_gz << std::endl;
-            std::cout << "dxdydz = " << (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) << std::endl;
+            double q = ptype[id].getCharge();
 
             (*rho)[gx_lower    ][gy_lower    ][gz_lower    ] += (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
             (*rho)[gx_lower + 1][gy_lower    ][gz_lower    ] += delta_gx * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
