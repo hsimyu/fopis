@@ -1,12 +1,13 @@
 #ifndef __TDPIC_H_INCLUDED__
 #define __TDPIC_H_INCLUDED__
 #include <iostream>
-#include <string>
 #include <math.h>
+#include <string>
+#include <vector>
 #include <memory>
 #include <boost/multi_array.hpp>
+#include <boost/format.hpp>
 #include <picojson.h>
-#include <vector>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -183,6 +184,8 @@ class Grid {
         int nx, ny, nz;
         int level;
 
+        Field* field;
+
     public:
         Grid(const Environment*);
         ~Grid();
@@ -201,19 +204,25 @@ class Grid {
         void setParent(Grid*);
         Grid* getParent();
 
+        void setField(Field*);
+        Field* getField();
+
         void addChild(Grid*);
         std::vector< std::unique_ptr<Grid*> > getChildren();
         void removeChild();
 
         //! Particleを格納したstd::vectorを、粒子種ごとに保持したstd::vector
         ParticleArray particles;
+
+        // update fields
+        void updateRho(const Environment*);
 };
 
 namespace Initializer {
     double getSizeOfSuperParticle(int, double, double);
     Environment* loadEnvironment(picojson::object&);
     ParticleType* loadParticleType(picojson::object&, Environment*);
-    Field* initializeField(const Environment*);
+    void initializeRootField(const Environment*, Grid*);
     Grid* initializeGrid(const Environment*);
 }
 

@@ -6,12 +6,12 @@ namespace Initializer {
         return pow(dx, 2.0) * density / nr;
     }
 
-    Field* initializeField(const Environment* env){
+    void initializeRootField(const Environment* env, Grid* grid){
         Field* field = new Field;
 
-        const int cx = env->cell_x;
-        const int cy = env->cell_y;
-        const int cz = env->cell_z;
+        const int cx = env->cell_x + 2;
+        const int cy = env->cell_y + 2;
+        const int cz = env->cell_z + 2;
         auto extents = boost::extents[cx][cy][cz];
         threeD_array* phi = new threeD_array(extents);
         threeD_array* rho = new threeD_array(extents);
@@ -35,7 +35,7 @@ namespace Initializer {
         field->setBy(by);
         field->setBz(bz);
 
-        return field;
+        grid->setField(field);
     }
 
     Environment* loadEnvironment(picojson::object& inputs){
@@ -71,10 +71,11 @@ namespace Initializer {
             }
         }
 
-        // のりしろ1セルを両側においておく
-        env->cell_x = env->nx/env->proc_x + 2;
-        env->cell_y = env->ny/env->proc_y + 2;
-        env->cell_z = env->nz/env->proc_z + 2;
+        // 1プロセスあたりのグリッド数
+        // これに2を加えた数がのりしろ分になる
+        env->cell_x = env->nx/env->proc_x;
+        env->cell_y = env->ny/env->proc_y;
+        env->cell_z = env->nz/env->proc_z;
 
         return env;
     }

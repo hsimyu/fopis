@@ -1,5 +1,6 @@
 #include <tdpic.h>
 #include <random>
+using boost::format;
 
 Grid::Grid(const Environment* env){
     //! - コンストラクタにEnvironmentクラスが渡された場合、
@@ -9,8 +10,11 @@ Grid::Grid(const Environment* env){
     base_y = 0.0;
     base_z = 0.0;
 
-    // 粒子数は自動算出する
-    const float max_x = env->nx * env->dx, max_y = env->ny * env->dx, max_z = env->nz * env->dx;
+    // 粒子位置の上限を設定
+    // 下限はbase_xになる
+    const float max_x = env->cell_x * env->dx;
+    const float max_y = env->cell_y * env->dx;
+    const float max_z = env->cell_z * env->dx;
 
     // std::random_device rnd;
     const int random_src_x = 10684930;
@@ -61,3 +65,52 @@ int Grid::getLevel(void){ return level; }
 
 void Grid::setParent(Grid* g){ parent = g; }
 Grid* Grid::getParent(void){ return parent; }
+
+void Grid::setField(Field* f){ field = f; }
+Field* Grid::getField(void){ return field; }
+
+//! 粒子の位置から電荷を空間電荷にする
+void Grid::updateRho(const Environment* env) {
+    threeD_array* rho = field->getRho();
+
+    for(int id = 0; id < env->num_of_particle_types; ++id){
+        int pnum = env->ptype[id].getTotalNumber();
+        ParticleType* ptype = env->ptype;
+
+        for(int i = 0; i < pnum; ++i){
+            double x = particles[id][i].getX();
+            double y = particles[id][i].getY();
+            double z = particles[id][i].getZ();
+
+            double gx = x/env->dx;
+            int gx_lower = floor(gx);
+            double delta_gx = gx - gx_lower;
+
+            double gy = y/env->dx;
+            int gy_lower = floor(gy);
+            double delta_gy = gy - gy_lower;
+
+            double gz = z/env->dx;
+            int gz_lower = floor(gz);
+            double delta_gz = gz - gz_lower;
+
+            // glue cell分を考慮
+            gx_lower += 1; gy_lower += 1; gz_lower += 1;
+
+            double q = ptype->getCharge();
+            std::cout << "id = " << id << ", q = " << q << std::endl;
+            std::cout << format("gx = %f, gy = %f, gz = %f") % delta_gx % delta_gy % delta_gz << std::endl;
+            std::cout << "dxdydz = " << (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) << std::endl;
+
+            (*rho)[gx_lower    ][gy_lower    ][gz_lower    ] += (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
+            (*rho)[gx_lower + 1][gy_lower    ][gz_lower    ] += delta_gx * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
+            (*rho)[gx_lower    ][gy_lower + 1][gz_lower    ] += (1.0 - delta_gx) * delta_gy * (1.0 - delta_gz) * q;
+            (*rho)[gx_lower + 1][gy_lower + 1][gz_lower    ] += delta_gx * delta_gy * (1.0 - delta_gz) * q;
+
+            (*rho)[gx_lower    ][gy_lower    ][gz_lower + 1] += (1.0 - delta_gx) * (1.0 - delta_gy) * delta_gz * q;
+            (*rho)[gx_lower + 1][gy_lower    ][gz_lower + 1] += delta_gx * (1.0 - delta_gy) * delta_gz * q;
+            (*rho)[gx_lower    ][gy_lower + 1][gz_lower + 1] += (1.0 - delta_gx) * delta_gy * delta_gz * q;
+            (*rho)[gx_lower + 1][gy_lower + 1][gz_lower + 1] += delta_gx * delta_gy * delta_gz * q;
+        }
+    }
+}

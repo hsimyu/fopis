@@ -1,6 +1,5 @@
 #include <tdpic.h>
 #include <fstream>
-#include <boost/format.hpp>
 
 using std::cout;
 using std::endl;

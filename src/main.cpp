@@ -15,12 +15,17 @@ int main(int argc, char* argv[]){
     cout << env << endl;
 
     ParticleType* ptype;
-    Field* field;
     Grid* root_grid;
+
     if(env->jobtype == "new") {
         ptype = Initializer::loadParticleType(inputs, env);
-        field = Initializer::initializeField(env);
         root_grid = Initializer::initializeGrid(env);
+
+        // generate root field
+        Initializer::initializeRootField(env, root_grid);
+
+        // particle -> space charge
+        root_grid->updateRho(env);
     } else {
         // load ptype?
         // load particle
@@ -29,7 +34,7 @@ int main(int argc, char* argv[]){
     }
 
 #ifdef DEBUG
-    IO::print3DArray( field->getRho() );
+    IO::print3DArray( root_grid->getField()->getRho() );
     IO::outputParticlePositions( env, root_grid->particles );
 #endif
 
