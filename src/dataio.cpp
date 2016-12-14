@@ -31,12 +31,12 @@ namespace IO {
         }
     }
 
-    void outputParticlePositions(const Environment* env, const ParticleType* ptype, const ParticleArray& parray, std::string filename){
+    void outputParticlePositions(const Environment* env, const ParticleArray& parray, std::string filename){
         std::ofstream ofs(filename);
 
-        for(int id = 0; id < env->particle_types; ++id){
+        for(int id = 0; id < env->num_of_particle_types; ++id){
 
-            ofs << "## " << ptype[id].getName() << endl;
+            ofs << "## " << env->ptype[id].getName() << endl;
 
             for(int i = 0; i < parray[id].size(); ++i){
                 ofs << format("%8.3f %8.3f %8.3f") % parray[id][i].getX() % parray[id][i].getY() % parray[id][i].getZ();

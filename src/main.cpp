@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
     if(env->jobtype == "new") {
         ptype = Initializer::loadParticleType(inputs, env);
         field = Initializer::initializeField(env);
-        root_grid = Initializer::initializeGrid(env, ptype);
+        root_grid = Initializer::initializeGrid(env);
     } else {
         // load ptype?
         // load particle
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]){
 
 #ifdef DEBUG
     IO::print3DArray( field->getRho() );
-    IO::outputParticlePositions( env, ptype, root_grid->particles );
+    IO::outputParticlePositions( env, root_grid->particles );
 #endif
 
     cout << "--  End Initializing  --" << endl;

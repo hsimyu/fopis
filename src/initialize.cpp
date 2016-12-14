@@ -85,7 +85,7 @@ namespace Initializer {
         for(auto i = plasma_inputs.begin(); i != plasma_inputs.end(); ++i){
             ++particle_types;
         }
-        env->particle_types = particle_types;
+        env->num_of_particle_types = particle_types;
         ParticleType* ptype = new ParticleType[particle_types];
         int ii = 0;
         for(auto it = plasma_inputs.begin(); it != plasma_inputs.end(); ++it){
@@ -108,11 +108,14 @@ namespace Initializer {
             ++ii;
         }
 
+        // add pointer to ptype
+        env->ptype = ptype;
+
         return ptype;
     }
 
-    Grid* initializeGrid(const Environment* env, const ParticleType* ptype){
-        return new Grid(env, ptype);
+    Grid* initializeGrid(const Environment* env){
+        return new Grid(env);
     }
 }
 

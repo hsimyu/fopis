@@ -10,11 +10,16 @@
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
+// proto types
+class Particle;
+class ParticleType;
+
 typedef boost::multi_array<double, 3> threeD_array;
+typedef std::vector< std::vector<Particle> > ParticleArray;
 
 struct Environment {
     public:
-        int particle_types;
+        int num_of_particle_types;
         double dx;
         double dt;
         int nx, ny, nz;
@@ -22,6 +27,8 @@ struct Environment {
         int cell_x, cell_y, cell_z;
         std::string jobtype;
         int max_iteration;
+
+        ParticleType* ptype;
 
         friend std::ostream& operator<<(std::ostream&, const Environment&);
         friend std::ostream& operator<<(std::ostream&, const Environment*);
@@ -161,8 +168,6 @@ class ParticleType {
         friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
 
-typedef std::vector< std::vector<Particle> > ParticleArray;
-
 class Grid {
     private:
         Grid* parent;
@@ -179,7 +184,7 @@ class Grid {
         int level;
 
     public:
-        Grid(const Environment*, const ParticleType*);
+        Grid(const Environment*);
         ~Grid();
 
         void setBaseX(int);
@@ -209,7 +214,7 @@ namespace Initializer {
     Environment* loadEnvironment(picojson::object&);
     ParticleType* loadParticleType(picojson::object&, Environment*);
     Field* initializeField(const Environment*);
-    Grid* initializeGrid(const Environment*, const ParticleType*);
+    Grid* initializeGrid(const Environment*);
 }
 
 namespace Utils {
@@ -221,6 +226,6 @@ namespace Utils {
 
 namespace IO {
     void print3DArray(threeD_array*);
-    void outputParticlePositions(const Environment*, const ParticleType*, const ParticleArray&, std::string filename = "particlePositions.csv");
+    void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }
 #endif
