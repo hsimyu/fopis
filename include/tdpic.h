@@ -221,6 +221,6 @@ namespace Utils {
 
 namespace IO {
     void print3DArray(threeD_array*);
-    void outputParticlePositions(const Environment*, const ParticleArray&);
+    void outputParticlePositions(const Environment*, const ParticleType*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }
 #endif

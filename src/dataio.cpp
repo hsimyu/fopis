@@ -1,5 +1,6 @@
 #include <tdpic.h>
 #include <boost/format.hpp>
+#include <fstream>
 
 using std::cout;
 using std::cin;
@@ -30,10 +31,20 @@ namespace IO {
         }
     }
 
-    void outputParticlePositions(const Environment* env, const ParticleArray& parray){
-        cout << "-- PARTICLE POSITIONS --" << endl;
+    void outputParticlePositions(const Environment* env, const ParticleType* ptype, const ParticleArray& parray, std::string filename){
+        std::ofstream ofs(filename);
+
         for(int id = 0; id < env->particle_types; ++id){
-            cout << "-- ID: " << format("%d") % id << " -- " << endl;
+
+            ofs << "## " << ptype[id].getName() << endl;
+
+            for(int i = 0; i < parray[id].size(); ++i){
+                ofs << format("%8.3f %8.3f %8.3f") % parray[id][i].getX() % parray[id][i].getY() % parray[id][i].getZ();
+                ofs << format("%8.3f %8.3f %8.3f") % parray[id][i].getVX() % parray[id][i].getVY() % parray[id][i].getVZ();
+                ofs << endl;
+            }
+
+            ofs << endl << endl;
         }
     }
 }
