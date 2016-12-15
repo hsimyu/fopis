@@ -2,62 +2,62 @@
 
 // potential
 void Field::setPhi(threeDArray _phi){
-    pPhi = _phi;
+    phi = _phi;
 }
 threeDArray Field::getPhi(){
-    return pPhi;
+    return phi;
 }
 
 // charge density
 void Field::setRho(threeDArray _rho){
-    pRho = _rho;
+    rho = _rho;
 }
 threeDArray Field::getRho(){
-    return pRho;
+    return rho;
 }
 
 // electric fields
 void Field::setEx(threeDArray _ex){
-    pEx = _ex;
+    ex = _ex;
 }
 threeDArray Field::getEx(){
-    return pEx;
+    return ex;
 }
 
 void Field::setEy(threeDArray _ey){
-    pEy = _ey;
+    ey = _ey;
 }
 threeDArray Field::getEy(){
-    return pEy;
+    return ey;
 }
 
 void Field::setEz(threeDArray _ez){
-    pEz = _ez;
+    ez = _ez;
 }
 threeDArray Field::getEz(){
-    return pEz;
+    return ez;
 }
 
 // magnetic fields
 void Field::setBx(threeDArray _bx){
-    pBx = _bx;
+    bx = _bx;
 }
 threeDArray Field::getBx(){
-    return pBx;
+    return bx;
 }
 
 void Field::setBy(threeDArray _by){
-    pBy = _by;
+    by = _by;
 }
 threeDArray Field::getBy(){
-    return pBy;
+    return by;
 }
 
 void Field::setBz(threeDArray _bz){
-    pBz = _bz;
+    bz = _bz;
 }
 threeDArray Field::getBz(){
-    return pBz;
+    return bz;
 }
 
 void Field::initializePoisson(const Environment* env){
@@ -118,7 +118,7 @@ void Field::solvePoisson(const Environment* env) {
     if(psn == nullptr) initializePoisson(env);
 
     //! rho(3D) -> rho(1D)
-    Utils::convert3Dto1Darray(pRho, psn->nx + 1, psn->ny + 1, psn->nz + 1, psn->rho1D);
+    Utils::convert3Dto1Darray(rho, psn->nx + 1, psn->ny + 1, psn->nz + 1, psn->rho1D);
 
     //! Commit solver
     //! @note Is it required?
@@ -130,19 +130,19 @@ void Field::solvePoisson(const Environment* env) {
     if( psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
 
     //! phi(1D) -> phi(3D)
-    Utils::convert1Dto3Darray(psn->rho1D, psn->nx + 1, psn->ny + 1, psn->nz + 1, pPhi);
+    Utils::convert1Dto3Darray(psn->rho1D, psn->nx + 1, psn->ny + 1, psn->nz + 1, phi);
 }
 
 // destructor
 Field::~Field(){
-    Utils::delete3DArray(pPhi);
-    Utils::delete3DArray(pRho);
-    Utils::delete3DArray(pEx);
-    Utils::delete3DArray(pEy);
-    Utils::delete3DArray(pEz);
-    Utils::delete3DArray(pBx);
-    Utils::delete3DArray(pBy);
-    Utils::delete3DArray(pBz);
+    Utils::delete3DArray(phi);
+    Utils::delete3DArray(rho);
+    Utils::delete3DArray(ex);
+    Utils::delete3DArray(ey);
+    Utils::delete3DArray(ez);
+    Utils::delete3DArray(bx);
+    Utils::delete3DArray(by);
+    Utils::delete3DArray(bz);
 
     delete psn;
 }

@@ -58,14 +58,14 @@ struct Environment {
 
 class Field {
     private:
-        threeDArray pPhi;
-        threeDArray pRho;
-        threeDArray pEx;
-        threeDArray pEy;
-        threeDArray pEz;
-        threeDArray pBx;
-        threeDArray pBy;
-        threeDArray pBz;
+        threeDArray phi;
+        threeDArray rho;
+        threeDArray ex;
+        threeDArray ey;
+        threeDArray ez;
+        threeDArray bx;
+        threeDArray by;
+        threeDArray bz;
 
         Poisson* psn = nullptr;
     public:
