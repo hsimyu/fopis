@@ -133,6 +133,28 @@ void Field::solvePoisson(const Environment* env) {
     Utils::convert1Dto3Darray(psn->rho1D, psn->nx + 1, psn->ny + 1, psn->nz + 1, phi);
 }
 
+//! @brief 電場を更新する
+//! e = - (p_+1 - p_+0)/dx
+//! @param const Environment*
+void Field::updateEfield(const Environment* env) {
+
+    const int nx = env->cell_x + 1;
+    const int ny = env->cell_y + 1;
+    const int nz = env->cell_z + 1;
+
+    //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
+    for(int i = 1; i < nx; ++i){
+        for(int j = 1; j < ny; ++j){
+            for(int k = 1; k < nz; ++k){
+                //! 各方向には1つ少ないのでcx-1まで
+                if(i < nx - 1) ex[i][j][k] = phi[i][j][k] - phi[i + 1][j][k];
+                if(j < ny - 1) ey[i][j][k] = phi[i][j][k] - phi[i][j + 1][k];
+                if(k < nz - 1) ez[i][j][k] = phi[i][j][k] - phi[i][j][k + 1];
+            }
+        }
+    }
+}
+
 // destructor
 Field::~Field(){
     Utils::delete3DArray(phi);

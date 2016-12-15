@@ -93,6 +93,7 @@ class Field {
 
         void initializePoisson(const Environment*);
         void solvePoisson(const Environment*);
+        void updateEfield(const Environment*);
 };
 
 class Velocity {
