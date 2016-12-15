@@ -46,7 +46,6 @@ message(STATUS "HOME              = ${HOME}")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
     #set(CRAYPE_LINK_TYPE "dynamic")
-    set(CMAKE_CXX_COMPILER "CC")
 
     if(${DEBUG})
         set(CMAKE_BUILD_TYPE Debug)
