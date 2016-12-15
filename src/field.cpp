@@ -87,7 +87,7 @@ void Field::initializePoisson(const Environment* env){
     double upper_x = env->cell_x;
     double q = 0.0; // 0 for Poisson and Laplace
 
-    d_init_Helmholtz_3D(&zero, &upper_x, &zero, &upper_x, &zero, &upper_x, &nx, &ny, &nz, "DDDDDD", &q, psn->ipar, psn->dpar, &(psn->stat));
+    d_init_Helmholtz_3D(&zero, &upper_x, &zero, &upper_x, &zero, &upper_x, &nx, &ny, &nz, env->boundary.c_str(), &q, psn->ipar, psn->dpar, &(psn->stat));
     if(psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
 
     psn->b_lx = new double[(ny + 1) * (nz + 1)];

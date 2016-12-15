@@ -2,6 +2,9 @@
     "Environment": {
         "max_iteration": 100,
         "job_type": "new",
+        "solver_type": "EM",
+        "boundary_condition": "DDDDDD",
+        "dimension": "3D",
         "nx": 16,
         "ny": 16,
         "nz": 2,

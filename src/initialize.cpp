@@ -65,6 +65,12 @@ namespace Initializer {
                 env->max_iteration = static_cast<int>(it->second.get<double>());
             } else if(it->first == "job_type"){
                 env->jobtype = it->second.to_str();
+            } else if(it->first == "solver_type"){
+                env->solver_type = it->second.to_str();
+            } else if(it->first == "boundary"){
+                env->boundary = it->second.to_str();
+            } else if(it->first == "dimension"){
+                env->dimension = it->second.to_str();
             } else {
                 std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
             }

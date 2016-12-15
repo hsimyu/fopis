@@ -46,8 +46,12 @@ struct Environment {
         int nx, ny, nz;
         int proc_x, proc_y, proc_z;
         int cell_x, cell_y, cell_z;
-        std::string jobtype;
         int max_iteration;
+
+        std::string jobtype;
+        std::string solver_type;
+        std::string boundary;
+        std::string dimension;
 
         ParticleType* ptype;
 
