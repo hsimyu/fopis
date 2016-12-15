@@ -1,73 +1,73 @@
 #include <tdpic.h>
 
 // potential
-void Field::setPhi(threeD_array* _phi){
+void Field::setPhi(threeDArray _phi){
     pPhi = _phi;
 }
-threeD_array* Field::getPhi(){
+threeDArray Field::getPhi(){
     return pPhi;
 }
 
 // charge density
-void Field::setRho(threeD_array* _rho){
+void Field::setRho(threeDArray _rho){
     pRho = _rho;
 }
-threeD_array* Field::getRho(){
+threeDArray Field::getRho(){
     return pRho;
 }
 
 // electric fields
-void Field::setEx(threeD_array* _ex){
+void Field::setEx(threeDArray _ex){
     pEx = _ex;
 }
-threeD_array* Field::getEx(){
+threeDArray Field::getEx(){
     return pEx;
 }
 
-void Field::setEy(threeD_array* _ey){
+void Field::setEy(threeDArray _ey){
     pEy = _ey;
 }
-threeD_array* Field::getEy(){
+threeDArray Field::getEy(){
     return pEy;
 }
 
-void Field::setEz(threeD_array* _ez){
+void Field::setEz(threeDArray _ez){
     pEz = _ez;
 }
-threeD_array* Field::getEz(){
+threeDArray Field::getEz(){
     return pEz;
 }
 
 // magnetic fields
-void Field::setBx(threeD_array* _bx){
+void Field::setBx(threeDArray _bx){
     pBx = _bx;
 }
-threeD_array* Field::getBx(){
+threeDArray Field::getBx(){
     return pBx;
 }
 
-void Field::setBy(threeD_array* _by){
+void Field::setBy(threeDArray _by){
     pBy = _by;
 }
-threeD_array* Field::getBy(){
+threeDArray Field::getBy(){
     return pBy;
 }
 
-void Field::setBz(threeD_array* _bz){
+void Field::setBz(threeDArray _bz){
     pBz = _bz;
 }
-threeD_array* Field::getBz(){
+threeDArray Field::getBz(){
     return pBz;
 }
 
 // destructor
 Field::~Field(){
-    delete [] pPhi;
-    delete [] pRho;
-    delete [] pEx;
-    delete [] pEy;
-    delete [] pEz;
-    delete [] pBx;
-    delete [] pBy;
-    delete [] pBz;
+    Utils::delete3DArray(pPhi);
+    Utils::delete3DArray(pRho);
+    Utils::delete3DArray(pEx);
+    Utils::delete3DArray(pEy);
+    Utils::delete3DArray(pEz);
+    Utils::delete3DArray(pBx);
+    Utils::delete3DArray(pBy);
+    Utils::delete3DArray(pBz);
 }

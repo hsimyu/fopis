@@ -34,7 +34,7 @@ int main(int argc, char* argv[]){
     }
 
 #ifdef DEBUG
-    IO::print3DArray( root_grid->getField()->getRho() );
+    IO::print3DArray( root_grid->getField()->getRho(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
     IO::outputParticlePositions( env, root_grid->particles );
 #endif
 

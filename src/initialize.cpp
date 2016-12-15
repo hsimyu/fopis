@@ -12,24 +12,23 @@ namespace Initializer {
         const int cx = env->cell_x + 2;
         const int cy = env->cell_y + 2;
         const int cz = env->cell_z + 2;
-        auto extents = boost::extents[cx][cy][cz];
-        threeD_array* phi = new threeD_array(extents);
-        threeD_array* rho = new threeD_array(extents);
 
+        threeDArray phi = Utils::create3DArray(cx, cy, cz);
+        threeDArray rho = Utils::create3DArray(cx, cy, cz);
         field->setPhi(phi);
         field->setRho(rho);
 
-        threeD_array* ex = new threeD_array(boost::extents[cx-1][cy][cz]);
-        threeD_array* ey = new threeD_array(boost::extents[cx][cy-1][cz]);
-        threeD_array* ez = new threeD_array(boost::extents[cx][cy][cz-1]);
+        threeDArray ex = Utils::create3DArray(cx-1, cy, cz);
+        threeDArray ey = Utils::create3DArray(cx, cy-1, cz);
+        threeDArray ez = Utils::create3DArray(cx, cy, cz-1);
 
         field->setEx(ex);
         field->setEy(ey);
         field->setEz(ez);
 
-        threeD_array* bx = new threeD_array(boost::extents[cx][cy-1][cz-1]);
-        threeD_array* by = new threeD_array(boost::extents[cx-1][cy][cz-1]);
-        threeD_array* bz = new threeD_array(boost::extents[cx-1][cy-1][cz]);
+        threeDArray bx = Utils::create3DArray(cx, cy-1, cz-1);
+        threeDArray by = Utils::create3DArray(cx-1, cy, cz-1);
+        threeDArray bz = Utils::create3DArray(cx-1, cy-1, cz);
 
         field->setBx(bx);
         field->setBy(by);

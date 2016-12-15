@@ -7,22 +7,21 @@ using std::endl;
 using boost::format;
 
 namespace IO {
-    void print3DArray(threeD_array* data){
-        double* it = data->origin();
-        for ( int i = 1 ; i < data->shape()[0] - 1 ; ++i ) {
-            cout << "[x:" << i << "] " << endl;
-            for ( int j = 1 ; j < data->shape()[1] - 1; ++j ) {
+    void print3DArray(double*** data, const int nx, const int ny, const int nz){
+        for (int k = 0; k < nz; ++k ) {
+            cout << "[z:" << k << "] " << endl;
 
-                    if(j == 1) {
-                        cout << "     [y/z]";
-                        for ( int k = 1 ; k < data->shape()[2] - 1; ++k ) {
-                            cout << "[" << k << "]";
+            for ( int i = 0 ; i < nx; ++i ) {
+                    if(i == 0) {
+                        cout << "     [x/y]";
+                        for ( int j = 0 ; j < ny; ++j ) {
+                            cout << "[" << j << "]";
                         }
                         cout << endl;
                     }
-                    cout << "     [" << j << "]  ";
-                for ( int k = 1 ; k < data->shape()[2] - 1; ++k, ++it ) {
-                    cout << " " << (*data)[i][j][k] << " ";
+                    cout << "     [" << i << "]  ";
+                for ( int j = 0 ; j < ny; ++j ) {
+                    cout << " " << data[i][j][k] << " ";
                 }
                 cout << endl;
             }

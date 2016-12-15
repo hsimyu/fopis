@@ -2,8 +2,8 @@
     "Environment": {
         "max_iteration": 100,
         "job_type": "new",
-        "nx": 4,
-        "ny": 4,
+        "nx": 16,
+        "ny": 16,
         "nz": 2,
         "proc_x": 2,
         "proc_y": 1,

@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <boost/multi_array.hpp>
 #include <boost/format.hpp>
 #include <picojson.h>
 
@@ -15,7 +14,7 @@
 class Particle;
 class ParticleType;
 
-typedef boost::multi_array<double, 3> threeD_array;
+typedef double*** threeDArray;
 typedef std::vector< std::vector<Particle> > ParticleArray;
 
 struct Environment {
@@ -38,36 +37,36 @@ struct Environment {
 
 class Field {
     private:
-        threeD_array* pPhi;
-        threeD_array* pRho;
-        threeD_array* pEx;
-        threeD_array* pEy;
-        threeD_array* pEz;
-        threeD_array* pBx;
-        threeD_array* pBy;
-        threeD_array* pBz;
+        threeDArray pPhi;
+        threeDArray pRho;
+        threeDArray pEx;
+        threeDArray pEy;
+        threeDArray pEz;
+        threeDArray pBx;
+        threeDArray pBy;
+        threeDArray pBz;
     public:
         ~Field();
 
-        threeD_array* getPhi();
-        void setPhi(threeD_array*);
+        threeDArray getPhi();
+        void setPhi(threeDArray);
 
-        threeD_array* getRho();
-        void setRho(threeD_array*);
+        threeDArray getRho();
+        void setRho(threeDArray);
 
-        threeD_array* getEx();
-        void setEx(threeD_array*);
-        threeD_array* getEy();
-        void setEy(threeD_array*);
-        threeD_array* getEz();
-        void setEz(threeD_array*);
+        threeDArray getEx();
+        void setEx(threeDArray);
+        threeDArray getEy();
+        void setEy(threeDArray);
+        threeDArray getEz();
+        void setEz(threeDArray);
 
-        threeD_array* getBx();
-        void setBx(threeD_array*);
-        threeD_array* getBy();
-        void setBy(threeD_array*);
-        threeD_array* getBz();
-        void setBz(threeD_array*);
+        threeDArray getBx();
+        void setBx(threeDArray);
+        threeDArray getBy();
+        void setBy(threeDArray);
+        threeDArray getBz();
+        void setBz(threeDArray);
 };
 
 class Velocity {
@@ -231,10 +230,14 @@ namespace Utils {
     void printParticleMemory(const ParticleType&);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
+
+    double*** create3DArray(const int nx, const int ny, const int nz);
+
+    void delete3DArray(double*** x);
 }
 
 namespace IO {
-    void print3DArray(threeD_array*);
+    void print3DArray(double***, const int, const int, const int);
     void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }
 #endif

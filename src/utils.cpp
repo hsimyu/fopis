@@ -6,6 +6,29 @@ using std::endl;
 using boost::format;
 
 namespace Utils {
+    double*** create3DArray(const int nx, const int ny, const int nz) {
+        double*** x;
+
+        x = new double**[nx];
+        x[0] = new double*[nx * ny];
+        x[0][0] = new double[nx * ny * nz];
+
+        for(int i = 0; i < nx; ++i) {
+            x[i] = x[0] + i * ny;
+            for(int j = 0; j  < ny; ++j){
+                x[i][j] = x[0][0] + i * ny * nz + j * nz;
+            }
+        }
+
+        return x;
+    }
+
+    void delete3DArray(double*** x) {
+        delete [] x[0][0];
+        delete [] x[0];
+        delete [] x;
+    }
+
     static std::string computeMemory(double mem){
         std::string suffix = "B";
         if(mem > 1048.0){
