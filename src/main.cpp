@@ -1,3 +1,9 @@
+/**
+ * @mainpage
+ * TDPIC: 三次元Electromagnetic Full Particle-in-cell code
+ * 帯電解析用 & マルチグリッド解析用のPICコード
+ **/
+
 #include <tdpic.h>
 
 using std::cout;
@@ -23,9 +29,6 @@ int main(int argc, char* argv[]){
 
         // generate root field
         Initializer::initializeRootField(env, root_grid);
-
-        // particle -> space charge
-        root_grid->updateRho(env);
     } else {
         // load ptype?
         // load particle
@@ -33,17 +36,21 @@ int main(int argc, char* argv[]){
         // load field
     }
 
+    cout << "--  End Initializing  --" << endl;
+    cout << "--  Begin A Loop  --" << endl;
+
+    // particle -> space charge
+    root_grid->updateRho(env);
+
+    // space charge -> potential
+    root_grid->getField()->solvePoisson(env);
+
+    cout << "--  End A Loop  --" << endl;
+
 #ifdef DEBUG
     IO::print3DArray( root_grid->getField()->getRho(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
-    IO::outputParticlePositions( env, root_grid->particles );
-#endif
-
-    cout << "--  End Initializing  --" << endl;
-
-    root_grid->initializePoisson(env);
-    root_grid->solvePoisson(env);
-#ifdef DEBUG
     IO::print3DArray( root_grid->getField()->getPhi(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+    IO::outputParticlePositions( env, root_grid->particles );
 #endif
 
     return 0;

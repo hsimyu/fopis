@@ -66,6 +66,8 @@ class Field {
         threeDArray pBx;
         threeDArray pBy;
         threeDArray pBz;
+
+        Poisson* psn = nullptr;
     public:
         ~Field();
 
@@ -88,6 +90,9 @@ class Field {
         void setBy(threeDArray);
         threeDArray getBz();
         void setBz(threeDArray);
+
+        void initializePoisson(const Environment*);
+        void solvePoisson(const Environment*);
 };
 
 class Velocity {
@@ -205,8 +210,6 @@ class Grid {
         int level;
 
         Field* field;
-        Poisson* psn;
-
     public:
         Grid(const Environment*);
         ~Grid();
@@ -237,8 +240,6 @@ class Grid {
 
         // update fields
         void updateRho(const Environment*);
-        void initializePoisson(const Environment*);
-        void solvePoisson(const Environment*);
 };
 
 namespace Initializer {
@@ -264,7 +265,7 @@ namespace Utils {
 }
 
 namespace IO {
-    void print3DArray(double***, const int, const int, const int);
+    void print3DArray(double*** const, const int, const int, const int);
     void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }
 #endif

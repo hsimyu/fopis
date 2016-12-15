@@ -7,7 +7,7 @@ using std::endl;
 using boost::format;
 
 namespace IO {
-    void print3DArray(double*** data, const int nx, const int ny, const int nz){
+    void print3DArray(double*** const data, const int nx, const int ny, const int nz){
         for (int k = 0; k < nz; ++k ) {
             cout << "[z:" << k << "] " << endl;
 
