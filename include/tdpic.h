@@ -7,6 +7,7 @@
 #include <memory>
 #include <boost/format.hpp>
 #include <picojson.h>
+#include <mkl.h>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -16,6 +17,26 @@ class ParticleType;
 
 typedef double*** threeDArray;
 typedef std::vector< std::vector<Particle> > ParticleArray;
+
+struct Poisson {
+    public:
+        ~Poisson();
+
+        MKL_INT nx;
+        MKL_INT ny;
+        MKL_INT nz;
+
+        MKL_INT* ipar;
+        double* dpar;
+        MKL_INT stat;
+        DFTI_DESCRIPTOR_HANDLE* xhandle;
+        DFTI_DESCRIPTOR_HANDLE* yhandle;
+        double* b_lx;
+        double* b_ly;
+        double* b_lz;
+
+        double* rho1D;
+};
 
 struct Environment {
     public:
@@ -184,6 +205,7 @@ class Grid {
         int level;
 
         Field* field;
+        Poisson* psn;
 
     public:
         Grid(const Environment*);
@@ -215,6 +237,8 @@ class Grid {
 
         // update fields
         void updateRho(const Environment*);
+        void initializePoisson(const Environment*);
+        void solvePoisson(const Environment*);
 };
 
 namespace Initializer {
@@ -231,9 +255,12 @@ namespace Utils {
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
 
-    double*** create3DArray(const int nx, const int ny, const int nz);
-
+    double*** create3DArray(const int, const int, const int);
     void delete3DArray(double*** x);
+
+    void convert3Dto1Darray(double***, const int, const int, const int, double*);
+    void convert1Dto3Darray(double*, const int, const int, const int, double***);
+    void clearBoundaryValues(double***, const int, const int, const int);
 }
 
 namespace IO {

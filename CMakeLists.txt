@@ -3,20 +3,13 @@ project(TDPIC)
 
 # options
 option(BUILD_FOR_HOST "Build for the login node" ON)
+option(COPY_SAMPLE_INPUT "Copy input.json to build dir" OFF)
 option(DEBUG          "Build in Debug Mode"      OFF)
 option(WITH_TEST      "Build with Test"          ON)
-
 
 # add submodules
 include_directories(${CMAKE_SOURCE_DIR}/picojson)
 include_directories(${CMAKE_SOURCE_DIR}/include)
-
-if(${WITH_TEST})
-    enable_testing()
-    add_subdirectory(${CMAKE_SOURCE_DIR}/googletest)
-    include_directories(${CMAKE_SOURCE_DIR}/googletest/googletest/include)
-    add_subdirectory(test)
-endif()
 
 # check host
 message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
@@ -72,13 +65,26 @@ else()
     # Flags for Local build
     if(${DEBUG})
         set(CMAKE_BUILD_TYPE Debug)
-        set(CMAKE_CXX_FLAGS "-O0 -g -Wall")
+        set(CMAKE_CXX_FLAGS "-O0 -g -Wall -m64")
         add_definitions(-DDEBUG)
     else()
         set(CMAKE_BUILD_TYPE Release)
-        set(CMAKE_CXX_FLAGS "-O2")
+        set(CMAKE_CXX_FLAGS "-O2 -m64")
     endif()
 
+    # options for mkl
+    set(MKLROOT "/opt/intel/mkl")
+    set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
+    set(MKL_LIBRARIES "${MKLROOT}/lib")
+    # add_definitions(-DMKL_LP64)
+    link_directories(${MKL_LIBRARIES})
+    include_directories(${MKL_INCLUDE_DIRS})
+    find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
+    find_library(MKL_INTEL_LP64 mkl_intel_lp64 HINTS ${MKL_LIBRARIES})
+    find_library(MKL_INTEL_THREAD mkl_intel_thread HINTS ${MKL_LIBRARIES})
+    find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
+    find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
+    find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
 endif()
 
 # -- check C++11 --
@@ -112,13 +118,17 @@ set(SRCS
 
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${Boost_LIBRARIES})
+target_link_libraries(tdpic ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
 
-add_custom_command(
-    OUTPUT copy_json
-    COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/src/input.json.sample" "${CMAKE_BINARY_DIR}/input.json"
-)
-add_custom_target(copy_sample_input DEPENDS copy_json)
-add_dependencies(tdpic copy_sample_input)
+if(${COPY_SAMPLE_INPUT})
+    add_custom_command(
+        OUTPUT copy_json
+        COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/src/input.json.sample" "${CMAKE_BINARY_DIR}/input.json"
+    )
+
+    add_custom_target(copy_sample_input DEPENDS copy_json)
+    add_dependencies(tdpic copy_sample_input)
+endif()
 
 # compiler info
 message(STATUS "CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")

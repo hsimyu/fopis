@@ -12,9 +12,9 @@ Grid::Grid(const Environment* env){
 
     // 粒子位置の上限を設定
     // 下限はbase_xになる
-    const float max_x = env->cell_x * env->dx;
-    const float max_y = env->cell_y * env->dx;
-    const float max_z = env->cell_z * env->dx;
+    const float max_x = env->cell_x;
+    const float max_y = env->cell_y;
+    const float max_z = env->cell_z;
 
     // std::random_device rnd;
     const int random_src_x = 10684930;
@@ -44,15 +44,6 @@ Grid::Grid(const Environment* env){
     }
 }
 
-Grid::~Grid(){
-    //! delete all particles
-    //! vector内のparticleは自動でデストラクタが呼ばれる
-    particles.erase(particles.begin(), particles.end());
-
-    // reserveしてあった分を削除する
-    particles.shrink_to_fit();
-}
-
 void Grid::setBaseX(int _x){ base_x = _x; }
 void Grid::setBaseY(int _y){ base_y = _y; }
 void Grid::setBaseZ(int _z){ base_z = _z; }
@@ -71,7 +62,7 @@ Field* Grid::getField(void){ return field; }
 
 //! 粒子の位置から電荷を空間電荷にする
 void Grid::updateRho(const Environment* env) {
-    double*** rho = field->getRho();
+    threeDArray rho = field->getRho();
 
     ParticleType* ptype = env->ptype;
     for(int id = 0; id < env->num_of_particle_types; ++id){
@@ -82,17 +73,14 @@ void Grid::updateRho(const Environment* env) {
             double y = particles[id][i].getY();
             double z = particles[id][i].getZ();
 
-            double gx = x/env->dx;
-            int gx_lower = floor(gx);
-            double delta_gx = gx - gx_lower;
+            int gx_lower = floor(x);
+            double delta_gx = x - gx_lower;
 
-            double gy = y/env->dx;
-            int gy_lower = floor(gy);
-            double delta_gy = gy - gy_lower;
+            int gy_lower = floor(y);
+            double delta_gy = y - gy_lower;
 
-            double gz = z/env->dx;
-            int gz_lower = floor(gz);
-            double delta_gz = gz - gz_lower;
+            int gz_lower = floor(z);
+            double delta_gz = z - gz_lower;
 
             // glue cell分を考慮
             gx_lower += 1; gy_lower += 1; gz_lower += 1;
@@ -110,4 +98,87 @@ void Grid::updateRho(const Environment* env) {
             rho[gx_lower + 1][gy_lower + 1][gz_lower + 1] += delta_gx * delta_gy * delta_gz * q;
         }
     }
+
+    // clear values on glue cell
+    Utils::clearBoundaryValues(rho, env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+}
+
+void Grid::initializePoisson(const Environment* env){
+    std::cout << "--  Poisson Initializing  --" << std::endl;
+
+    psn = new Poisson();
+    // mesh interval なので -1 する
+    int nx = env->cell_x + 2 - 1;
+    int ny = env->cell_y + 2 - 1;
+    int nz = env->cell_z + 2 - 1;
+
+    psn->nx = nx;
+    psn->ny = ny;
+    psn->nz = nz;
+
+    psn->ipar = new MKL_INT[128];
+    for(int i = 0; i < 128; ++i) {
+        psn->ipar[i] = 0;
+    }
+
+    psn->dpar = new double[5*(nx*ny)/2 +9];
+
+    double zero = 0.0;
+    double upper_x = env->cell_x;
+    double q = 0.0; // 0 for Poisson and Laplace
+
+    auto prho = field->getRho();
+
+    d_init_Helmholtz_3D(&zero, &upper_x, &zero, &upper_x, &zero, &upper_x, &nx, &ny, &nz, "DDDDDD", &q, psn->ipar, psn->dpar, &(psn->stat));
+    if(psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
+
+    psn->b_lx = new double[(ny + 1) * (nz + 1)];
+    for(int i = 0; i < (ny +1) * (nz + 1); ++i) psn->b_lx[i] = 0.0;
+
+    psn->b_ly = new double[(nx + 1) * (nz + 1)];
+    for(int i = 0; i < (nx +1) * (nz + 1); ++i) psn->b_ly[i] = 0.0;
+
+    psn->b_lz = new double[(nx + 1) * (ny + 1)];
+    for(int i = 0; i < (nx +1) * (ny + 1); ++i) psn->b_lz[i] = 0.0;
+
+    psn->xhandle = new DFTI_DESCRIPTOR_HANDLE();
+    psn->yhandle = new DFTI_DESCRIPTOR_HANDLE();
+
+    psn->rho1D = new double[(nx + 1)*(ny + 1)*(nz + 1)];
+    Utils::convert3Dto1Darray(prho, nx + 1, ny + 1, nz + 1, psn->rho1D);
+
+    d_commit_Helmholtz_3D(psn->rho1D, psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
+    if(psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
+
+    std::cout << "--  End Poisson Initializing  --" << std::endl;
+}
+
+void Grid::solvePoisson(const Environment* env) {
+    d_Helmholtz_3D(psn->rho1D, psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
+    if( psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
+
+    Utils::convert1Dto3Darray(psn->rho1D, psn->nx + 1, psn->ny + 1, psn->nz + 1, field->getPhi());
+}
+
+Grid::~Grid(){
+    //! delete all particles
+    //! vector内のparticleは自動でデストラクタが呼ばれる
+    particles.erase(particles.begin(), particles.end());
+
+    // reserveしてあった分を削除する
+    particles.shrink_to_fit();
+
+    delete psn;
+    delete field;
+}
+
+Poisson::~Poisson(){
+    delete [] ipar;
+    delete [] dpar;
+    delete [] b_lx;
+    delete [] b_ly;
+    delete [] b_lz;
+    delete [] xhandle;
+    delete [] yhandle;
+    delete [] rho1D;
 }

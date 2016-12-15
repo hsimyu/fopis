@@ -39,5 +39,12 @@ int main(int argc, char* argv[]){
 #endif
 
     cout << "--  End Initializing  --" << endl;
+
+    root_grid->initializePoisson(env);
+    root_grid->solvePoisson(env);
+#ifdef DEBUG
+    IO::print3DArray( root_grid->getField()->getPhi(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+#endif
+
     return 0;
 }

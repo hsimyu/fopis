@@ -20,6 +20,14 @@ namespace Utils {
             }
         }
 
+        for(int i = 0; i < nx; ++i) {
+            for(int j = 0; j  < ny; ++j){
+                for(int k = 0; k  < nz; ++k){
+                    x[i][j][k] = 0.0;
+                }
+            }
+        }
+
         return x;
     }
 
@@ -27,6 +35,55 @@ namespace Utils {
         delete [] x[0][0];
         delete [] x[0];
         delete [] x;
+    }
+
+    void clearBoundaryValues(double*** x, const int nx, const int ny, const int nz) {
+        for(int i = 0; i < nx; i += nx - 1) {
+            for(int j = 0; j < ny; ++j){
+                for(int k = 0; k < nz; ++k){
+                    x[i][j][k] = 0.0;
+                }
+            }
+        }
+
+        for(int j = 0; j < ny; j += ny - 1){
+            for(int i = 1; i < nx - 1; ++i) {
+                for(int k = 0; k < nz; ++k){
+                    x[i][j][k] = 0.0;
+                }
+            }
+        }
+
+        for(int k = 0; k < nz; k += nz - 1){
+            for(int j = 1; j < ny - 1; ++j){
+                for(int i = 1; i < nx - 1; ++i) {
+                    x[i][j][k] = 0.0;
+                }
+            }
+        }
+    }
+
+    void convert3Dto1Darray(double*** x3D, const int nx, const int ny, const int nz, double* x1D){
+        // convert to 1D array
+        // Fortran-based indicing
+        for(int k = 0; k < nz; ++k){
+            for(int j = 0; j < ny; ++j){
+                for(int i = 0; i < nx; ++i){
+                    x1D[i + j*nx + k*nx*ny] = x3D[i][j][k];
+                }
+            }
+        }
+    }
+
+    void convert1Dto3Darray(double* x1D, const int nx, const int ny, const int nz, double*** x3D){
+        // convert to 3D array
+        for(int i = 0; i < nx; ++i){
+            for(int j = 0; j < ny; ++j){
+                for(int k = 0; k < nz; ++k){
+                    x3D[i][j][k] = x1D[i + j*nx + k*nx*ny];
+                }
+            }
+        }
     }
 
     static std::string computeMemory(double mem){
