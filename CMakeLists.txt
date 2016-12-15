@@ -117,7 +117,10 @@ set(SRCS
 
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${Boost_LIBRARIES})
-target_link_libraries(tdpic ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
+
+if(NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Linux") )
+    target_link_libraries(tdpic ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
+endif()
 
 if(${COPY_SAMPLE_INPUT})
     add_custom_command(
