@@ -3,4 +3,5 @@ set(TEST_SRCS
     "Field"
     )
 
+add_definitions(-DBUILD_TEST)
 subdirs(${TEST_SRCS})

@@ -102,18 +102,8 @@ endif()
 
 # add include
 INCLUDE_DIRECTORIES("${HOME}/local/include")
-set(SRCS
-    "src/main.cpp"
-    "src/particle.cpp"
-    "src/position.cpp"
-    "src/velocity.cpp"
-    "src/field.cpp"
-    "src/initialize.cpp"
-    "src/environment.cpp"
-    "src/utils.cpp"
-    "src/grid.cpp"
-    "src/dataio.cpp"
-)
+file(GLOB SRCS src/*.cpp)
+message("SOURCES: ${SRCS}")
 
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${Boost_LIBRARIES})
