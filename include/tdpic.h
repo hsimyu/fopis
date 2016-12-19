@@ -18,6 +18,12 @@ class ParticleType;
 typedef double*** threeDArray;
 typedef std::vector< std::vector<Particle> > ParticleArray;
 
+//! constants
+const double e = 1.60217733e-19;
+const double eps0 = 8.854187817e-12;
+const double me = 9.1093818872e-31;
+const double c = 2.99792458e8;
+
 struct Poisson {
     public:
         ~Poisson();
