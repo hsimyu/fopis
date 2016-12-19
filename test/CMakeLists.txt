@@ -3,4 +3,4 @@ set(TEST_SRCS
     "Field"
     )
 
-add_subdirectory(${TEST_SRCS})
+subdirs(${TEST_SRCS})
