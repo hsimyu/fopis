@@ -37,8 +37,8 @@ namespace IO {
             ofs << "## " << env->ptype[id].getName() << endl;
 
             for(int i = 0; i < parray[id].size(); ++i){
-                ofs << format("%8.3f %8.3f %8.3f") % parray[id][i].getX() % parray[id][i].getY() % parray[id][i].getZ();
-                ofs << format("%8.3f %8.3f %8.3f") % parray[id][i].getVX() % parray[id][i].getVY() % parray[id][i].getVZ();
+                ofs << format("%9.4f %9.4f %9.4f") % parray[id][i].getX() % parray[id][i].getY() % parray[id][i].getZ();
+                ofs << format("%13.4e %13.4e %13.4e") % parray[id][i].getVX() % parray[id][i].getVY() % parray[id][i].getVZ();
                 ofs << endl;
             }
 
