@@ -1,8 +1,8 @@
-set(SRCS
+set(PARTICLE_TEST_SRCS
     "particle_test.cpp"
 )
 
-add_executable(particle_test ${SRCS})
+add_executable(particle_test ${PARTICLE_TEST_SRCS})
 
 target_link_libraries(particle_test
     gtest

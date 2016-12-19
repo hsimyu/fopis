@@ -155,6 +155,48 @@ void Field::updateEfield(const Environment* env) {
     }
 }
 
+//! @brief 磁場を更新する(FDTD)
+//!
+void Field::updateBfield(const Environment* env) {
+    const double epsilon0 = 8.85418782e-12; //m-3 kg-1 s4 A2
+    const double c = 2.992972458e8; // m/s
+    const double dx = env->dx;
+    const double dt = env->dt;
+    //const double DT = 0.1 * DX/c
+    const double eta = 1.0/(c * epsilon0);
+    const double epsilon_r = 1.0;
+    const double mu_r = 1.0;
+    const double sigma = 1.0;
+    const double sigma_m = 1.0;
+    const double c1 = epsilon_r/(epsilon_r + eta * sigma * c * dt);
+    const double c2 = 1.0/(epsilon_r + eta * sigma * c * dt);
+    const double d1 = mu_r/(mu_r + sigma_m * c * dt / eta);
+    const double d2 = 1.0/(mu_r + sigma_m * c * dt / eta);
+
+    std::cout << "c1 = " << c1 << ", c2 = " << c2 << std::endl;
+    std::cout << "d1 = " << d1 << ", d2 = " << d2 << std::endl;
+    std::cout << "eta = " << eta << std::endl;
+
+    const int nx = env->cell_x + 1;
+    const int ny = env->cell_y + 1;
+    const int nz = env->cell_z + 1;
+
+    //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
+    for(int i = 1; i < nx; ++i){
+        for(int j = 1; j < ny; ++j){
+            for(int k = 1; k < nz; ++k){
+                bx[i][j][k] = d1 * bx[i][j][k] - d2 * ((ez[i][j + 1][k] - ez[i][j][k]) / (dx/(c * dt)) - (ey[i][j][k + 1] - ey[i][j][k]) / (dx/(c * dt))) / eta;
+                by[i][j][k] = d1 * by[i][j][k] - d2 * ((ex[i][j][k + 1] - ex[i][j][k]) / (dx/(c * dt)) - (ez[i + 1][j][k] - ez[i][j][k]) / (dx/(c * dt))) / eta;
+                bz[i][j][k] = d1 * bz[i][j][k] - d2 * ((ey[i + 1][j][k] - ey[i][j][k]) / (dx/(c * dt)) - (ex[i][j + 1][k] - ex[i][j][k]) / (dx/(c * dt))) / eta;
+                // hx[i][j][k] = d1 * hx[i][j][k] - d2 * ((ez[i][j + 1][k] - ez[i][j][k]) / (DY/(c * DT)) - (ey[i][j][k + 1] - ey[i][j][k]) / (DZ/(c * DT))) / eta
+                // hy[i][j][k] = d1 * hy[i][j][k] - d2 * ((ex[i][j][k + 1] - ex[i][j][k]) / (DZ/(c * DT)) - (ez[i + 1][j][k] - ez[i][j][k]) / (DX/(c * DT))) / eta
+                // hz[i][j][k] = d1 * hz[i][j][k] - d2 * ((ey[i + 1][j][k] - ey[i][j][k]) / (DX/(c * DT)) - (ex[i][j + 1][k] - ex[i][j][k]) / (DY/(c * DT))) / eta
+            }
+        }
+    }
+
+}
+
 // destructor
 Field::~Field(){
     Utils::delete3DArray(phi);
