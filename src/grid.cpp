@@ -20,9 +20,15 @@ Grid::Grid(const Environment* env){
     const int random_src_x = 10684930;
     const int random_src_y = 99881;
     const int random_src_z = 861200045;
+    const int random_src_vx = 930;
+    const int random_src_vy = 98076621;
+    const int random_src_vz = 7662566;
     std::mt19937 mt_x(random_src_x);
     std::mt19937 mt_y(random_src_y);
     std::mt19937 mt_z(random_src_z);
+    std::mt19937 mt_vx(random_src_vx);
+    std::mt19937 mt_vy(random_src_vy);
+    std::mt19937 mt_vz(random_src_vz);
 
     std::uniform_real_distribution<> dist_x(base_x, max_x);
     std::uniform_real_distribution<> dist_y(base_y, max_y);
@@ -37,9 +43,16 @@ Grid::Grid(const Environment* env){
         //! particle_number分のコンストラクタが呼ばれる
         particles[id].resize(pnum);
 
+        const double deviation = Utils::Normalizer::normalizeVelocity( env->ptype[id].calcDeviation() );
+        std::cout << "Deviation: " << deviation << std::endl;
+        std::normal_distribution<> dist_vx(0.0, deviation);
+        std::normal_distribution<> dist_vy(0.0, deviation);
+        std::normal_distribution<> dist_vz(0.0, deviation);
+
         //! - 粒子はレベル0グリッドにのみ所属します
         for(int i = 0; i < pnum; ++i){
             particles[id][i].setPosition(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
+            particles[id][i].setVelocity(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
         }
     }
 }

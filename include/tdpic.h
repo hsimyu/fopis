@@ -201,6 +201,8 @@ class ParticleType {
 
         int calcSize(const Environment*);
         int calcTotalNumber(const Environment*);
+        double calcDeviation(void) const;
+
 
         friend std::ostream& operator<<(std::ostream&, const ParticleType&);
         friend std::istream& operator<<(std::istream&, const ParticleType&);
@@ -274,6 +276,32 @@ namespace Utils {
     void convert3Dto1Darray(double***, const int, const int, const int, double*);
     void convert1Dto3Darray(double*, const int, const int, const int, double***);
     void clearBoundaryValues(double***, const int, const int, const int);
+
+    class Normalizer {
+        protected:
+            // static class
+            Normalizer();
+            ~Normalizer();
+
+        public:
+            // static member
+            static double x_unit;
+            static double t_unit;
+            static double e_unit;
+
+            static double normalizeLength(const double);
+            static double unnormalizeLength(const double);
+
+            static double normalizeVelocity(const double);
+            static double unnormalizeVelocity(const double);
+
+            static double normalizeTime(const double);
+            static double unnormalizeTime(const double);
+
+            static double normalizeCharge(const double);
+            static double unnormalizeCharge(const double);
+
+    };
 }
 
 namespace IO {

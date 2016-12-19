@@ -6,6 +6,44 @@ using std::endl;
 using boost::format;
 
 namespace Utils {
+    // Normalizedのstatic変数の実体
+    double Normalizer::x_unit = 1.0;
+    double Normalizer::t_unit = 1.0;
+    double Normalizer::e_unit = 1.0;
+
+    // Normalize Utilities
+    double Normalizer::normalizeLength(double raw_x) {
+        return raw_x / x_unit;
+    }
+
+    double Normalizer::unnormalizeLength(double normalized_x) {
+        return normalized_x * x_unit;
+    }
+
+    double Normalizer::normalizeVelocity(double raw_v) {
+        return t_unit * raw_v / x_unit;
+    }
+
+    double Normalizer::unnormalizeVelocity(double normalized_v) {
+        return normalized_v * x_unit / t_unit;
+    }
+
+    double Normalizer::normalizeTime(double raw_t) {
+        return raw_t / t_unit;
+    }
+
+    double Normalizer::unnormalizeTime(double normalized_t) {
+        return normalized_t * t_unit;
+    }
+
+    double Normalizer::normalizeCharge(double raw_e) {
+        return raw_e / e_unit;
+    }
+
+    double Normalizer::unnormalizeCharge(double normalized_e) {
+        return normalized_e * e_unit;
+    }
+
     double*** create3DArray(const int nx, const int ny, const int nz) {
         double*** x;
 

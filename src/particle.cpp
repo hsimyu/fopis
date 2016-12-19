@@ -45,7 +45,11 @@ void ParticleType::setId(int _id){ id = _id; }
 void ParticleType::setCharge(double _charge){ charge = _charge; }
 void ParticleType::setMass(double _mass){ mass = _mass; }
 void ParticleType::setDensity(double _density){ density = _density; }
-void ParticleType::setTemperature(double _temp){ temperature = _temp; }
+void ParticleType::setTemperature(double _temp){
+    //! eV形式で入力されると仮定
+    //! 内部的にはkB Teの値で持つ => eをかけて保存
+    temperature = e * _temp;
+}
 void ParticleType::setName(std::string _name){ name = _name; }
 void ParticleType::setType(std::string _type){ type = _type; }
 void ParticleType::setSize(int _size){ size = _size; }
@@ -73,6 +77,10 @@ int ParticleType::calcSize(const Environment* env){
 int ParticleType::calcTotalNumber(const Environment* env){
     totalNumber = env->cell_x * env->cell_y * env->cell_z * particle_per_cell;
     return totalNumber;
+}
+
+double ParticleType::calcDeviation() const {
+    return sqrt(temperature / (mass * me));
 }
 
 // util

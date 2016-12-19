@@ -21,6 +21,11 @@ int main(int argc, char* argv[]){
     Environment* env = Initializer::loadEnvironment(inputs);
     cout << env << endl;
 
+    // initialize normalizer
+    Utils::Normalizer::x_unit = env->dx;
+    Utils::Normalizer::t_unit = env->dt;
+    Utils::Normalizer::e_unit = e;
+
     ParticleType* ptype;
     Grid* root_grid;
 
