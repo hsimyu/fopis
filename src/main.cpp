@@ -68,11 +68,14 @@ int main(int argc, char* argv[]){
     cout << "-- Ez --" << endl;
     IO::print3DArray( root_grid->getField()->getEz(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 1);
     cout << "-- Bx --" << endl;
-    IO::print3DArray( root_grid->getField()->getBx(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 2);
+    IO::print3DArray( root_grid->getField()->getBx(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 1);
     cout << "-- By --" << endl;
-    IO::print3DArray( root_grid->getField()->getBy(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 2);
+    IO::print3DArray( root_grid->getField()->getBy(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 1);
     cout << "-- Bz --" << endl;
-    IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 1);
+    IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 1, env->cell_y + 1, env->cell_z + 2);
+    IO::outputParticlePositions( env, root_grid->particles );
+
+    IO::testHDF5Write();
 #endif
 
     return 0;

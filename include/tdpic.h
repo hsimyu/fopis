@@ -7,7 +7,7 @@
 #include <memory>
 #include <boost/format.hpp>
 #include <picojson.h>
-#include <mkl.h>
+#include <mkl.h> // Intel Math Kernel Library
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -305,6 +305,7 @@ namespace Utils {
 }
 
 namespace IO {
+    void testHDF5Write(void);
     void print3DArray(double*** const, const int, const int, const int);
     void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }

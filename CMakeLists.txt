@@ -2,10 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 project(TDPIC)
 
 # options
-option(BUILD_FOR_HOST "Build for the login node" ON)
+option(BUILD_FOR_HOST    "Build for the login node"      ON)
 option(COPY_SAMPLE_INPUT "Copy input.json to build dir" OFF)
-option(DEBUG          "Build in Debug Mode"      OFF)
-option(WITH_TEST      "Build with Test"          ON)
+option(DEBUG             "Build in Debug Mode"          OFF)
+option(WITH_TEST         "Build with Test"               ON)
+
+set(CXX_REQUIRED_LIBS "")
 
 # add submodules
 include_directories(${CMAKE_SOURCE_DIR}/picojson)
@@ -20,6 +22,7 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(HOME "$ENV{HOME}")
     find_package( Boost REQUIRED )
     include_directories( ${Boost_INCLUDE_DIRS} )
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
 
     # Doxygen
     FIND_PACKAGE(Doxygen)
@@ -75,7 +78,7 @@ else()
     set(MKLROOT "/opt/intel/mkl")
     set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
     set(MKL_LIBRARIES "${MKLROOT}/lib")
-    # add_definitions(-DMKL_LP64)
+    # add_definitions(-DMKL_ILP64)
     link_directories(${MKL_LIBRARIES})
     include_directories(${MKL_INCLUDE_DIRS})
     find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
@@ -84,6 +87,20 @@ else()
     find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
     find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
     find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
+
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
+
+    # options for hdf5
+    set(HDF5_ROOT "${HOME}/local/")
+    set(HDF5_LIBRARIES "${HDF5_ROOT}/lib")
+    find_library(LIB_HDF5 hdf5 HINTS ${HDF5_LIBRARIES})
+    find_library(LIB_HDF5_CXX hdf5_cpp HINTS ${HDF5_LIBRARIES})
+    set(HDF5_CXX_LIBRARIES ${LIB_HDF5} ${LIB_HDF5_CXX})
+
+    message("HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
+
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_CXX_LIBRARIES})
+    message("REQUIRED_LIBRARIES: ${CXX_REQUIRED_LIBS}")
 endif()
 
 # -- check C++11 --
@@ -103,14 +120,9 @@ endif()
 # add include
 INCLUDE_DIRECTORIES("${HOME}/local/include")
 file(GLOB SRCS src/*.cpp)
-message("SOURCES: ${SRCS}")
 
 add_executable(tdpic ${SRCS})
-target_link_libraries(tdpic ${Boost_LIBRARIES})
-
-if(NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Linux") )
-    target_link_libraries(tdpic ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
-endif()
+target_link_libraries(tdpic ${CXX_REQUIRED_LIBS})
 
 if(${COPY_SAMPLE_INPUT})
     add_custom_command(
