@@ -88,10 +88,10 @@ namespace {
         IO::outputParticlePositions( env, root_grid->particles );
 
 #ifdef DEBUG
-        cout << "-- SPACE CHARGE --" << endl;
-        IO::print3DArray( root_grid->getField()->getRho(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
-        cout << "-- POTENTIAL --" << endl;
-        IO::print3DArray( root_grid->getField()->getPhi(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+        // cout << "-- SPACE CHARGE --" << endl;
+        // IO::print3DArray( root_grid->getField()->getRho(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+        // cout << "-- POTENTIAL --" << endl;
+        // IO::print3DArray( root_grid->getField()->getPhi(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
         cout << "-- Ex --" << endl;
         IO::print3DArray( root_grid->getField()->getEx(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 2);
         cout << "-- Ey --" << endl;

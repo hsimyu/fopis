@@ -1,62 +1,62 @@
 #include <tdpic.h>
 
 // potential
-void Field::setPhi(threeDArray* _phi){
+void Field::setPhi(threeDArray& _phi){
     phi = _phi;
 }
-threeDArray* Field::getPhi(){
+threeDArray& Field::getPhi(){
     return phi;
 }
 
 // charge density
-void Field::setRho(threeDArray* _rho){
+void Field::setRho(threeDArray& _rho){
     rho = _rho;
 }
-threeDArray* Field::getRho(){
+threeDArray& Field::getRho(){
     return rho;
 }
 
 // electric fields
-void Field::setEx(threeDArray* _ex){
+void Field::setEx(threeDArray& _ex){
     ex = _ex;
 }
-threeDArray* Field::getEx(){
+threeDArray& Field::getEx(){
     return ex;
 }
 
-void Field::setEy(threeDArray* _ey){
+void Field::setEy(threeDArray& _ey){
     ey = _ey;
 }
-threeDArray* Field::getEy(){
+threeDArray& Field::getEy(){
     return ey;
 }
 
-void Field::setEz(threeDArray* _ez){
+void Field::setEz(threeDArray& _ez){
     ez = _ez;
 }
-threeDArray* Field::getEz(){
+threeDArray& Field::getEz(){
     return ez;
 }
 
 // magnetic fields
-void Field::setBx(threeDArray* _bx){
+void Field::setBx(threeDArray& _bx){
     bx = _bx;
 }
-threeDArray* Field::getBx(){
+threeDArray& Field::getBx(){
     return bx;
 }
 
-void Field::setBy(threeDArray* _by){
+void Field::setBy(threeDArray& _by){
     by = _by;
 }
-threeDArray* Field::getBy(){
+threeDArray& Field::getBy(){
     return by;
 }
 
-void Field::setBz(threeDArray* _bz){
+void Field::setBz(threeDArray& _bz){
     bz = _bz;
 }
-threeDArray* Field::getBz(){
+threeDArray& Field::getBz(){
     return bz;
 }
 
@@ -147,9 +147,9 @@ void Field::updateEfield(const Environment* env) {
         for(int j = 1; j < ny; ++j){
             for(int k = 1; k < nz; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
-                if(i < nx - 1) (*ex)[i][j][k] = (*phi)[i][j][k] - (*phi)[i + 1][j][k];
-                if(j < ny - 1) (*ey)[i][j][k] = (*phi)[i][j][k] - (*phi)[i][j + 1][k];
-                if(k < nz - 1) (*ez)[i][j][k] = (*phi)[i][j][k] - (*phi)[i][j][k + 1];
+                if(i < nx - 1) ex[i][j][k] = phi[i][j][k] - phi[i + 1][j][k];
+                if(j < ny - 1) ey[i][j][k] = phi[i][j][k] - phi[i][j + 1][k];
+                if(k < nz - 1) ez[i][j][k] = phi[i][j][k] - phi[i][j][k + 1];
             }
         }
     }
@@ -199,14 +199,14 @@ void Field::updateBfield(const Environment* env) {
 
 // destructor
 Field::~Field(){
-    Utils::delete3DArray(phi);
-    Utils::delete3DArray(rho);
-    Utils::delete3DArray(ex);
-    Utils::delete3DArray(ey);
-    Utils::delete3DArray(ez);
-    Utils::delete3DArray(bx);
-    Utils::delete3DArray(by);
-    Utils::delete3DArray(bz);
+    // Utils::delete3DArray(phi);
+    // Utils::delete3DArray(rho);
+    // Utils::delete3DArray(ex);
+    // Utils::delete3DArray(ey);
+    // Utils::delete3DArray(ez);
+    // Utils::delete3DArray(bx);
+    // Utils::delete3DArray(by);
+    // Utils::delete3DArray(bz);
 
     delete psn;
 }

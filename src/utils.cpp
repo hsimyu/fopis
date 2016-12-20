@@ -44,25 +44,11 @@ namespace Utils {
         return normalized_e * e_unit;
     }
 
-    threeDArray* create3DArray(const int nx, const int ny, const int nz) {
-        threeDArray* x = new threeDArray;
-
-        // resize to [nx][ny][nz]
-        threeDArray::extent_gen extents;
-        x->resize(extents[nx][ny][nz]);
-
-        return x;
-    }
-
-    void delete3DArray(threeDArray* x) {
-        delete x;
-    }
-
-    void clearBoundaryValues(threeDArray* x, const int nx, const int ny, const int nz) {
+    void clearBoundaryValues(threeDArray& x, const int nx, const int ny, const int nz) {
         for(int i = 0; i < nx; i += nx - 1) {
             for(int j = 0; j < ny; ++j){
                 for(int k = 0; k < nz; ++k){
-                    (*x)[i][j][k] = 0.0;
+                    x[i][j][k] = 0.0;
                 }
             }
         }
@@ -70,7 +56,7 @@ namespace Utils {
         for(int j = 0; j < ny; j += ny - 1){
             for(int i = 1; i < nx - 1; ++i) {
                 for(int k = 0; k < nz; ++k){
-                    (*x)[i][j][k] = 0.0;
+                    x[i][j][k] = 0.0;
                 }
             }
         }
@@ -78,30 +64,30 @@ namespace Utils {
         for(int k = 0; k < nz; k += nz - 1){
             for(int j = 1; j < ny - 1; ++j){
                 for(int i = 1; i < nx - 1; ++i) {
-                    (*x)[i][j][k] = 0.0;
+                    x[i][j][k] = 0.0;
                 }
             }
         }
     }
 
-    void convert3Dto1Darray(threeDArray* x3D, const int nx, const int ny, const int nz, double* x1D){
+    void convert3Dto1Darray(const threeDArray& x3D, const int nx, const int ny, const int nz, double* x1D){
         // convert to 1D array
         // Fortran-based indicing
         for(int k = 0; k < nz; ++k){
             for(int j = 0; j < ny; ++j){
                 for(int i = 0; i < nx; ++i){
-                    x1D[i + j*nx + k*nx*ny] = (*x3D)[i][j][k];
+                    x1D[i + j*nx + k*nx*ny] = x3D[i][j][k];
                 }
             }
         }
     }
 
-    void convert1Dto3Darray(double* x1D, const int nx, const int ny, const int nz, threeDArray* x3D){
+    void convert1Dto3Darray(double* x1D, const int nx, const int ny, const int nz, threeDArray& x3D){
         // convert to 3D array
         for(int i = 0; i < nx; ++i){
             for(int j = 0; j < ny; ++j){
                 for(int k = 0; k < nz; ++k){
-                    (*x3D)[i][j][k] = x1D[i + j*nx + k*nx*ny];
+                    x3D[i][j][k] = x1D[i + j*nx + k*nx*ny];
                 }
             }
         }
