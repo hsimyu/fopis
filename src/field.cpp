@@ -114,7 +114,6 @@ void Field::initializePoisson(const Environment* env){
 
     psn->rho1D = new double[(nx + 1)*(ny + 1)*(nz + 1)];
 
-    //! rho(3D) -> rho(1D)
 #ifdef DEBUG
     std::cout << "--  End Poisson Initializing  --" << std::endl;
 #endif
@@ -127,21 +126,19 @@ void Field::initializePoisson(const Environment* env){
 void Field::solvePoisson(const Environment* env) {
     if(psn == nullptr) initializePoisson(env);
 
-    //! rho(3D) -> rho(1D)
-    Utils::convert3Dto1Darray(rho, psn->nx + 1, psn->ny + 1, psn->nz + 1, psn->rho1D);
+    //! space charge を phi 配列に copy
+    //! multi_array& operator=(const multi_array& x);
+    //! "This performs an element-wise copy of x into the current multi_array."
+    phi = rho;
 
     //! Commit solver
     //! @note Is it required?
-    d_commit_Helmholtz_3D(rho.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
+    d_commit_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
     if(psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
 
     //! rho(1D) -> phi(1D)
-    d_Helmholtz_3D(rho.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
+    d_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
     if( psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
-
-    // phi.data() = rho.data();
-    //! phi(1D) -> phi(3D)
-    // Utils::convert1Dto3Darray(psn->rho1D, psn->nx + 1, psn->ny + 1, psn->nz + 1, phi);
 }
 
 //! @brief 電場を更新する
