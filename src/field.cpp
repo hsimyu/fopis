@@ -1,5 +1,15 @@
 #include <tdpic.h>
 
+Field::Field() :
+    rho(boost::extents[0][0][0], boost::fortran_storage_order()),
+    phi(boost::extents[0][0][0], boost::fortran_storage_order()),
+    ex(boost::extents[0][0][0], boost::fortran_storage_order()),
+    ey(boost::extents[0][0][0], boost::fortran_storage_order()),
+    ez(boost::extents[0][0][0], boost::fortran_storage_order()),
+    bx(boost::extents[0][0][0], boost::fortran_storage_order()),
+    by(boost::extents[0][0][0], boost::fortran_storage_order()),
+    bz(boost::extents[0][0][0], boost::fortran_storage_order()) {}
+
 // potential
 void Field::setPhi(threeDArray& _phi){
     phi = _phi;
@@ -122,15 +132,16 @@ void Field::solvePoisson(const Environment* env) {
 
     //! Commit solver
     //! @note Is it required?
-    d_commit_Helmholtz_3D(psn->rho1D, psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
+    d_commit_Helmholtz_3D(rho.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
     if(psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
 
     //! rho(1D) -> phi(1D)
-    d_Helmholtz_3D(psn->rho1D, psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
+    d_Helmholtz_3D(rho.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
     if( psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
 
+    // phi.data() = rho.data();
     //! phi(1D) -> phi(3D)
-    Utils::convert1Dto3Darray(psn->rho1D, psn->nx + 1, psn->ny + 1, psn->nz + 1, phi);
+    // Utils::convert1Dto3Darray(psn->rho1D, psn->nx + 1, psn->ny + 1, psn->nz + 1, phi);
 }
 
 //! @brief 電場を更新する
@@ -199,15 +210,6 @@ void Field::updateBfield(const Environment* env) {
 
 // destructor
 Field::~Field(){
-    // Utils::delete3DArray(phi);
-    // Utils::delete3DArray(rho);
-    // Utils::delete3DArray(ex);
-    // Utils::delete3DArray(ey);
-    // Utils::delete3DArray(ez);
-    // Utils::delete3DArray(bx);
-    // Utils::delete3DArray(by);
-    // Utils::delete3DArray(bz);
-
     delete psn;
 }
 

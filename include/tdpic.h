@@ -17,6 +17,7 @@ class Particle;
 class ParticleType;
 
 typedef boost::multi_array<double, 3> threeDArray;
+
 typedef std::vector< std::vector<Particle> > ParticleArray;
 
 //! constants
@@ -80,7 +81,7 @@ class Field {
 
         Poisson* psn = nullptr;
     public:
-
+        Field();
         ~Field();
 
         threeDArray& getPhi();

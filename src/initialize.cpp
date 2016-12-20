@@ -8,23 +8,22 @@ namespace Initializer {
 
     void initializeRootField(const Environment* env, Grid* grid){
         Field* field = new Field;
-
-        threeDArray::extent_gen extents;
+        threeDArray::extent_gen tdExtents;
 
         const int cx = env->cell_x + 2;
         const int cy = env->cell_y + 2;
         const int cz = env->cell_z + 2;
 
-        field->getPhi().resize(extents[cx][cy][cz]);
-        field->getRho().resize(extents[cx][cy][cz]);
+        field->getPhi().resize(tdExtents[cx][cy][cz]);
+        field->getRho().resize(tdExtents[cx][cy][cz]);
 
-        field->getEx().resize(extents[cx-1][cy][cz]);
-        field->getEy().resize(extents[cx][cy-1][cz]);
-        field->getEz().resize(extents[cx][cy][cz-1]);
+        field->getEx().resize(tdExtents[cx-1][cy][cz]);
+        field->getEy().resize(tdExtents[cx][cy-1][cz]);
+        field->getEz().resize(tdExtents[cx][cy][cz-1]);
 
-        field->getBx().resize(extents[cx][cy-1][cz-1]);
-        field->getBy().resize(extents[cx-1][cy][cz-1]);
-        field->getBz().resize(extents[cx-1][cy-1][cz]);
+        field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
+        field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
+        field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
 
         grid->setField(field);
     }
