@@ -305,7 +305,7 @@ namespace Utils {
 }
 
 namespace IO {
-    void testHDF5Write(void);
+    void writeFieldData(Grid*, const std::string);
     void print3DArray(const threeDArray&, const int, const int, const int);
     void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }
