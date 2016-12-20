@@ -44,7 +44,6 @@ Grid::Grid(const Environment* env){
         particles[id].resize(pnum);
 
         const double deviation = Utils::Normalizer::normalizeVelocity( env->ptype[id].calcDeviation() );
-        std::cout << "Deviation: " << deviation << std::endl;
         std::normal_distribution<> dist_vx(0.0, deviation);
         std::normal_distribution<> dist_vy(0.0, deviation);
         std::normal_distribution<> dist_vz(0.0, deviation);
@@ -75,7 +74,7 @@ Field* Grid::getField(void){ return field; }
 
 //! 粒子の位置から電荷を空間電荷にする
 void Grid::updateRho(const Environment* env) {
-    threeDArray rho = field->getRho();
+    threeDArray* rho = field->getRho();
 
     ParticleType* ptype = env->ptype;
     for(int id = 0; id < env->num_of_particle_types; ++id){
@@ -100,15 +99,15 @@ void Grid::updateRho(const Environment* env) {
 
             double q = ptype[id].getCharge();
 
-            rho[gx_lower    ][gy_lower    ][gz_lower    ] += (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
-            rho[gx_lower + 1][gy_lower    ][gz_lower    ] += delta_gx * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
-            rho[gx_lower    ][gy_lower + 1][gz_lower    ] += (1.0 - delta_gx) * delta_gy * (1.0 - delta_gz) * q;
-            rho[gx_lower + 1][gy_lower + 1][gz_lower    ] += delta_gx * delta_gy * (1.0 - delta_gz) * q;
+            (*rho)[gx_lower    ][gy_lower    ][gz_lower    ] += (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
+            (*rho)[gx_lower + 1][gy_lower    ][gz_lower    ] += delta_gx * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
+            (*rho)[gx_lower    ][gy_lower + 1][gz_lower    ] += (1.0 - delta_gx) * delta_gy * (1.0 - delta_gz) * q;
+            (*rho)[gx_lower + 1][gy_lower + 1][gz_lower    ] += delta_gx * delta_gy * (1.0 - delta_gz) * q;
 
-            rho[gx_lower    ][gy_lower    ][gz_lower + 1] += (1.0 - delta_gx) * (1.0 - delta_gy) * delta_gz * q;
-            rho[gx_lower + 1][gy_lower    ][gz_lower + 1] += delta_gx * (1.0 - delta_gy) * delta_gz * q;
-            rho[gx_lower    ][gy_lower + 1][gz_lower + 1] += (1.0 - delta_gx) * delta_gy * delta_gz * q;
-            rho[gx_lower + 1][gy_lower + 1][gz_lower + 1] += delta_gx * delta_gy * delta_gz * q;
+            (*rho)[gx_lower    ][gy_lower    ][gz_lower + 1] += (1.0 - delta_gx) * (1.0 - delta_gy) * delta_gz * q;
+            (*rho)[gx_lower + 1][gy_lower    ][gz_lower + 1] += delta_gx * (1.0 - delta_gy) * delta_gz * q;
+            (*rho)[gx_lower    ][gy_lower + 1][gz_lower + 1] += (1.0 - delta_gx) * delta_gy * delta_gz * q;
+            (*rho)[gx_lower + 1][gy_lower + 1][gz_lower + 1] += delta_gx * delta_gy * delta_gz * q;
         }
     }
 

@@ -55,7 +55,7 @@ namespace IO {
         delete file;
     }
 
-    void print3DArray(double*** const data, const int nx, const int ny, const int nz){
+    void print3DArray(const threeDArray* data, const int nx, const int ny, const int nz){
         for (int k = 0; k < nz; ++k ) {
             cout << "[z:" << k << "] " << endl;
 
@@ -69,7 +69,7 @@ namespace IO {
                     }
                     cout << "     [" << i << "]  ";
                 for ( int j = 0 ; j < ny; ++j ) {
-                    cout << " " << data[i][j][k] << " ";
+                    cout << " " << (*data)[i][j][k] << " ";
                 }
                 cout << endl;
             }

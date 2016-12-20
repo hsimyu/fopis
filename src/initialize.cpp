@@ -13,22 +13,22 @@ namespace Initializer {
         const int cy = env->cell_y + 2;
         const int cz = env->cell_z + 2;
 
-        threeDArray phi = Utils::create3DArray(cx, cy, cz);
-        threeDArray rho = Utils::create3DArray(cx, cy, cz);
+        threeDArray* phi = Utils::create3DArray(cx, cy, cz);
+        threeDArray* rho = Utils::create3DArray(cx, cy, cz);
         field->setPhi(phi);
         field->setRho(rho);
 
-        threeDArray ex = Utils::create3DArray(cx-1, cy, cz);
-        threeDArray ey = Utils::create3DArray(cx, cy-1, cz);
-        threeDArray ez = Utils::create3DArray(cx, cy, cz-1);
+        threeDArray* ex = Utils::create3DArray(cx-1, cy, cz);
+        threeDArray* ey = Utils::create3DArray(cx, cy-1, cz);
+        threeDArray* ez = Utils::create3DArray(cx, cy, cz-1);
 
         field->setEx(ex);
         field->setEy(ey);
         field->setEz(ez);
 
-        threeDArray bx = Utils::create3DArray(cx, cy-1, cz-1);
-        threeDArray by = Utils::create3DArray(cx-1, cy, cz-1);
-        threeDArray bz = Utils::create3DArray(cx-1, cy-1, cz);
+        threeDArray* bx = Utils::create3DArray(cx, cy-1, cz-1);
+        threeDArray* by = Utils::create3DArray(cx-1, cy, cz-1);
+        threeDArray* bz = Utils::create3DArray(cx-1, cy-1, cz);
 
         field->setBx(bx);
         field->setBy(by);
