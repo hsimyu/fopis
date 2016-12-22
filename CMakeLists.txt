@@ -3,9 +3,9 @@ project(TDPIC)
 
 # options
 option(BUILD_FOR_HOST    "Build for the login node"      ON)
-option(COPY_SAMPLE_INPUT "Copy input.json to build dir" OFF)
-option(DEBUG             "Build in Debug Mode"          OFF)
-option(WITH_TEST         "Build with Test"               ON)
+option(COPY_SAMPLE_INPUT "Copy input.json to build dir"  ON)
+option(DEBUG             "Build in Debug Mode"           ON)
+option(WITH_TEST         "Build with Test"              OFF)
 
 set(CXX_REQUIRED_LIBS "")
 
@@ -91,16 +91,12 @@ else()
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
 
     # options for hdf5
-    set(HDF5_ROOT "${HOME}/local/")
-    set(HDF5_LIBRARIES "${HDF5_ROOT}/lib")
-    find_library(LIB_HDF5 hdf5 HINTS ${HDF5_LIBRARIES})
-    find_library(LIB_HDF5_CXX hdf5_cpp HINTS ${HDF5_LIBRARIES})
-    set(HDF5_CXX_LIBRARIES ${LIB_HDF5} ${LIB_HDF5_CXX})
+    set(HOME_ROOT "${HOME}/local/")
+    set(HOME_LIBRARIES "${HOME_ROOT}/lib")
+    find_library(LIB_SILO silo HINTS ${HOME_LIBRARIES})
 
-    message("HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
-
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_CXX_LIBRARIES})
-    message("REQUIRED_LIBRARIES: ${CXX_REQUIRED_LIBS}")
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_SILO})
+    message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 endif()
 
 # -- check C++11 --

@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
     // IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 1, env->cell_y + 1, env->cell_z + 2);
     IO::outputParticlePositions( env, root_grid->particles );
 
-    IO::writeFieldData(root_grid, "test_field_data.h5");
+    IO::writeData(root_grid, 0);
 #endif
 
     return 0;

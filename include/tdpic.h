@@ -211,6 +211,7 @@ class ParticleType {
         friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
 
+//! @class Grid
 class Grid {
     private:
         Grid* parent;
@@ -309,7 +310,7 @@ namespace Utils {
 }
 
 namespace IO {
-    void writeFieldData(Grid*, const std::string);
+    void writeData(Grid*, int);
     void print3DArray(const threeDArray&, const int, const int, const int);
     void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }
