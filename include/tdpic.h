@@ -225,6 +225,7 @@ class Grid {
 
         int nx, ny, nz;
         int level;
+        double dx;
 
         Field* field;
     public:
@@ -241,6 +242,9 @@ class Grid {
 
         void setLevel(int);
         int getLevel();
+
+        void setDX(double);
+        double getDX();
 
         void setParent(Grid*);
         Grid* getParent();

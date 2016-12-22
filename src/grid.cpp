@@ -9,6 +9,7 @@ Grid::Grid(const Environment* env){
     base_x = 0.0;
     base_y = 0.0;
     base_z = 0.0;
+    dx = env->dx;
 
     // 粒子位置の上限を設定
     // 下限はbase_xになる
@@ -65,6 +66,9 @@ int Grid::getBaseZ(void){ return base_z; }
 
 void Grid::setLevel(int l){ level = l; }
 int Grid::getLevel(void){ return level; }
+
+void Grid::setDX(double _dx){ dx = _dx; }
+double Grid::getDX(void){ return dx; }
 
 void Grid::setParent(Grid* g){ parent = g; }
 Grid* Grid::getParent(void){ return parent; }
