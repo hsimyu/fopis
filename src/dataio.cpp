@@ -26,23 +26,21 @@ namespace IO {
         const int dim = 3;
 
         // Create new directory for a block
-        std::string dirname = (format("block%d") % blocknum).str();
-        DBMkDir(file, dirname.c_str());
-        DBSetDir(file, dirname.c_str());
+        // std::string dirname = (format("block%d") % blocknum).str();
+        // DBMkDir(file, dirname.c_str());
+        // DBSetDir(file, dirname.c_str());
 
         threeDArray& tdArray = g->getField()->getPhi();
-        int nx = tdArray.shape()[0];
-        int ny = tdArray.shape()[1];
-        int nz = tdArray.shape()[2];
 
         // dimensions
-        int dimensions[dim];
-        dimensions[0] = nx;
-        dimensions[1] = ny;
-        dimensions[2] = nz;
+        // glue cellも出力
+        int dimensions[3];
+        dimensions[0] = g->getNX() + 2;
+        dimensions[1] = g->getNY() + 2;
+        dimensions[2] = g->getNZ() + 2;
 
         // names of the coordinates
-        char* coordnames[dim];
+        char* coordnames[3];
         coordnames[0] = const_cast<char*>("x");
         coordnames[1] = const_cast<char*>("y");
         coordnames[2] = const_cast<char*>("z");
@@ -51,30 +49,8 @@ namespace IO {
         char* varnames[1];
         varnames[0] = "potential";
 
-        // generate the coordinate arrays
-        double dx = g->getDX();
-        float node_x[nx];
-        float node_y[ny];
-        float node_z[nz];
-
-        double base = g->getBaseX();
-        for(int i = 0; i < nx; ++i) {
-            node_x[i] = base + dx * i;
-        }
-        base = g->getBaseY();
-        for(int i = 0; i < ny; ++i) {
-            node_y[i] = base + dx * i;
-        }
-        base = g->getBaseZ();
-        for(int i = 0; i < nz; ++i) {
-            node_z[i] = base + dx * i;
-        }
-
         // the array of coordinate arrays
-        float* coordinates[dim];
-        coordinates[0] = node_x;
-        coordinates[1] = node_y;
-        coordinates[2] = node_z;
+        float** coordinates = g->getMeshNodes(dim);
 
         // make options list
         DBoptlist* optList = DBMakeOptlist(2);
@@ -85,13 +61,23 @@ namespace IO {
 
         double* vars[] = {tdArray.data()};
 
+        // directoryが1階層下がった分を考慮
+        // std::string mesh_path = "../" + meshname;
+        // std::string var_path = "../" + meshname;
+
         DBPutQuadmesh(file, meshname, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
         DBPutQuadvar(file, varname, meshname, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optList);
 
         // Free optList
         DBFreeOptlist(optList);
 
-        DBSetDir(file, "..");
+        // free mesh nodes
+        delete [] coordinates[0];
+        delete [] coordinates[1];
+        delete [] coordinates[2];
+        delete [] coordinates;
+
+        // DBSetDir(file, "..");
 
     }
 

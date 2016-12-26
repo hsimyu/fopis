@@ -241,6 +241,14 @@ class Grid {
         int  getBaseY();
         int  getBaseZ();
 
+        void setNX(int);
+        void setNY(int);
+        void setNZ(int);
+
+        int  getNX();
+        int  getNY();
+        int  getNZ();
+
         void setLevel(int);
         int getLevel();
 
@@ -262,6 +270,9 @@ class Grid {
 
         // update fields
         void updateRho(const Environment*);
+
+        // create mesh nodes array
+        float** getMeshNodes(int);
 };
 
 namespace Initializer {

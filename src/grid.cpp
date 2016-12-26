@@ -9,6 +9,10 @@ Grid::Grid(const Environment* env){
     base_x = 0.0;
     base_y = 0.0;
     base_z = 0.0;
+
+    nx = env->cell_x;
+    ny = env->cell_y;
+    nz = env->cell_z;
     dx = env->dx;
 
     // 粒子位置の上限を設定
@@ -63,6 +67,12 @@ void Grid::setBaseZ(int _z){ base_z = _z; }
 int Grid::getBaseX(void){ return base_x; }
 int Grid::getBaseY(void){ return base_y; }
 int Grid::getBaseZ(void){ return base_z; }
+void Grid::setNX(int _x){ nx = _x; }
+void Grid::setNY(int _y){ ny = _y; }
+void Grid::setNZ(int _z){ nz = _z; }
+int Grid::getNX(void){ return nx; }
+int Grid::getNY(void){ return ny; }
+int Grid::getNZ(void){ return nz; }
 
 void Grid::setLevel(int l){ level = l; }
 int Grid::getLevel(void){ return level; }
@@ -118,6 +128,26 @@ void Grid::updateRho(const Environment* env) {
     // clear values on glue cell
     Utils::clearBoundaryValues(rho, env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
 }
+
+float** Grid::getMeshNodes(int dim) {
+    // the array of coordinate arrays
+    // @note: メモリリークしそう
+    float** coordinates = new float*[dim];
+    coordinates[0] = new float[nx];
+    for(int i = 0; i < nx; ++i) {
+	coordinates[0][i] = base_x + dx * i;
+    }
+    coordinates[1] = new float[ny];
+    for(int i = 0; i < ny; ++i) {
+	coordinates[1][i] = base_y + dx * i;
+    }
+    coordinates[2] = new float[nz];
+    for(int i = 0; i < nz; ++i) {
+	coordinates[2][i] = base_z + dx * i;
+    }
+    return coordinates;
+}
+
 
 Grid::~Grid(){
     //! delete all particles
