@@ -65,6 +65,7 @@ struct Environment {
         // MPI info
         int numprocs;
         int myid;
+        int xid, yid, zid;
 
         std::string jobtype;
         std::string solver_type;

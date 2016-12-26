@@ -14,8 +14,36 @@ namespace Initializer {
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
         MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
+        if(numprocs != env->proc_x * env->proc_y * env->proc_z) {
+            if(myid == 0) {
+                cout << format("[ERROR] Allocated Process Number [%d] is different from [%d] inputted from json.") % numprocs % (env->proc_x * env->proc_y * env->proc_z) << endl;
+            }
+            MPI_Finalize();
+            exit(0);
+        }
+
         env->numprocs = numprocs;
         env->myid = myid;
+
+        int xid = -1, yid = -1, zid = -1;
+
+        // Processの積み方は
+        // x->y->z
+        for(int k = 0; k < env->proc_z; ++k){
+            for(int j = 0; j < env->proc_y; ++j){
+                for(int i = 0; i < env->proc_x; ++i){
+                    if( (i + env->proc_x * j + env->proc_x * env->proc_y * k) == myid ){
+                        xid = i;
+                        yid = j;
+                        zid = k;
+                    }
+                }
+            }
+        }
+
+        env->xid = xid;
+        env->yid = yid;
+        env->zid = zid;
 
         // 0のノードをルートとして扱う
         env->isRootNode = (myid == 0);
