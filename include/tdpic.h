@@ -9,6 +9,7 @@
 #include <boost/multi_array.hpp>
 #include <picojson.h>
 #include <mkl.h> // Intel Math Kernel Library
+#include <mpi.h>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -59,6 +60,11 @@ struct Environment {
         int proc_x, proc_y, proc_z;
         int cell_x, cell_y, cell_z;
         int max_iteration;
+        bool isRootNode;
+
+        // MPI info
+        int numprocs;
+        int myid;
 
         std::string jobtype;
         std::string solver_type;
@@ -280,6 +286,7 @@ class Grid {
 };
 
 namespace Initializer {
+    void initializeMPI(int, char**, Environment*);
     double getSizeOfSuperParticle(int, double, double);
     Environment* loadEnvironment(picojson::object&);
     ParticleType* loadParticleType(picojson::object&, Environment*);

@@ -6,6 +6,23 @@ namespace Initializer {
         return pow(dx, 2.0) * density / nr;
     }
 
+    void initializeMPI(int argc, char* argv[], Environment* env) {
+        MPI_Init(&argc, &argv);
+
+        int numprocs = 0, myid = 0;
+
+        MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+        MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+        env->numprocs = numprocs;
+        env->myid = myid;
+
+        // 0のノードをルートとして扱う
+        env->isRootNode = (myid == 0);
+
+        if(env->isRootNode) cout << format("[MPIINFO] allocated processes: %d") % numprocs << endl;
+    }
+
     void initializeRootField(const Environment* env, Grid* grid){
         Field* field = new Field;
         threeDArray::extent_gen tdExtents;
@@ -100,8 +117,13 @@ namespace Initializer {
 
             ptype[ii].calcTotalNumber(env);
             ptype[ii].calcSize(env);
-            std::cout << ptype[ii];
-            Utils::printTotalMemory(ptype[ii]);
+
+            // print particle info
+            if(env->isRootNode) {
+                std::cout << ptype[ii];
+                Utils::printTotalMemory(ptype[ii]);
+            }
+
             ++ii;
         }
 

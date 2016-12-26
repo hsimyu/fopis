@@ -65,6 +65,11 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
 else()
     # Flags for Local build
+
+    # OpenMPI
+    set(CMAKE_C_COMPILER mpicc)
+    set(CMAKE_CXX_COMPILER mpicxx)
+
     if(${DEBUG})
         set(CMAKE_BUILD_TYPE Debug)
         set(CMAKE_CXX_FLAGS "-O0 -g -Wall -m64")

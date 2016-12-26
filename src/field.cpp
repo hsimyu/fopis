@@ -73,7 +73,7 @@ threeDArray& Field::getBz(){
 void Field::initializePoisson(const Environment* env){
 
 #ifdef DEBUG
-    std::cout << "--  Poisson Initializing  --" << std::endl;
+    if( env->isRootNode ) cout << "--  Poisson Initializing  --" << endl;
 #endif
 
     psn = new Poisson();
@@ -98,7 +98,8 @@ void Field::initializePoisson(const Environment* env){
     double q = 0.0; // 0 for Poisson and Laplace
 
     d_init_Helmholtz_3D(&zero, &upper_x, &zero, &upper_x, &zero, &upper_x, &nx, &ny, &nz, env->boundary.c_str(), &q, psn->ipar, psn->dpar, &(psn->stat));
-    if(psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
+
+    if(psn->stat != 0) cout << format("[%d] stat == %d at init Poisson") % env->myid % psn->stat << endl;
 
     psn->b_lx = new double[(ny + 1) * (nz + 1)];
     for(int i = 0; i < (ny +1) * (nz + 1); ++i) psn->b_lx[i] = 0.0;
@@ -115,7 +116,7 @@ void Field::initializePoisson(const Environment* env){
     psn->rho1D = new double[(nx + 1)*(ny + 1)*(nz + 1)];
 
 #ifdef DEBUG
-    std::cout << "--  End Poisson Initializing  --" << std::endl;
+    if( env->isRootNode ) cout << "--  End Poisson Initializing  --" << endl;
 #endif
 }
 
@@ -134,11 +135,11 @@ void Field::solvePoisson(const Environment* env) {
     //! Commit solver
     //! @note Is it required?
     d_commit_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
-    if(psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
+    if(psn->stat != 0) cout << format("[%d] stat == %d at commiting Poisson") % env->myid % psn->stat << endl;
 
     //! rho(1D) -> phi(1D)
     d_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
-    if( psn->stat != 0) std::cout << "stat == " << psn->stat << std::endl;
+    if(psn->stat != 0) cout << format("[%d] stat == %d at solving Poisson") % env->myid % psn->stat << endl;
 }
 
 //! @brief 電場を更新する
@@ -181,9 +182,9 @@ void Field::updateBfield(const Environment* env) {
     const double d1 = mu_r/(mu_r + sigma_m * c * dt / eta);
     const double d2 = 1.0/(mu_r + sigma_m * c * dt / eta);
 
-    std::cout << "c1 = " << c1 << ", c2 = " << c2 << std::endl;
-    std::cout << "d1 = " << d1 << ", d2 = " << d2 << std::endl;
-    std::cout << "eta = " << eta << std::endl;
+    cout << "c1 = " << c1 << ", c2 = " << c2 << endl;
+    cout << "d1 = " << d1 << ", d2 = " << d2 << endl;
+    cout << "eta = " << eta << endl;
 
     const int nx = env->cell_x + 1;
     const int ny = env->cell_y + 1;

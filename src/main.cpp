@@ -8,15 +8,17 @@
 
 #ifndef BUILD_TEST
 int main(int argc, char* argv[]){
-    cout << "---    [ TDPIC ]      --" << endl;
-    cout << "-- Start Initializing --" << endl;
-
     std::string filename = "input.json";
 
     // load parameter from json
     auto inputs = Utils::readJSONFile(filename);
     Environment* env = Initializer::loadEnvironment(inputs);
-    cout << env << endl;
+    Initializer::initializeMPI(argc, argv, env);
+
+    if( env->isRootNode ) {
+        cout << "---    [ TDPIC ]      --" << endl;
+        cout << env << endl;
+    }
 
     // initialize normalizer
     Utils::Normalizer::x_unit = env->dx;
@@ -39,8 +41,10 @@ int main(int argc, char* argv[]){
         // load field
     }
 
-    cout << "--  End Initializing  --" << endl;
-    cout << "--  Begin A Loop  --" << endl;
+    if( env->isRootNode ) {
+        cout << "--  End Initializing  --" << endl;
+        cout << "--  Begin A Loop  --" << endl;
+    }
 
     // particle -> space charge
     root_grid->updateRho(env);
@@ -51,30 +55,33 @@ int main(int argc, char* argv[]){
     // potential -> efield
     root_grid->getField()->updateEfield(env);
 
-    cout << "--  End A Loop  --" << endl;
+    if( env->isRootNode ) {
+        cout << "--  End A Loop  --" << endl;
 
 #ifdef DEBUG
-    cout << "-- SPACE CHARGE --" << endl;
-    IO::print3DArray( root_grid->getField()->getRho(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
-    cout << "-- POTENTIAL --" << endl;
-    IO::print3DArray( root_grid->getField()->getPhi(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
-    cout << "-- Ex --" << endl;
-    IO::print3DArray( root_grid->getField()->getEx(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 2);
-    cout << "-- Ey --" << endl;
-    IO::print3DArray( root_grid->getField()->getEy(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 2);
-    cout << "-- Ez --" << endl;
-    IO::print3DArray( root_grid->getField()->getEz(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 1);
-    // cout << "-- Bx --" << endl;
-    // IO::print3DArray( root_grid->getField()->getBx(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 1);
-    // cout << "-- By --" << endl;
-    // IO::print3DArray( root_grid->getField()->getBy(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 1);
-    // cout << "-- Bz --" << endl;
-    // IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 1, env->cell_y + 1, env->cell_z + 2);
-    IO::outputParticlePositions( env, root_grid->particles );
+        // cout << "-- SPACE CHARGE --" << endl;
+        // IO::print3DArray( root_grid->getField()->getRho(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+        // cout << "-- POTENTIAL --" << endl;
+        // IO::print3DArray( root_grid->getField()->getPhi(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+        // cout << "-- Ex --" << endl;
+        // IO::print3DArray( root_grid->getField()->getEx(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 2);
+        // cout << "-- Ey --" << endl;
+        // IO::print3DArray( root_grid->getField()->getEy(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 2);
+        // cout << "-- Ez --" << endl;
+        // IO::print3DArray( root_grid->getField()->getEz(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 1);
+        // cout << "-- Bx --" << endl;
+        // IO::print3DArray( root_grid->getField()->getBx(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 1);
+        // cout << "-- By --" << endl;
+        // IO::print3DArray( root_grid->getField()->getBy(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 1);
+        // cout << "-- Bz --" << endl;
+        // IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 1, env->cell_y + 1, env->cell_z + 2);
+        IO::outputParticlePositions( env, root_grid->particles );
 
-    IO::writeData(root_grid, 0);
+        IO::writeData(root_grid, 0);
 #endif
+    }
 
+    MPI_Finalize();
     return 0;
 }
 #endif
