@@ -5,20 +5,25 @@ Grid::Grid(const Environment* env){
     //! - コンストラクタにEnvironmentクラスが渡された場合、
     //! レベル0のGridを作成します.
     level = 0;
-    base_x = 0.0;
-    base_y = 0.0;
-    base_z = 0.0;
+
+    //! @{
+    //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
+    //! その上にプロセス分割されたグリッドが乗っていると考える
+    base_x = static_cast<double>(env->xid * env->cell_x);
+    base_y = static_cast<double>(env->yid * env->cell_y);
+    base_z = static_cast<double>(env->zid * env->cell_z);
+    //! @}
 
     nx = env->cell_x;
     ny = env->cell_y;
     nz = env->cell_z;
     dx = env->dx;
 
-    // 粒子位置の上限を設定
-    // 下限はbase_xになる
-    const float max_x = env->cell_x;
-    const float max_y = env->cell_y;
-    const float max_z = env->cell_z;
+    //! 粒子位置の上限を設定
+    //! [0, max_x)になるよう1e-20を引いておく
+    const double max_x = static_cast<double>(env->cell_x) - 1e-20;
+    const double max_y = static_cast<double>(env->cell_y) - 1e-20;
+    const double max_z = static_cast<double>(env->cell_z) - 1e-20;
 
     // std::random_device rnd;
     const int random_src_x = 10684930;
@@ -34,9 +39,9 @@ Grid::Grid(const Environment* env){
     std::mt19937 mt_vy(random_src_vy);
     std::mt19937 mt_vz(random_src_vz);
 
-    std::uniform_real_distribution<> dist_x(base_x, max_x);
-    std::uniform_real_distribution<> dist_y(base_y, max_y);
-    std::uniform_real_distribution<> dist_z(base_z, max_z);
+    std::uniform_real_distribution<> dist_x(0.0, max_x);
+    std::uniform_real_distribution<> dist_y(0.0, max_y);
+    std::uniform_real_distribution<> dist_z(0.0, max_z);
 
     // particlesは空のstd::vector< std::vector<Particle> >として宣言されている
     // particle types 分だけresize
@@ -111,6 +116,13 @@ void Grid::updateRho(const Environment* env) {
             gx_lower += 1; gy_lower += 1; gz_lower += 1;
 
             double q = ptype[id].getCharge();
+
+#ifdef DEBUG
+            if(gx_lower + 1 >= env->cell_x + 2 || gy_lower + 1 >= env->cell_y + 2 || gz_lower + 1 >= env->cell_z + 2) {
+                cout << format("[P%d Particle]: %5f %5f %5f") % env->myid % x % y % z << endl;
+                cout << format("[P%d Particle]: int + 1: %d %d %d") % env->myid % (gx_lower+1) % (gy_lower+1) % (gz_lower+1) << endl;
+            }
+#endif
 
             rho[gx_lower    ][gy_lower    ][gz_lower    ] += (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
             rho[gx_lower + 1][gy_lower    ][gz_lower    ] += delta_gx * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
