@@ -6,9 +6,6 @@
 
 #include <tdpic.h>
 
-using std::cout;
-using std::endl;
-
 #ifndef BUILD_TEST
 int main(int argc, char* argv[]){
     cout << "---    [ TDPIC ]      --" << endl;

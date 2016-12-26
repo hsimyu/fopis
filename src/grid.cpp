@@ -1,6 +1,5 @@
 #include <tdpic.h>
 #include <random>
-using boost::format;
 
 Grid::Grid(const Environment* env){
     //! - コンストラクタにEnvironmentクラスが渡された場合、

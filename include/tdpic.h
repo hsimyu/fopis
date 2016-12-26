@@ -16,6 +16,10 @@
 class Particle;
 class ParticleType;
 
+using std::cout;
+using std::endl;
+using boost::format;
+
 typedef boost::multi_array<double, 3> threeDArray;
 
 typedef std::vector< std::vector<Particle> > ParticleArray;

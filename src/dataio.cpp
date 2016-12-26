@@ -2,11 +2,6 @@
 #include <fstream>
 #include <silo.h>
 
-using std::cout;
-using std::cin;
-using std::endl;
-using boost::format;
-
 namespace IO {
     void writeMultimesh(DBfile* file, int total_blocknum, char** meshnames, char** varnames) {
         // make options list

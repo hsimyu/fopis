@@ -1,5 +1,4 @@
 #include <tdpic.h>
-using boost::format;
 
 std::ostream& operator<<(std::ostream& ost, const Environment* env){
     ost << "[Environment]" << std::endl;

@@ -1,10 +1,6 @@
 #include <tdpic.h>
 #include <fstream>
 
-using std::cout;
-using std::endl;
-using boost::format;
-
 namespace Utils {
     // Normalizedのstatic変数の実体
     double Normalizer::x_unit = 1.0;
