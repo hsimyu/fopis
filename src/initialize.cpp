@@ -45,6 +45,10 @@ namespace Initializer {
         env->yid = yid;
         env->zid = zid;
 
+        env->onLowXedge = (xid == 0); env->onHighXedge = (xid == env->proc_x - 1);
+        env->onLowYedge = (yid == 0); env->onHighYedge = (yid == env->proc_y - 1);
+        env->onLowZedge = (zid == 0); env->onHighZedge = (zid == env->proc_z - 1);
+
         // 0のノードをルートとして扱う
         env->isRootNode = (myid == 0);
 

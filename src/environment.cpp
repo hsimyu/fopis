@@ -25,3 +25,7 @@ std::ostream& operator<<(std::ostream& ost, const Environment& env){
     ost << "    cell(+): " << format("%1%x%2%x%3%") % (env.cell_x + 2) % (env.cell_y + 2) % (env.cell_z + 2) << " grids [/proc] (with glue cells) " << std::endl;
     return ost;
 }
+
+std::string Environment::getMPIString(void) {
+    return (format("[P%04d] ") % myid).str();
+}

@@ -62,6 +62,10 @@ struct Environment {
         int max_iteration;
         bool isRootNode;
 
+        bool onLowXedge, onHighXedge;
+        bool onLowYedge, onHighYedge;
+        bool onLowZedge, onHighZedge;
+
         // MPI info
         int numprocs;
         int myid;
@@ -77,6 +81,7 @@ struct Environment {
         friend std::ostream& operator<<(std::ostream&, const Environment&);
         friend std::ostream& operator<<(std::ostream&, const Environment*);
         friend std::istream& operator<<(std::istream&, const Environment&);
+        std::string getMPIString(void);
 };
 
 class Field {
