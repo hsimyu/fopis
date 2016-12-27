@@ -99,7 +99,7 @@ void Field::initializePoisson(const Environment* env){
 
     d_init_Helmholtz_3D(&zero, &upper_x, &zero, &upper_x, &zero, &upper_x, &nx, &ny, &nz, env->boundary.c_str(), &q, psn->ipar, psn->dpar, &(psn->stat));
 
-    if(psn->stat != 0) cout << format("[%d] stat == %d at init Poisson") % env->myid % psn->stat << endl;
+    if(psn->stat != 0) cout << env->rankStr() << format("[Poisson Init] stat == %d") % psn->stat << endl;
 
     psn->b_lx = new double[(ny + 1) * (nz + 1)];
     for(int i = 0; i < (ny +1) * (nz + 1); ++i) psn->b_lx[i] = 0.0;
@@ -135,11 +135,11 @@ void Field::solvePoisson(const Environment* env) {
     //! Commit solver
     //! @note Is it required?
     d_commit_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
-    if(psn->stat != 0) cout << format("[%d] stat == %d at commiting Poisson") % env->myid % psn->stat << endl;
+    if(psn->stat != 0) cout << env->rankStr() << format("[Poisson Commit] stat == %d") % psn->stat << endl;
 
     //! rho(1D) -> phi(1D)
     d_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
-    if(psn->stat != 0) cout << format("[%d] stat == %d at solving Poisson") % env->myid % psn->stat << endl;
+    if(psn->stat != 0) cout << env->rankStr() << format("[Poisson Solve] stat == %d") % psn->stat << endl;
 }
 
 //! @brief 電場を更新する

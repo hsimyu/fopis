@@ -9,7 +9,7 @@
 #include <boost/multi_array.hpp>
 #include <picojson.h>
 #include <mkl.h> // Intel Math Kernel Library
-#include <mpi.h>
+#include <mpi_wrapper.hpp>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
@@ -70,8 +70,8 @@ struct Environment {
 
         // MPI info
         int numprocs;
-        int myid;
-        int xid, yid, zid;
+        int rank;
+        int xrank, yrank, zrank;
 
         std::string jobtype;
         std::string solver_type;
@@ -80,10 +80,12 @@ struct Environment {
 
         ParticleType* ptype;
 
+        //! 中身はMPI::Environment::getRankStr()と同様
+        std::string rankStr(void) const;
+
         friend std::ostream& operator<<(std::ostream&, const Environment&);
         friend std::ostream& operator<<(std::ostream&, const Environment*);
         friend std::istream& operator<<(std::istream&, const Environment&);
-        std::string getMPIString(void);
 };
 
 class Field {
@@ -294,7 +296,7 @@ class Grid {
 };
 
 namespace Initializer {
-    void initializeMPI(int, char**, Environment*);
+    void setMPIInfoToEnv(Environment*);
     double getSizeOfSuperParticle(int, double, double);
     Environment* loadEnvironment(picojson::object&);
     ParticleType* loadParticleType(picojson::object&, Environment*);

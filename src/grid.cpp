@@ -9,9 +9,9 @@ Grid::Grid(const Environment* env){
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
     //! その上にプロセス分割されたグリッドが乗っていると考える
-    base_x = static_cast<double>(env->xid * env->cell_x);
-    base_y = static_cast<double>(env->yid * env->cell_y);
-    base_z = static_cast<double>(env->zid * env->cell_z);
+    base_x = static_cast<double>(env->xrank * env->cell_x);
+    base_y = static_cast<double>(env->yrank * env->cell_y);
+    base_z = static_cast<double>(env->zrank * env->cell_z);
     //! @}
 
     nx = env->cell_x;
@@ -119,8 +119,8 @@ void Grid::updateRho(const Environment* env) {
 
 #ifdef DEBUG
             if(gx_lower + 1 >= env->cell_x + 2 || gy_lower + 1 >= env->cell_y + 2 || gz_lower + 1 >= env->cell_z + 2) {
-                cout << format("[P%d Particle]: %5f %5f %5f") % env->myid % x % y % z << endl;
-                cout << format("[P%d Particle]: int + 1: %d %d %d") % env->myid % (gx_lower+1) % (gy_lower+1) % (gz_lower+1) << endl;
+                cout << env->rankStr() << format("[Particle]: %5f %5f %5f") % x % y % z << endl;
+                cout << env->rankStr() << format("[Particle]: int + 1: %d %d %d") % (gx_lower+1) % (gy_lower+1) % (gz_lower+1) << endl;
             }
 #endif
 

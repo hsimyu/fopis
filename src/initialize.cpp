@@ -6,51 +6,46 @@ namespace Initializer {
         return pow(dx, 2.0) * density / nr;
     }
 
-    void initializeMPI(int argc, char* argv[], Environment* env) {
-        MPI_Init(&argc, &argv);
-
-        int numprocs = 0, myid = 0;
-
-        MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-        MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    void setMPIInfoToEnv(Environment* env) {
+        int rank = MPI::Environment::rank;
+        int numprocs = MPI::Environment::numprocs;
 
         if(numprocs != env->proc_x * env->proc_y * env->proc_z) {
-            if(myid == 0) {
+            if(rank == 0) {
                 cout << format("[ERROR] Allocated Process Number [%d] is different from [%d] inputted from json.") % numprocs % (env->proc_x * env->proc_y * env->proc_z) << endl;
             }
-            MPI_Finalize();
-            exit(0);
+            MPI::Environment::exitWithFinalize(0);
         }
 
         env->numprocs = numprocs;
-        env->myid = myid;
+        env->rank = rank;
 
-        int xid = -1, yid = -1, zid = -1;
+        int xrank = -1, yrank = -1, zrank = -1;
 
         // Processの積み方は
         // x->y->z
         for(int k = 0; k < env->proc_z; ++k){
             for(int j = 0; j < env->proc_y; ++j){
                 for(int i = 0; i < env->proc_x; ++i){
-                    if( (i + env->proc_x * j + env->proc_x * env->proc_y * k) == myid ){
-                        xid = i;
-                        yid = j;
-                        zid = k;
+                    if( (i + env->proc_x * j + env->proc_x * env->proc_y * k) == rank ){
+                        xrank = i;
+                        yrank = j;
+                        zrank = k;
                     }
                 }
             }
         }
 
-        env->xid = xid;
-        env->yid = yid;
-        env->zid = zid;
+        env->xrank = xrank;
+        env->yrank = yrank;
+        env->zrank = zrank;
 
-        env->onLowXedge = (xid == 0); env->onHighXedge = (xid == env->proc_x - 1);
-        env->onLowYedge = (yid == 0); env->onHighYedge = (yid == env->proc_y - 1);
-        env->onLowZedge = (zid == 0); env->onHighZedge = (zid == env->proc_z - 1);
+        env->onLowXedge = (xrank == 0); env->onHighXedge = (xrank == env->proc_x - 1);
+        env->onLowYedge = (yrank == 0); env->onHighYedge = (yrank == env->proc_y - 1);
+        env->onLowZedge = (zrank == 0); env->onHighZedge = (zrank == env->proc_z - 1);
 
         // 0のノードをルートとして扱う
-        env->isRootNode = (myid == 0);
+        env->isRootNode = (rank == 0);
 
         if(env->isRootNode) cout << format("[MPIINFO] allocated processes: %d") % numprocs << endl;
     }

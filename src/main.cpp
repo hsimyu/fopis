@@ -8,12 +8,19 @@
 
 #ifndef BUILD_TEST
 int main(int argc, char* argv[]){
-    std::string filename = "input.json";
+    //! MPI Environmentを初期化
+    //! コンストラクタでMPI_Initを呼んで
+    //! mainが終わったらdestructされる
+    MPI::Environment mpiEnv(argc, argv);
+    MPI::Communicator world; // MPI_COMM_WORLD
 
     // load parameter from json
+    std::string filename = "input.json";
     auto inputs = Utils::readJSONFile(filename);
     Environment* env = Initializer::loadEnvironment(inputs);
-    Initializer::initializeMPI(argc, argv, env);
+
+    // EnvironmentにMPI::Environment情報をセット
+    Initializer::setMPIInfoToEnv(env);
 
     if( env->isRootNode ) {
         cout << "---    [ TDPIC ]      --" << endl;
@@ -81,7 +88,6 @@ int main(int argc, char* argv[]){
 #endif
     }
 
-    MPI_Finalize();
     return 0;
 }
 #endif

@@ -26,6 +26,6 @@ std::ostream& operator<<(std::ostream& ost, const Environment& env){
     return ost;
 }
 
-std::string Environment::getMPIString(void) {
-    return (format("[P%04d] ") % myid).str();
+std::string Environment::rankStr(void) const {
+    return MPI::Environment::rankStr();
 }
