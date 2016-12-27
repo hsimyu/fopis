@@ -19,14 +19,9 @@ namespace IO {
         DBFreeOptlist(optList);
     }
 
-    void writeBlock(DBfile* file, int blocknum, Grid* g, char* meshname, char* varname){
+    void writeBlock(DBfile* file, Grid* g, char* meshname, char* varname){
         // dimension
         const int dim = 3;
-
-        // Create new directory for a block
-        // std::string dirname = (format("block%d") % blocknum).str();
-        // DBMkDir(file, dirname.c_str());
-        // DBSetDir(file, dirname.c_str());
 
         tdArray& tdArray = g->getField()->getPhi();
 
@@ -50,43 +45,38 @@ namespace IO {
         // the array of coordinate arrays
         float** coordinates = g->getMeshNodes(dim);
 
-        // make options list
-        DBoptlist* optList = DBMakeOptlist(2);
+        // make options list for mesh
+        DBoptlist* optListMesh = DBMakeOptlist(1);
+
+        // make options list for var
+        DBoptlist* optListVar = DBMakeOptlist(2);
         char* unit = "V";
-        DBAddOption(optList, DBOPT_UNITS, unit);
+        DBAddOption(optListVar, DBOPT_UNITS, unit);
         int major_order = 1;
-        DBAddOption(optList, DBOPT_MAJORORDER, &major_order); // column-major (Fortran) order
+        DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // column-major (Fortran) order
 
         double* vars[] = {tdArray.data()};
 
-        // directoryが1階層下がった分を考慮
-        // std::string mesh_path = "../" + meshname;
-        // std::string var_path = "../" + meshname;
-
         DBPutQuadmesh(file, meshname, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
-        DBPutQuadvar(file, varname, meshname, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optList);
+        DBPutQuadvar(file, varname, meshname, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
 
         // Free optList
-        DBFreeOptlist(optList);
+        DBFreeOptlist(optListMesh);
+        DBFreeOptlist(optListVar);
 
         // free mesh nodes
         delete [] coordinates[0];
         delete [] coordinates[1];
         delete [] coordinates[2];
         delete [] coordinates;
-
-        // DBSetDir(file, "..");
-
     }
 
     // void writeData(Grid* g, int timestep) {
     //     std::string filename = (format("potential%d_%04d.silo") % timestep % MPI::Environment::rank).str();
     //     DBfile* file = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, DB_PDB);
-    //
     //     int total_blocknum = MPI::Environment::numprocs;
     //     char* meshnames[total_blocknum];
     //     char* varnames[total_blocknum];
-    //
     //     for(int i = 0; i < total_blocknum; ++i) {
     //         meshnames[i] = ((format("mesh%d") % i).str()).c_str();
     //         varnames[i] = ((format("var%d") % i).str()).c_str();
@@ -108,9 +98,13 @@ namespace IO {
         PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 1000, PMPIO_DefaultCreate, PMPIO_DefaultOpen, PMPIO_DefaultClose, NULL);
         int groupRank = PMPIO_GroupRank(bat, MPI::Environment::rank);
         int rankInGroup = PMPIO_RankInGroup(bat, MPI::Environment::rank);
-        std::string filename = (format("data/%s_%d_%04d.silo") % dataTypeName % timestep % groupRank).str();
+        std::string filename = (format("data/%s_%04d_%04d.silo") % dataTypeName % groupRank % timestep).str();
         std::string blockname = (format("block%04d") % rankInGroup).str();
         DBfile* file = static_cast<DBfile*>(PMPIO_WaitForBaton(bat, filename.c_str(), blockname.c_str()));
+
+        char* meshname = "mesh";
+        char* varname = "potential";
+        writeBlock(file, g, meshname, varname);
 
         PMPIO_HandOffBaton(bat, file);
         PMPIO_Finish(bat);

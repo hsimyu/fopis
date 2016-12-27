@@ -6,18 +6,18 @@ Grid::Grid(const Environment* env){
     //! レベル0のGridを作成します.
     level = 0;
 
-    //! @{
-    //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
-    //! その上にプロセス分割されたグリッドが乗っていると考える
-    base_x = static_cast<double>(env->xrank * env->cell_x);
-    base_y = static_cast<double>(env->yrank * env->cell_y);
-    base_z = static_cast<double>(env->zrank * env->cell_z);
-    //! @}
-
     nx = env->cell_x;
     ny = env->cell_y;
     nz = env->cell_z;
     dx = env->dx;
+
+    //! @{
+    //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
+    //! その上にプロセス分割されたグリッドが乗っていると考える
+    base_x = dx * static_cast<double>(env->xrank * env->cell_x);
+    base_y = dx * static_cast<double>(env->yrank * env->cell_y);
+    base_z = dx * static_cast<double>(env->zrank * env->cell_z);
+    //! @}
 
     //! 粒子位置の上限を設定
     //! [0, max_x)になるよう1e-20を引いておく
@@ -144,16 +144,16 @@ float** Grid::getMeshNodes(int dim) {
     // the array of coordinate arrays
     // @note: メモリリークしそう
     float** coordinates = new float*[dim];
-    coordinates[0] = new float[nx];
-    for(int i = 0; i < nx; ++i) {
+    coordinates[0] = new float[nx + 2];
+    for(int i = 0; i < nx + 2; ++i) {
 	coordinates[0][i] = base_x + dx * i;
     }
-    coordinates[1] = new float[ny];
-    for(int i = 0; i < ny; ++i) {
+    coordinates[1] = new float[ny + 2];
+    for(int i = 0; i < ny + 2; ++i) {
 	coordinates[1][i] = base_y + dx * i;
     }
-    coordinates[2] = new float[nz];
-    for(int i = 0; i < nz; ++i) {
+    coordinates[2] = new float[nz + 2];
+    for(int i = 0; i < nz + 2; ++i) {
 	coordinates[2][i] = base_z + dx * i;
     }
     return coordinates;

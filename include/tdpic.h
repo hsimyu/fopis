@@ -316,7 +316,6 @@ namespace Utils {
 
     void createDir(std::string);
 
-
     class Normalizer {
         protected:
             // static class
