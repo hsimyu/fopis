@@ -142,18 +142,18 @@ void Grid::updateRho(const Environment* env) {
 
 float** Grid::getMeshNodes(int dim) {
     // the array of coordinate arrays
-    // @note: メモリリークしそう
+    // @note: メモリリーク防止のため必ずdeleteする
     float** coordinates = new float*[dim];
-    coordinates[0] = new float[nx + 2];
-    for(int i = 0; i < nx + 2; ++i) {
+    coordinates[0] = new float[nx];
+    for(int i = 0; i < nx; ++i) {
 	coordinates[0][i] = base_x + dx * i;
     }
-    coordinates[1] = new float[ny + 2];
-    for(int i = 0; i < ny + 2; ++i) {
+    coordinates[1] = new float[ny];
+    for(int i = 0; i < ny; ++i) {
 	coordinates[1][i] = base_y + dx * i;
     }
-    coordinates[2] = new float[nz + 2];
-    for(int i = 0; i < nz + 2; ++i) {
+    coordinates[2] = new float[nz];
+    for(int i = 0; i < nz; ++i) {
 	coordinates[2][i] = base_z + dx * i;
     }
     return coordinates;

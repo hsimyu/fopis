@@ -67,16 +67,24 @@ namespace Utils {
         }
     }
 
-    void convert3Dto1Darray(const tdArray& x3D, const int nx, const int ny, const int nz, double* x1D){
-        // convert to 1D array
-        // Fortran-based indicing
-        for(int k = 0; k < nz; ++k){
-            for(int j = 0; j < ny; ++j){
-                for(int i = 0; i < nx; ++i){
-                    x1D[i + j*nx + k*nx*ny] = x3D[i][j][k];
+    //! for DATA IO
+    double* getTrueCells(const tdArray& x3D){
+        int nx = x3D.shape()[0];
+        int ny = x3D.shape()[1];
+        int nz = x3D.shape()[2];
+        double* x1D = new double[(nx-2)*(ny-2)*(nz-2)];
+
+        //! Fortran-based indicing
+        //! without glue cells
+        for(int k = 1; k < nz - 1; ++k){
+            for(int j = 1; j < ny - 1; ++j){
+                for(int i = 1; i < nx - 1; ++i){
+                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = x3D[i][j][k];
                 }
             }
         }
+
+        return x1D;
     }
 
     void convert1Dto3Darray(double* x1D, const int nx, const int ny, const int nz, tdArray& x3D){

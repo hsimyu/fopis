@@ -310,7 +310,7 @@ namespace Utils {
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
 
-    void convert3Dto1Darray(const tdArray&, const int, const int, const int, double*);
+    double* getTrueCells(const tdArray&);
     void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
     void clearBoundaryValues(tdArray&, const int, const int, const int);
 

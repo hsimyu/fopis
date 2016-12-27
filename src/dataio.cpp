@@ -23,14 +23,14 @@ namespace IO {
         // dimension
         const int dim = 3;
 
-        tdArray& tdArray = g->getField()->getPhi();
+        double* tdArray = Utils::getTrueCells(g->getField()->getPhi());
 
         // dimensions
         // glue cellも出力
         int dimensions[3];
-        dimensions[0] = g->getNX() + 2;
-        dimensions[1] = g->getNY() + 2;
-        dimensions[2] = g->getNZ() + 2;
+        dimensions[0] = g->getNX();
+        dimensions[1] = g->getNY();
+        dimensions[2] = g->getNZ();
 
         // names of the coordinates
         char* coordnames[3];
@@ -55,7 +55,7 @@ namespace IO {
         int major_order = 1;
         DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // column-major (Fortran) order
 
-        double* vars[] = {tdArray.data()};
+        double* vars[] = {tdArray};
 
         DBPutQuadmesh(file, meshname, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
         DBPutQuadvar(file, varname, meshname, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
