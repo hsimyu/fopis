@@ -71,28 +71,8 @@ namespace IO {
         delete [] coordinates;
     }
 
-    // void writeData(Grid* g, int timestep) {
-    //     std::string filename = (format("potential%d_%04d.silo") % timestep % MPI::Environment::rank).str();
-    //     DBfile* file = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, DB_PDB);
-    //     int total_blocknum = MPI::Environment::numprocs;
-    //     char* meshnames[total_blocknum];
-    //     char* varnames[total_blocknum];
-    //     for(int i = 0; i < total_blocknum; ++i) {
-    //         meshnames[i] = ((format("mesh%d") % i).str()).c_str();
-    //         varnames[i] = ((format("var%d") % i).str()).c_str();
-    //     }
-    //
-    //     writeMultimesh(file, total_blocknum, meshnames, varnames);
-    //
-    //     for(int i = 0; i < total_blocknum; ++i){
-    //         writeBlock(file, i, g, meshnames[i], varnames[i]);
-    //     }
-    //
-    //     DBClose(file);
-    // }
-
     void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
-        const int maxIOUnit = 2;
+        const int maxIOUnit = 8;
         int numfiles = (MPI::Environment::numprocs <= maxIOUnit) ? MPI::Environment::numprocs : maxIOUnit;
 
         PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 1000, PMPIO_DefaultCreate, PMPIO_DefaultOpen, PMPIO_DefaultClose, NULL);
@@ -102,8 +82,46 @@ namespace IO {
         std::string blockname = (format("block%04d") % rankInGroup).str();
         DBfile* file = static_cast<DBfile*>(PMPIO_WaitForBaton(bat, filename.c_str(), blockname.c_str()));
 
+        if(rankInGroup == 0 && groupRank == 0) {
+            int total_blocknum = MPI::Environment::numprocs;
+            char** meshnames = new char*[total_blocknum];
+            char** varnames = new char*[total_blocknum];
+
+            for(int i = 0; i < total_blocknum; ++i) {
+                int tmpGroupRank = PMPIO_GroupRank(bat, i);
+                int tmpRankInGroup = PMPIO_RankInGroup(bat, i);
+                std::string tmpfilename = (format("%s_%04d_%04d.silo") % dataTypeName % tmpGroupRank % timestep).str();
+
+                std::string tmpstring;
+                if(filename == tmpstring) {
+                    tmpstring = (format("/block%04d/mesh") % tmpRankInGroup).str();
+                } else {
+                    tmpstring = (format("%s:/block%04d/mesh") % tmpfilename % tmpRankInGroup).str();
+                }
+                meshnames[i] = new char[tmpstring.size() + 1];
+                std::strcpy(meshnames[i], tmpstring.c_str());
+
+                if(filename == tmpstring) {
+                    tmpstring = (format("/block%04d/%s") % tmpRankInGroup % dataTypeName).str();
+                } else {
+                    tmpstring = (format("%s:/block%04d/%s") % tmpfilename % tmpRankInGroup % dataTypeName).str();
+                }
+                varnames[i] = new char[tmpstring.size() + 1];
+                std::strcpy(varnames[i], tmpstring.c_str());
+            }
+
+            writeMultimesh(file, total_blocknum, meshnames, varnames);
+
+            for(int i = 0; i < total_blocknum; ++i) {
+                delete [] meshnames[i];
+                delete [] varnames[i];
+            }
+            delete [] meshnames;
+            delete [] varnames;
+        }
+
         char* meshname = "mesh";
-        char* varname = "potential";
+        char* varname = const_cast<char*>(dataTypeName.c_str());
         writeBlock(file, g, meshname, varname);
 
         PMPIO_HandOffBaton(bat, file);
