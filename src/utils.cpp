@@ -1,5 +1,6 @@
 #include <tdpic.h>
 #include <fstream>
+#include <boost/filesystem.hpp>
 
 namespace Utils {
     // Normalizedのstatic変数の実体
@@ -145,5 +146,12 @@ namespace Utils {
         picojson::value::object& o = v.get<picojson::object>();
 
         return o;
+    }
+
+    void createDir(std::string dirname) {
+        boost::filesystem::path dir(dirname);
+        if(!boost::filesystem::is_directory(dir)) {
+            boost::filesystem::create_directory(dir);
+        }
     }
 }

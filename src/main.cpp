@@ -25,6 +25,9 @@ int main(int argc, char* argv[]){
     if( env->isRootNode ) {
         cout << "---    [ TDPIC ]      --" << endl;
         cout << env << endl;
+
+        //! データ書き込み用ディレクトリを作成
+        Utils::createDir("data");
     }
 
     // initialize normalizer
@@ -84,9 +87,11 @@ int main(int argc, char* argv[]){
         // IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 1, env->cell_y + 1, env->cell_z + 2);
         IO::outputParticlePositions( env, root_grid->particles );
 
-        IO::writeData(root_grid, 0);
+        // IO::writeData(root_grid, 0);
 #endif
     }
+
+    IO::writeDataInParallel(root_grid, 0, "potential");
 
     return 0;
 }

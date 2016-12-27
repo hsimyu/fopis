@@ -314,6 +314,8 @@ namespace Utils {
     void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
     void clearBoundaryValues(tdArray&, const int, const int, const int);
 
+    void createDir(std::string);
+
 
     class Normalizer {
         protected:
@@ -343,8 +345,8 @@ namespace Utils {
 }
 
 namespace IO {
-    void writeData(Grid*, int);
+    void writeDataInParallel(Grid*, int, std::string);
     void print3DArray(const tdArray&, const int, const int, const int);
-    void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
+    void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "data/particlePositions.csv");
 }
 #endif

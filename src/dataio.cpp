@@ -2,6 +2,9 @@
 #include <fstream>
 #include <silo.h>
 
+#include <mpi.h>
+#include <pmpio.h>
+
 namespace IO {
     void writeMultimesh(DBfile* file, int total_blocknum, char** meshnames, char** varnames) {
         // make options list
@@ -76,23 +79,41 @@ namespace IO {
 
     }
 
-    void writeData(Grid* g, int timestep) {
-        std::string filename = (format("test%d.silo") % timestep).str();
-        DBfile* file = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, DB_PDB);
+    // void writeData(Grid* g, int timestep) {
+    //     std::string filename = (format("potential%d_%04d.silo") % timestep % MPI::Environment::rank).str();
+    //     DBfile* file = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, DB_PDB);
+    //
+    //     int total_blocknum = MPI::Environment::numprocs;
+    //     char* meshnames[total_blocknum];
+    //     char* varnames[total_blocknum];
+    //
+    //     for(int i = 0; i < total_blocknum; ++i) {
+    //         meshnames[i] = ((format("mesh%d") % i).str()).c_str();
+    //         varnames[i] = ((format("var%d") % i).str()).c_str();
+    //     }
+    //
+    //     writeMultimesh(file, total_blocknum, meshnames, varnames);
+    //
+    //     for(int i = 0; i < total_blocknum; ++i){
+    //         writeBlock(file, i, g, meshnames[i], varnames[i]);
+    //     }
+    //
+    //     DBClose(file);
+    // }
 
-        int total_blocknum = 1;
-        char* meshnames[total_blocknum];
-        char* varnames[total_blocknum];
-        meshnames[0] = "mesh1";
-        varnames[0] = "var1";
+    void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
+        const int maxIOUnit = 2;
+        int numfiles = (MPI::Environment::numprocs <= maxIOUnit) ? MPI::Environment::numprocs : maxIOUnit;
 
-        writeMultimesh(file, total_blocknum, meshnames, varnames);
+        PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 1000, PMPIO_DefaultCreate, PMPIO_DefaultOpen, PMPIO_DefaultClose, NULL);
+        int groupRank = PMPIO_GroupRank(bat, MPI::Environment::rank);
+        int rankInGroup = PMPIO_RankInGroup(bat, MPI::Environment::rank);
+        std::string filename = (format("data/%s_%d_%04d.silo") % dataTypeName % timestep % groupRank).str();
+        std::string blockname = (format("block%04d") % rankInGroup).str();
+        DBfile* file = static_cast<DBfile*>(PMPIO_WaitForBaton(bat, filename.c_str(), blockname.c_str()));
 
-        for(int i = 0; i < total_blocknum; ++i){
-            writeBlock(file, i, g, meshnames[i], varnames[i]);
-        }
-
-        DBClose(file);
+        PMPIO_HandOffBaton(bat, file);
+        PMPIO_Finish(bat);
     }
 
     void print3DArray(const tdArray& data, const int nx, const int ny, const int nz){

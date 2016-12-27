@@ -20,7 +20,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(CMAKE_SUPPRESS_REGENERATION true)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(HOME "$ENV{HOME}")
-    find_package( Boost REQUIRED )
+    find_package( Boost REQUIRED COMPONENTS filesystem)
     include_directories( ${Boost_INCLUDE_DIRS} )
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
 
