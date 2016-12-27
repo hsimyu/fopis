@@ -57,7 +57,7 @@ namespace Initializer {
 
     void initializeRootField(const Environment* env, Grid* grid){
         Field* field = new Field;
-        threeDArray::extent_gen tdExtents;
+        tdArray::extent_gen tdExtents;
 
         const int cx = env->cell_x + 2;
         const int cy = env->cell_y + 2;

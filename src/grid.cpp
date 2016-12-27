@@ -92,7 +92,7 @@ Field* Grid::getField(void){ return field; }
 
 //! 粒子の位置から電荷を空間電荷にする
 void Grid::updateRho(const Environment* env) {
-    threeDArray& rho = field->getRho();
+    tdArray& rho = field->getRho();
 
     ParticleType* ptype = env->ptype;
     for(int id = 0; id < env->num_of_particle_types; ++id){

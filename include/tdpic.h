@@ -21,7 +21,9 @@ using std::cout;
 using std::endl;
 using boost::format;
 
-typedef boost::multi_array<double, 3> threeDArray;
+typedef boost::multi_array<double, 3> tdArray;
+typedef tdArray::index_gen tdIndex;
+typedef tdArray::array_view<3>::type tdView;
 
 typedef std::vector< std::vector<Particle> > ParticleArray;
 
@@ -86,39 +88,39 @@ struct Environment {
 
 class Field {
     private:
-        threeDArray rho;
-        threeDArray phi;
-        threeDArray ex;
-        threeDArray ey;
-        threeDArray ez;
-        threeDArray bx;
-        threeDArray by;
-        threeDArray bz;
+        tdArray rho;
+        tdArray phi;
+        tdArray ex;
+        tdArray ey;
+        tdArray ez;
+        tdArray bx;
+        tdArray by;
+        tdArray bz;
 
         Poisson* psn = nullptr;
     public:
         Field();
         ~Field();
 
-        threeDArray& getPhi();
-        void setPhi(threeDArray&);
+        tdArray& getPhi();
+        void setPhi(tdArray&);
 
-        threeDArray& getRho();
-        void setRho(threeDArray&);
+        tdArray& getRho();
+        void setRho(tdArray&);
 
-        threeDArray& getEx();
-        void setEx(threeDArray&);
-        threeDArray& getEy();
-        void setEy(threeDArray&);
-        threeDArray& getEz();
-        void setEz(threeDArray&);
+        tdArray& getEx();
+        void setEx(tdArray&);
+        tdArray& getEy();
+        void setEy(tdArray&);
+        tdArray& getEz();
+        void setEz(tdArray&);
 
-        threeDArray& getBx();
-        void setBx(threeDArray&);
-        threeDArray& getBy();
-        void setBy(threeDArray&);
-        threeDArray& getBz();
-        void setBz(threeDArray&);
+        tdArray& getBx();
+        void setBx(tdArray&);
+        tdArray& getBy();
+        void setBy(tdArray&);
+        tdArray& getBz();
+        void setBz(tdArray&);
 
         void initializePoisson(const Environment*);
         void solvePoisson(const Environment*);
@@ -306,9 +308,10 @@ namespace Utils {
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
 
-    void convert3Dto1Darray(const threeDArray&, const int, const int, const int, double*);
-    void convert1Dto3Darray(double*, const int, const int, const int, threeDArray&);
-    void clearBoundaryValues(threeDArray&, const int, const int, const int);
+    void convert3Dto1Darray(const tdArray&, const int, const int, const int, double*);
+    void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
+    void clearBoundaryValues(tdArray&, const int, const int, const int);
+
 
     class Normalizer {
         protected:
@@ -339,7 +342,7 @@ namespace Utils {
 
 namespace IO {
     void writeData(Grid*, int);
-    void print3DArray(const threeDArray&, const int, const int, const int);
+    void print3DArray(const tdArray&, const int, const int, const int);
     void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "particlePositions.csv");
 }
 #endif

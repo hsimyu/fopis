@@ -11,62 +11,62 @@ Field::Field() :
     bz(boost::extents[0][0][0], boost::fortran_storage_order()) {}
 
 // potential
-void Field::setPhi(threeDArray& _phi){
+void Field::setPhi(tdArray& _phi){
     phi = _phi;
 }
-threeDArray& Field::getPhi(){
+tdArray& Field::getPhi(){
     return phi;
 }
 
 // charge density
-void Field::setRho(threeDArray& _rho){
+void Field::setRho(tdArray& _rho){
     rho = _rho;
 }
-threeDArray& Field::getRho(){
+tdArray& Field::getRho(){
     return rho;
 }
 
 // electric fields
-void Field::setEx(threeDArray& _ex){
+void Field::setEx(tdArray& _ex){
     ex = _ex;
 }
-threeDArray& Field::getEx(){
+tdArray& Field::getEx(){
     return ex;
 }
 
-void Field::setEy(threeDArray& _ey){
+void Field::setEy(tdArray& _ey){
     ey = _ey;
 }
-threeDArray& Field::getEy(){
+tdArray& Field::getEy(){
     return ey;
 }
 
-void Field::setEz(threeDArray& _ez){
+void Field::setEz(tdArray& _ez){
     ez = _ez;
 }
-threeDArray& Field::getEz(){
+tdArray& Field::getEz(){
     return ez;
 }
 
 // magnetic fields
-void Field::setBx(threeDArray& _bx){
+void Field::setBx(tdArray& _bx){
     bx = _bx;
 }
-threeDArray& Field::getBx(){
+tdArray& Field::getBx(){
     return bx;
 }
 
-void Field::setBy(threeDArray& _by){
+void Field::setBy(tdArray& _by){
     by = _by;
 }
-threeDArray& Field::getBy(){
+tdArray& Field::getBy(){
     return by;
 }
 
-void Field::setBz(threeDArray& _bz){
+void Field::setBz(tdArray& _bz){
     bz = _bz;
 }
-threeDArray& Field::getBz(){
+tdArray& Field::getBz(){
     return bz;
 }
 

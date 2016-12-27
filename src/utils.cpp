@@ -40,7 +40,7 @@ namespace Utils {
         return normalized_e * e_unit;
     }
 
-    void clearBoundaryValues(threeDArray& x, const int nx, const int ny, const int nz) {
+    void clearBoundaryValues(tdArray& x, const int nx, const int ny, const int nz) {
         for(int i = 0; i < nx; i += nx - 1) {
             for(int j = 0; j < ny; ++j){
                 for(int k = 0; k < nz; ++k){
@@ -66,7 +66,7 @@ namespace Utils {
         }
     }
 
-    void convert3Dto1Darray(const threeDArray& x3D, const int nx, const int ny, const int nz, double* x1D){
+    void convert3Dto1Darray(const tdArray& x3D, const int nx, const int ny, const int nz, double* x1D){
         // convert to 1D array
         // Fortran-based indicing
         for(int k = 0; k < nz; ++k){
@@ -78,7 +78,7 @@ namespace Utils {
         }
     }
 
-    void convert1Dto3Darray(double* x1D, const int nx, const int ny, const int nz, threeDArray& x3D){
+    void convert1Dto3Darray(double* x1D, const int nx, const int ny, const int nz, tdArray& x3D){
         // convert to 3D array
         for(int i = 0; i < nx; ++i){
             for(int j = 0; j < ny; ++j){

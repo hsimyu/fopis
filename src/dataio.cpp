@@ -25,7 +25,7 @@ namespace IO {
         // DBMkDir(file, dirname.c_str());
         // DBSetDir(file, dirname.c_str());
 
-        threeDArray& tdArray = g->getField()->getPhi();
+        tdArray& tdArray = g->getField()->getPhi();
 
         // dimensions
         // glue cellも出力
@@ -95,7 +95,7 @@ namespace IO {
         DBClose(file);
     }
 
-    void print3DArray(const threeDArray& data, const int nx, const int ny, const int nz){
+    void print3DArray(const tdArray& data, const int nx, const int ny, const int nz){
         for (int k = 0; k < nz; ++k ) {
             cout << "[z:" << k << "] " << endl;
 
