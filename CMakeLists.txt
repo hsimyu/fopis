@@ -20,9 +20,10 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(CMAKE_SUPPRESS_REGENERATION true)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(HOME "$ENV{HOME}")
-    find_package( Boost REQUIRED COMPONENTS filesystem)
+    find_package( Boost REQUIRED COMPONENTS filesystem system)
     include_directories( ${Boost_INCLUDE_DIRS} )
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
+    message(STATUS "Boost: ${Boost_LIBRARIES}")
 
     # Doxygen
     FIND_PACKAGE(Doxygen)
