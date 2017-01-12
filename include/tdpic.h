@@ -22,7 +22,6 @@ using std::endl;
 using boost::format;
 
 typedef boost::multi_array<double, 3> tdArray;
-
 typedef std::vector< std::vector<Particle> > ParticleArray;
 
 //! constants
@@ -224,7 +223,6 @@ class ParticleType {
         int calcTotalNumber(const Environment*);
         double calcDeviation(void) const;
 
-
         friend std::ostream& operator<<(std::ostream&, const ParticleType&);
         friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
@@ -233,7 +231,7 @@ class ParticleType {
 class Grid {
     private:
         Grid* parent;
-        std::vector< std::unique_ptr<Grid*> > children;
+        std::vector<Grid*> children;
 
         //! 親のどの座標にくっついているか
         //! @{
@@ -251,27 +249,29 @@ class Grid {
         Grid(const Environment*);
         ~Grid();
 
+        Grid(Grid*, const int, const int, const int, const int, const int, const int);
+
         void setBaseIX(int);
         void setBaseIY(int);
         void setBaseIZ(int);
 
-        int  getBaseIX();
-        int  getBaseIY();
-        int  getBaseIZ();
+        int  getBaseIX() const;
+        int  getBaseIY() const;
+        int  getBaseIZ() const;
 
         void setNX(int);
         void setNY(int);
         void setNZ(int);
 
-        int  getNX();
-        int  getNY();
-        int  getNZ();
+        int  getNX() const;
+        int  getNY() const;
+        int  getNZ() const;
 
         void setLevel(int);
-        int getLevel();
+        int getLevel() const;
 
         void setDX(double);
-        double getDX();
+        double getDX() const;
 
         void setParent(Grid*);
         Grid* getParent();
@@ -279,9 +279,12 @@ class Grid {
         void setField(Field*);
         Field* getField();
 
+        void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(Grid*);
-        std::vector< std::unique_ptr<Grid*> > getChildren();
-        void removeChild();
+        std::vector<Grid*>& getChildren();
+        unsigned int getChildrenLength(void) const;
+        void removeChild(const int);
+        void checkGridValidness(void);
 
         //! Particleを格納したstd::vectorを、粒子種ごとに保持したstd::vector
         ParticleArray particles;
@@ -291,6 +294,9 @@ class Grid {
 
         // create mesh nodes array
         float** getMeshNodes(int);
+
+        // std out
+        friend std::ostream& operator<<(std::ostream&, Grid*);
 };
 
 namespace Initializer {
