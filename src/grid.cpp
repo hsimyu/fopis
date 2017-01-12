@@ -14,6 +14,74 @@ Grid::Grid(const Environment* env){
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
     //! その上にプロセス分割されたグリッドが乗っていると考える
+    base_ix = static_cast<double>(env->xrank * env->cell_x);
+    base_iy = static_cast<double>(env->yrank * env->cell_y);
+    base_iz = static_cast<double>(env->zrank * env->cell_z);
+    //! @}
+
+    //! 粒子位置の上限を設定
+    //! [0, max_x)になるよう1e-20を引いておく
+    const double max_x = static_cast<double>(env->cell_x) - 1e-20;
+    const double max_y = static_cast<double>(env->cell_y) - 1e-20;
+    const double max_z = static_cast<double>(env->cell_z) - 1e-20;
+
+    // std::random_device rnd;
+    const int random_src_x = 10684930;
+    const int random_src_y = 99881;
+    const int random_src_z = 861200045;
+    const int random_src_vx = 930;
+    const int random_src_vy = 98076621;
+    const int random_src_vz = 7662566;
+    std::mt19937 mt_x(random_src_x);
+    std::mt19937 mt_y(random_src_y);
+    std::mt19937 mt_z(random_src_z);
+    std::mt19937 mt_vx(random_src_vx);
+    std::mt19937 mt_vy(random_src_vy);
+    std::mt19937 mt_vz(random_src_vz);
+
+    std::uniform_real_distribution<> dist_x(0.0, max_x);
+    std::uniform_real_distribution<> dist_y(0.0, max_y);
+    std::uniform_real_distribution<> dist_z(0.0, max_z);
+
+    // particlesは空のstd::vector< std::vector<Particle> >として宣言されている
+    // particle types 分だけresize
+    particles.resize(env->num_of_particle_types);
+
+    for(int id = 0; id < env->num_of_particle_types; ++id){
+        int pnum = env->ptype[id].getTotalNumber();
+        //! particle_number分のコンストラクタが呼ばれる
+        particles[id].resize(pnum);
+
+        const double deviation = Utils::Normalizer::normalizeVelocity( env->ptype[id].calcDeviation() );
+        std::normal_distribution<> dist_vx(0.0, deviation);
+        std::normal_distribution<> dist_vy(0.0, deviation);
+        std::normal_distribution<> dist_vz(0.0, deviation);
+
+        //! - 粒子はレベル0グリッドにのみ所属します
+        for(int i = 0; i < pnum; ++i){
+            particles[id][i].setPosition(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
+            particles[id][i].setVelocity(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+        }
+    }
+}
+
+//! GridコンストラクタにGridが渡された場合、
+//! そのGridを親とした子グリッドを生成します
+/*
+Grid::Grid(Grid* g, const int _base_ix, const int _base_iy, const int _base_iz, const int _nx, const int _ny, const int _nz){
+    const double refineRatio = 2.0;
+
+    parent = g;
+    level = g->getLevel() + 1;
+
+    nx = _nx;
+    ny = _ny;
+    nz = _nz;
+    dx = g->getDX() / refineRatio;
+
+    //! @{
+    //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
+    //! その上にプロセス分割されたグリッドが乗っていると考える
     base_x = dx * static_cast<double>(env->xrank * env->cell_x);
     base_y = dx * static_cast<double>(env->yrank * env->cell_y);
     base_z = dx * static_cast<double>(env->zrank * env->cell_z);
@@ -64,13 +132,14 @@ Grid::Grid(const Environment* env){
         }
     }
 }
+*/
 
-void Grid::setBaseX(int _x){ base_x = _x; }
-void Grid::setBaseY(int _y){ base_y = _y; }
-void Grid::setBaseZ(int _z){ base_z = _z; }
-int Grid::getBaseX(void){ return base_x; }
-int Grid::getBaseY(void){ return base_y; }
-int Grid::getBaseZ(void){ return base_z; }
+void Grid::setBaseIX(int _ix){ base_ix = _ix; }
+void Grid::setBaseIY(int _iy){ base_iy = _iy; }
+void Grid::setBaseIZ(int _iz){ base_iz = _iz; }
+int Grid::getBaseIX(void){ return base_ix; }
+int Grid::getBaseIY(void){ return base_iy; }
+int Grid::getBaseIZ(void){ return base_iz; }
 void Grid::setNX(int _x){ nx = _x; }
 void Grid::setNY(int _y){ ny = _y; }
 void Grid::setNZ(int _z){ nz = _z; }
@@ -146,15 +215,15 @@ float** Grid::getMeshNodes(int dim) {
     float** coordinates = new float*[dim];
     coordinates[0] = new float[nx];
     for(int i = 0; i < nx; ++i) {
-	coordinates[0][i] = base_x + dx * i;
+	coordinates[0][i] = dx * (base_ix + i);
     }
     coordinates[1] = new float[ny];
     for(int i = 0; i < ny; ++i) {
-	coordinates[1][i] = base_y + dx * i;
+	coordinates[1][i] = dx * (base_iy + i);
     }
     coordinates[2] = new float[nz];
     for(int i = 0; i < nz; ++i) {
-	coordinates[2][i] = base_z + dx * i;
+	coordinates[2][i] = dx * (base_iz + i);
     }
     return coordinates;
 }

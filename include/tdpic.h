@@ -22,8 +22,6 @@ using std::endl;
 using boost::format;
 
 typedef boost::multi_array<double, 3> tdArray;
-typedef tdArray::index_gen tdIndex;
-typedef tdArray::array_view<3>::type tdView;
 
 typedef std::vector< std::vector<Particle> > ParticleArray;
 
@@ -239,9 +237,9 @@ class Grid {
 
         //! 親のどの座標にくっついているか
         //! @{
-        int base_x;
-        int base_y;
-        int base_z;
+        int base_ix;
+        int base_iy;
+        int base_iz;
         //! @}
 
         int nx, ny, nz;
@@ -253,13 +251,13 @@ class Grid {
         Grid(const Environment*);
         ~Grid();
 
-        void setBaseX(int);
-        void setBaseY(int);
-        void setBaseZ(int);
+        void setBaseIX(int);
+        void setBaseIY(int);
+        void setBaseIZ(int);
 
-        int  getBaseX();
-        int  getBaseY();
-        int  getBaseZ();
+        int  getBaseIX();
+        int  getBaseIY();
+        int  getBaseIZ();
 
         void setNX(int);
         void setNY(int);
