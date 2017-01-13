@@ -2,12 +2,18 @@
 #include <random>
 
 // accessors
-void Grid::setBaseIX(int _ix){ base_ix = _ix; }
-void Grid::setBaseIY(int _iy){ base_iy = _iy; }
-void Grid::setBaseIZ(int _iz){ base_iz = _iz; }
-int  Grid::getBaseIX(void) const { return base_ix; }
-int  Grid::getBaseIY(void) const { return base_iy; }
-int  Grid::getBaseIZ(void) const { return base_iz; }
+void   Grid::setBaseIX(int _ix) { base_ix = _ix; }
+void   Grid::setBaseIY(int _iy) { base_iy = _iy; }
+void   Grid::setBaseIZ(int _iz) { base_iz = _iz; }
+void   Grid::setBaseX(double _x){ base_x = _x; }
+void   Grid::setBaseY(double _y){ base_y = _y; }
+void   Grid::setBaseZ(double _z){ base_z = _z; }
+int    Grid::getBaseIX(void) const { return base_ix; }
+int    Grid::getBaseIY(void) const { return base_iy; }
+int    Grid::getBaseIZ(void) const { return base_iz; }
+double Grid::getBaseX(void)  const { return base_x; }
+double Grid::getBaseY(void)  const { return base_y; }
+double Grid::getBaseZ(void)  const { return base_z; }
 
 void Grid::setNX(int _x){ nx = _x; }
 void Grid::setNY(int _y){ ny = _y; }
@@ -28,6 +34,7 @@ void Grid::makeChild(const int _base_ix, const int _base_iy, const int _base_iz,
     Grid* child = new Grid(this, _base_ix, _base_iy, _base_iz, _nx, _ny, _nz);
 
     this->addChild(child);
+    incrementSumOfChild();
 }
 
 void Grid::addChild(Grid* child) { children.push_back(child); }
@@ -40,11 +47,36 @@ unsigned int Grid::getChildrenLength(void) const {
     return children.size();
 }
 
+unsigned int Grid::getSumOfChild(void) const {
+    return sumTotalNumOfChildGrids;
+}
+
+void Grid::setSumOfChild(const unsigned int s) {
+    sumTotalNumOfChildGrids = s;
+}
+
+void Grid::decrementSumOfChild() {
+    --sumTotalNumOfChildGrids;
+
+    if(level > 0) {
+        parent->decrementSumOfChild();
+    }
+}
+
+void Grid::incrementSumOfChild() {
+    ++sumTotalNumOfChildGrids;
+
+    if(level > 0) {
+        parent->incrementSumOfChild();
+    }
+}
+
 // root grid constructor
 Grid::Grid(const Environment* env){
     //! - コンストラクタにEnvironmentクラスが渡された場合、
     //! レベル0のGridを作成します.
     level = 0;
+    sumTotalNumOfChildGrids = 0;
 
     nx = env->cell_x;
     ny = env->cell_y;
@@ -57,6 +89,9 @@ Grid::Grid(const Environment* env){
     base_ix = env->xrank * env->cell_x;
     base_iy = env->yrank * env->cell_y;
     base_iz = env->zrank * env->cell_z;
+    base_x = dx * static_cast<double>(env->xrank * env->cell_x);
+    base_y = dx * static_cast<double>(env->yrank * env->cell_y);
+    base_z = dx * static_cast<double>(env->zrank * env->cell_z);
     //! @}
 
     //! 粒子位置の上限を設定
@@ -113,6 +148,7 @@ Grid::Grid(Grid* g, const int _base_ix, const int _base_iy, const int _base_iz, 
 
     parent = g;
     level = g->getLevel() + 1;
+    sumTotalNumOfChildGrids = 0;
 
     // patchの大きさを指定
     nx = _nx;
@@ -124,9 +160,13 @@ Grid::Grid(Grid* g, const int _base_ix, const int _base_iy, const int _base_iz, 
 
     //! @{
     //! 子グリッドの場合, base_ix変数は純粋に親グリッドの何番目に乗っているかを表す
+    //! Glue cell 分も考慮した方に乗る
     base_ix = _base_ix;
-    base_iy = _base_ix;
-    base_iz = _base_ix;
+    base_iy = _base_iy;
+    base_iz = _base_iz;
+    base_x = g->getBaseX() + g->getDX() * (_base_ix - 1);
+    base_y = g->getBaseY() + g->getDX() * (_base_iy - 1);
+    base_z = g->getBaseZ() + g->getDX() * (_base_iz - 1);
     //! @}
 
     checkGridValidness();
@@ -136,6 +176,11 @@ void Grid::checkGridValidness() {
     const double refineRatio = 2.0;
 
     bool isValid = true;
+
+    if(base_ix == 0 || base_iy == 0 || base_iz == 0) {
+        std::cerr << "[ERROR] Base index of child patch cannot be defined as 0 (0 is glue cell)." << endl;
+        isValid = false;
+    }
 
     if( nx % 2 == 0 ) {
         std::cerr << "[ERROR] x-extent is not odd number. : " << nx << endl;
@@ -232,15 +277,15 @@ float** Grid::getMeshNodes(int dim) {
     float** coordinates = new float*[dim];
     coordinates[0] = new float[nx];
     for(int i = 0; i < nx; ++i) {
-	coordinates[0][i] = dx * (base_ix + i);
+	coordinates[0][i] = base_x + dx * i;
     }
     coordinates[1] = new float[ny];
     for(int i = 0; i < ny; ++i) {
-	coordinates[1][i] = dx * (base_iy + i);
+	coordinates[1][i] = base_y + dx * i;
     }
     coordinates[2] = new float[nz];
     for(int i = 0; i < nz; ++i) {
-	coordinates[2][i] = dx * (base_iz + i);
+	coordinates[2][i] = base_z + dx * i;
     }
     return coordinates;
 }
@@ -274,7 +319,10 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     ost << tab << "level: " << g->getLevel() << endl;
     ost << tab << "dx: " << format("%10.5e") % g->getDX() << "m" << endl;
     ost << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % g->getNX() % g->getNY() % g->getNZ() << " grids [total]" << endl;
-    ost << tab << "base grids: " << format("%1%,%2%,%3%") % g->getBaseIX() % g->getBaseIY() % g->getBaseIZ() << endl;
+    ost << tab << "nx,ny,nz(+): " << format("%1%x%2%x%3%") % (g->getNX() + 2) % (g->getNY() + 2) % (g->getNZ() + 2) << " grids [with glue cells]" << endl;
+    ost << tab << "base grid: " << format("%1%,%2%,%3%") % g->getBaseIX() % g->getBaseIY() % g->getBaseIZ() << endl;
+    ost << tab << "base positions: " << format("%1%,%2%,%3%") % g->getBaseX() % g->getBaseY() % g->getBaseZ() << endl;
+    ost << tab << "sumNumOfChild: " << g->getSumOfChild() << endl;
     ost << tab << "numOfChild: " << g->getChildrenLength() << endl;
 
     if(g->getChildrenLength() > 0) {
@@ -286,7 +334,7 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
 }
 
 std::ostream& operator<<(std::ostream& ost, Grid* g){
-    ost << "[Grid]" << std::endl;
+    ost << "[Grid Info]" << std::endl;
     printGridInfo(ost, g, 0);
     return ost;
 }

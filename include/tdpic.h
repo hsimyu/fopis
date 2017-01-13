@@ -238,10 +238,14 @@ class Grid {
         int base_ix;
         int base_iy;
         int base_iz;
+        double base_x;
+        double base_y;
+        double base_z;
         //! @}
 
         int nx, ny, nz;
         int level;
+        unsigned int sumTotalNumOfChildGrids;
         double dx;
 
         Field* field;
@@ -258,6 +262,14 @@ class Grid {
         int  getBaseIX() const;
         int  getBaseIY() const;
         int  getBaseIZ() const;
+
+        void setBaseX(double);
+        void setBaseY(double);
+        void setBaseZ(double);
+
+        double getBaseX() const;
+        double getBaseY() const;
+        double getBaseZ() const;
 
         void setNX(int);
         void setNY(int);
@@ -285,6 +297,12 @@ class Grid {
         unsigned int getChildrenLength(void) const;
         void removeChild(const int);
         void checkGridValidness(void);
+
+        // child gridの総数を保存するためのメソッド
+        unsigned int getSumOfChild(void) const;
+        void setSumOfChild(const unsigned int);
+        void incrementSumOfChild(void);
+        void decrementSumOfChild(void);
 
         //! Particleを格納したstd::vectorを、粒子種ごとに保持したstd::vector
         ParticleArray particles;
