@@ -95,7 +95,12 @@ int main(int argc, char* argv[]){
         root_grid->makeChild(2, 2, 2, 5, 5, 5);
         root_grid->makeChild(4, 8, 8, 9, 9, 9);
         root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
+        root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
+        root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
+        root_grid->getChildren()[0]->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
         cout << root_grid << endl;
+
+        int* test = root_grid->getChildrenNumbers();
     }
 
     IO::writeDataInParallel(root_grid, 0, "potential");

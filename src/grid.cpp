@@ -43,15 +43,15 @@ std::vector<Grid*>& Grid::getChildren(void) {
     return children;
 }
 
-unsigned int Grid::getChildrenLength(void) const {
+int Grid::getChildrenLength(void) const {
     return children.size();
 }
 
-unsigned int Grid::getSumOfChild(void) const {
+int Grid::getSumOfChild(void) const {
     return sumTotalNumOfChildGrids;
 }
 
-void Grid::setSumOfChild(const unsigned int s) {
+void Grid::setSumOfChild(const int s) {
     sumTotalNumOfChildGrids = s;
 }
 
@@ -290,6 +290,26 @@ float** Grid::getMeshNodes(int dim) {
     return coordinates;
 }
 
+//! 自分も含めた子パッチの数を再帰的に返す
+//! return int[sumTotalNumOfChild] = {1, 1, 0, 1, 1, 0}
+//! 深さ優先でID付?
+int* Grid::getChildrenNumbers() {
+    int* childOfPatches = new int[sumTotalNumOfChildGrids + 1];
+    int index = 0;
+
+    // 自分の分を追加
+    childOfPatches[index++] = getChildrenLength();
+
+    for(int i = 0; i < getChildrenLength(); ++i){
+        int* tempChildOfPatches = children[i]->getChildrenNumbers();
+        int sumOfGrandChild = children[i]->getSumOfChild();
+
+        for(int j = 0; j < sumOfGrandChild + 1; ++j){
+            childOfPatches[index++] = tempChildOfPatches[j];
+        }
+    }
+    return childOfPatches;
+}
 
 Grid::~Grid(){
     //! delete all particles
@@ -327,7 +347,7 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
 
     if(g->getChildrenLength() > 0) {
         std::vector<Grid*>& children = g->getChildren();
-        for(int i = 0; i < children.size(); ++i) {
+        for(unsigned int i = 0; i < children.size(); ++i) {
             printGridInfo(ost, children[i], i);
         }
     }

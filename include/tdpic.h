@@ -245,7 +245,7 @@ class Grid {
 
         int nx, ny, nz;
         int level;
-        unsigned int sumTotalNumOfChildGrids;
+        int sumTotalNumOfChildGrids;
         double dx;
 
         Field* field;
@@ -294,13 +294,13 @@ class Grid {
         void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(Grid*);
         std::vector<Grid*>& getChildren();
-        unsigned int getChildrenLength(void) const;
+        int getChildrenLength(void) const;
         void removeChild(const int);
         void checkGridValidness(void);
 
         // child gridの総数を保存するためのメソッド
-        unsigned int getSumOfChild(void) const;
-        void setSumOfChild(const unsigned int);
+        int getSumOfChild(void) const;
+        void setSumOfChild(const int);
         void incrementSumOfChild(void);
         void decrementSumOfChild(void);
 
@@ -312,6 +312,7 @@ class Grid {
 
         // create mesh nodes array
         float** getMeshNodes(int);
+        int* getChildrenNumbers();
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);
