@@ -290,10 +290,55 @@ float** Grid::getMeshNodes(int dim) {
     return coordinates;
 }
 
-//! 自分も含めた子パッチの数を再帰的に返す
+int Grid::getMaxLevel() {
+    int maxLevel = level; //! 初期値は自分のレベル
+
+    for(int i = 0; i < getChildrenLength(); ++i){
+        //! 子がいる時、再帰的に子の最大レベルを取ってくる
+        //! @note: パッチ数が増えた時に無駄なチェック時間が大きくなりすぎないか
+        int lv = children[i]->getMaxLevel();
+        maxLevel = (lv > maxLevel) ? lv : maxLevel;
+    }
+
+    return maxLevel;
+}
+
+int Grid::getMaxChildLevel() {
+    return this->getMaxLevel() - level;
+}
+
+//! 各レベルの子パッチの数を再帰的に返す
+//! numOfPatches = {1, 3, 3, 1}
+int* Grid::getNumOfPatches() {
+    int maxChildLevel = this->getMaxChildLevel();
+    int* numOfPatches = new int[maxChildLevel + 1];
+
+    // 初期化
+    for(int j = 1; j < maxChildLevel + 1; ++j){
+        numOfPatches[j] = 0;
+    }
+
+    // 自分を追加
+    numOfPatches[0] = 1;
+
+    for(int i = 0; i < getChildrenLength(); ++i){
+        int* tempNumOfPatches = children[i]->getNumOfPatches();
+        int tempMaxChildLevel = children[i]->getMaxChildLevel() + 1;
+
+        for(int j = 1; j < tempMaxChildLevel + 1; ++j){
+            numOfPatches[j] += tempNumOfPatches[j - 1];
+        }
+
+        delete [] tempNumOfPatches;
+    }
+
+    return numOfPatches;
+}
+
+//! 自分も含めた子パッチの持つ子の数を再帰的に返す
 //! return int[sumTotalNumOfChild] = {1, 1, 0, 1, 1, 0}
 //! 深さ優先でID付?
-int* Grid::getChildrenNumbers() {
+int* Grid::getChildOfPatches() {
     int* childOfPatches = new int[sumTotalNumOfChildGrids + 1];
     int index = 0;
 
@@ -301,13 +346,16 @@ int* Grid::getChildrenNumbers() {
     childOfPatches[index++] = getChildrenLength();
 
     for(int i = 0; i < getChildrenLength(); ++i){
-        int* tempChildOfPatches = children[i]->getChildrenNumbers();
+        int* tempChildOfPatches = children[i]->getChildOfPatches();
         int sumOfGrandChild = children[i]->getSumOfChild();
 
         for(int j = 0; j < sumOfGrandChild + 1; ++j){
             childOfPatches[index++] = tempChildOfPatches[j];
         }
+
+        delete [] tempChildOfPatches;
     }
+
     return childOfPatches;
 }
 

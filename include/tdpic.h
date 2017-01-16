@@ -312,7 +312,10 @@ class Grid {
 
         // create mesh nodes array
         float** getMeshNodes(int);
-        int* getChildrenNumbers();
+        int* getChildOfPatches();
+        int* getNumOfPatches();
+        int getMaxLevel(void);
+        int getMaxChildLevel(void);
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);
