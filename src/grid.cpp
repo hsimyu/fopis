@@ -1,6 +1,12 @@
 #include <tdpic.h>
 #include <random>
 
+// Unique ID
+unsigned int Grid::nextID = 0;
+unsigned int Grid::getNextID(void) {
+    return Grid::nextID++;
+}
+
 // accessors
 void   Grid::setBaseIX(int _ix) { base_ix = _ix; }
 void   Grid::setBaseIY(int _iy) { base_iy = _iy; }
@@ -14,6 +20,7 @@ int    Grid::getBaseIZ(void) const { return base_iz; }
 double Grid::getBaseX(void)  const { return base_x; }
 double Grid::getBaseY(void)  const { return base_y; }
 double Grid::getBaseZ(void)  const { return base_z; }
+unsigned int Grid::getID(void) const { return id; }
 
 void Grid::setNX(int _x){ nx = _x; }
 void Grid::setNY(int _y){ ny = _y; }
@@ -77,6 +84,9 @@ Grid::Grid(const Environment* env){
     //! レベル0のGridを作成します.
     level = 0;
     sumTotalNumOfChildGrids = 0;
+
+    //! UniqueなIDをセット
+    id = this->getNextID();
 
     nx = env->cell_x;
     ny = env->cell_y;
@@ -145,6 +155,9 @@ Grid::Grid(const Environment* env){
 //! そのGridを親とした子グリッドを生成します
 Grid::Grid(Grid* g, const int _base_ix, const int _base_iy, const int _base_iz, const int _nx, const int _ny, const int _nz){
     const double refineRatio = 2.0;
+
+    //! UniqueなIDをセット
+    id = this->getNextID();
 
     parent = g;
     level = g->getLevel() + 1;
@@ -384,6 +397,7 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     for(int i = 0; i < g->getLevel(); ++i) tab += "  ";
 
     if(g->getLevel() > 0) ost << tab << "--- child [" << childnum << "] ---" << endl;
+    ost << tab << "id: " << g->getID() << endl;
     ost << tab << "level: " << g->getLevel() << endl;
     ost << tab << "dx: " << format("%10.5e") % g->getDX() << "m" << endl;
     ost << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % g->getNX() % g->getNY() % g->getNZ() << " grids [total]" << endl;

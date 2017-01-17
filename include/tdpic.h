@@ -243,17 +243,26 @@ class Grid {
         double base_z;
         //! @}
 
+        unsigned int id;
         int nx, ny, nz;
         int level;
         int sumTotalNumOfChildGrids;
         double dx;
 
         Field* field;
+
+        // Class Unique ID
+        static unsigned int nextID;
+
     public:
         Grid(const Environment*);
+        Grid(Grid*, const int, const int, const int, const int, const int, const int);
+
         ~Grid();
 
-        Grid(Grid*, const int, const int, const int, const int, const int, const int);
+        unsigned int getID(void) const;
+        unsigned int getNextID(void);
+        // IDへのsetterは提供しない
 
         void setBaseIX(int);
         void setBaseIY(int);
