@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 #include <boost/format.hpp>
 #include <boost/multi_array.hpp>
 #include <picojson.h>
@@ -321,10 +322,20 @@ class Grid {
 
         // create mesh nodes array
         float** getMeshNodes(int);
-        int* getChildOfPatches();
-        int* getNumOfPatches();
+        int* getChildOfPatches(void);
+        int* getNumOfPatches(void);
+        int* getChildIdMap(void);
         int getMaxLevel(void);
         int getMaxChildLevel(void);
+
+        // {id: [子のIDを格納したvector]}のmapを作成する
+        std::map<int, std::vector<int> > getChildMapOnRoot(void);
+        void addChildrenIDToMap(std::map<int, std::vector<int> >&);
+        std::vector<int> getChildrenIDs(void);
+
+        // [level: [IDを格納したvector]]のvectorを作成する
+        std::vector< std::vector<int> > getIDMapOnRoot(void);
+        void addIDToVector(std::vector< std::vector<int> >&);
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);

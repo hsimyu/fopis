@@ -141,7 +141,6 @@ message(STATUS "CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")
 
 if(${WITH_TEST})
-    enable_testing()
     add_subdirectory(${CMAKE_SOURCE_DIR}/googletest)
     include_directories(${CMAKE_SOURCE_DIR}/googletest/googletest/include)
     add_subdirectory(test)

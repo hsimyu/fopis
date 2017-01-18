@@ -348,6 +348,50 @@ int* Grid::getNumOfPatches() {
     return numOfPatches;
 }
 
+//! 自分以下のGridの子の数を順に格納していく
+std::map<int, std::vector<int> > Grid::getChildMapOnRoot(void) {
+    // 初期化
+    std::map<int, std::vector<int> > childMap;
+
+    this->addChildrenIDToMap(childMap);
+    return childMap;
+}
+
+void Grid::addChildrenIDToMap(std::map<int, std::vector<int> >& childMap){
+    childMap[this->getID()] = this->getChildrenIDs();
+
+    for(int i = 0; i < getChildrenLength(); ++i){
+        children[i]->addChildrenIDToMap(childMap);
+    }
+}
+
+std::vector<int> Grid::getChildrenIDs(void) {
+    std::vector<int> childIDs(this->getChildrenLength());
+
+    for(int i = 0; i < childIDs.size(); ++i){
+        childIDs[i] = children[i]->getID();
+    }
+
+    return childIDs;
+}
+
+//! 自分以下のGridのIDを順に格納していく
+std::vector< std::vector<int> > Grid::getIDMapOnRoot(void) {
+    // 初期化
+    std::vector< std::vector<int> > idMap(this->getMaxLevel() + 1);
+    this->addIDToVector(idMap);
+
+    return idMap;
+}
+
+void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
+    idMap[level].push_back( this->getID() );
+
+    for(int i = 0; i < getChildrenLength(); ++i){
+        children[i]->addIDToVector(idMap);
+    }
+}
+
 //! 自分も含めた子パッチの持つ子の数を再帰的に返す
 //! return int[sumTotalNumOfChild] = {1, 1, 0, 1, 1, 0}
 //! 深さ優先でID付?
