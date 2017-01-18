@@ -392,30 +392,6 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
     }
 }
 
-//! 自分も含めた子パッチの持つ子の数を再帰的に返す
-//! return int[sumTotalNumOfChild] = {1, 1, 0, 1, 1, 0}
-//! 深さ優先でID付?
-int* Grid::getChildOfPatches() {
-    int* childOfPatches = new int[sumTotalNumOfChildGrids + 1];
-    int index = 0;
-
-    // 自分の分を追加
-    childOfPatches[index++] = getChildrenLength();
-
-    for(int i = 0; i < getChildrenLength(); ++i){
-        int* tempChildOfPatches = children[i]->getChildOfPatches();
-        int sumOfGrandChild = children[i]->getSumOfChild();
-
-        for(int j = 0; j < sumOfGrandChild + 1; ++j){
-            childOfPatches[index++] = tempChildOfPatches[j];
-        }
-
-        delete [] tempChildOfPatches;
-    }
-
-    return childOfPatches;
-}
-
 Grid::~Grid(){
     //! delete all particles
     //! vector内のparticleは自動でデストラクタが呼ばれる

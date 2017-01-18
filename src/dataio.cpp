@@ -71,6 +71,209 @@ namespace IO {
         delete [] coordinates;
     }
 
+    void writeGroupelMap(
+            DBfile* file, Grid* root_grid, const int maxAMRLevel, const int numOfPatches,
+            int* numOfPatchesOnLevel, std::vector< std::vector<int> >& idMap, std::map<int, std::vector<int> >& childMap)
+    {
+        // ARMの最大レベルと、パッチの総数、各レベルでのパッチ数は事前にMPI通信で確認しておく
+        // Mrgvarは各ファイルに分割して記入する
+        // -- make level map --
+        int* levelSegTypes = new int[maxAMRLevel];
+        for(int i = 0; i < maxAMRLevel; i++){
+            levelSegTypes[i] = DB_BLOCKCENT;
+        }
+
+        int** segData = new int*[maxAMRLevel];
+        // numPatchesOnLevelもいらないというかidMapから生成できる
+        for(int i = 0; i < maxAMRLevel; ++i){
+            segData[i] = new int[ numOfPatchesOnLevel[i] ];
+
+            for(int j = 0; j < numOfPatchesOnLevel[i]; ++j){
+                segData[i][j] = idMap[i][j];
+            }
+        }
+        // segData = {0, 1, 2} ただの番号付け
+
+        DBPutGroupelmap(file, "levelMap", maxAMRLevel, levelSegTypes, numOfPatchesOnLevel, 0, segData, 0, 0, 0);
+
+        // -- make child map --
+        int* patchSegTypes = new int[numOfPatches];
+        for(int i = 0; i < numOfPatches; i++){
+            patchSegTypes[i] = DB_BLOCKCENT;
+        }
+
+        // 1D child number array
+        int* childOfPatches = new int[numOfPatches];
+        // segData must have child IDs of each patch
+        segData = new int*[numOfPatches];
+
+        for(int i = 0; i < numOfPatches; i++){
+            childOfPatches[i] = childMap[i].size();
+            segData[i] = new int[ childOfPatches[i] ];
+
+            for(int j = 0; j < childOfPatches[i]; ++j) {
+                segData[i][j] = childMap[i][j];
+            }
+        }
+
+        cout << "child ID map test:" << endl;
+        for(int i = 0; i < numOfPatches; i++){
+            cout << "[" << i << "]" << endl;
+            for(int j = 0; j < childOfPatches[i]; ++j) {
+                cout << "  " << segData[i][j];
+            }
+            cout << endl;
+        }
+        // segData = {1, 2, 0}
+        DBPutGroupelmap(file, "childMap", numOfPatches, patchSegTypes, childOfPatches, 0, segData, 0, 0, 0);
+
+        // free segData
+        for(int i = 0; i < maxAMRLevel; i++){
+            delete [] segData[i];
+        }
+        delete [] segData;
+
+        // make mrgTree
+        /* Create an mrg tree for inclusion in the file */
+        DBmrgtree* mrgTree = DBMakeMrgtree(DB_MULTIMESH, 0, 2, 0);
+        // 2 is maximum number of children
+
+        /* Add a region for AMR configuration */
+        DBAddRegion(mrgTree, "amr_decomp", 0, 2, 0, 0, 0, 0, 0, 0);
+        DBSetCwr(mrgTree, "amr_decomp");
+        DBAddRegion(mrgTree, "levels", 0, maxAMRLevel, 0, 0, 0, 0, 0, 0);
+        DBSetCwr(mrgTree, "levels");
+
+        // levels
+        // segTypes は使い回し
+        {
+            char* levelRegnNames[1];
+            int* segIds = new int[maxAMRLevel];
+            for (int i = 0; i < maxAMRLevel; ++i) {
+                segIds[i] = i;
+            }
+            // printf style
+            levelRegnNames[0] = "@level%d@n";
+            DBAddRegionArray(mrgTree, maxAMRLevel, levelRegnNames, 0, "levelMap", 1, segIds, numOfPatchesOnLevel, levelSegTypes, 0);
+
+            delete [] segIds;
+        }
+        DBSetCwr(mrgTree, "..");
+        DBAddRegion(mrgTree, "patches", 0, numOfPatches, 0, 0, 0, 0, 0, 0);
+        DBSetCwr(mrgTree, "patches");
+
+        // patches
+        {
+            char* patchRegnNames[1];
+            int* segIds = new int[numOfPatches];
+            for (int i = 0; i < numOfPatches; ++i) {
+                segIds[i] = i;
+            }
+            patchRegnNames[0] = "@patch%d@n";
+            DBAddRegionArray(mrgTree, numOfPatches, patchRegnNames, 0, "childMap", 1, segIds, childOfPatches, patchSegTypes, 0);
+
+            delete [] segIds;
+        }
+
+        {
+            DBoptlist* optList = DBMakeOptlist(10);
+            char* mrgv_onames[5];
+            mrgv_onames[0] = "lvlRatios";
+            mrgv_onames[1] = "ijkExts";
+            mrgv_onames[2] = "xyzExts";
+            mrgv_onames[3] = "rank";
+            mrgv_onames[4] = 0;
+
+            DBAddOption(optList, DBOPT_MRGV_ONAMES, mrgv_onames);
+            DBPutMrgtree(file, "mrgTree", "amr_mesh", mrgTree, optList);
+            DBFreeMrgtree(mrgTree);
+            DBFreeOptlist(optList);
+        }
+
+        const int numOfDim = 3;
+        /* Output level refinement ratios as an mrg variable on the array of regions
+           representing the levels */
+        {
+            char* compnames[3] = {"iRatio","jRatio","kRatio"};
+            char* levelRegnNames[1];
+            int* data[3];
+            for (int i = 0; i < numOfDim; i++) {
+                data[i] = new int[maxAMRLevel];
+            }
+
+            for (int i = 0; i < maxAMRLevel; i++)
+            {
+                if(i == 0) {
+                    data[0][i] = 1;
+                    data[1][i] = 1;
+                    data[2][i] = 1;
+                } else {
+                    data[0][i] = 2;
+                    data[1][i] = 2;
+                    data[2][i] = 2;
+                }
+            }
+            // data = { {1, 2, 2}, {1, 2, 2}, {1, 2, 2}};
+            levelRegnNames[0] = "@level%d@n";
+            DBPutMrgvar(file, "lvlRatios", "mrgTree", numOfDim, compnames, maxAMRLevel, levelRegnNames, DB_INT, data, 0);
+            for (int i = 0; i < numOfDim; i++) {
+                delete [] data[i];
+            }
+        }
+
+        // logical Extents
+        /* Output logical extents of the patches as an mrg variable on the
+           array of regions representing the patches */
+        /*{
+            char*  compnames[6] = {"iMin","iMax","jMin","jMax","kMin","kMax"};
+            char* scompnames[6] = {"xMin","xMax","yMin","yMax","zMin","zMax"};
+            char* patchRegnNames[1];
+            int* data[6];
+            float* rdata[1];
+            float* sdata[6];
+            patchRegnNames[0] = "@patch%d@n";
+
+            for (int i = 0; i < 2 * numOfDim; i++) {
+                data[i] = new int[numOfPatches];
+                sdata[i] = new float[numOfPatches];
+            }
+
+            rdata[0] = new float[numOfPatches];
+            for (int i = 0; i < numOfPatches; i++) {
+                data[0][i] = amrconf.patches[i].logExtents[0];
+                data[1][i] = amrconf.patches[i].logExtents[1];
+                data[2][i] = amrconf.patches[i].logExtents[2];
+                data[3][i] = amrconf.patches[i].logExtents[3];
+                data[4][i] = amrconf.patches[i].logExtents[4];
+                data[5][i] = amrconf.patches[i].logExtents[5];
+
+                sdata[0][i] = amrconf.patches[i].spatExtents[0];
+                sdata[1][i] = amrconf.patches[i].spatExtents[1];
+                sdata[2][i] = amrconf.patches[i].spatExtents[2];
+                sdata[3][i] = amrconf.patches[i].spatExtents[3];
+                sdata[4][i] = amrconf.patches[i].spatExtents[4];
+                sdata[5][i] = amrconf.patches[i].spatExtents[5];
+
+                rdata[0][i] = amrconf.patches[i].rank;
+            }
+            DBPutMrgvar(file, "ijkExts", "mrgTree", 6, compnames, numOfPatches, patchRegnNames, DB_INT, data, 0);
+            DBPutMrgvar(file, "xyzExts", "mrgTree", 6, scompnames, numOfPatches, patchRegnNames, DB_FLOAT, sdata, 0);
+
+            for (i = 0; i < 6; i++)
+            {
+                delete [] data[i];
+                delete [] sdata[i];
+            }
+            DBPutMrgvar(file, "rank", "mrgTree", 1, 0, numOfPatches, patchRegnNames, DB_FLOAT, rdata, 0);
+            delete [] rdata[0];
+        }*/
+
+        delete [] levelSegTypes;
+        delete [] patchSegTypes;
+        delete [] numOfPatchesOnLevel;
+        delete [] childOfPatches;
+    }
+
     void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
         const int maxIOUnit = 8;
         int numfiles = (MPI::Environment::numprocs <= maxIOUnit) ? MPI::Environment::numprocs : maxIOUnit;
@@ -111,6 +314,13 @@ namespace IO {
             }
 
             writeMultimesh(file, total_blocknum, meshnames, varnames);
+
+            int numAllPatches = g->getSumOfChild() + 1;
+            int maxAMRLevel = g->getMaxLevel();
+            int* numPatchesOnLevel = g->getNumOfPatches();
+            std::map<int, std::vector<int> > childMap = g->getChildMapOnRoot();
+            std::vector< std::vector<int> > idMap = g->getIDMapOnRoot();
+            writeGroupelMap(file, g, maxAMRLevel, numAllPatches, numPatchesOnLevel, idMap, childMap);
 
             for(int i = 0; i < total_blocknum; ++i) {
                 delete [] meshnames[i];
