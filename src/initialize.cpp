@@ -50,28 +50,6 @@ namespace Initializer {
         if(env->isRootNode) cout << format("[MPIINFO] allocated processes: %d") % numprocs << endl;
     }
 
-    void initializeRootField(const Environment* env, Grid* grid){
-        Field* field = new Field;
-        tdArray::extent_gen tdExtents;
-
-        const int cx = env->cell_x + 2;
-        const int cy = env->cell_y + 2;
-        const int cz = env->cell_z + 2;
-
-        field->getPhi().resize(tdExtents[cx][cy][cz]);
-        field->getRho().resize(tdExtents[cx][cy][cz]);
-
-        field->getEx().resize(tdExtents[cx-1][cy][cz]);
-        field->getEy().resize(tdExtents[cx][cy-1][cz]);
-        field->getEz().resize(tdExtents[cx][cy][cz-1]);
-
-        field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
-        field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
-        field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
-
-        grid->setField(field);
-    }
-
     Environment* loadEnvironment(picojson::object& inputs){
         Environment* env = new Environment;
         auto env_inputs = inputs["Environment"].get<picojson::object>();

@@ -78,6 +78,28 @@ void Grid::incrementSumOfChild() {
     }
 }
 
+void Grid::initializeField(void){
+    Field* field = new Field;
+    tdArray::extent_gen tdExtents;
+
+    const int cx = nx + 2;
+    const int cy = ny + 2;
+    const int cz = nz + 2;
+
+    field->getPhi().resize(tdExtents[cx][cy][cz]);
+    field->getRho().resize(tdExtents[cx][cy][cz]);
+
+    field->getEx().resize(tdExtents[cx-1][cy][cz]);
+    field->getEy().resize(tdExtents[cx][cy-1][cz]);
+    field->getEz().resize(tdExtents[cx][cy][cz-1]);
+
+    field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
+    field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
+    field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
+
+    this->setField(field);
+}
+
 // root grid constructor
 Grid::Grid(const Environment* env){
     //! - コンストラクタにEnvironmentクラスが渡された場合、
@@ -103,6 +125,9 @@ Grid::Grid(const Environment* env){
     base_y = dx * static_cast<double>(env->yrank * env->cell_y);
     base_z = dx * static_cast<double>(env->zrank * env->cell_z);
     //! @}
+
+    // Field初期化
+    this->initializeField();
 
     //! 粒子位置の上限を設定
     //! [0, max_x)になるよう1e-20を引いておく
@@ -183,6 +208,9 @@ Grid::Grid(Grid* g, const int _base_ix, const int _base_iy, const int _base_iz, 
     //! @}
 
     checkGridValidness();
+
+    // Field初期化
+    this->initializeField();
 }
 
 void Grid::checkGridValidness() {
@@ -431,6 +459,41 @@ void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
     for(int i = 0; i < getChildrenLength(); ++i){
         children[i]->addExtent(data, sdata, rdata);
     }
+}
+
+void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], DBoptlist* optListVar, int rankInGroup){
+    const int dim = 3;
+
+    // the array of coordinate arrays
+    float** coordinates = this->getMeshNodes(dim);
+
+    //! @TODO: varnamesによってtdArrayを変える
+    double* tdArray = Utils::getTrueCells(this->getField()->getPhi());
+
+    // dimensions
+    // glue cellも出力
+    int dimensions[3];
+    dimensions[0] = nx;
+    dimensions[1] = ny;
+    dimensions[2] = nz;
+    double* vars[] = {tdArray};
+
+    std::string meshname = (format("/block%04d/mesh%04d") % rankInGroup % id).str();
+    std::string varname = (format("/block%04d/%s%04d") % rankInGroup % varnames[0] % id).str();
+
+    char* m = const_cast<char*>(meshname.c_str());
+    char* v = const_cast<char*>(varname.c_str());
+
+    DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
+    DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+
+    for(int i = 0; i < children.size(); ++i) {
+        children[i]->putQuadMesh(file, coordnames, varnames, optListVar, rankInGroup);
+    }
+
+    delete [] vars[0];
+    delete [] coordinates[0];
+    delete [] coordinates;
 }
 
 Grid::~Grid(){

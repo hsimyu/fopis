@@ -4,10 +4,12 @@
 #include <math.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <memory>
 #include <map>
 #include <boost/format.hpp>
 #include <boost/multi_array.hpp>
+#include <silo.h>
 #include <picojson.h>
 #include <mkl.h> // Intel Math Kernel Library
 #include <mpi_wrapper.hpp>
@@ -301,6 +303,10 @@ class Grid {
         void setField(Field*);
         Field* getField();
 
+        // Field 初期化
+        void initializeField(void);
+
+        // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(Grid*);
         std::vector<Grid*>& getChildren();
@@ -340,6 +346,9 @@ class Grid {
         // Extentを指定されたポインタに格納する (Silo MRG Tree出力用)
         void addExtent(int* logicalExtent[6], float* spatialExtent[6], float* rank[1]);
 
+        // QuadMeshとVarをDBfileに突っ込む
+        void putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], DBoptlist* optListVar, int rankInGroup);
+
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);
 };
@@ -349,7 +358,6 @@ namespace Initializer {
     double getSizeOfSuperParticle(int, double, double);
     Environment* loadEnvironment(picojson::object&);
     ParticleType* loadParticleType(picojson::object&, Environment*);
-    void initializeRootField(const Environment*, Grid*);
     Grid* initializeGrid(const Environment*);
 }
 

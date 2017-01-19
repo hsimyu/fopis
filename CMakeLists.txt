@@ -51,7 +51,7 @@ set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -W
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
     #set(CRAYPE_LINK_TYPE "dynamic")
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
 
     if(${DEBUG})
@@ -71,7 +71,7 @@ else()
     # OpenMPI
     set(CMAKE_C_COMPILER mpicc)
     set(CMAKE_CXX_COMPILER mpicxx)
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g ${CXX_WARNING_FLAGS} -m64")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64")
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64")
 
     if(${DEBUG})

@@ -1,6 +1,6 @@
 #include <tdpic.h>
+#include <numeric>
 #include <fstream>
-#include <silo.h>
 
 #include <mpi.h>
 #include <pmpio.h>
@@ -19,18 +19,9 @@ namespace IO {
         DBFreeOptlist(optList);
     }
 
-    void writeBlock(DBfile* file, Grid* g, char* meshname, char* varname){
+    void writeBlock(DBfile* file, Grid* g, std::string dataTypeName, int rankInGroup){
         // dimension
         const int dim = 3;
-
-        double* tdArray = Utils::getTrueCells(g->getField()->getPhi());
-
-        // dimensions
-        // glue cellも出力
-        int dimensions[3];
-        dimensions[0] = g->getNX();
-        dimensions[1] = g->getNY();
-        dimensions[2] = g->getNZ();
 
         // names of the coordinates
         char* coordnames[3];
@@ -40,35 +31,23 @@ namespace IO {
 
         // names of the variables
         char* varnames[1];
-        varnames[0] = "potential";
-
-        // the array of coordinate arrays
-        float** coordinates = g->getMeshNodes(dim);
+        varnames[0] = const_cast<char*>(dataTypeName.c_str());
 
         // make options list for mesh
         DBoptlist* optListMesh = DBMakeOptlist(1);
 
         // make options list for var
         DBoptlist* optListVar = DBMakeOptlist(2);
-        char* unit = "V";
+        char* unit = const_cast<char*>("V");
         DBAddOption(optListVar, DBOPT_UNITS, unit);
         int major_order = 1;
         DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // column-major (Fortran) order
 
-        double* vars[] = {tdArray};
-
-        DBPutQuadmesh(file, meshname, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
-        DBPutQuadvar(file, varname, meshname, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+        g->putQuadMesh(file, coordnames, varnames, optListVar, rankInGroup);
 
         // Free optList
         DBFreeOptlist(optListMesh);
         DBFreeOptlist(optListVar);
-
-        // free mesh nodes
-        delete [] coordinates[0];
-        delete [] coordinates[1];
-        delete [] coordinates[2];
-        delete [] coordinates;
     }
 
     void writeGroupelMap(
@@ -116,14 +95,14 @@ namespace IO {
             }
         }
 
-        cout << "child ID map test:" << endl;
+        /*cout << "child ID map test:" << endl;
         for(int i = 0; i < numOfPatches; i++){
             cout << "[" << i << "]" << endl;
             for(int j = 0; j < childOfPatches[i]; ++j) {
                 cout << "  " << segData[i][j];
             }
             cout << endl;
-        }
+        }*/
         // segData = {1, 2, 0}
         DBPutGroupelmap(file, "childMap", numOfPatches, patchSegTypes, childOfPatches, 0, segData, 0, 0, 0);
 
@@ -149,11 +128,14 @@ namespace IO {
         {
             char* levelRegnNames[1];
             int* segIds = new int[maxAMRLevel];
+
+            // これはセグメントへのID付けであって、データ自体へのID付けではない
             for (int i = 0; i < maxAMRLevel; ++i) {
                 segIds[i] = i;
             }
+
             // printf style
-            levelRegnNames[0] = "@level%d@n";
+            levelRegnNames[0] = const_cast<char*>("@level%d@n");
             DBAddRegionArray(mrgTree, maxAMRLevel, levelRegnNames, 0, "levelMap", 1, segIds, numOfPatchesOnLevel, levelSegTypes, 0);
 
             delete [] segIds;
@@ -166,10 +148,13 @@ namespace IO {
         {
             char* patchRegnNames[1];
             int* segIds = new int[numOfPatches];
+
+            //! これはセグメントへのID付けであって、データ自体へのID付けではないが
+            //! childOfPatchesがID順に格納されているとしているので、自動的に一致する
             for (int i = 0; i < numOfPatches; ++i) {
                 segIds[i] = i;
             }
-            patchRegnNames[0] = "@patch%d@n";
+            patchRegnNames[0] = const_cast<char*>("@patch%d@n");
             DBAddRegionArray(mrgTree, numOfPatches, patchRegnNames, 0, "childMap", 1, segIds, childOfPatches, patchSegTypes, 0);
 
             delete [] segIds;
@@ -214,24 +199,24 @@ namespace IO {
                 }
             }
             // data = { {1, 2, 2}, {1, 2, 2}, {1, 2, 2}};
-            levelRegnNames[0] = "@level%d@n";
+            levelRegnNames[0] = const_cast<char*>("@level%d@n");
             DBPutMrgvar(file, "lvlRatios", "mrgTree", numOfDim, compnames, maxAMRLevel, levelRegnNames, DB_INT, data, 0);
             for (int i = 0; i < numOfDim; i++) {
                 delete [] data[i];
             }
         }
 
-        // logical Extents
-        /* Output logical extents of the patches as an mrg variable on the
-           array of regions representing the patches */
-        /*{
+        //! logical Extents
+        //! Output logical extents of the patches as an mrg variable on the
+        //!   array of regions representing the patches
+        {
             char*  compnames[6] = {"iMin","iMax","jMin","jMax","kMin","kMax"};
             char* scompnames[6] = {"xMin","xMax","yMin","yMax","zMin","zMax"};
             char* patchRegnNames[1];
             int* data[6];
             float* rdata[1];
             float* sdata[6];
-            patchRegnNames[0] = "@patch%d@n";
+            patchRegnNames[0] = const_cast<char*>("@patch%d@n");
 
             for (int i = 0; i < 2 * numOfDim; i++) {
                 data[i] = new int[numOfPatches];
@@ -239,34 +224,20 @@ namespace IO {
             }
 
             rdata[0] = new float[numOfPatches];
-            for (int i = 0; i < numOfPatches; i++) {
-                data[0][i] = amrconf.patches[i].logExtents[0];
-                data[1][i] = amrconf.patches[i].logExtents[1];
-                data[2][i] = amrconf.patches[i].logExtents[2];
-                data[3][i] = amrconf.patches[i].logExtents[3];
-                data[4][i] = amrconf.patches[i].logExtents[4];
-                data[5][i] = amrconf.patches[i].logExtents[5];
 
-                sdata[0][i] = amrconf.patches[i].spatExtents[0];
-                sdata[1][i] = amrconf.patches[i].spatExtents[1];
-                sdata[2][i] = amrconf.patches[i].spatExtents[2];
-                sdata[3][i] = amrconf.patches[i].spatExtents[3];
-                sdata[4][i] = amrconf.patches[i].spatExtents[4];
-                sdata[5][i] = amrconf.patches[i].spatExtents[5];
+            root_grid->addExtent(data, sdata, rdata);
 
-                rdata[0][i] = amrconf.patches[i].rank;
-            }
             DBPutMrgvar(file, "ijkExts", "mrgTree", 6, compnames, numOfPatches, patchRegnNames, DB_INT, data, 0);
             DBPutMrgvar(file, "xyzExts", "mrgTree", 6, scompnames, numOfPatches, patchRegnNames, DB_FLOAT, sdata, 0);
+            DBPutMrgvar(file, "rank", "mrgTree", 1, 0, numOfPatches, patchRegnNames, DB_FLOAT, rdata, 0);
 
-            for (i = 0; i < 6; i++)
+            for (int i = 0; i < 6; i++)
             {
                 delete [] data[i];
                 delete [] sdata[i];
             }
-            DBPutMrgvar(file, "rank", "mrgTree", 1, 0, numOfPatches, patchRegnNames, DB_FLOAT, rdata, 0);
             delete [] rdata[0];
-        }*/
+        }
 
         delete [] levelSegTypes;
         delete [] patchSegTypes;
@@ -275,6 +246,7 @@ namespace IO {
     }
 
     void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
+        //! @note: 事前に全てのプロセスの持つパッチ数などを云々しておく
         const int maxIOUnit = 8;
         int numfiles = (MPI::Environment::numprocs <= maxIOUnit) ? MPI::Environment::numprocs : maxIOUnit;
 
@@ -287,40 +259,59 @@ namespace IO {
 
         if(rankInGroup == 0 && groupRank == 0) {
             int total_blocknum = MPI::Environment::numprocs;
-            char** meshnames = new char*[total_blocknum];
-            char** varnames = new char*[total_blocknum];
+            std::vector<int> patchNumOfEachProcess;
+            patchNumOfEachProcess.resize(total_blocknum);
 
+            patchNumOfEachProcess[0] = g->getSumOfChild() + 1;
+            patchNumOfEachProcess[1] = 1;
+
+            int numAllPatches = std::accumulate(patchNumOfEachProcess.begin(), patchNumOfEachProcess.end(), 0);
+            char** meshnames = new char*[numAllPatches];
+            char** varnames = new char*[numAllPatches];
+
+            //! 全パッチ数を保存する変数
+            int id = 0;
             for(int i = 0; i < total_blocknum; ++i) {
                 int tmpGroupRank = PMPIO_GroupRank(bat, i);
                 int tmpRankInGroup = PMPIO_RankInGroup(bat, i);
+
                 std::string tmpfilename = (format("%s_%04d_%04d.silo") % dataTypeName % tmpGroupRank % timestep).str();
 
-                std::string tmpstring;
-                if(filename == tmpstring) {
-                    tmpstring = (format("/block%04d/mesh") % tmpRankInGroup).str();
-                } else {
-                    tmpstring = (format("%s:/block%04d/mesh") % tmpfilename % tmpRankInGroup).str();
-                }
-                meshnames[i] = new char[tmpstring.size() + 1];
-                std::strcpy(meshnames[i], tmpstring.c_str());
+                for(int patchNum = 0; patchNum < patchNumOfEachProcess[i]; ++patchNum){
+                    std::string tmpstring;
 
-                if(filename == tmpstring) {
-                    tmpstring = (format("/block%04d/%s") % tmpRankInGroup % dataTypeName).str();
-                } else {
-                    tmpstring = (format("%s:/block%04d/%s") % tmpfilename % tmpRankInGroup % dataTypeName).str();
+                    // 違うブロックに書き込むならファイル名も指定する
+                    if(filename == ("data/" + tmpfilename)) {
+                        tmpstring = (format("/block%04d/mesh%04d") % tmpRankInGroup % patchNum).str();
+                    } else {
+                        tmpstring = (format("%s:/block%04d/mesh%04d") % tmpfilename % tmpRankInGroup % patchNum).str();
+                    }
+
+                    meshnames[id] = new char[tmpstring.size() + 1];
+                    std::strcpy(meshnames[id], tmpstring.c_str());
+
+                    if(filename == ("data/" + tmpfilename)) {
+                        tmpstring = (format("/block%04d/%s%04d") % tmpRankInGroup % dataTypeName % patchNum).str();
+                    } else {
+                        tmpstring = (format("%s:/block%04d/%s%04d") % tmpfilename % tmpRankInGroup % dataTypeName % patchNum).str();
+                    }
+
+                    varnames[id] = new char[tmpstring.size() + 1];
+                    std::strcpy(varnames[id], tmpstring.c_str());
+
+                    ++id;
                 }
-                varnames[i] = new char[tmpstring.size() + 1];
-                std::strcpy(varnames[i], tmpstring.c_str());
             }
 
-            writeMultimesh(file, total_blocknum, meshnames, varnames);
+            writeMultimesh(file, numAllPatches, meshnames, varnames);
 
-            int numAllPatches = g->getSumOfChild() + 1;
+            /*
             int maxAMRLevel = g->getMaxLevel();
             int* numPatchesOnLevel = g->getNumOfPatches();
             std::map<int, std::vector<int> > childMap = g->getChildMapOnRoot();
             std::vector< std::vector<int> > idMap = g->getIDMapOnRoot();
-            writeGroupelMap(file, g, maxAMRLevel, numAllPatches, numPatchesOnLevel, idMap, childMap);
+            writeGroupelMap(file, g, maxAMRLevel, g->getSumOfChild() + 1, numPatchesOnLevel, idMap, childMap);
+            */
 
             for(int i = 0; i < total_blocknum; ++i) {
                 delete [] meshnames[i];
@@ -330,9 +321,7 @@ namespace IO {
             delete [] varnames;
         }
 
-        char* meshname = "mesh";
-        char* varname = const_cast<char*>(dataTypeName.c_str());
-        writeBlock(file, g, meshname, varname);
+        writeBlock(file, g, dataTypeName, rankInGroup);
 
         PMPIO_HandOffBaton(bat, file);
         PMPIO_Finish(bat);

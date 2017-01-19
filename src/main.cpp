@@ -41,9 +41,6 @@ int main(int argc, char* argv[]){
     if(env->jobtype == "new") {
         ptype = Initializer::loadParticleType(inputs, env);
         root_grid = Initializer::initializeGrid(env);
-
-        // generate root field
-        Initializer::initializeRootField(env, root_grid);
     } else {
         // load ptype?
         // load particle
