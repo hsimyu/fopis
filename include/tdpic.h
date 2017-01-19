@@ -337,6 +337,9 @@ class Grid {
         std::vector< std::vector<int> > getIDMapOnRoot(void);
         void addIDToVector(std::vector< std::vector<int> >&);
 
+        // Extentを指定されたポインタに格納する (Silo MRG Tree出力用)
+        void addExtent(int* logicalExtent[6], float* spatialExtent[6], float* rank[1]);
+
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);
 };

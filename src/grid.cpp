@@ -392,6 +392,47 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
     }
 }
 
+// 渡されたポインタにExtentを入力する
+void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
+    if(level == 0) {
+        data[0][id] = base_ix;
+        data[1][id] = data[0][id] + (nx - 1);
+        data[2][id] = base_iy;
+        data[3][id] = data[0][id] + (ny - 1);
+        data[4][id] = base_iz;
+        data[5][id] = data[0][id] + (nz - 1);
+    } else {
+        data[0][id] = 2 * (base_ix - 1);
+        data[1][id] = data[0][id] + (nx - 1);
+        data[2][id] = 2 * (base_iy - 1);
+        data[3][id] = data[0][id] + (ny - 1);
+        data[4][id] = 2 * (base_iz - 1);
+        data[5][id] = data[0][id] + (nz - 1);
+    }
+
+    sdata[0][id] = base_x;
+    sdata[1][id] = base_x + (nx - 1) * dx;
+    sdata[2][id] = base_y;
+    sdata[3][id] = base_y + (ny - 1) * dx;
+    sdata[4][id] = base_z;
+    sdata[5][id] = base_z + (nz - 1) * dx;
+
+    rdata[0][id] = dx;
+
+    cout << "[ID " << id << "]" << endl;
+    cout << "LogicalExtent imin, imax = " << data[0][id] << " to " << data[1][id] << endl;
+    cout << "LogicalExtent jmin, jmax = " << data[2][id] << " to " << data[3][id] << endl;
+    cout << "LogicalExtent kmin, kmax = " << data[4][id] << " to " << data[5][id] << endl;
+
+    cout << "SpatialExtent xmin, xmax = " << sdata[0][id] << " to " << sdata[1][id] << endl;
+    cout << "SpatialExtent ymin, ymax = " << sdata[2][id] << " to " << sdata[3][id] << endl;
+    cout << "SpatialExtent zmin, zmax = " << sdata[4][id] << " to " << sdata[5][id] << endl;
+
+    for(int i = 0; i < getChildrenLength(); ++i){
+        children[i]->addExtent(data, sdata, rdata);
+    }
+}
+
 Grid::~Grid(){
     //! delete all particles
     //! vector内のparticleは自動でデストラクタが呼ばれる
