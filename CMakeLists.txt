@@ -5,7 +5,6 @@ project(TDPIC)
 option(BUILD_FOR_HOST    "Build for the login node"      ON)
 option(COPY_SAMPLE_INPUT "Copy input.json to build dir"  ON)
 option(DEBUG             "Build in Debug Mode"           ON)
-option(WITH_TEST         "Build with Test"              OFF)
 
 set(CXX_REQUIRED_LIBS "")
 
@@ -46,18 +45,20 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 message(STATUS "HOME              = ${HOME}")
 
+set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self")
+
 # if(${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
     #set(CRAYPE_LINK_TYPE "dynamic")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
 
     if(${DEBUG})
         set(CMAKE_BUILD_TYPE Debug)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -W -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
         add_definitions(-DDEBUG)
     else()
         set(CMAKE_BUILD_TYPE Release)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
     endif()
 
     if(BUILD_FOR_HOST)
@@ -70,14 +71,14 @@ else()
     # OpenMPI
     set(CMAKE_C_COMPILER mpicc)
     set(CMAKE_CXX_COMPILER mpicxx)
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g ${CXX_WARNING_FLAGS} -m64")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64")
 
     if(${DEBUG})
         set(CMAKE_BUILD_TYPE Debug)
-        set(CMAKE_CXX_FLAGS "-O0 -g -W -m64")
         add_definitions(-DDEBUG)
     else()
         set(CMAKE_BUILD_TYPE Release)
-        set(CMAKE_CXX_FLAGS "-O2 -m64")
     endif()
 
     # options for mkl
@@ -138,10 +139,8 @@ endif()
 
 # compiler info
 message(STATUS "CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
-message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")
-
-if(${WITH_TEST})
-    add_subdirectory(${CMAKE_SOURCE_DIR}/googletest)
-    include_directories(${CMAKE_SOURCE_DIR}/googletest/googletest/include)
-    add_subdirectory(test)
+if(${DEBUG})
+    message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+else()
+    message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
 endif()
