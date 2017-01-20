@@ -7,6 +7,10 @@ unsigned int Grid::getNextID(void) {
     return Grid::nextID++;
 }
 
+void Grid::resetNextID(void) {
+    nextID = 0;
+}
+
 // accessors
 void   Grid::setBaseIX(int _ix) { base_ix = _ix; }
 void   Grid::setBaseIY(int _iy) { base_iy = _iy; }

@@ -265,7 +265,8 @@ class Grid {
 
         unsigned int getID(void) const;
         unsigned int getNextID(void);
-        // IDへのsetterは提供しない
+        // IDへのsetterは提供しない、代わりにresetterを用意
+        static void resetNextID(void);
 
         void setBaseIX(int);
         void setBaseIY(int);

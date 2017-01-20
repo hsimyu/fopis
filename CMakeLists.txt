@@ -6,6 +6,7 @@ option(BUILD_FOR_HOST    "Build for the login node."            ON)
 option(COPY_GDB_MPIRUN_SCRIPT   "Copy gdb_mpirun.sh to build dir." ON)
 option(COPY_SAMPLE_INPUT "Copy input.json to build dir."        ON)
 option(DEBUG             "Build in Debug Mode."                 ON)
+option(WITH_TEST         "Build Test code."                     ON)
 
 set(CXX_REQUIRED_LIBS "")
 
@@ -48,7 +49,6 @@ message(STATUS "HOME              = ${HOME}")
 
 set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self")
 
-# if(${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
     #set(CRAYPE_LINK_TYPE "dynamic")
@@ -70,8 +70,8 @@ else()
     # Flags for Local build
 
     # OpenMPI
-    set(CMAKE_C_COMPILER mpicc)
-    set(CMAKE_CXX_COMPILER mpicxx)
+    set(CMAKE_C_COMPILER /usr/local/bin/mpicc)
+    set(CMAKE_CXX_COMPILER /usr/local/bin/mpicxx)
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64")
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64")
 
@@ -154,4 +154,11 @@ if(${DEBUG})
     message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 else()
     message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+endif()
+
+if(${WITH_TEST})
+    enable_testing()
+    add_subdirectory(${CMAKE_SOURCE_DIR}/googletest)
+    include_directories(${CMAKE_SOURCE_DIR}/googletest/googletest/include)
+    add_subdirectory(test)
 endif()

@@ -83,18 +83,12 @@ int main(int argc, char* argv[]){
         // cout << "-- Bz --" << endl;
         // IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 1, env->cell_y + 1, env->cell_z + 2);
         IO::outputParticlePositions( env, root_grid->particles );
-
-        // IO::writeData(root_grid, 0);
 #endif
 
         // Level 2まで
-        // patchesは4個?
         root_grid->makeChild(2, 2, 2, 5, 5, 5);
         root_grid->makeChild(4, 8, 8, 9, 9, 9);
         root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
-        root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
-        root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
-        root_grid->getChildren()[0]->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
         cout << root_grid << endl;
     }
 
