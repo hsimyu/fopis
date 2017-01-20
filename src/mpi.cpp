@@ -6,18 +6,25 @@ namespace MPI {
     int Environment::numprocs = -1;
 
     Environment::Environment(int argc, char* argv[]) {
+#ifndef BUILD_TEST
         MPI_Init(&argc, &argv);
 
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+        rank = 0;
+        numprocs = 1;
+#endif
     }
 
     void Environment::finalize(void) {
+#ifndef BUILD_TEST
         static bool finalized = false;
         if(!finalized) {
             MPI_Finalize();
             finalized = true;
         }
+#endif
     }
 
     // 破棄時にFinalize()する

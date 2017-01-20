@@ -355,6 +355,8 @@ class Grid {
 };
 
 namespace Initializer {
+    void initTDPIC(Environment*&, ParticleType*&, Grid*&);
+    void setTestEnvirontment(Environment*&, ParticleType*&);
     void setMPIInfoToEnv(Environment*);
     double getSizeOfSuperParticle(int, double, double);
     Environment* loadEnvironment(picojson::object&);

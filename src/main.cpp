@@ -11,45 +11,17 @@ int main(int argc, char* argv[]){
     //! MPI Environmentを初期化
     //! コンストラクタでMPI_Initを呼んで
     //! mainが終わったらdestructされる
+
     MPI::Environment mpiEnv(argc, argv);
     MPI::Communicator world; // MPI_COMM_WORLD
 
-    // load parameter from json
-    std::string filename = "input.json";
-    auto inputs = Utils::readJSONFile(filename);
-    Environment* env = Initializer::loadEnvironment(inputs);
-
-    // EnvironmentにMPI::Environment情報をセット
-    Initializer::setMPIInfoToEnv(env);
-
-    if( env->isRootNode ) {
-        cout << "---    [ TDPIC ]      --" << endl;
-        cout << env << endl;
-
-        //! データ書き込み用ディレクトリを作成
-        Utils::createDir("data");
-    }
-
-    // initialize normalizer
-    Utils::Normalizer::x_unit = env->dx;
-    Utils::Normalizer::t_unit = env->dt;
-    Utils::Normalizer::e_unit = e;
-
+    Environment* env;
     ParticleType* ptype;
     Grid* root_grid;
 
-    if(env->jobtype == "new") {
-        ptype = Initializer::loadParticleType(inputs, env);
-        root_grid = Initializer::initializeGrid(env);
-    } else {
-        // load ptype?
-        // load particle
-        // load grid
-        // load field
-    }
+    Initializer::initTDPIC(env, ptype, root_grid);
 
     if( env->isRootNode ) {
-        cout << "--  End Initializing  --" << endl;
         cout << "--  Begin A Loop  --" << endl;
     }
 
@@ -92,8 +64,7 @@ int main(int argc, char* argv[]){
         cout << root_grid << endl;
     }
 
-    IO::writeDataInParallel(root_grid, 0, "potential");
-
+    // IO::writeDataInParallel(root_grid, 0, "potential");
     return 0;
 }
 #endif
