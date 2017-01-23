@@ -58,10 +58,10 @@ int main(int argc, char* argv[]){
 #endif
 
         // Level 2まで
-        root_grid->makeChild(2, 2, 2, 11, 11, 11);
+        root_grid->makeChild(2, 2, 2, 8, 8, 8);
         // root_grid->makeChild(4, 8, 8, 9, 9, 9);
-        root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
-        root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
+        root_grid->getChildren()[0]->makeChild(2, 2, 2, 10, 10, 10);
+        // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
         cout << root_grid << endl;
     }
 

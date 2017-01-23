@@ -12,18 +12,27 @@ void Grid::resetNextID(void) {
 }
 
 // accessors
-void   Grid::setBaseIX(int _ix) { base_ix = _ix; }
-void   Grid::setBaseIY(int _iy) { base_iy = _iy; }
-void   Grid::setBaseIZ(int _iz) { base_iz = _iz; }
+void   Grid::setFromIX(int _ix) { from_ix = _ix; }
+void   Grid::setFromIY(int _iy) { from_iy = _iy; }
+void   Grid::setFromIZ(int _iz) { from_iz = _iz; }
+int    Grid::getFromIX(void) const { return from_ix; }
+int    Grid::getFromIY(void) const { return from_iy; }
+int    Grid::getFromIZ(void) const { return from_iz; }
+
+void   Grid::setToIX(int _ix) { to_ix = _ix; }
+void   Grid::setToIY(int _iy) { to_iy = _iy; }
+void   Grid::setToIZ(int _iz) { to_iz = _iz; }
+int    Grid::getToIX(void) const { return to_ix; }
+int    Grid::getToIY(void) const { return to_iy; }
+int    Grid::getToIZ(void) const { return to_iz; }
+
 void   Grid::setBaseX(double _x){ base_x = _x; }
 void   Grid::setBaseY(double _y){ base_y = _y; }
 void   Grid::setBaseZ(double _z){ base_z = _z; }
-int    Grid::getBaseIX(void) const { return base_ix; }
-int    Grid::getBaseIY(void) const { return base_iy; }
-int    Grid::getBaseIZ(void) const { return base_iz; }
 double Grid::getBaseX(void)  const { return base_x; }
 double Grid::getBaseY(void)  const { return base_y; }
 double Grid::getBaseZ(void)  const { return base_z; }
+
 unsigned int Grid::getID(void) const { return id; }
 
 void Grid::setNX(int _x){ nx = _x; }
@@ -41,8 +50,11 @@ double Grid::getDX(void) const { return dx; }
 void  Grid::setParent(Grid* g){ parent = g; }
 Grid* Grid::getParent(void){ return parent; }
 
-void Grid::makeChild(const int _base_ix, const int _base_iy, const int _base_iz, const int _nx, const int _ny, const int _nz) {
-    Grid* child = new Grid(this, _base_ix, _base_iy, _base_iz, _nx, _ny, _nz);
+void Grid::makeChild(
+        const int from_ix, const int from_iy, const int from_iz,
+        const int to_ix,   const int to_iy,   const int to_iz)
+{
+    Grid* child = new Grid(this, from_ix, from_iy, from_iz, to_ix, to_iy, to_iz);
 
     this->addChild(child);
     incrementSumOfChild();
@@ -122,12 +134,15 @@ Grid::Grid(const Environment* env){
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
     //! その上にプロセス分割されたグリッドが乗っていると考える
-    base_ix = env->xrank * env->cell_x;
-    base_iy = env->yrank * env->cell_y;
-    base_iz = env->zrank * env->cell_z;
-    base_x = dx * static_cast<double>(env->xrank * env->cell_x);
-    base_y = dx * static_cast<double>(env->yrank * env->cell_y);
-    base_z = dx * static_cast<double>(env->zrank * env->cell_z);
+    from_ix = env->xrank * env->cell_x;
+    from_iy = env->yrank * env->cell_y;
+    from_iz = env->zrank * env->cell_z;
+    to_ix = from_ix + nx;
+    to_iy = from_iy + ny;
+    to_iz = from_iz + nz;
+    base_x = dx * static_cast<double>(from_ix);
+    base_y = dx * static_cast<double>(from_iy);
+    base_z = dx * static_cast<double>(from_iz);
     //! @}
 
     // Field初期化
@@ -182,7 +197,10 @@ Grid::Grid(const Environment* env){
 //! child grid constructor
 //! GridコンストラクタにGridが渡された場合、
 //! そのGridを親とした子グリッドを生成します
-Grid::Grid(Grid* g, const int _base_ix, const int _base_iy, const int _base_iz, const int _nx, const int _ny, const int _nz){
+Grid::Grid(Grid* g,
+        const int _from_ix, const int _from_iy, const int _from_iz,
+        const int _to_ix,   const int _to_iy,   const int _to_iz)
+{
     const double refineRatio = 2.0;
 
     //! UniqueなIDをセット
@@ -192,24 +210,27 @@ Grid::Grid(Grid* g, const int _base_ix, const int _base_iy, const int _base_iz, 
     level = g->getLevel() + 1;
     sumTotalNumOfChildGrids = 0;
 
-    // patchの大きさを指定
-    nx = _nx;
-    ny = _ny;
-    nz = _nz;
+    //! @{
+    //! 子グリッドの場合, from_ix, to_ix変数は純粋に親グリッドの何番目に乗っているかを表す
+    //! Glue cell 分も考慮した方に乗る
+    from_ix = _from_ix;
+    from_iy = _from_iy;
+    from_iz = _from_iz;
+    to_ix = _to_ix;
+    to_iy = _to_iy;
+    to_iz = _to_iz;
+    base_x = g->getBaseX() + g->getDX() * (from_ix - 1);
+    base_y = g->getBaseY() + g->getDX() * (from_iy - 1);
+    base_z = g->getBaseZ() + g->getDX() * (from_iz - 1);
+    //! @}
+
+    // patchの大きさを計算
+    nx = (_to_ix - _from_ix) * 2 + 1;
+    ny = (_to_iy - _from_iy) * 2 + 1;
+    nz = (_to_iz - _from_iz) * 2 + 1;
 
     // refineRatioは2で固定
     dx = g->getDX() / refineRatio;
-
-    //! @{
-    //! 子グリッドの場合, base_ix変数は純粋に親グリッドの何番目に乗っているかを表す
-    //! Glue cell 分も考慮した方に乗る
-    base_ix = _base_ix;
-    base_iy = _base_iy;
-    base_iz = _base_iz;
-    base_x = g->getBaseX() + g->getDX() * (_base_ix - 1);
-    base_y = g->getBaseY() + g->getDX() * (_base_iy - 1);
-    base_z = g->getBaseZ() + g->getDX() * (_base_iz - 1);
-    //! @}
 
     checkGridValidness();
 
@@ -222,41 +243,26 @@ void Grid::checkGridValidness() {
 
     bool isValid = true;
 
-    if(base_ix == 0 || base_iy == 0 || base_iz == 0) {
+    if(from_ix == 0 || from_iy == 0 || from_iz == 0) {
         std::cerr << "[ERROR] Base index of child patch cannot be defined as 0 (0 is glue cell)." << endl;
         isValid = false;
     }
 
-    if( nx % 2 == 0 ) {
-        std::cerr << "[ERROR] x-extent is not odd number. : " << nx << endl;
-        isValid = false;
-    }
-
-    if( ny % 2 == 0 ) {
-        std::cerr << "[ERROR] y-extent is not odd number. : " << ny << endl;
-        isValid = false;
-    }
-
-    if( nz % 2 == 0 ) {
-        std::cerr << "[ERROR] z-extent is not odd number. : " << nz << endl;
-        isValid = false;
-    }
-
     // x extent
-    if( (base_ix + (nx - 1)/ refineRatio) > parent->getNX() ){
-        std::cerr << "[ERROR] A child patch's x-extent exceeds the parent's extent. : " << (base_ix + (nx - 1)/ refineRatio) << " > " << parent->getNX() << endl;
+    if( to_ix > parent->getNX() ){
+        std::cerr << "[ERROR] A child patch's x-extent exceeds the parent's extent. : " << to_ix << " > " << parent->getNX() << endl;
         isValid = false;
     }
 
     // y extent
-    if( (base_iy + (ny - 1)/ refineRatio) > parent->getNY() ){
-        std::cerr << "[ERROR] A child patch's y-extent exceeds the parent's extent. : " << (base_iy + (ny - 1)/ refineRatio) << " > " << parent->getNY() << endl;
+    if( to_iy > parent->getNY() ){
+        std::cerr << "[ERROR] A child patch's y-extent exceeds the parent's extent. : " << to_iy << " > " << parent->getNY() << endl;
         isValid = false;
     }
 
     // z extent
-    if( (base_iz + (nz - 1)/ refineRatio) > parent->getNZ() ){
-        std::cerr << "[ERROR] A child patch's z-extent exceeds the parent's extent. : " << (base_iz + (nz - 1)/ refineRatio) << " > " << parent->getNZ() << endl;
+    if( to_iz > parent->getNZ() ){
+        std::cerr << "[ERROR] A child patch's z-extent exceeds the parent's extent. : " << to_iz << " > " << parent->getNZ() << endl;
         isValid = false;
     }
 
@@ -427,18 +433,18 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
 // 渡されたポインタにExtentを入力する
 void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
     if(level == 0) {
-        data[0][id] = base_ix;
+        data[0][id] = from_ix;
         data[1][id] = data[0][id] + (nx - 1);
-        data[2][id] = base_iy;
+        data[2][id] = from_iy;
         data[3][id] = data[0][id] + (ny - 1);
-        data[4][id] = base_iz;
+        data[4][id] = from_iz;
         data[5][id] = data[0][id] + (nz - 1);
     } else {
-        data[0][id] = 2 * (base_ix - 1);
+        data[0][id] = 2 * (from_ix - 1);
         data[1][id] = data[0][id] + (nx - 1);
-        data[2][id] = 2 * (base_iy - 1);
+        data[2][id] = 2 * (from_iy - 1);
         data[3][id] = data[0][id] + (ny - 1);
-        data[4][id] = 2 * (base_iz - 1);
+        data[4][id] = 2 * (from_iz - 1);
         data[5][id] = data[0][id] + (nz - 1);
     }
 
@@ -531,7 +537,8 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     ost << tab << "dx: " << format("%10.5e") % g->getDX() << "m" << endl;
     ost << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % g->getNX() % g->getNY() % g->getNZ() << " grids [total]" << endl;
     ost << tab << "nx,ny,nz(+): " << format("%1%x%2%x%3%") % (g->getNX() + 2) % (g->getNY() + 2) % (g->getNZ() + 2) << " grids [with glue cells]" << endl;
-    ost << tab << "base grid: " << format("%1%,%2%,%3%") % g->getBaseIX() % g->getBaseIY() % g->getBaseIZ() << endl;
+    ost << tab << "parent from: " << format("%1%,%2%,%3%") % g->getFromIX() % g->getFromIY() % g->getFromIZ() << endl;
+    ost << tab << "parent to  : " << format("%1%,%2%,%3%") % g->getToIX() % g->getToIY() % g->getToIZ() << endl;
     ost << tab << "base positions: " << format("%1%,%2%,%3%") % g->getBaseX() % g->getBaseY() % g->getBaseZ() << endl;
     ost << tab << "sumNumOfChild: " << g->getSumOfChild() << endl;
     ost << tab << "numOfChild: " << g->getChildrenLength() << endl;

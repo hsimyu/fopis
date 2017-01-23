@@ -238,9 +238,12 @@ class Grid {
 
         //! 親のどの座標にくっついているか
         //! @{
-        int base_ix;
-        int base_iy;
-        int base_iz;
+        int from_ix;
+        int from_iy;
+        int from_iz;
+        int to_ix;
+        int to_iy;
+        int to_iz;
         double base_x;
         double base_y;
         double base_z;
@@ -268,13 +271,18 @@ class Grid {
         // IDへのsetterは提供しない、代わりにresetterを用意
         static void resetNextID(void);
 
-        void setBaseIX(int);
-        void setBaseIY(int);
-        void setBaseIZ(int);
-
-        int  getBaseIX() const;
-        int  getBaseIY() const;
-        int  getBaseIZ() const;
+        void setFromIX(int);
+        void setFromIY(int);
+        void setFromIZ(int);
+        int  getFromIX() const;
+        int  getFromIY() const;
+        int  getFromIZ() const;
+        void setToIX(int);
+        void setToIY(int);
+        void setToIZ(int);
+        int  getToIX() const;
+        int  getToIY() const;
+        int  getToIZ() const;
 
         void setBaseX(double);
         void setBaseY(double);
