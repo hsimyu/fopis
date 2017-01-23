@@ -13,7 +13,7 @@ namespace Initializer {
         Initializer::setTestEnvirontment(env, ptype);
 #endif
 
-        // EnvironmentにMPI::Environment情報をセット
+        // EnvironmentにMPIw::Environment情報をセット
         Initializer::setMPIInfoToEnv(env);
 
         if( env->isRootNode ) {
@@ -93,14 +93,14 @@ namespace Initializer {
     }
 
     void setMPIInfoToEnv(Environment* env) {
-        int rank = MPI::Environment::rank;
-        int numprocs = MPI::Environment::numprocs;
+        int rank = MPIw::Environment::rank;
+        int numprocs = MPIw::Environment::numprocs;
 
         if(numprocs != env->proc_x * env->proc_y * env->proc_z) {
             if(rank == 0) {
                 cout << format("[ERROR] Allocated Process Number [%d] is different from [%d] inputted from json.") % numprocs % (env->proc_x * env->proc_y * env->proc_z) << endl;
             }
-            MPI::Environment::exitWithFinalize(0);
+            MPIw::Environment::exitWithFinalize(0);
         }
 
         env->numprocs = numprocs;

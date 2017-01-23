@@ -260,7 +260,7 @@ void Grid::checkGridValidness() {
         isValid = false;
     }
 
-    if(!isValid) MPI::Environment::exitWithFinalize(1);
+    if(!isValid) MPIw::Environment::exitWithFinalize(1);
 }
 
 void Grid::setField(Field* f){ field = f; }

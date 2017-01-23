@@ -1,6 +1,6 @@
 #include <mpi_wrapper.hpp>
 
-namespace MPI {
+namespace MPIw {
     // Environmentのstatic変数の実体
     int Environment::rank = -1;
     int Environment::numprocs = -1;
@@ -38,7 +38,7 @@ namespace MPI {
     }
 
     std::string Environment::rankStr(void) {
-        return (format("[P%04d] ") % rank).str();
+        return (format("[RANK P%04d] ") % rank).str();
     }
 
     // Communicator

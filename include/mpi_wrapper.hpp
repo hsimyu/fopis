@@ -7,7 +7,7 @@ using std::cout;
 using std::endl;
 using boost::format;
 
-namespace MPI {
+namespace MPIw {
 
     //! MPI ランク保持用のクラス
     class Environment {

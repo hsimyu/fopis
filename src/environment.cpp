@@ -27,5 +27,5 @@ std::ostream& operator<<(std::ostream& ost, const Environment& env){
 }
 
 std::string Environment::rankStr(void) const {
-    return MPI::Environment::rankStr();
+    return MPIw::Environment::rankStr();
 }

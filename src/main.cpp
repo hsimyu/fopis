@@ -12,8 +12,8 @@ int main(int argc, char* argv[]){
     //! コンストラクタでMPI_Initを呼んで
     //! mainが終わったらdestructされる
 
-    MPI::Environment mpiEnv(argc, argv);
-    MPI::Communicator world; // MPI_COMM_WORLD
+    MPIw::Environment mpiEnv(argc, argv);
+    MPIw::Communicator world; // MPI_COMM_WORLD
 
     Environment* env;
     ParticleType* ptype;
@@ -58,13 +58,16 @@ int main(int argc, char* argv[]){
 #endif
 
         // Level 2まで
-        root_grid->makeChild(2, 2, 2, 5, 5, 5);
-        root_grid->makeChild(4, 8, 8, 9, 9, 9);
+        root_grid->makeChild(2, 2, 2, 11, 11, 11);
+        // root_grid->makeChild(4, 8, 8, 9, 9, 9);
         root_grid->getChildren()[0]->makeChild(2, 2, 2, 3, 3, 3);
+        root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
         cout << root_grid << endl;
     }
 
-    // IO::writeDataInParallel(root_grid, 0, "potential");
+    IO::writeDataInParallel(root_grid, 0, "potential");
+    cout << "[RANK " << MPIw::Environment::rank << "] Waiting all procs.." << endl;
+    // MPI_Barrier(MPI_COMM_WORLD);
     return 0;
 }
 #endif
