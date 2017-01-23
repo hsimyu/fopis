@@ -482,14 +482,15 @@ void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], DBo
     dimensions[2] = nz;
     double* vars[] = {tdArray};
 
-    std::string meshname = (format("/block%04d/mesh%04d") % rankInGroup % id).str();
-    std::string varname = (format("/block%04d/%s%04d") % rankInGroup % varnames[0] % id).str();
+    std::string meshname = (format("/block%04d/mesh%04d%04d") % rankInGroup % MPIw::Environment::rank % id).str();
+    std::string varname = (format("/block%04d/%s%04d%04d") % rankInGroup % varnames[0] % MPIw::Environment::rank % id).str();
 
     char* m = const_cast<char*>(meshname.c_str());
     char* v = const_cast<char*>(varname.c_str());
 
     DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
-    DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+    // DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+    DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
 
     for(int i = 0; i < children.size(); ++i) {
         children[i]->putQuadMesh(file, coordnames, varnames, optListVar, rankInGroup);

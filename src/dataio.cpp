@@ -6,16 +6,53 @@
 #include <pmpio.h>
 
 namespace IO {
-    void writeMultimesh(DBfile* file, int total_blocknum, char** meshnames, char** varnames) {
+    void writeMRGTree(DBfile* file) {
+        int maxGroupChildren = 1;
+        DBmrgtree* mrgTree = DBMakeMrgtree(DB_MULTIMESH, 0, maxGroupChildren, 0);
+
+        // Add a region for Multimesh Groupings
+        int maxBlock = 1;
+        DBAddRegion(mrgTree, "groupings", 0, maxBlock, 0, 0, 0, 0, 0, 0);
+        DBSetCwr(mrgTree, "groupings");
+
+        int maxChildren = 1;
+        DBAddRegion(mrgTree, "grouping_block0000", 0, maxChildren, 0, 0, 0, 0, 0, 0);
+        DBSetCwr(mrgTree, "grouping_block0000");
+
+        {
+            DBoptlist* optList = DBMakeOptlist(10);
+            // char* mrgv_onames[1];
+            // mrgv_onames[0] = "grouping_block0000";
+            // mrgv_onames[1] = "ijkExts";
+            // mrgv_onames[2] = "xyzExts";
+            // mrgv_onames[3] = "rank";
+            // mrgv_onames[4] = 0;
+
+            // DBAddOption(optList, DBOPT_MRGV_ONAMES, mrgv_onames);
+            DBPutMrgtree(file, "mrgTree", "amr_mesh", mrgTree, NULL);
+            DBFreeMrgtree(mrgTree);
+            DBFreeOptlist(optList);
+        }
+    }
+
+    void writeMultimesh(DBfile* file, int total_blocknum, char** meshnames, char** varnames, int rank) {
         // make options list
-        DBoptlist* optList = DBMakeOptlist(1);
+        DBoptlist* optList = DBMakeOptlist(2);
         int meshtype = DB_QUAD_RECT;
+        // multimesh を region nameと紐付ける
+        // char* pname = const_cast<char*>("grouping_block0000");
         DBAddOption(optList, DBOPT_MB_BLOCK_TYPE, &meshtype);
-        DBPutMultimesh(file, "multimesh", total_blocknum, meshnames, NULL, optList);
+        // DBAddOption(optList, DBOPT_REGION_PNAMES, &pname);
+        std::string tmpstring = (format("multiblock%04d") % rank).str();
+        char* blockname = const_cast<char*>( tmpstring.c_str() );
+        DBPutMultimesh(file, blockname, total_blocknum, meshnames, NULL, optList);
+        DBClearOptlist(optList);
 
         int vartype = DB_QUADVAR;
+        tmpstring = (format("var%04d") % rank).str();
+        char* varblockname = const_cast<char*>( tmpstring.c_str() );
         DBAddOption(optList, DBOPT_MB_BLOCK_TYPE, &vartype);
-        DBPutMultivar(file, "multivar", total_blocknum, varnames, NULL, optList);
+        DBPutMultivar(file, varblockname, total_blocknum, varnames, NULL, optList);
         DBFreeOptlist(optList);
     }
 
@@ -34,7 +71,7 @@ namespace IO {
         varnames[0] = const_cast<char*>(dataTypeName.c_str());
 
         // make options list for mesh
-        DBoptlist* optListMesh = DBMakeOptlist(1);
+        // DBoptlist* optListMesh = DBMakeOptlist(1);
 
         // make options list for var
         DBoptlist* optListVar = DBMakeOptlist(2);
@@ -46,7 +83,7 @@ namespace IO {
         g->putQuadMesh(file, coordnames, varnames, optListVar, rankInGroup);
 
         // Free optList
-        DBFreeOptlist(optListMesh);
+        // DBFreeOptlist(optListMesh);
         DBFreeOptlist(optListVar);
     }
 
@@ -71,7 +108,6 @@ namespace IO {
                 segData[i][j] = idMap[i][j];
             }
         }
-        // segData = {0, 1, 2} ただの番号付け
 
         DBPutGroupelmap(file, "levelMap", maxAMRLevel, levelSegTypes, numOfPatchesOnLevel, 0, segData, 0, 0, 0);
 
@@ -95,15 +131,6 @@ namespace IO {
             }
         }
 
-        /*cout << "child ID map test:" << endl;
-        for(int i = 0; i < numOfPatches; i++){
-            cout << "[" << i << "]" << endl;
-            for(int j = 0; j < childOfPatches[i]; ++j) {
-                cout << "  " << segData[i][j];
-            }
-            cout << endl;
-        }*/
-        // segData = {1, 2, 0}
         DBPutGroupelmap(file, "childMap", numOfPatches, patchSegTypes, childOfPatches, 0, segData, 0, 0, 0);
 
         // free segData
@@ -245,86 +272,97 @@ namespace IO {
         delete [] childOfPatches;
     }
 
+    // Callback functions for PMPIO
+    void* createFileCallback(const char* fname, const char* dname, void* udata){
+        DBfile* file = DBCreate(fname, DB_CLOBBER, DB_LOCAL, NULL, DB_PDB);
+        DBMkDir(file, dname);
+        DBSetDir(file, dname);
+        return file;
+    }
+
+    void* openFileCallback(const char* fname, const char* dname, PMPIO_iomode_t iomode, void* udata){
+        DBfile* file = DBOpen(fname, DB_UNKNOWN, DB_APPEND);
+        DBMkDir(file, dname);
+        DBSetDir(file, dname);
+        return file;
+    }
+
+    void closeFileCallback(void* file, void* udata){
+        DBClose((DBfile*)file);
+    }
+
     void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
         //! @note: 事前に全てのプロセスの持つパッチ数などを云々しておく
-        const int maxIOUnit = 8;
-        int numfiles = (MPI::Environment::numprocs <= maxIOUnit) ? MPI::Environment::numprocs : maxIOUnit;
+        const int maxIOUnit = 4;
+        int numfiles = (MPIw::Environment::numprocs <= maxIOUnit) ? MPIw::Environment::numprocs : maxIOUnit;
 
-        PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 1000, PMPIO_DefaultCreate, PMPIO_DefaultOpen, PMPIO_DefaultClose, NULL);
-        int groupRank = PMPIO_GroupRank(bat, MPI::Environment::rank);
-        int rankInGroup = PMPIO_RankInGroup(bat, MPI::Environment::rank);
+        PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 10000, createFileCallback, openFileCallback, closeFileCallback, NULL);
+        // MPI_Barrier(MPI_COMM_WORLD);
+        int groupRank = PMPIO_GroupRank(bat, MPIw::Environment::rank);
+        int rankInGroup = PMPIO_RankInGroup(bat, MPIw::Environment::rank);
         std::string filename = (format("data/%s_%04d_%04d.silo") % dataTypeName % groupRank % timestep).str();
         std::string blockname = (format("block%04d") % rankInGroup).str();
-        DBfile* file = static_cast<DBfile*>(PMPIO_WaitForBaton(bat, filename.c_str(), blockname.c_str()));
+        cout << MPIw::Environment::rankStr() << "[FILE NAME] " << filename << endl;
+        cout << MPIw::Environment::rankStr() << "[BLOCK NAME] " << blockname << endl;
+        cout << MPIw::Environment::rankStr() << "Waiting baton... " << endl;
+        DBfile* file = (DBfile*)(PMPIO_WaitForBaton(bat, filename.c_str(), blockname.c_str()));
+        cout << MPIw::Environment::rankStr() << "Baton passed.!" << endl;
 
-        if(rankInGroup == 0 && groupRank == 0) {
-            int total_blocknum = MPI::Environment::numprocs;
-            std::vector<int> patchNumOfEachProcess;
-            patchNumOfEachProcess.resize(total_blocknum);
+        // 自分の持つroot_gridを統合したMultimeshを作成する
+        // int total_blocknum = MPI::Environment::numprocs;
+        // std::vector<int> patchNumOfEachProcess;
+        // patchNumOfEachProcess.resize(total_blocknum);
+        //
+        // patchNumOfEachProcess[0] = g->getSumOfChild() + 1;
+        // patchNumOfEachProcess[1] = 1;
+        //
+        // int numAllPatches = std::accumulate(patchNumOfEachProcess.begin(), patchNumOfEachProcess.end(), 0);
+        int numAllPatches = g->getSumOfChild() + 1;
+        /*char** meshnames = new char*[numAllPatches];
+        char** varnames = new char*[numAllPatches];
 
-            patchNumOfEachProcess[0] = g->getSumOfChild() + 1;
-            patchNumOfEachProcess[1] = 1;
+        //! 全パッチ数を保存する変数
+        for(int i = 0; i < numAllPatches; ++i) {
+            std::string tmpstring;
+            tmpstring = (format("/block%04d/mesh%04d%04d") % rankInGroup % MPIw::Environment::rank % i).str();
 
-            int numAllPatches = std::accumulate(patchNumOfEachProcess.begin(), patchNumOfEachProcess.end(), 0);
-            char** meshnames = new char*[numAllPatches];
-            char** varnames = new char*[numAllPatches];
+            meshnames[i] = new char[tmpstring.size() + 1];
+            std::strcpy(meshnames[i], tmpstring.c_str());
 
-            //! 全パッチ数を保存する変数
-            int id = 0;
-            for(int i = 0; i < total_blocknum; ++i) {
-                int tmpGroupRank = PMPIO_GroupRank(bat, i);
-                int tmpRankInGroup = PMPIO_RankInGroup(bat, i);
+            tmpstring = (format("/block%04d/%s%04d%04d") % rankInGroup % dataTypeName % MPIw::Environment::rank % i).str();
+            varnames[i] = new char[tmpstring.size() + 1];
+            std::strcpy(varnames[i], tmpstring.c_str());
 
-                std::string tmpfilename = (format("%s_%04d_%04d.silo") % dataTypeName % tmpGroupRank % timestep).str();
+            cout << MPIw::Environment::rankStr() << "meshnames[" << i << "] = " << meshnames[i] << endl;
+            cout << MPIw::Environment::rankStr() << "varnames[" << i << "] = " << varnames[i] << endl;
+        }*/
 
-                for(int patchNum = 0; patchNum < patchNumOfEachProcess[i]; ++patchNum){
-                    std::string tmpstring;
+        // writeMultimesh(file, numAllPatches, meshnames, varnames, rankInGroup);
+        // writeMRGTree(file);
 
-                    // 違うブロックに書き込むならファイル名も指定する
-                    if(filename == ("data/" + tmpfilename)) {
-                        tmpstring = (format("/block%04d/mesh%04d") % tmpRankInGroup % patchNum).str();
-                    } else {
-                        tmpstring = (format("%s:/block%04d/mesh%04d") % tmpfilename % tmpRankInGroup % patchNum).str();
-                    }
-
-                    meshnames[id] = new char[tmpstring.size() + 1];
-                    std::strcpy(meshnames[id], tmpstring.c_str());
-
-                    if(filename == ("data/" + tmpfilename)) {
-                        tmpstring = (format("/block%04d/%s%04d") % tmpRankInGroup % dataTypeName % patchNum).str();
-                    } else {
-                        tmpstring = (format("%s:/block%04d/%s%04d") % tmpfilename % tmpRankInGroup % dataTypeName % patchNum).str();
-                    }
-
-                    varnames[id] = new char[tmpstring.size() + 1];
-                    std::strcpy(varnames[id], tmpstring.c_str());
-
-                    ++id;
-                }
-            }
-
-            writeMultimesh(file, numAllPatches, meshnames, varnames);
-
-            /*
-            int maxAMRLevel = g->getMaxLevel();
-            int* numPatchesOnLevel = g->getNumOfPatches();
-            std::map<int, std::vector<int> > childMap = g->getChildMapOnRoot();
-            std::vector< std::vector<int> > idMap = g->getIDMapOnRoot();
-            writeGroupelMap(file, g, maxAMRLevel, g->getSumOfChild() + 1, numPatchesOnLevel, idMap, childMap);
-            */
-
-            for(int i = 0; i < total_blocknum; ++i) {
-                delete [] meshnames[i];
-                delete [] varnames[i];
-            }
-            delete [] meshnames;
-            delete [] varnames;
-        }
+        /*
+        int maxAMRLevel = g->getMaxLevel();
+        int* numPatchesOnLevel = g->getNumOfPatches();
+        std::map<int, std::vector<int> > childMap = g->getChildMapOnRoot();
+        std::vector< std::vector<int> > idMap = g->getIDMapOnRoot();
+        writeGroupelMap(file, g, maxAMRLevel, g->getSumOfChild() + 1, numPatchesOnLevel, idMap, childMap);
+        */
 
         writeBlock(file, g, dataTypeName, rankInGroup);
 
+        cout << MPIw::Environment::rankStr() << "Ended wrote blocks" << endl;
         PMPIO_HandOffBaton(bat, file);
+        cout << MPIw::Environment::rankStr() << "Handed off baton, waiting MPI_Barrier" << endl;
+        // MPI_Barrier(MPI_COMM_WORLD);
         PMPIO_Finish(bat);
+        cout << MPIw::Environment::rankStr() << "PMPIO Finished" << endl;
+
+        // for(int i = 0; i < numAllPatches; ++i) {
+        //     delete [] meshnames[i];
+        //     delete [] varnames[i];
+        // }
+        // delete [] meshnames;
+        // delete [] varnames;
     }
 
     void print3DArray(const tdArray& data, const int nx, const int ny, const int nz){
