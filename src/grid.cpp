@@ -490,7 +490,7 @@ void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], DBo
 
     DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
     // DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
-    DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+    DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
 
     for(int i = 0; i < children.size(); ++i) {
         children[i]->putQuadMesh(file, coordnames, varnames, optListVar, rankInGroup);

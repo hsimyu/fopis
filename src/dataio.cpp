@@ -304,16 +304,8 @@ namespace IO {
         DBfile* file = (DBfile*)(PMPIO_WaitForBaton(bat, filename.c_str(), blockname.c_str()));
 
         // 自分の持つroot_gridを統合したMultimeshを作成する
-        // int total_blocknum = MPI::Environment::numprocs;
-        // std::vector<int> patchNumOfEachProcess;
-        // patchNumOfEachProcess.resize(total_blocknum);
-        //
-        // patchNumOfEachProcess[0] = g->getSumOfChild() + 1;
-        // patchNumOfEachProcess[1] = 1;
-        //
-        // int numAllPatches = std::accumulate(patchNumOfEachProcess.begin(), patchNumOfEachProcess.end(), 0);
         int numAllPatches = g->getSumOfChild() + 1;
-        /*char** meshnames = new char*[numAllPatches];
+        char** meshnames = new char*[numAllPatches];
         char** varnames = new char*[numAllPatches];
 
         //! 全パッチ数を保存する変数
@@ -327,12 +319,9 @@ namespace IO {
             tmpstring = (format("/block%04d/%s%04d%04d") % rankInGroup % dataTypeName % MPIw::Environment::rank % i).str();
             varnames[i] = new char[tmpstring.size() + 1];
             std::strcpy(varnames[i], tmpstring.c_str());
+        }
 
-            cout << MPIw::Environment::rankStr() << "meshnames[" << i << "] = " << meshnames[i] << endl;
-            cout << MPIw::Environment::rankStr() << "varnames[" << i << "] = " << varnames[i] << endl;
-        }*/
-
-        // writeMultimesh(file, numAllPatches, meshnames, varnames, rankInGroup);
+        writeMultimesh(file, numAllPatches, meshnames, varnames, rankInGroup);
         // writeMRGTree(file);
 
         /*
@@ -348,12 +337,12 @@ namespace IO {
         PMPIO_HandOffBaton(bat, file);
         PMPIO_Finish(bat);
 
-        // for(int i = 0; i < numAllPatches; ++i) {
-        //     delete [] meshnames[i];
-        //     delete [] varnames[i];
-        // }
-        // delete [] meshnames;
-        // delete [] varnames;
+        for(int i = 0; i < numAllPatches; ++i) {
+            delete [] meshnames[i];
+            delete [] varnames[i];
+        }
+        delete [] meshnames;
+        delete [] varnames;
     }
 
     void print3DArray(const tdArray& data, const int nx, const int ny, const int nz){
