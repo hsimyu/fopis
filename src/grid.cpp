@@ -10,6 +10,7 @@ unsigned int Grid::getNextID(void) {
 void Grid::resetNextID(void) {
     nextID = 0;
 }
+unsigned int Grid::getID(void) const { return id; }
 
 // accessors
 void   Grid::setFromIX(int _ix) { from_ix = _ix; }
@@ -33,8 +34,6 @@ double Grid::getBaseX(void)  const { return base_x; }
 double Grid::getBaseY(void)  const { return base_y; }
 double Grid::getBaseZ(void)  const { return base_z; }
 
-unsigned int Grid::getID(void) const { return id; }
-
 void Grid::setNX(int _x){ nx = _x; }
 void Grid::setNY(int _y){ ny = _y; }
 void Grid::setNZ(int _z){ nz = _z; }
@@ -47,20 +46,22 @@ int  Grid::getLevel(void) const { return level; }
 void   Grid::setDX(double _dx){ dx = _dx; }
 double Grid::getDX(void) const { return dx; }
 
+void Grid::setField(Field* f){ field = f; }
+Field* Grid::getField(void){ return field; }
+
 void  Grid::setParent(Grid* g){ parent = g; }
 Grid* Grid::getParent(void){ return parent; }
 
-void Grid::makeChild(
-        const int from_ix, const int from_iy, const int from_iz,
-        const int to_ix,   const int to_iy,   const int to_iz)
-{
+void Grid::makeChild(const int from_ix, const int from_iy, const int from_iz, const int to_ix, const int to_iy, const int to_iz) {
     Grid* child = new Grid(this, from_ix, from_iy, from_iz, to_ix, to_iy, to_iz);
-
     this->addChild(child);
     incrementSumOfChild();
 }
 
-void Grid::addChild(Grid* child) { children.push_back(child); }
+void Grid::addChild(Grid* child) {
+    children.push_back(child);
+}
+
 std::vector<Grid*>& Grid::getChildren(void) {
     // 参照にしないと新しいポインタが生まれてしまう？
     return children;
@@ -269,9 +270,6 @@ void Grid::checkGridValidness() {
     if(!isValid) MPIw::Environment::exitWithFinalize(1);
 }
 
-void Grid::setField(Field* f){ field = f; }
-Field* Grid::getField(void){ return field; }
-
 //! 粒子の位置から電荷を空間電荷にする
 void Grid::updateRho(const Environment* env) {
     tdArray& rho = field->getRho();
@@ -322,25 +320,7 @@ void Grid::updateRho(const Environment* env) {
     Utils::clearBoundaryValues(rho, env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
 }
 
-float** Grid::getMeshNodes(int dim) {
-    // the array of coordinate arrays
-    // @note: メモリリーク防止のため必ずdeleteする
-    float** coordinates = new float*[dim];
-    coordinates[0] = new float[nx];
-    for(int i = 0; i < nx; ++i) {
-	coordinates[0][i] = base_x + dx * i;
-    }
-    coordinates[1] = new float[ny];
-    for(int i = 0; i < ny; ++i) {
-	coordinates[1][i] = base_y + dx * i;
-    }
-    coordinates[2] = new float[nz];
-    for(int i = 0; i < nz; ++i) {
-	coordinates[2][i] = base_z + dx * i;
-    }
-    return coordinates;
-}
-
+// -- AMR utility methods --
 int Grid::getMaxLevel() {
     int maxLevel = level; //! 初期値は自分のレベル
 
@@ -430,6 +410,27 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
     }
 }
 
+// mesh nodesの座標配列を生成
+float** Grid::getMeshNodes(int dim) {
+    // the array of coordinate arrays
+    // @note: メモリリーク防止のため必ずdeleteする
+    float** coordinates = new float*[dim];
+    coordinates[0] = new float[nx];
+    for(int i = 0; i < nx; ++i) {
+	coordinates[0][i] = base_x + dx * i;
+    }
+    coordinates[1] = new float[ny];
+    for(int i = 0; i < ny; ++i) {
+	coordinates[1][i] = base_y + dx * i;
+    }
+    coordinates[2] = new float[nz];
+    for(int i = 0; i < nz; ++i) {
+	coordinates[2][i] = base_z + dx * i;
+    }
+    return coordinates;
+}
+
+
 // 渡されたポインタにExtentを入力する
 void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
     if(level == 0) {
@@ -471,6 +472,7 @@ void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
     }
 }
 
+// -- DATA IO methods --
 void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
     const int dim = 3;
 
