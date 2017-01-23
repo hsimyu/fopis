@@ -465,7 +465,7 @@ void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
     }
 }
 
-void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], DBoptlist* optListVar, int rankInGroup){
+void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
     const int dim = 3;
 
     // the array of coordinate arrays
@@ -488,12 +488,12 @@ void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], DBo
     char* m = const_cast<char*>(meshname.c_str());
     char* v = const_cast<char*>(varname.c_str());
 
-    DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, NULL);
+    DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, optListMesh);
     // DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
     DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
 
     for(int i = 0; i < children.size(); ++i) {
-        children[i]->putQuadMesh(file, coordnames, varnames, optListVar, rankInGroup);
+        children[i]->putQuadMesh(file, coordnames, varnames, rankInGroup, optListMesh, optListVar);
     }
 
     delete [] vars[0];

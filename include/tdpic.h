@@ -348,7 +348,7 @@ class Grid {
         void addExtent(int* logicalExtent[6], float* spatialExtent[6], float* rank[1]);
 
         // QuadMeshとVarをDBfileに突っ込む
-        void putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], DBoptlist* optListVar, int rankInGroup);
+        void putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar);
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);
