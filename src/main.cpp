@@ -66,8 +66,6 @@ int main(int argc, char* argv[]){
     }
 
     IO::writeDataInParallel(root_grid, 0, "potential");
-    cout << "[RANK " << MPIw::Environment::rank << "] Waiting all procs.." << endl;
-    // MPI_Barrier(MPI_COMM_WORLD);
     return 0;
 }
 #endif

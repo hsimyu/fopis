@@ -297,16 +297,11 @@ namespace IO {
         int numfiles = (MPIw::Environment::numprocs <= maxIOUnit) ? MPIw::Environment::numprocs : maxIOUnit;
 
         PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 10000, createFileCallback, openFileCallback, closeFileCallback, NULL);
-        // MPI_Barrier(MPI_COMM_WORLD);
         int groupRank = PMPIO_GroupRank(bat, MPIw::Environment::rank);
         int rankInGroup = PMPIO_RankInGroup(bat, MPIw::Environment::rank);
         std::string filename = (format("data/%s_%04d_%04d.silo") % dataTypeName % groupRank % timestep).str();
         std::string blockname = (format("block%04d") % rankInGroup).str();
-        cout << MPIw::Environment::rankStr() << "[FILE NAME] " << filename << endl;
-        cout << MPIw::Environment::rankStr() << "[BLOCK NAME] " << blockname << endl;
-        cout << MPIw::Environment::rankStr() << "Waiting baton... " << endl;
         DBfile* file = (DBfile*)(PMPIO_WaitForBaton(bat, filename.c_str(), blockname.c_str()));
-        cout << MPIw::Environment::rankStr() << "Baton passed.!" << endl;
 
         // 自分の持つroot_gridを統合したMultimeshを作成する
         // int total_blocknum = MPI::Environment::numprocs;
@@ -350,12 +345,8 @@ namespace IO {
 
         writeBlock(file, g, dataTypeName, rankInGroup);
 
-        cout << MPIw::Environment::rankStr() << "Ended wrote blocks" << endl;
         PMPIO_HandOffBaton(bat, file);
-        cout << MPIw::Environment::rankStr() << "Handed off baton, waiting MPI_Barrier" << endl;
-        // MPI_Barrier(MPI_COMM_WORLD);
         PMPIO_Finish(bat);
-        cout << MPIw::Environment::rankStr() << "PMPIO Finished" << endl;
 
         // for(int i = 0; i < numAllPatches; ++i) {
         //     delete [] meshnames[i];
