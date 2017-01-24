@@ -156,12 +156,12 @@ Grid::Grid(void){
     const double max_z = static_cast<double>(Environment::cell_z) - 1e-20;
 
     // std::random_device rnd;
-    const int random_src_x = 10684930;
-    const int random_src_y = 99881;
-    const int random_src_z = 861200045;
-    const int random_src_vx = 930;
-    const int random_src_vy = 98076621;
-    const int random_src_vz = 7662566;
+    const int random_src_x = 10684930 + MPIw::Environment::rank;
+    const int random_src_y = 99881 + MPIw::Environment::rank;
+    const int random_src_z = 861200045 + MPIw::Environment::rank;
+    const int random_src_vx = 930 + MPIw::Environment::rank;
+    const int random_src_vy = 98076621 + MPIw::Environment::rank;
+    const int random_src_vz = 7662566 + MPIw::Environment::rank;
     std::mt19937 mt_x(random_src_x);
     std::mt19937 mt_y(random_src_y);
     std::mt19937 mt_z(random_src_z);
