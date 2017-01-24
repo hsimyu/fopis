@@ -318,8 +318,9 @@ class Grid {
         // Field 初期化
         void initializeField(void);
 
-        // 子とのFieldやりとり用
+        // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
+        void copyScalarToParent(std::string);
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);

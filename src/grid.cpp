@@ -382,6 +382,26 @@ void Grid::copyScalarToChildren(std::string varname){
     }
 }
 
+void Grid::copyScalarToParent(std::string varname){
+    tdArray& tdValue = field->getScalar(varname);
+
+    // @note: OpenMP
+    tdArray& parentValue = parent->getField()->getScalar(varname);
+
+    for(int ix = from_ix; ix <= to_ix; ++ix){
+        int i = 2 * (ix - from_ix) + 1;
+        for(int iy = from_iy; iy <= to_iy; ++iy){
+            int j = 2 * (iy - from_iy) + 1;
+            for(int iz = from_iz; iz <= to_iz; ++iz){
+                int k = 2 * (iz - from_iz) + 1;
+
+                // とりあえずダイレクトにコピーする
+                parentValue[ix][iy][iz] = tdValue[i][j][k];
+            }
+        }
+    }
+}
+
 // -- AMR utility methods --
 int Grid::getMaxLevel() {
     int maxLevel = level; //! 初期値は自分のレベル
