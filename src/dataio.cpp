@@ -350,15 +350,15 @@ namespace IO {
 
         if (rank == 0) {
             std::vector<int> patchesOnEachProcess(MPIw::Environment::numprocs);
-            // 各プロセスの持つパッチ数
-            patchesOnEachProcess[0] = g->getSumOfChild() + 1;
-            patchesOnEachProcess[1] = 1;
-            patchesOnEachProcess[2] = 1;
-            patchesOnEachProcess[3] = 1;
-            patchesOnEachProcess[4] = 1;
-            patchesOnEachProcess[5] = 1;
-            patchesOnEachProcess[6] = 1;
-            patchesOnEachProcess[7] = 1;
+
+            for(int process_num = 0; process_num < MPIw::Environment::numprocs; ++process_num) {
+                // 各プロセスの持つパッチ数
+                if(process_num == 0) {
+                    patchesOnEachProcess[process_num] = g->getSumOfChild() + 1;
+                } else {
+                    patchesOnEachProcess[process_num] = 1;
+                }
+            }
 
             // 自分の持つroot_gridを統合したMultimeshを作成する
             int numAllPatches = std::accumulate(patchesOnEachProcess.begin(), patchesOnEachProcess.end(), 0);
