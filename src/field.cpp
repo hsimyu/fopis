@@ -26,6 +26,16 @@ tdArray& Field::getRho(){
     return rho;
 }
 
+tdArray& Field::getScalar(std::string varname){
+    if(varname == "potential" || varname == "phi") {
+        return phi;
+    } else if(varname == "rho" || varname == "charge") {
+        return rho;
+    } else {
+        throw std::invalid_argument("[ERROR] Invalid varname is passed to Field::getScalarField():" + varname);
+    }
+}
+
 // electric fields
 void Field::setEx(tdArray& _ex){
     ex = _ex;

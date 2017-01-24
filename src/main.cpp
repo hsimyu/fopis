@@ -38,22 +38,6 @@ int main(int argc, char* argv[]){
         cout << "--  End A Loop  --" << endl;
 
 #ifdef DEBUG
-        // cout << "-- SPACE CHARGE --" << endl;
-        // IO::print3DArray( root_grid->getField()->getRho(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
-        // cout << "-- POTENTIAL --" << endl;
-        // IO::print3DArray( root_grid->getField()->getPhi(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
-        // cout << "-- Ex --" << endl;
-        // IO::print3DArray( root_grid->getField()->getEx(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 2);
-        // cout << "-- Ey --" << endl;
-        // IO::print3DArray( root_grid->getField()->getEy(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 2);
-        // cout << "-- Ez --" << endl;
-        // IO::print3DArray( root_grid->getField()->getEz(), env->cell_x + 2, env->cell_y + 2, env->cell_z + 1);
-        // cout << "-- Bx --" << endl;
-        // IO::print3DArray( root_grid->getField()->getBx(), env->cell_x + 2, env->cell_y + 1, env->cell_z + 1);
-        // cout << "-- By --" << endl;
-        // IO::print3DArray( root_grid->getField()->getBy(), env->cell_x + 1, env->cell_y + 2, env->cell_z + 1);
-        // cout << "-- Bz --" << endl;
-        // IO::print3DArray( root_grid->getField()->getBz(), env->cell_x + 1, env->cell_y + 1, env->cell_z + 2);
         IO::outputParticlePositions( env, root_grid->particles );
 #endif
 
@@ -61,8 +45,12 @@ int main(int argc, char* argv[]){
         root_grid->makeChild(2, 2, 2, 8, 8, 8);
         // root_grid->makeChild(4, 8, 8, 9, 9, 9);
         root_grid->getChildren()[0]->makeChild(2, 2, 2, 10, 10, 10);
-        // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
         cout << root_grid << endl;
+
+        root_grid->copyScalarToChildren("potential");
+        root_grid->getChildren()[0]->copyScalarToChildren("potential");
+
+        // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
     }
 
     IO::writeDataInParallel(root_grid, 0, "potential");

@@ -52,8 +52,8 @@ Field* Grid::getField(void){ return field; }
 void  Grid::setParent(Grid* g){ parent = g; }
 Grid* Grid::getParent(void){ return parent; }
 
-void Grid::makeChild(const int from_ix, const int from_iy, const int from_iz, const int to_ix, const int to_iy, const int to_iz) {
-    Grid* child = new Grid(this, from_ix, from_iy, from_iz, to_ix, to_iy, to_iz);
+void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix, const int _to_iy, const int _to_iz) {
+    Grid* child = new Grid(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz);
     this->addChild(child);
     incrementSumOfChild();
 }
@@ -318,6 +318,68 @@ void Grid::updateRho(const Environment* env) {
 
     // clear values on glue cell
     Utils::clearBoundaryValues(rho, env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+}
+
+// 子グリッドへ場の値をコピーする
+// この実装はノード to ノードの場合
+void Grid::copyScalarToChildren(std::string varname){
+    tdArray& tdValue = field->getScalar(varname);
+
+    // @note: OpenMP
+    for(int chidx = 0; chidx < children.size(); ++chidx) {
+        tdArray& childValue = children[chidx]->getField()->getScalar(varname);
+
+        int child_from_ix = children[chidx]->getFromIX();
+        int child_from_iy = children[chidx]->getFromIY();
+        int child_from_iz = children[chidx]->getFromIZ();
+        int child_to_ix = children[chidx]->getToIX();
+        int child_to_iy = children[chidx]->getToIY();
+        int child_to_iz = children[chidx]->getToIZ();
+
+        for(int ix = child_from_ix; ix <= child_to_ix; ++ix){
+            int i = 2 * (ix - child_from_ix) + 1;
+            for(int iy = child_from_iy; iy <= child_to_iy; ++iy){
+                int j = 2 * (iy - child_from_iy) + 1;
+                for(int iz = child_from_iz; iz <= child_to_iz; ++iz){
+                    int k = 2 * (iz - child_from_iz) + 1;
+
+                    // cout << format("i, j, k = %d, %d, %d") % i % j % k << endl;
+                    // cout << format("ix, iy, iz = %d, %d, %d") % ix % iy % iz << endl;
+                    childValue[i][j][k] = tdValue[ix][iy][iz];
+
+                    if(iz != child_to_iz) {
+                        childValue[i][j][k + 1] = 0.5 * (tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1]);
+                    }
+
+                    if(iy != child_to_iy) {
+                        childValue[i][j + 1][k] = 0.5 * (tdValue[ix][iy][iz] + tdValue[ix][iy + 1][iz]);
+
+                        if(iz != child_to_iz) {
+                            childValue[i][j + 1][k + 1] = 0.25 * (tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1] + tdValue[ix][iy + 1][iz] + tdValue[ix][iy + 1][iz + 1]);
+                        }
+                    }
+
+                    if(ix != child_to_ix) {
+                        childValue[i + 1][j][k] = 0.5 * (tdValue[ix][iy][iz] + tdValue[ix + 1][iy][iz]);
+
+                        if(iz != child_to_iz) {
+                            childValue[i + 1][j][k + 1] = 0.25 * (tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1] + tdValue[ix + 1][iy][iz] + tdValue[ix + 1][iy][iz + 1]);
+                        }
+
+                        if(iy != child_to_iy) {
+                            childValue[i + 1][j + 1][k] = 0.25 * (tdValue[ix][iy][iz] + tdValue[ix + 1][iy][iz] + tdValue[ix][iy + 1][iz] + tdValue[ix + 1][iy + 1][iz]);
+
+                            if(iz != child_to_iz) {
+                                childValue[i + 1][j + 1][k + 1] = 0.125 *
+                                    ( tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1] + tdValue[ix][iy + 1][iz] + tdValue[ix][iy + 1][iz + 1]
+                                    + tdValue[ix + 1][iy][iz] + tdValue[ix + 1][iy][iz + 1] + tdValue[ix + 1][iy + 1][iz] + tdValue[ix + 1][iy + 1][iz + 1]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // -- AMR utility methods --

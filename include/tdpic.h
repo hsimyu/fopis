@@ -1,6 +1,7 @@
 #ifndef __TDPIC_H_INCLUDED__
 #define __TDPIC_H_INCLUDED__
 #include <iostream>
+#include <stdexcept>
 #include <math.h>
 #include <string>
 #include <vector>
@@ -104,12 +105,14 @@ class Field {
         Field();
         ~Field();
 
+        // scalars
         tdArray& getPhi();
         void setPhi(tdArray&);
-
         tdArray& getRho();
         void setRho(tdArray&);
+        tdArray& getScalar(std::string);
 
+        // vectors
         tdArray& getEx();
         void setEx(tdArray&);
         tdArray& getEy();
@@ -314,6 +317,9 @@ class Grid {
 
         // Field 初期化
         void initializeField(void);
+
+        // 子とのFieldやりとり用
+        void copyScalarToChildren(std::string);
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
