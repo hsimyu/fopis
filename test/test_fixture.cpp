@@ -5,7 +5,7 @@ using std::endl;
 
 namespace TEST_TDPIC {
     TDPICTest1::TDPICTest1() {
-        Initializer::initTDPIC(env, ptype, root_grid);
+        Initializer::initTDPIC(root_grid);
     }
 
     // テスト毎に実行される

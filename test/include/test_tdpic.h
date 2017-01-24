@@ -8,8 +8,6 @@ namespace TEST_TDPIC {
             ~TDPICTest1();
 
             // members
-            Environment* env;
-            ParticleType* ptype;
             Grid* root_grid;
     };
 }

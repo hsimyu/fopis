@@ -44,6 +44,10 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     ENDIF(DOXYGEN_FOUND)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(HOME "$ENV{HOME}")
+    find_package( Boost REQUIRED COMPONENTS filesystem system)
+    include_directories( ${Boost_INCLUDE_DIRS} )
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
+    message(STATUS "Boost: ${Boost_LIBRARIES}")
 endif()
 message(STATUS "HOME              = ${HOME}")
 
@@ -52,7 +56,7 @@ set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -W
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
     #set(CRAYPE_LINK_TYPE "dynamic")
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
 
     if(${DEBUG})
@@ -66,6 +70,13 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
     endif()
 
+    # options for silo
+    set(HOME_ROOT "${HOME}/local/")
+    set(HOME_LIBRARIES "${HOME_ROOT}/lib")
+    find_library(LIB_SILO silo HINTS ${HOME_LIBRARIES})
+
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_SILO})
+    message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 else()
     # Flags for Local build
 
