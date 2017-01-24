@@ -3,7 +3,7 @@ project(TDPIC)
 
 # options
 option(BUILD_FOR_HOST    "Build for the login node."            ON)
-option(COPY_GDB_MPIRUN_SCRIPT   "Copy gdb_mpirun.sh to build dir." ON)
+option(COPY_DEBUG_MPIRUN_SCRIPT   "Copy gdb_mpirun.sh to build dir." ON)
 option(COPY_SAMPLE_INPUT "Copy input.json to build dir."        ON)
 option(DEBUG             "Build in Debug Mode."                 ON)
 option(WITH_TEST         "Build Test code."                     ON)
@@ -128,14 +128,14 @@ file(GLOB SRCS src/*.cpp)
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${CXX_REQUIRED_LIBS})
 
-if(${COPY_GDB_MPIRUN_SCRIPT})
+if(${COPY_DEBUG_MPIRUN_SCRIPT})
     add_custom_command(
-        OUTPUT copy_gdb_mpirun_command
-        COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/scripts/gdb_mpirun.sh" "${CMAKE_BINARY_DIR}/gdb_mpirun.sh"
+        OUTPUT copy_debug_mpirun_command
+        COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/scripts/lldb_mpirun.sh" "${CMAKE_BINARY_DIR}/lldb_mpirun.sh"
     )
 
-    add_custom_target(copy_gdb_mpirun DEPENDS copy_gdb_mpirun_command)
-    add_dependencies(tdpic copy_gdb_mpirun)
+    add_custom_target(copy_debug_mpirun DEPENDS copy_debug_mpirun_command)
+    add_dependencies(tdpic copy_debug_mpirun)
 endif()
 
 if(${COPY_SAMPLE_INPUT})
