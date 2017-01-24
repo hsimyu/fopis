@@ -106,7 +106,7 @@ namespace IO {
             delete [] segIds;
         }
 
-        {
+        /*{
             DBoptlist* optList = DBMakeOptlist(10);
             char* mrgv_onames[5];
             mrgv_onames[0] = "lvlRatios";
@@ -119,12 +119,12 @@ namespace IO {
             DBPutMrgtree(file, "mrgTree", "amr_mesh", mrgTree, optList);
             DBFreeMrgtree(mrgTree);
             DBFreeOptlist(optList);
-        }
+        }*/
 
         const int numOfDim = 3;
         /* Output level refinement ratios as an mrg variable on the array of regions
            representing the levels */
-        {
+        /*{
             char* compnames[3] = {"iRatio","jRatio","kRatio"};
             char* levelRegnNames[1];
             int* data[3];
@@ -150,12 +150,12 @@ namespace IO {
             for (int i = 0; i < numOfDim; i++) {
                 delete [] data[i];
             }
-        }
+        }*/
 
         //! logical Extents
         //! Output logical extents of the patches as an mrg variable on the
         //!   array of regions representing the patches
-        {
+        /*{
             char*  compnames[6] = {"iMin","iMax","jMin","jMax","kMin","kMax"};
             char* scompnames[6] = {"xMin","xMax","yMin","yMax","zMin","zMax"};
             char* patchRegnNames[1];
@@ -183,7 +183,7 @@ namespace IO {
                 delete [] sdata[i];
             }
             delete [] rdata[0];
-        }
+        }*/
 
         delete [] levelSegTypes;
         delete [] patchSegTypes;
@@ -279,19 +279,14 @@ namespace IO {
         DBFreeOptlist(optList);
     }
 
-    void writeBlock(DBfile* file, Grid* g, std::string dataTypeName, int rankInGroup){
+    void writeBlock(DBfile* file, Grid* g, int rankInGroup, std::string dataTypeName){
         // dimension
         const int dim = 3;
-
         // names of the coordinates
         char* coordnames[3];
         coordnames[0] = const_cast<char*>("x");
         coordnames[1] = const_cast<char*>("y");
         coordnames[2] = const_cast<char*>("z");
-
-        // names of the variables
-        char* varnames[1];
-        varnames[0] = const_cast<char*>(dataTypeName.c_str());
 
         // make options list for mesh
         DBoptlist* optListMesh = DBMakeOptlist(1);
@@ -300,12 +295,26 @@ namespace IO {
 
         // make options list for var
         DBoptlist* optListVar = DBMakeOptlist(2);
-        char* unit = const_cast<char*>("V");
+
+        // set unit
+        char* unit;
+        if(dataTypeName == "potential") {
+            unit = const_cast<char*>("V");
+        } else if(dataTypeName == "rho") {
+            unit = const_cast<char*>("/m^3");
+        } else if (dataTypeName == "efield") {
+            unit = const_cast<char*>("V/m");
+        } else if (dataTypeName == "bfield") {
+            unit = const_cast<char*>("T");
+        } else {
+            throw std::invalid_argument("[ERROR] Invalid dataTypeName was passed.");
+        }
         DBAddOption(optListVar, DBOPT_UNITS, unit);
+
         int major_order = 1;
         DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // column-major (Fortran) order
 
-        g->putQuadMesh(file, coordnames, varnames, rankInGroup, optListMesh, optListVar);
+        g->putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
 
         // Free optList
         DBFreeOptlist(optListMesh);
@@ -346,7 +355,7 @@ namespace IO {
         DBfile* file = (DBfile*)(PMPIO_WaitForBaton(bat, ("data/" + filename).c_str(), blockname.c_str()));
 
         // 自分の持つroot_gridを再帰的にPutQuadmesh, PutQuadvarする
-        writeBlock(file, g, dataTypeName, rankInGroup);
+        writeBlock(file, g, rankInGroup, dataTypeName);
 
         if (rank == 0) {
             std::vector<int> patchesOnEachProcess(MPIw::Environment::numprocs);
@@ -391,7 +400,7 @@ namespace IO {
                 }
             }
 
-            writeMultimesh(file, numAllPatches, meshnames, varnames, const_cast<char*>("potential"));
+            writeMultimesh(file, numAllPatches, meshnames, varnames, dataTypeName);
 
             for(int i = 0; i < numAllPatches; ++i) {
                 delete [] meshnames[i];
@@ -447,12 +456,12 @@ namespace IO {
         }
     }
 
-    void outputParticlePositions(const Environment* env, const ParticleArray& parray, std::string filename){
+    void outputParticlePositions(const ParticleArray& parray, std::string filename){
         std::ofstream ofs(filename);
 
-        for(int id = 0; id < env->num_of_particle_types; ++id){
+        for(int id = 0; id < Environment::num_of_particle_types; ++id){
 
-            ofs << "## " << env->ptype[id].getName() << endl;
+            ofs << "## " << Environment::ptype[id].getName() << endl;
 
             for(int i = 0; i < parray[id].size(); ++i){
                 ofs << format("%9.4f %9.4f %9.4f") % parray[id][i].getX() % parray[id][i].getY() % parray[id][i].getZ();

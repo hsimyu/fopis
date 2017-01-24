@@ -32,7 +32,7 @@ int main(int argc, char* argv[]){
         cout << "--  End A Loop  --" << endl;
 
 #ifdef DEBUG
-        // IO::outputParticlePositions( env, root_grid->particles );
+        IO::outputParticlePositions(root_grid->particles);
 #endif
 
         // Level 2まで
@@ -48,6 +48,9 @@ int main(int argc, char* argv[]){
     }
 
     IO::writeDataInParallel(root_grid, 0, "potential");
+    // IO::writeDataInParallel(root_grid, 0, "rho");
+    // IO::writeDataInParallel(root_grid, 0, "efield");
+    // IO::writeDataInParallel(root_grid, 0, "bfield");
 #ifdef DEBUG
     world.barrier();
 #endif

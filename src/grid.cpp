@@ -568,38 +568,66 @@ void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
 }
 
 // -- DATA IO methods --
-void Grid::putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
+void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, char* coordnames[3], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
     const int dim = 3;
 
-    // the array of coordinate arrays
-    float** coordinates = this->getMeshNodes(dim);
-
-    //! @TODO: varnamesによってtdArrayを変える
-    double* tdArray = Utils::getTrueCells(this->getField()->getPhi());
-
     // dimensions
-    // glue cellも出力
+    // glue cellは出力しない
     int dimensions[3];
     dimensions[0] = nx;
     dimensions[1] = ny;
     dimensions[2] = nz;
-    double* vars[] = {tdArray};
 
+    // the array of coordinate arrays
+    float** coordinates = this->getMeshNodes(dim);
+
+    // quadmesh and quadvar name
     std::string meshname = (format("/block%04d/mesh%04d%04d") % rankInGroup % MPIw::Environment::rank % id).str();
-    std::string varname = (format("/block%04d/%s%04d%04d") % rankInGroup % varnames[0] % MPIw::Environment::rank % id).str();
+    std::string varname = (format("/block%04d/%s%04d%04d") % rankInGroup % dataTypeName % MPIw::Environment::rank % id).str();
 
     char* m = const_cast<char*>(meshname.c_str());
     char* v = const_cast<char*>(varname.c_str());
-
     DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, optListMesh);
-    // DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
-    DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
 
-    for(int i = 0; i < children.size(); ++i) {
-        children[i]->putQuadMesh(file, coordnames, varnames, rankInGroup, optListMesh, optListVar);
+    if(dataTypeName == "potential") {
+        double* tdArray = Utils::getTrueCells(this->getField()->getPhi());
+        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+        delete [] tdArray;
+    } else if(dataTypeName == "rho") {
+        double* tdArray = Utils::getTrueCells(this->getField()->getRho());
+        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+        delete [] tdArray;
+    } else if(dataTypeName == "efield") {
+        char* varnames[3];
+        varnames[0] = const_cast<char*>("ex");
+        varnames[1] = const_cast<char*>("ey");
+        varnames[2] = const_cast<char*>("ez");
+
+        double* vars[] = {Utils::getTrueCells(field->getEx()), Utils::getTrueCells(field->getEy()), Utils::getTrueCells(field->getEz())};
+        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+
+        delete [] vars[0];
+        delete [] vars[1];
+        delete [] vars[2];
+    } else if(dataTypeName == "bfield") {
+        char* varnames[3];
+        varnames[0] = const_cast<char*>("ex");
+        varnames[1] = const_cast<char*>("ey");
+        varnames[2] = const_cast<char*>("ez");
+        double* vars[] = {Utils::getTrueCells(field->getBx()), Utils::getTrueCells(field->getBy()), Utils::getTrueCells(field->getBz())};
+        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+
+        delete [] vars[0];
+        delete [] vars[1];
+        delete [] vars[2];
+    } else {
+        throw std::invalid_argument("[ERROR] Invalid argument was passed to putQuadMesh().");
     }
 
-    delete [] vars[0];
+    for(int i = 0; i < children.size(); ++i) {
+        children[i]->putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
+    }
+
     delete [] coordinates[0];
     delete [] coordinates;
 }
@@ -626,7 +654,7 @@ Grid::~Grid(){
 // --- stdout friend function ----
 void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     std::string tab = "";
-    for(int i = 0; i < g->getLevel(); ++i) tab += "  ";
+    for(int i = 0; i < g->getLevel(); ++i) tab += "    ";
 
     if(g->getLevel() > 0) ost << tab << "--- child [" << childnum << "] ---" << endl;
     ost << tab << "id: " << g->getID() << endl;

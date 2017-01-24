@@ -358,7 +358,7 @@ class Grid {
         void addExtent(int* logicalExtent[6], float* spatialExtent[6], float* rank[1]);
 
         // QuadMeshとVarをDBfileに突っ込む
-        void putQuadMesh(DBfile* file, char* coordnames[3], char* varnames[1], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar);
+        void putQuadMesh(DBfile*, std::string, char* coordnames[3], int, DBoptlist*, DBoptlist*);
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);
@@ -416,6 +416,6 @@ namespace Utils {
 namespace IO {
     void writeDataInParallel(Grid*, int, std::string);
     void print3DArray(const tdArray&, const int, const int, const int);
-    void outputParticlePositions(const Environment*, const ParticleArray&, std::string filename = "data/particlePositions.csv");
+    void outputParticlePositions(const ParticleArray&, std::string filename = "data/particlePositions.csv");
 }
 #endif
