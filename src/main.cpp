@@ -9,36 +9,30 @@
 #ifndef BUILD_TEST
 int main(int argc, char* argv[]){
     //! MPI Environmentを初期化
-    //! コンストラクタでMPI_Initを呼んで
-    //! mainが終わったらdestructされる
-
     MPIw::Environment mpiEnv(argc, argv);
-    MPIw::Communicator world; // MPI_COMM_WORLD
+    MPIw::Communicator world;
 
-    Environment* env;
-    ParticleType* ptype;
     Grid* root_grid;
+    Initializer::initTDPIC(root_grid);
 
-    Initializer::initTDPIC(env, ptype, root_grid);
-
-    if( env->isRootNode ) {
+    if( Environment::isRootNode ) {
         cout << "--  Begin A Loop  --" << endl;
     }
 
     // particle -> space charge
-    root_grid->updateRho(env);
+    root_grid->updateRho();
 
     // space charge -> potential
-    root_grid->getField()->solvePoisson(env);
+    root_grid->solvePoisson();
 
     // potential -> efield
-    root_grid->getField()->updateEfield(env);
+    root_grid->updateEfield();
 
-    if( env->isRootNode ) {
+    if( Environment::isRootNode ) {
         cout << "--  End A Loop  --" << endl;
 
 #ifdef DEBUG
-        IO::outputParticlePositions( env, root_grid->particles );
+        // IO::outputParticlePositions( env, root_grid->particles );
 #endif
 
         // Level 2まで

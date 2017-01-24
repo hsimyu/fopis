@@ -56,37 +56,29 @@ struct Poisson {
 
 struct Environment {
     public:
-        int num_of_particle_types;
-        double dx;
-        double dt;
-        int nx, ny, nz;
-        int proc_x, proc_y, proc_z;
-        int cell_x, cell_y, cell_z;
-        int max_iteration;
-        bool isRootNode;
+        static int num_of_particle_types;
+        static double dx;
+        static double dt;
+        static int nx, ny, nz;
+        static int proc_x, proc_y, proc_z;
+        static int cell_x, cell_y, cell_z;
+        static int max_iteration;
+        static bool isRootNode;
 
-        bool onLowXedge, onHighXedge;
-        bool onLowYedge, onHighYedge;
-        bool onLowZedge, onHighZedge;
+        static bool onLowXedge, onHighXedge;
+        static bool onLowYedge, onHighYedge;
+        static bool onLowZedge, onHighZedge;
 
-        // MPI info
-        int numprocs;
-        int rank;
-        int xrank, yrank, zrank;
+        static std::string jobtype;
+        static std::string solver_type;
+        static std::string boundary;
+        static std::string dimension;
 
-        std::string jobtype;
-        std::string solver_type;
-        std::string boundary;
-        std::string dimension;
-
-        ParticleType* ptype;
+        static ParticleType* ptype;
 
         //! 中身はMPI::Environment::getRankStr()と同様
-        std::string rankStr(void) const;
-
-        friend std::ostream& operator<<(std::ostream&, const Environment&);
-        friend std::ostream& operator<<(std::ostream&, const Environment*);
-        friend std::istream& operator<<(std::istream&, const Environment&);
+        static std::string rankStr(void);
+        static void printInfo(void);
 };
 
 class Field {
@@ -127,10 +119,10 @@ class Field {
         tdArray& getBz();
         void setBz(tdArray&);
 
-        void initializePoisson(const Environment*);
-        void solvePoisson(const Environment*);
-        void updateEfield(const Environment*);
-        void updateBfield(const Environment*);
+        void initializePoisson(const int, const int, const int);
+        void solvePoisson(const int, const int, const int);
+        void updateEfield(const int, const int, const int);
+        void updateBfield(const int, const int, const int);
 };
 
 class Velocity {
@@ -225,8 +217,8 @@ class ParticleType {
         int getTotalNumber() const;
         int getPcell() const;
 
-        int calcSize(const Environment*);
-        int calcTotalNumber(const Environment*);
+        int calcSize(void);
+        int calcTotalNumber(void);
         double calcDeviation(void) const;
 
         friend std::ostream& operator<<(std::ostream&, const ParticleType&);
@@ -264,7 +256,7 @@ class Grid {
         static unsigned int nextID;
 
     public:
-        Grid(const Environment*);
+        Grid(void);
         Grid(Grid*, const int, const int, const int, const int, const int, const int);
 
         ~Grid();
@@ -340,7 +332,10 @@ class Grid {
         ParticleArray particles;
 
         // update fields
-        void updateRho(const Environment*);
+        void updateRho(void);
+        void solvePoisson(void);
+        void updateEfield(void);
+        void updateBfield(void);
 
         // create mesh nodes array
         float** getMeshNodes(int);
@@ -370,13 +365,13 @@ class Grid {
 };
 
 namespace Initializer {
-    void initTDPIC(Environment*&, ParticleType*&, Grid*&);
-    void setTestEnvirontment(Environment*&, ParticleType*&);
-    void setMPIInfoToEnv(Environment*);
-    double getSizeOfSuperParticle(int, double, double);
-    Environment* loadEnvironment(picojson::object&);
-    ParticleType* loadParticleType(picojson::object&, Environment*);
-    Grid* initializeGrid(const Environment*);
+    void initTDPIC(Grid*&);
+    void setTestEnvirontment(void);
+    void setMPIInfoToEnv(void);
+    // double getSizeOfSuperParticle(int, double, double);
+    void loadEnvironment(picojson::object&);
+    void loadParticleType(picojson::object&);
+    Grid* initializeGrid(void);
 }
 
 namespace Utils {

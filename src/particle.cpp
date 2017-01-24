@@ -68,14 +68,14 @@ int ParticleType::getPcell() const { return particle_per_cell; }
 int ParticleType::getSize() const { return size; }
 int ParticleType::getTotalNumber() const { return totalNumber; }
 
-int ParticleType::calcSize(const Environment* env){
-    size = static_cast<int>(pow(env->dx, 3) * density / static_cast<double>(particle_per_cell));
+int ParticleType::calcSize(void){
+    size = static_cast<int>(pow(Environment::dx, 3) * density / static_cast<double>(particle_per_cell));
     return size;
 }
 
 // initializer for ambient plasma
-int ParticleType::calcTotalNumber(const Environment* env){
-    totalNumber = env->cell_x * env->cell_y * env->cell_z * particle_per_cell;
+int ParticleType::calcTotalNumber(void){
+    totalNumber = Environment::cell_x * Environment::cell_y * Environment::cell_z * particle_per_cell;
     return totalNumber;
 }
 

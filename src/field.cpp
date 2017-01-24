@@ -80,17 +80,17 @@ tdArray& Field::getBz(){
     return bz;
 }
 
-void Field::initializePoisson(const Environment* env){
+void Field::initializePoisson(const int cx, const int cy, const int cz){
 
 #ifdef DEBUG
-    if( env->isRootNode ) cout << "--  Poisson Initializing  --" << endl;
+    if( Environment::isRootNode ) cout << "--  Poisson Initializing  --" << endl;
 #endif
 
     psn = new Poisson();
     // mesh interval なので -1 する
-    int nx = env->cell_x + 2 - 1;
-    int ny = env->cell_y + 2 - 1;
-    int nz = env->cell_z + 2 - 1;
+    int nx = cx + 2 - 1;
+    int ny = cy + 2 - 1;
+    int nz = cz + 2 - 1;
 
     psn->nx = nx;
     psn->ny = ny;
@@ -104,12 +104,12 @@ void Field::initializePoisson(const Environment* env){
     psn->dpar = new double[5*(nx*ny)/2 +9];
 
     double zero = 0.0;
-    double upper_x = env->cell_x;
+    double upper_x = cx;
     double q = 0.0; // 0 for Poisson and Laplace
 
-    d_init_Helmholtz_3D(&zero, &upper_x, &zero, &upper_x, &zero, &upper_x, &nx, &ny, &nz, env->boundary.c_str(), &q, psn->ipar, psn->dpar, &(psn->stat));
+    d_init_Helmholtz_3D(&zero, &upper_x, &zero, &upper_x, &zero, &upper_x, &nx, &ny, &nz, Environment::boundary.c_str(), &q, psn->ipar, psn->dpar, &(psn->stat));
 
-    if(psn->stat != 0) cout << env->rankStr() << format("[Poisson Init] stat == %d") % psn->stat << endl;
+    if(psn->stat != 0) cout << Environment::rankStr() << format("[Poisson Init] stat == %d") % psn->stat << endl;
 
     psn->b_lx = new double[(ny + 1) * (nz + 1)];
     for(int i = 0; i < (ny +1) * (nz + 1); ++i) psn->b_lx[i] = 0.0;
@@ -126,7 +126,7 @@ void Field::initializePoisson(const Environment* env){
     psn->rho1D = new double[(nx + 1)*(ny + 1)*(nz + 1)];
 
 #ifdef DEBUG
-    if( env->isRootNode ) cout << "--  End Poisson Initializing  --" << endl;
+    if( Environment::isRootNode ) cout << "--  End Poisson Initializing  --" << endl;
 #endif
 }
 
@@ -134,8 +134,8 @@ void Field::initializePoisson(const Environment* env){
 //! もしPoisson用構造体のポインタがnullptrだった場合、初期化を行う
 //!
 //! @param Environment
-void Field::solvePoisson(const Environment* env) {
-    if(psn == nullptr) initializePoisson(env);
+void Field::solvePoisson(const int cx, const int cy, const int cz) {
+    if(psn == nullptr) initializePoisson(cx, cy, cz);
 
     //! space charge を phi 配列に copy
     //! multi_array& operator=(const multi_array& x);
@@ -145,30 +145,29 @@ void Field::solvePoisson(const Environment* env) {
     //! Commit solver
     //! @note Is it required?
     d_commit_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
-    if(psn->stat != 0) cout << env->rankStr() << format("[Poisson Commit] stat == %d") % psn->stat << endl;
+    if(psn->stat != 0) cout << Environment::rankStr() << format("[Poisson Commit] stat == %d") % psn->stat << endl;
 
     //! rho(1D) -> phi(1D)
     d_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
-    if(psn->stat != 0) cout << env->rankStr() << format("[Poisson Solve] stat == %d") % psn->stat << endl;
+    if(psn->stat != 0) cout << Environment::rankStr() << format("[Poisson Solve] stat == %d") % psn->stat << endl;
 }
 
 //! @brief 電場を更新する
 //! e = - (p_+1 - p_+0)/dx
 //! @param const Environment*
-void Field::updateEfield(const Environment* env) {
-
-    const int nx = env->cell_x + 1;
-    const int ny = env->cell_y + 1;
-    const int nz = env->cell_z + 1;
+void Field::updateEfield(const int nx, const int ny, const int nz) {
+    const int nx_with_glue = nx + 1; // (cx + 2) - 1
+    const int ny_with_glue = ny + 1;
+    const int nz_with_glue = nz + 1;
 
     //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
-    for(int i = 1; i < nx; ++i){
-        for(int j = 1; j < ny; ++j){
-            for(int k = 1; k < nz; ++k){
+    for(int i = 1; i < nx_with_glue; ++i){
+        for(int j = 1; j < ny_with_glue; ++j){
+            for(int k = 1; k < nz_with_glue; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
-                if(i < nx - 1) ex[i][j][k] = phi[i][j][k] - phi[i + 1][j][k];
-                if(j < ny - 1) ey[i][j][k] = phi[i][j][k] - phi[i][j + 1][k];
-                if(k < nz - 1) ez[i][j][k] = phi[i][j][k] - phi[i][j][k + 1];
+                if(i < nx_with_glue - 1) ex[i][j][k] = phi[i][j][k] - phi[i + 1][j][k];
+                if(j < ny_with_glue - 1) ey[i][j][k] = phi[i][j][k] - phi[i][j + 1][k];
+                if(k < nz_with_glue - 1) ez[i][j][k] = phi[i][j][k] - phi[i][j][k + 1];
             }
         }
     }
@@ -176,13 +175,11 @@ void Field::updateEfield(const Environment* env) {
 
 //! @brief 磁場を更新する(FDTD)
 //!
-void Field::updateBfield(const Environment* env) {
-    const double epsilon0 = 8.85418782e-12; //m-3 kg-1 s4 A2
-    const double c = 2.992972458e8; // m/s
-    const double dx = env->dx;
-    const double dt = env->dt;
+void Field::updateBfield(const int nx, const int ny, const int nz) {
+    const double dx = Environment::dx;
+    const double dt = Environment::dt;
     //const double DT = 0.1 * DX/c
-    const double eta = 1.0/(c * epsilon0);
+    const double eta = 1.0/(c * eps0);
     const double epsilon_r = 1.0;
     const double mu_r = 1.0;
     const double sigma = 1.0;
@@ -196,14 +193,14 @@ void Field::updateBfield(const Environment* env) {
     cout << "d1 = " << d1 << ", d2 = " << d2 << endl;
     cout << "eta = " << eta << endl;
 
-    const int nx = env->cell_x + 1;
-    const int ny = env->cell_y + 1;
-    const int nz = env->cell_z + 1;
+    const int cx_with_glue = nx + 1;
+    const int cy_with_glue = nx + 1;
+    const int cz_with_glue = nx + 1;
 
     //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
-    for(int i = 1; i < nx; ++i){
-        for(int j = 1; j < ny; ++j){
-            for(int k = 1; k < nz; ++k){
+    for(int i = 1; i < cx_with_glue; ++i){
+        for(int j = 1; j < cy_with_glue; ++j){
+            for(int k = 1; k < cz_with_glue; ++k){
                 // bx[i][j][k] = d1 * bx[i][j][k] - d2 * ((ez[i][j + 1][k] - ez[i][j][k]) / (dx/(c * dt)) - (ey[i][j][k + 1] - ey[i][j][k]) / (dx/(c * dt))) / eta;
                 // by[i][j][k] = d1 * by[i][j][k] - d2 * ((ex[i][j][k + 1] - ex[i][j][k]) / (dx/(c * dt)) - (ez[i + 1][j][k] - ez[i][j][k]) / (dx/(c * dt))) / eta;
                 // bz[i][j][k] = d1 * bz[i][j][k] - d2 * ((ey[i + 1][j][k] - ey[i][j][k]) / (dx/(c * dt)) - (ex[i][j + 1][k] - ex[i][j][k]) / (dx/(c * dt))) / eta;

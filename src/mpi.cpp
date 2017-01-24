@@ -4,6 +4,9 @@ namespace MPIw {
     // Environmentのstatic変数の実体
     int Environment::rank = -1;
     int Environment::numprocs = -1;
+    int Environment::xrank = -1;
+    int Environment::yrank = -1;
+    int Environment::zrank = -1;
 
     Environment::Environment(int argc, char* argv[]) {
 #ifndef BUILD_TEST
@@ -14,6 +17,9 @@ namespace MPIw {
 #else
         rank = 0;
         numprocs = 1;
+        xrank = 0;
+        yrank = 0;
+        zrank = 0;
 #endif
     }
 

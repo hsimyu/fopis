@@ -118,7 +118,7 @@ void Grid::initializeField(void){
 }
 
 // root grid constructor
-Grid::Grid(const Environment* env){
+Grid::Grid(void){
     //! - コンストラクタにEnvironmentクラスが渡された場合、
     //! レベル0のGridを作成します.
     level = 0;
@@ -127,17 +127,17 @@ Grid::Grid(const Environment* env){
     //! UniqueなIDをセット
     id = this->getNextID();
 
-    nx = env->cell_x;
-    ny = env->cell_y;
-    nz = env->cell_z;
-    dx = env->dx;
+    nx = Environment::cell_x;
+    ny = Environment::cell_y;
+    nz = Environment::cell_z;
+    dx = Environment::dx;
 
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
     //! その上にプロセス分割されたグリッドが乗っていると考える
-    from_ix = env->xrank * env->cell_x;
-    from_iy = env->yrank * env->cell_y;
-    from_iz = env->zrank * env->cell_z;
+    from_ix = MPIw::Environment::xrank * Environment::cell_x;
+    from_iy = MPIw::Environment::yrank * Environment::cell_y;
+    from_iz = MPIw::Environment::zrank * Environment::cell_z;
     to_ix = from_ix + nx;
     to_iy = from_iy + ny;
     to_iz = from_iz + nz;
@@ -151,9 +151,9 @@ Grid::Grid(const Environment* env){
 
     //! 粒子位置の上限を設定
     //! [0, max_x)になるよう1e-20を引いておく
-    const double max_x = static_cast<double>(env->cell_x) - 1e-20;
-    const double max_y = static_cast<double>(env->cell_y) - 1e-20;
-    const double max_z = static_cast<double>(env->cell_z) - 1e-20;
+    const double max_x = static_cast<double>(Environment::cell_x) - 1e-20;
+    const double max_y = static_cast<double>(Environment::cell_y) - 1e-20;
+    const double max_z = static_cast<double>(Environment::cell_z) - 1e-20;
 
     // std::random_device rnd;
     const int random_src_x = 10684930;
@@ -175,14 +175,14 @@ Grid::Grid(const Environment* env){
 
     // particlesは空のstd::vector< std::vector<Particle> >として宣言されている
     // particle types 分だけresize
-    particles.resize(env->num_of_particle_types);
+    particles.resize(Environment::num_of_particle_types);
 
-    for(int id = 0; id < env->num_of_particle_types; ++id){
-        int pnum = env->ptype[id].getTotalNumber();
+    for(int id = 0; id < Environment::num_of_particle_types; ++id){
+        int pnum = Environment::ptype[id].getTotalNumber();
         //! particle_number分のコンストラクタが呼ばれる
         particles[id].resize(pnum);
 
-        const double deviation = Utils::Normalizer::normalizeVelocity( env->ptype[id].calcDeviation() );
+        const double deviation = Utils::Normalizer::normalizeVelocity( Environment::ptype[id].calcDeviation() );
         std::normal_distribution<> dist_vx(0.0, deviation);
         std::normal_distribution<> dist_vy(0.0, deviation);
         std::normal_distribution<> dist_vz(0.0, deviation);
@@ -250,20 +250,20 @@ void Grid::checkGridValidness() {
     }
 
     // x extent
-    if( to_ix > parent->getNX() ){
-        std::cerr << "[ERROR] A child patch's x-extent exceeds the parent's extent. : " << to_ix << " > " << parent->getNX() << endl;
+    if( to_ix > (parent->getNX() + 1)){
+        std::cerr << "[ERROR] A child patch's x-extent exceeds the parent's extent. : " << to_ix << " > " << (parent->getNX() + 1)<< endl;
         isValid = false;
     }
 
     // y extent
-    if( to_iy > parent->getNY() ){
-        std::cerr << "[ERROR] A child patch's y-extent exceeds the parent's extent. : " << to_iy << " > " << parent->getNY() << endl;
+    if( to_iy > (parent->getNY() + 1)){
+        std::cerr << "[ERROR] A child patch's y-extent exceeds the parent's extent. : " << to_iy << " > " << (parent->getNY() + 1)<< endl;
         isValid = false;
     }
 
     // z extent
-    if( to_iz > parent->getNZ() ){
-        std::cerr << "[ERROR] A child patch's z-extent exceeds the parent's extent. : " << to_iz << " > " << parent->getNZ() << endl;
+    if( to_iz > (parent->getNZ() + 1)){
+        std::cerr << "[ERROR] A child patch's z-extent exceeds the parent's extent. : " << to_iz << " > " << (parent->getNZ() + 1)<< endl;
         isValid = false;
     }
 
@@ -271,11 +271,12 @@ void Grid::checkGridValidness() {
 }
 
 //! 粒子の位置から電荷を空間電荷にする
-void Grid::updateRho(const Environment* env) {
+//! 基本的にはroot_gridに対してのみ呼ぶ
+void Grid::updateRho() {
     tdArray& rho = field->getRho();
 
-    ParticleType* ptype = env->ptype;
-    for(int id = 0; id < env->num_of_particle_types; ++id){
+    ParticleType* ptype = Environment::ptype;
+    for(int id = 0; id < Environment::num_of_particle_types; ++id){
         int pnum = ptype[id].getTotalNumber();
 
         for(int i = 0; i < pnum; ++i){
@@ -298,9 +299,9 @@ void Grid::updateRho(const Environment* env) {
             double q = ptype[id].getCharge();
 
 #ifdef DEBUG
-            if(gx_lower + 1 >= env->cell_x + 2 || gy_lower + 1 >= env->cell_y + 2 || gz_lower + 1 >= env->cell_z + 2) {
-                cout << env->rankStr() << format("[Particle]: %5f %5f %5f") % x % y % z << endl;
-                cout << env->rankStr() << format("[Particle]: int + 1: %d %d %d") % (gx_lower+1) % (gy_lower+1) % (gz_lower+1) << endl;
+            if(gx_lower + 1 >= nx + 2 || gy_lower + 1 >= ny + 2 || gz_lower + 1 >= nz + 2) {
+                cout << Environment::rankStr() << format("[Particle]: %5f %5f %5f") % x % y % z << endl;
+                cout << Environment::rankStr() << format("[Particle]: int + 1: %d %d %d") % (gx_lower+1) % (gy_lower+1) % (gz_lower+1) << endl;
             }
 #endif
 
@@ -317,7 +318,19 @@ void Grid::updateRho(const Environment* env) {
     }
 
     // clear values on glue cell
-    Utils::clearBoundaryValues(rho, env->cell_x + 2, env->cell_y + 2, env->cell_z + 2);
+    Utils::clearBoundaryValues(rho, nx+2, ny+2, nz+2);
+}
+
+void Grid::solvePoisson(void) {
+    field->solvePoisson(nx, ny, nz);
+}
+
+void Grid::updateEfield(void) {
+    field->updateEfield(nx, ny, nz);
+}
+
+void Grid::updateBfield(void) {
+    field->updateBfield(nx, ny, nz);
 }
 
 // 子グリッドへ場の値をコピーする

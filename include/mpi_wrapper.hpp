@@ -22,6 +22,8 @@ namespace MPIw {
             //! int rank = MPI::Environment::rank; でアクセスする
             static int rank;
             static int numprocs;
+            static int xrank, yrank, zrank;
+
             static std::string rankStr(void);
             static void exitWithFinalize(int);
     };
