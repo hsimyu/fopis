@@ -48,6 +48,9 @@ int main(int argc, char* argv[]){
     }
 
     IO::writeDataInParallel(root_grid, 0, "potential");
+#ifdef DEBUG
+    world.barrier();
+#endif
     return 0;
 }
 #endif

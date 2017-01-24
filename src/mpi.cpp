@@ -55,4 +55,9 @@ namespace MPIw {
     Communicator::Communicator(MPI_Comm _comm) {
         comm = _comm;
     }
+
+    void Communicator::barrier(void) {
+        MPI_Barrier(comm);
+    }
+
 }

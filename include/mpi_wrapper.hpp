@@ -41,6 +41,7 @@ namespace MPIw {
             void setComm(MPI_Comm);
 
             // communicate methods
+            void barrier();
             void send();
     };
 }
