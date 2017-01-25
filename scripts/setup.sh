@@ -9,7 +9,7 @@ mkdir libraries
 cd libraries
 
 # install silo
-wget https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/silo-4.10.2/silo-4.10.2.tar.gz
+wget --no-check-certificate https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/silo-4.10.2/silo-4.10.2.tar.gz
 tar zxvf silo-4.10.2.tar.gz
 cd silo-4.10.2
 ./configure --prefix=$HOME/local
