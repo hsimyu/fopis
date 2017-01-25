@@ -380,7 +380,7 @@ namespace Utils {
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
 
-    double* getTrueCells(const tdArray&);
+    float* getTrueCells(const tdArray&);
     void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
     void clearBoundaryValues(tdArray&, const int, const int, const int);
 

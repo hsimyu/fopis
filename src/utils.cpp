@@ -68,18 +68,18 @@ namespace Utils {
     }
 
     //! for DATA IO
-    double* getTrueCells(const tdArray& x3D){
+    float* getTrueCells(const tdArray& x3D){
         int nx = x3D.shape()[0];
         int ny = x3D.shape()[1];
         int nz = x3D.shape()[2];
-        double* x1D = new double[(nx-2)*(ny-2)*(nz-2)];
+        float* x1D = new float[(nx-2)*(ny-2)*(nz-2)];
 
         //! Fortran-based indicing
         //! without glue cells
         for(int k = 1; k < nz - 1; ++k){
             for(int j = 1; j < ny - 1; ++j){
                 for(int i = 1; i < nx - 1; ++i){
-                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = x3D[i][j][k];
+                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
                 }
             }
         }

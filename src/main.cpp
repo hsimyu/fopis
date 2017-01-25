@@ -48,7 +48,7 @@ int main(int argc, char* argv[]){
     }
 
     IO::writeDataInParallel(root_grid, 0, "potential");
-    // IO::writeDataInParallel(root_grid, 0, "rho");
+    IO::writeDataInParallel(root_grid, 0, "rho");
     // IO::writeDataInParallel(root_grid, 0, "efield");
     // IO::writeDataInParallel(root_grid, 0, "bfield");
 #ifdef DEBUG

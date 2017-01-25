@@ -585,16 +585,19 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, char* coordnames[
     std::string meshname = (format("/block%04d/mesh%04d%04d") % rankInGroup % MPIw::Environment::rank % id).str();
     std::string varname = (format("/block%04d/%s%04d%04d") % rankInGroup % dataTypeName % MPIw::Environment::rank % id).str();
 
-    char* m = const_cast<char*>(meshname.c_str());
-    char* v = const_cast<char*>(varname.c_str());
+    const char* m = meshname.c_str();
+    const char* v = varname.c_str();
     DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, optListMesh);
 
     if(dataTypeName == "potential") {
-        double* tdArray = Utils::getTrueCells(this->getField()->getPhi());
-        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
-        delete [] tdArray;
+        const char* varnames[1] = {dataTypeName.c_str()};
+        // double* tdArray = Utils::getTrueCells(this->getField()->getPhi());
+        float* vars[1] = {Utils::getTrueCells(this->getField()->getPhi())};
+        // DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+        DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
+        delete [] vars[0];
     } else if(dataTypeName == "rho") {
-        double* tdArray = Utils::getTrueCells(this->getField()->getRho());
+        float* tdArray = Utils::getTrueCells(this->getField()->getRho());
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "efield") {
@@ -603,7 +606,7 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, char* coordnames[
         varnames[1] = const_cast<char*>("ey");
         varnames[2] = const_cast<char*>("ez");
 
-        double* vars[] = {Utils::getTrueCells(field->getEx()), Utils::getTrueCells(field->getEy()), Utils::getTrueCells(field->getEz())};
+        float* vars[] = {Utils::getTrueCells(field->getEx()), Utils::getTrueCells(field->getEy()), Utils::getTrueCells(field->getEz())};
         DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
 
         delete [] vars[0];
@@ -614,7 +617,7 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, char* coordnames[
         varnames[0] = const_cast<char*>("ex");
         varnames[1] = const_cast<char*>("ey");
         varnames[2] = const_cast<char*>("ez");
-        double* vars[] = {Utils::getTrueCells(field->getBx()), Utils::getTrueCells(field->getBy()), Utils::getTrueCells(field->getBz())};
+        float* vars[] = {Utils::getTrueCells(field->getBx()), Utils::getTrueCells(field->getBy()), Utils::getTrueCells(field->getBz())};
         DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
 
         delete [] vars[0];
