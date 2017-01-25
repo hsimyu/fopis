@@ -98,6 +98,10 @@ else()
 
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
 
+    # MPI LIBRARIES
+    find_library(MPI_LIBS mpi HINTS /usr/local/lib)
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MPI_LIBS})
+
     # options for hdf5
     set(HOME_ROOT "${HOME}/local/")
     set(HOME_LIBRARIES "${HOME_ROOT}/lib")
