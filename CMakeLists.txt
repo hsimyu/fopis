@@ -168,9 +168,11 @@ else()
     # options for hdf5
     set(HOME_ROOT "${HOME}/local/")
     set(HOME_LIBRARIES "${HOME_ROOT}/lib")
-    find_library(LIB_SILO silo HINTS ${HOME_LIBRARIES})
+    find_library(LIB_HDF5 hdf5 HINTS ${HOME_LIBRARIES})
+    find_library(LIB_SILO siloh5 HINTS ${HOME_LIBRARIES})
+    find_library(LIB_Z z HINTS ${HOME_LIBRARIES})
 
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_SILO})
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_Z} ${LIB_HDF5} ${LIB_SILO})
     message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 endif()
 

@@ -324,7 +324,7 @@ namespace IO {
 
     // Callback functions for PMPIO
     void* createFileCallback(const char* fname, const char* dname, void* udata){
-        DBfile* file = DBCreate(fname, DB_CLOBBER, DB_LOCAL, NULL, DB_PDB);
+        DBfile* file = DBCreate(fname, DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
         DBMkDir(file, dname);
         DBSetDir(file, dname);
         return file;
@@ -338,7 +338,7 @@ namespace IO {
     }
 
     void closeFileCallback(void* file, void* udata){
-        DBClose((DBfile*)file);
+        DBClose(static_cast<DBfile*>(file));
     }
 
     void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
