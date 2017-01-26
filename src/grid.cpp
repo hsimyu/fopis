@@ -191,6 +191,7 @@ Grid::Grid(void){
         for(int i = 0; i < pnum; ++i){
             particles[id][i].setPosition(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
             particles[id][i].setVelocity(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+            particles[id][i].setTypeId(id);
         }
     }
 }
@@ -331,6 +332,20 @@ void Grid::updateEfield(void) {
 
 void Grid::updateBfield(void) {
     field->updateBfield(nx, ny, nz);
+}
+
+double Grid::getParticleEnergy(void) {
+    double res = 0.0;
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        double eachEnergy = 0.0;
+        for(int i = 0; i < particles[pid].size(); ++i){
+            eachEnergy += particles[pid][i].getSquaredMagnitudeOfVelocity();
+        }
+        res += (0.5 * Environment::ptype[id].getMass() * eachEnergy);
+    }
+
+    return res;
 }
 
 // 子グリッドへ場の値をコピーする

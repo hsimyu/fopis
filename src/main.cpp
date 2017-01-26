@@ -47,6 +47,8 @@ int main(int argc, char* argv[]){
         // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
     }
 
+    int timestep = 0;
+    IO::plotEnergy(root_grid, timestep);
     IO::writeDataInParallel(root_grid, 0, "potential");
     IO::writeDataInParallel(root_grid, 1, "potential");
     IO::writeDataInParallel(root_grid, 0, "rho");

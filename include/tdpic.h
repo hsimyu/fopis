@@ -343,6 +343,10 @@ class Grid {
         void updateEfield(void);
         void updateBfield(void);
 
+        //! エネルギーを計算する
+        double getParticleEnergy(void);
+        double getFieldEnergy(void);
+
         // create mesh nodes array
         float** getMeshNodes(int);
         int* getChildOfPatches(void);

@@ -434,6 +434,26 @@ namespace IO {
         PMPIO_Finish(bat);
     }
 
+    void plotEnergy(Grid* g, int timestep){
+        const double datatime = timestep * Environment::dt;
+        double particleEnergy = g->getParticleEnergy();
+        double receivedEnergy = 0.0;
+
+        MPI_Reduce(&particleEnergy, &receivedEnergy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+        if(Environment::isRootNode) {
+            std::string filename = (format("data/energy%08d.txt") % timestep).str();
+            auto openmode = (timestep == 0) ? std::ios::out : std::ios::app;
+            std::ofstream ofs(filename, openmode);
+
+            if(timestep == 0) {
+                ofs << "# " << format("%8s %10s %15s") % "timestep" % "time" % "Energy[J]" << endl;
+            }
+
+            ofs << format("%10d %10.5f %15.7e") % timestep % datatime % Utils::Normalizer::unnormalizeEnergy(receivedEnergy) << endl;
+        }
+    }
+
     void print3DArray(const tdArray& data, const int nx, const int ny, const int nz){
         for (int k = 0; k < nz; ++k ) {
             cout << "[z:" << k << "] " << endl;
