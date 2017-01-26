@@ -152,10 +152,10 @@ class Position {
 class Particle {
     private:
         // 8byte * 6
-        // + 2byte   = 50 byte
+        // + 4byte   = 52 byte
         double x, y, z;
         double vx, vy, vz;
-        unsigned short int id;
+        int typeId;
     public:
         Particle();
         ~Particle();
@@ -174,6 +174,12 @@ class Particle {
         double getVX(void) const;
         double getVY(void) const;
         double getVZ(void) const;
+
+        void setTypeId(const int);
+        int getTypeId(void) const;
+
+        double getEnergy(void) const;
+        double getSquaredMagnitudeOfVelocity(void) const;
 };
 
 class ParticleType {
