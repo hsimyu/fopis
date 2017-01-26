@@ -26,16 +26,17 @@ namespace Initializer {
             Utils::createDir("data");
         }
 
-        if(Environment::jobtype == "new") {
-            root_grid = Initializer::initializeGrid();
-        } else {
-        }
-
-        // initialize normalizer
+        //! initialize normalizer
+        //! normalizerのセットはGridの生成より先
         Utils::Normalizer::x_unit = Environment::dx;
         Utils::Normalizer::t_unit = Environment::dt;
         Utils::Normalizer::m_unit = me;
         Utils::Normalizer::e_unit = e;
+
+        if(Environment::jobtype == "new") {
+            root_grid = Initializer::initializeGrid();
+        } else {
+        }
 
         if( Environment::isRootNode ) {
            cout << "--  End Initializing  --" << endl;

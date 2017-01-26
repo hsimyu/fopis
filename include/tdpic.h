@@ -453,6 +453,9 @@ namespace Utils {
 
             static double normalizeEnergy(const double);
             static double unnormalizeEnergy(const double);
+
+            static double normalizeEpsilon(const double);
+            static double unnormalizeEpsilon(const double);
     };
 }
 

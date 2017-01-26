@@ -61,6 +61,16 @@ namespace Utils {
         return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2); //kg * m^2/s^2;
     }
 
+    //! s^4*A^2/kg*m^3 == C^2*s^2/kg*m^3 -> 1;
+    double Normalizer::normalizeEpsilon(double raw_epsilon) {
+        return raw_epsilon * (pow(x_unit, 3) * m_unit) / (pow(e_unit, 2) * pow(t_unit, 2));
+    }
+
+    //! 1 -> C^2*s^2/kg*m^3;
+    double Normalizer::unnormalizeEpsilon(double normalized_eps) {
+        return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (pow(x_unit, 3) * m_unit);
+    }
+
     void clearBoundaryValues(tdArray& x, const int nx, const int ny, const int nz) {
         for(int i = 0; i < nx; i += nx - 1) {
             for(int j = 0; j < ny; ++j){
