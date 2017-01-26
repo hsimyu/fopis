@@ -7,13 +7,14 @@ namespace MPIw {
     int Environment::xrank = -1;
     int Environment::yrank = -1;
     int Environment::zrank = -1;
+    std::map<std::string, Communicator*> Environment::Comms;
 
     Environment::Environment(int argc, char* argv[]) {
 #ifndef BUILD_TEST
         MPI_Init(&argc, &argv);
-
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        Comms["world"] = new Communicator();
 #else
         rank = 0;
         numprocs = 1;
@@ -56,8 +57,19 @@ namespace MPIw {
         comm = _comm;
     }
 
+    double Communicator::sum(double value, const int target_rank) {
+        double res = 0.0;
+        MPI_Reduce(&value, &res, 1, MPI_DOUBLE, MPI_SUM, target_rank, comm);
+        return res;
+    }
+
+    int Communicator::sum(int value, const int target_rank) {
+        int res = 0;
+        MPI_Reduce(&value, &res, 1, MPI_INT, MPI_SUM, target_rank, comm);
+        return res;
+    }
+
     void Communicator::barrier(void) {
         MPI_Barrier(comm);
     }
-
 }

@@ -437,9 +437,7 @@ namespace IO {
     void plotEnergy(Grid* g, int timestep){
         const double datatime = timestep * Environment::dt;
         double particleEnergy = g->getParticleEnergy();
-        double receivedEnergy = 0.0;
-
-        MPI_Reduce(&particleEnergy, &receivedEnergy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        double receivedEnergy = MPIw::Environment::Comms["world"]->sum(particleEnergy, 0);
 
         if(Environment::isRootNode) {
             std::string filename = (format("data/energy%08d.txt") % timestep).str();

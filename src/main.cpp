@@ -10,7 +10,7 @@
 int main(int argc, char* argv[]){
     //! MPI Environmentを初期化
     MPIw::Environment mpiEnv(argc, argv);
-    MPIw::Communicator world;
+    // MPIw::Communicator world;
 
     Grid* root_grid;
     Initializer::initTDPIC(root_grid);
@@ -54,9 +54,6 @@ int main(int argc, char* argv[]){
     IO::writeDataInParallel(root_grid, 0, "rho");
     IO::writeDataInParallel(root_grid, 0, "efield");
     IO::writeDataInParallel(root_grid, 0, "bfield");
-#ifdef DEBUG
-    world.barrier();
-#endif
     return 0;
 }
 #endif
