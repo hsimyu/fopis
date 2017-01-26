@@ -110,6 +110,11 @@ void Grid::initializeField(void){
     field->getEy().resize(tdExtents[cx][cy-1][cz]);
     field->getEz().resize(tdExtents[cx][cy][cz-1]);
 
+    // reference fields have the same size as nodal size
+    field->getExRef().resize(tdExtents[cx][cy][cz]);
+    field->getEyRef().resize(tdExtents[cx][cy][cz]);
+    field->getEzRef().resize(tdExtents[cx][cy][cz]);
+
     field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
     field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
     field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
@@ -276,45 +281,31 @@ void Grid::checkGridValidness() {
 void Grid::updateRho() {
     tdArray& rho = field->getRho();
 
-    ParticleType* ptype = Environment::ptype;
-    for(int id = 0; id < Environment::num_of_particle_types; ++id){
-        int pnum = ptype[id].getTotalNumber();
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+        int max_pnum = Environment::ptype[pid].getTotalNumber();
+        double q = Environment::ptype[pid].getCharge();
 
-        for(int i = 0; i < pnum; ++i){
-            double x = particles[id][i].getX();
-            double y = particles[id][i].getY();
-            double z = particles[id][i].getZ();
-
-            int gx_lower = floor(x);
-            double delta_gx = x - gx_lower;
-
-            int gy_lower = floor(y);
-            double delta_gy = y - gy_lower;
-
-            int gz_lower = floor(z);
-            double delta_gz = z - gz_lower;
-
-            // glue cell分を考慮
-            gx_lower += 1; gy_lower += 1; gz_lower += 1;
-
-            double q = ptype[id].getCharge();
+        for(int pnum = 0; pnum < max_pnum; ++pnum){
+            Particle& p = particles[pid][pnum];
+            Position pos(p);
+            int i = pos.i, j = pos.j, k = pos.k;
 
 #ifdef DEBUG
-            if(gx_lower + 1 >= nx + 2 || gy_lower + 1 >= ny + 2 || gz_lower + 1 >= nz + 2) {
-                cout << Environment::rankStr() << format("[Particle]: %5f %5f %5f") % x % y % z << endl;
-                cout << Environment::rankStr() << format("[Particle]: int + 1: %d %d %d") % (gx_lower+1) % (gy_lower+1) % (gz_lower+1) << endl;
+            if( (i >= nx + 2) || (j >= ny + 2) || (k >= nz + 2)) {
+                cout << Environment::rankStr() << format("[Particle Position Error]: xyz: %5f %5f %5f") % pos.x % pos.y % pos.z << endl;
+                cout << Environment::rankStr() << format("[Particle Position Error]: ijk: %d %d %d") % i % j % k << endl;
             }
 #endif
 
-            rho[gx_lower    ][gy_lower    ][gz_lower    ] += (1.0 - delta_gx) * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
-            rho[gx_lower + 1][gy_lower    ][gz_lower    ] += delta_gx * (1.0 - delta_gy) * (1.0 - delta_gz) * q;
-            rho[gx_lower    ][gy_lower + 1][gz_lower    ] += (1.0 - delta_gx) * delta_gy * (1.0 - delta_gz) * q;
-            rho[gx_lower + 1][gy_lower + 1][gz_lower    ] += delta_gx * delta_gy * (1.0 - delta_gz) * q;
+            rho[i  ][j  ][k] += pos.dx2 * pos.dy2 * pos.dz2 * q;
+            rho[i+1][j  ][k] += pos.dx1 * pos.dy2 * pos.dz2 * q;
+            rho[i  ][j+1][k] += pos.dx2 * pos.dy1 * pos.dz2 * q;
+            rho[i+1][j+1][k] += pos.dx1 * pos.dy1 * pos.dz2 * q;
 
-            rho[gx_lower    ][gy_lower    ][gz_lower + 1] += (1.0 - delta_gx) * (1.0 - delta_gy) * delta_gz * q;
-            rho[gx_lower + 1][gy_lower    ][gz_lower + 1] += delta_gx * (1.0 - delta_gy) * delta_gz * q;
-            rho[gx_lower    ][gy_lower + 1][gz_lower + 1] += (1.0 - delta_gx) * delta_gy * delta_gz * q;
-            rho[gx_lower + 1][gy_lower + 1][gz_lower + 1] += delta_gx * delta_gy * delta_gz * q;
+            rho[i  ][j  ][k+1] += pos.dx2 * pos.dy2 * pos.dz1 * q;
+            rho[i+1][j  ][k+1] += pos.dx1 * pos.dy2 * pos.dz1 * q;
+            rho[i  ][j+1][k+1] += pos.dx2 * pos.dy1 * pos.dz1 * q;
+            rho[i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
         }
     }
 
@@ -332,6 +323,80 @@ void Grid::updateEfield(void) {
 
 void Grid::updateBfield(void) {
     field->updateBfield(nx, ny, nz);
+}
+
+void Grid::updateParticleVelocity(void) {
+    tdArray& exref = field->getExRef();
+    tdArray& eyref = field->getEyRef();
+    tdArray& ezref = field->getEzRef();
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        double qm = 0.5 * (Environment::ptype[pid].getCharge()) * (Environment::ptype[pid].getMass());
+
+        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
+            Particle& p = particles[pid][pnum];
+            Position pos(p);
+
+            int i = pos.i, j = pos.j, k = pos.k;
+            double v1 = qm * pos.dx2 * pos.dy2 * pos.dz2;
+            double v2 = qm * pos.dx1 * pos.dy2 * pos.dz2;
+            double v3 = qm * pos.dx2 * pos.dy1 * pos.dz2;
+            double v4 = qm * pos.dx1 * pos.dy1 * pos.dz2;
+            double v5 = qm * pos.dx2 * pos.dy2 * pos.dz1;
+            double v6 = qm * pos.dx1 * pos.dy2 * pos.dz1;
+            double v7 = qm * pos.dx2 * pos.dy1 * pos.dz1;
+            double v8 = qm * pos.dx1 * pos.dy1 * pos.dz1;
+
+            double ex =  v1*exref[i][j][k]
+                + v2*exref[i+1][j][k]
+                + v3*exref[i][j+1][k]
+                + v4*exref[i+1][j+1][k]
+                + v5*exref[i][j][k+1]
+                + v6*exref[i+1][j][k+1]
+                + v7*exref[i][j+1][k+1]
+            + v8*exref[i+1][j+1][k+1];
+            double ey =  v1*eyref[i][j][k]
+                + v2*eyref[i+1][j][k]
+                + v3*eyref[i][j+1][k]
+                + v4*eyref[i+1][j+1][k]
+                + v5*eyref[i][j][k+1]
+                + v6*eyref[i+1][j][k+1]
+                + v7*eyref[i][j+1][k+1]
+            + v8*eyref[i+1][j+1][k+1];
+            double ez =  v1*ezref[i][j][k]
+                + v2*ezref[i+1][j][k]
+                + v3*ezref[i][j+1][k]
+                + v4*ezref[i+1][j+1][k]
+                + v5*ezref[i][j][k+1]
+                + v6*ezref[i+1][j][k+1]
+                + v7*ezref[i][j+1][k+1]
+            + v8*ezref[i+1][j+1][k+1];
+            double bx = 0.0;
+            double by = 0.0;
+            double bz = 0.0;
+            double boris = 2.0/(1.0 + (bx*bx+by*by+bz*bz));
+
+            double vx1 = p.getVX() + ex;
+            double vy1 = p.getVY() + ey;
+            double vz1 = p.getVZ() + ez;
+
+            double vxt = vx1 + vy1*bz - vz1 * by;
+            double vyt = vy1 + vz1*bx - vx1 * bz;
+            double vzt = vz1 + vx1*by - vy1 * bx;
+
+            p.setVX(vx1 + ex + boris*(vyt*bz - vzt*by));
+            p.setVY(vy1 + ey + boris*(vzt*bx - vxt*bz));
+            p.setVZ(vz1 + ez + boris*(vxt*by - vyt*bx));
+        }
+    }
+}
+
+void Grid::updateParticlePosition(void) {
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        for(int i = 0; i < particles[pid].size(); ++i){
+            particles[pid][i].updatePosition();
+        }
+    }
 }
 
 double Grid::getParticleEnergy(void) {

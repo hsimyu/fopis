@@ -85,9 +85,14 @@ class Field {
     private:
         tdArray rho;
         tdArray phi;
+
         tdArray ex;
         tdArray ey;
         tdArray ez;
+        tdArray exref;
+        tdArray eyref;
+        tdArray ezref;
+
         tdArray bx;
         tdArray by;
         tdArray bz;
@@ -111,6 +116,14 @@ class Field {
         void setEy(tdArray&);
         tdArray& getEz();
         void setEz(tdArray&);
+
+        // reference efield on nodes
+        tdArray& getExRef();
+        tdArray& getEyRef();
+        tdArray& getEzRef();
+        void setExRef(tdArray&);
+        void setEyRef(tdArray&);
+        void setEzRef(tdArray&);
 
         tdArray& getBx();
         void setBx(tdArray&);
@@ -350,6 +363,10 @@ class Grid {
         void solvePoisson(void);
         void updateEfield(void);
         void updateBfield(void);
+
+        // update particles
+        void updateParticleVelocity(void);
+        void updateParticlePosition(void);
 
         //! エネルギーを計算する
         double getParticleEnergy(void);

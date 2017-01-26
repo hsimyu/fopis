@@ -6,6 +6,9 @@ Field::Field() :
     ex(boost::extents[0][0][0], boost::fortran_storage_order()),
     ey(boost::extents[0][0][0], boost::fortran_storage_order()),
     ez(boost::extents[0][0][0], boost::fortran_storage_order()),
+    exref(boost::extents[0][0][0], boost::fortran_storage_order()),
+    eyref(boost::extents[0][0][0], boost::fortran_storage_order()),
+    ezref(boost::extents[0][0][0], boost::fortran_storage_order()),
     bx(boost::extents[0][0][0], boost::fortran_storage_order()),
     by(boost::extents[0][0][0], boost::fortran_storage_order()),
     bz(boost::extents[0][0][0], boost::fortran_storage_order()) {}
@@ -56,6 +59,19 @@ void Field::setEz(tdArray& _ez){
 }
 tdArray& Field::getEz(){
     return ez;
+}
+
+//! reference efield on nodes
+tdArray& Field::getExRef(){
+    return exref;
+}
+
+tdArray& Field::getEyRef(){
+    return eyref;
+}
+
+tdArray& Field::getEzRef(){
+    return ezref;
 }
 
 // magnetic fields
@@ -160,14 +176,27 @@ void Field::updateEfield(const int nx, const int ny, const int nz) {
     const int ny_with_glue = ny + 1;
     const int nz_with_glue = nz + 1;
 
-    //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
-    for(int i = 1; i < nx_with_glue; ++i){
-        for(int j = 1; j < ny_with_glue; ++j){
-            for(int k = 1; k < nz_with_glue; ++k){
+    //! phiは通信してあるとする -> 0番目のedgeも計算可能
+    for(int i = 0; i < nx_with_glue; ++i){
+        for(int j = 0; j < ny_with_glue; ++j){
+            for(int k = 0; k < nz_with_glue; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
                 if(i < nx_with_glue - 1) ex[i][j][k] = phi[i][j][k] - phi[i + 1][j][k];
                 if(j < ny_with_glue - 1) ey[i][j][k] = phi[i][j][k] - phi[i][j + 1][k];
                 if(k < nz_with_glue - 1) ez[i][j][k] = phi[i][j][k] - phi[i][j][k + 1];
+            }
+        }
+    }
+
+    //! @note:隣と通信しなくてもいい？？
+
+    //! reference 更新
+    for(int i = 1; i < nx_with_glue; ++i){
+        for(int j = 1; j < ny_with_glue; ++j){
+            for(int k = 1; k < nz_with_glue; ++k){
+                exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
+                eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
+                ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
             }
         }
     }
