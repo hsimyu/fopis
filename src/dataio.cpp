@@ -247,7 +247,7 @@ namespace IO {
 
         {
             DBoptlist* optList = DBMakeOptlist(1);
-            char* mrgv_onames[2];
+            const char* mrgv_onames[2];
             mrgv_onames[0] = "groupings";
             mrgv_onames[1] = 0;
             // mrgv_onames[1] = "ijkExts";
@@ -262,19 +262,21 @@ namespace IO {
         }
     }
 
-    void writeMultimesh(DBfile* file, int total_blocknum, char** meshnames, char** varnames, std::string varlabel) {
+    void writeMultimesh(DBfile* file, int total_blocknum, char** meshnames, char** varnames, std::string varlabel, float datatime) {
         // make options list
-        DBoptlist* optList = DBMakeOptlist(1);
+        DBoptlist* optList = DBMakeOptlist(2);
         int meshtype = DB_QUAD_RECT;
-
         DBAddOption(optList, DBOPT_MB_BLOCK_TYPE, &meshtype);
-        char* blockname = const_cast<char*>("multimesh");
+        DBAddOption(optList, DBOPT_TIME, &datatime);
+
+        const char* blockname = "multimesh";
         DBPutMultimesh(file, blockname, total_blocknum, meshnames, NULL, optList);
         DBClearOptlist(optList);
 
         int vartype = DB_QUADVAR;
-        char* varblockname = const_cast<char*>( varlabel.c_str() );
+        const char* varblockname = varlabel.c_str();
         DBAddOption(optList, DBOPT_MB_BLOCK_TYPE, &vartype);
+        DBAddOption(optList, DBOPT_TIME, &datatime);
         DBPutMultivar(file, varblockname, total_blocknum, varnames, NULL, optList);
         DBFreeOptlist(optList);
     }
@@ -283,10 +285,7 @@ namespace IO {
         // dimension
         const int dim = 3;
         // names of the coordinates
-        char* coordnames[3];
-        coordnames[0] = const_cast<char*>("x");
-        coordnames[1] = const_cast<char*>("y");
-        coordnames[2] = const_cast<char*>("z");
+        const char* coordnames[3] = {"x", "y", "z"};
 
         // make options list for mesh
         DBoptlist* optListMesh = DBMakeOptlist(1);
@@ -343,6 +342,7 @@ namespace IO {
 
     void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
         //! @note: 事前に全てのプロセスの持つパッチ数などを云々しておく
+        const float datatime = static_cast<float>(timestep * Environment::dt + 101);
         const int maxIOUnit = 4;
         int numfiles = (MPIw::Environment::numprocs <= maxIOUnit) ? MPIw::Environment::numprocs : maxIOUnit;
         int rank = MPIw::Environment::rank;
@@ -400,7 +400,7 @@ namespace IO {
                 }
             }
 
-            writeMultimesh(file, numAllPatches, meshnames, varnames, dataTypeName);
+            writeMultimesh(file, numAllPatches, meshnames, varnames, dataTypeName, datatime);
 
             for(int i = 0; i < numAllPatches; ++i) {
                 delete [] meshnames[i];

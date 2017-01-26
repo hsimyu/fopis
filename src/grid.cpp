@@ -568,7 +568,7 @@ void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
 }
 
 // -- DATA IO methods --
-void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, char* coordnames[3], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
+void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coordnames[3], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
     const int dim = 3;
 
     // dimensions
