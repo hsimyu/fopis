@@ -8,10 +8,11 @@ Particle::~Particle(){
 }
 
 void Particle::setPosition(const Position& pos){
-    x = pos.getX();
-    y = pos.getY();
-    z = pos.getZ();
+    x = pos.x;
+    y = pos.y;
+    z = pos.z;
 }
+
 void Particle::setPosition(double _x, double _y, double _z){
     x = _x;
     y = _y;
@@ -36,6 +37,10 @@ double Particle::getVX() const { return vx; }
 double Particle::getVY() const { return vy; }
 double Particle::getVZ() const { return vz; }
 
+void Particle::setVX(const double _vx) { vx = _vx; }
+void Particle::setVY(const double _vy) { vy = _vy; }
+void Particle::setVZ(const double _vz) { vz = _vz; }
+
 void Particle::setTypeId(const int _id) { typeId = _id; }
 int Particle::getTypeId(void) const { return typeId; }
 
@@ -47,4 +52,11 @@ double Particle::getEnergy(void) const {
 //! まとめて計算する時用
 double Particle::getSquaredMagnitudeOfVelocity(void) const {
     return (vx*vx + vy*vy + vz*vz);
+}
+
+//! 位置の更新
+void Particle::updatePosition(void) {
+    x += vx;
+    y += vy;
+    z += vz;
 }

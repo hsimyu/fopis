@@ -139,14 +139,18 @@ class Velocity {
 
 class Position {
     private:
-        double x, y, z;
+        void updateDelta(void);
+
     public:
-        Position();
+        int i, j, k;
+        double x, y, z;
+        double dx1, dy1, dz1, dx2, dy2, dz2;
+        Position(const double, const double, const double);
+        Position(const int, const int, const int);
+        Position(const Particle&);
         ~Position();
-        void set(double, double, double);
-        double getX(void) const;
-        double getY(void) const;
-        double getZ(void) const;
+        void setXYZ(const double, const double, const double);
+        void setIJK(const int, const int, const int);
 };
 
 class Particle {
@@ -165,21 +169,25 @@ class Particle {
 
         void setVelocity(const Velocity&);
         void setVelocity(double, double, double);
-        Position getPosition();
-        Velocity getVelocity();
 
         double getX(void) const;
         double getY(void) const;
         double getZ(void) const;
+
         double getVX(void) const;
         double getVY(void) const;
         double getVZ(void) const;
+        void setVX(const double);
+        void setVY(const double);
+        void setVZ(const double);
 
         void setTypeId(const int);
         int getTypeId(void) const;
 
         double getEnergy(void) const;
         double getSquaredMagnitudeOfVelocity(void) const;
+
+        void updatePosition(void);
 };
 
 class ParticleType {
