@@ -1,1 +1,4 @@
-#define TDPIC_VERSION "@TDPIC_VERSION@"
+#pragma once
+#define TDPIC_VERSION  "@TDPIC_VERSION@"
+#define TDPIC_DATE     "@TDPIC_DATE@"
+#define TDPIC_REVISION "@TDPIC_REVISION@"

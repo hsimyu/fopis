@@ -18,6 +18,9 @@ namespace Initializer {
 
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
+            cout << "    Built on: " << TDPIC_DATE << endl;
+            cout << "Git Revision: " << TDPIC_REVISION << endl << endl;
+
             Environment::printInfo();
             //! データ書き込み用ディレクトリを作成
             Utils::createDir("data");
