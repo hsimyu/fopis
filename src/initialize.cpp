@@ -1,5 +1,5 @@
-#include <math.h>
 #include <tdpic.h>
+#include <tdpic_configure.h>
 
 namespace Initializer {
     void initTDPIC(Grid*& root_grid){
@@ -17,7 +17,7 @@ namespace Initializer {
         Initializer::setMPIInfoToEnv();
 
         if( Environment::isRootNode ) {
-            cout << "---    [ TDPIC ]      --" << endl;
+            cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
             Environment::printInfo();
             //! データ書き込み用ディレクトリを作成
             Utils::createDir("data");

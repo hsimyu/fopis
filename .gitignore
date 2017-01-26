@@ -2,3 +2,4 @@ build
 .vscode
 .DS_Store
 libraries
+include/tdpic_configure.h

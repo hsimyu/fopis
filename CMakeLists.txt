@@ -9,6 +9,9 @@ option(DEBUG             "Build in Debug Mode."                 ON)
 option(WITH_TEST         "Build Test code."                     ON)
 
 set(CXX_REQUIRED_LIBS "")
+set(TDPIC_VERSION 0.0.1)
+
+configure_file(${CMAKE_SOURCE_DIR}/include/tdpic_configure.h.in ${CMAKE_SOURCE_DIR}/include/tdpic_configure.h @ONLY)
 
 # add submodules
 include_directories(${CMAKE_SOURCE_DIR}/picojson)
