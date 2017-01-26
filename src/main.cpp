@@ -23,6 +23,19 @@ int main(int argc, char* argv[]){
     root_grid->solvePoisson();
     root_grid->updateEfield();
 
+    /*
+    if(Environment::isRootNode) {
+        cout << "-- phi --" << endl;
+        IO::print3DArray(root_grid->getField()->getPhi());
+        cout << "-- ex --" << endl;
+        IO::print3DArray(root_grid->getField()->getEx());
+        cout << "-- ey --" << endl;
+        IO::print3DArray(root_grid->getField()->getEy());
+        cout << "-- ez --" << endl;
+        IO::print3DArray(root_grid->getField()->getEz());
+    }
+    */
+
     for(int timestep = 0; timestep < Environment::max_iteration; ++timestep) {
         // new particle position
         root_grid->updateParticleVelocity();

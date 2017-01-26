@@ -133,9 +133,13 @@ class Field {
         void setBz(tdArray&);
 
         void initializePoisson(const int, const int, const int);
-        void solvePoisson(const int, const int, const int);
         void updateEfield(const int, const int, const int);
         void updateBfield(const int, const int, const int);
+
+        //! solver の実体
+        void solvePoissonMKL(const int, const int, const int);
+        void solvePoissonSOR(const int, const double);
+        void solvePoisson(const int, const double);
 };
 
 class Velocity {
@@ -403,7 +407,6 @@ namespace Initializer {
     void initTDPIC(Grid*&);
     void setTestEnvirontment(void);
     void setMPIInfoToEnv(void);
-    // double getSizeOfSuperParticle(int, double, double);
     void loadEnvironment(picojson::object&);
     void loadParticleType(picojson::object&);
     Grid* initializeGrid(void);
@@ -462,7 +465,7 @@ namespace Utils {
 namespace IO {
     void plotEnergy(Grid*, int);
     void writeDataInParallel(Grid*, int, std::string);
-    void print3DArray(const tdArray&, const int, const int, const int);
+    void print3DArray(const tdArray&);
     void outputParticlePositions(const ParticleArray&, std::string filename = "data/particlePositions.csv");
 }
 #endif

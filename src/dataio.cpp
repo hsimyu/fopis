@@ -440,7 +440,7 @@ namespace IO {
         double receivedEnergy = MPIw::Environment::Comms["world"]->sum(particleEnergy, 0);
 
         if(Environment::isRootNode) {
-            std::string filename = (format("data/energy%08d.txt") % timestep).str();
+            std::string filename = "data/energy.txt";
             auto openmode = (timestep == 0) ? std::ios::out : std::ios::app;
             std::ofstream ofs(filename, openmode);
 
@@ -452,7 +452,11 @@ namespace IO {
         }
     }
 
-    void print3DArray(const tdArray& data, const int nx, const int ny, const int nz){
+    void print3DArray(const tdArray& data){
+        const int nx = data.shape()[0];
+        const int ny = data.shape()[1];
+        const int nz = data.shape()[2];
+
         for (int k = 0; k < nz; ++k ) {
             cout << "[z:" << k << "] " << endl;
 

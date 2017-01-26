@@ -43,7 +43,7 @@ int ParticleType::calcTotalNumber(void){
 }
 
 double ParticleType::calcDeviation() const {
-    return sqrt(temperature / (mass * me));
+    return Utils::Normalizer::normalizeVelocity(sqrt(temperature / (mass * me)));
 }
 
 // util

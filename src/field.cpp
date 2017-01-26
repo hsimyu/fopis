@@ -150,7 +150,7 @@ void Field::initializePoisson(const int cx, const int cy, const int cz){
 //! もしPoisson用構造体のポインタがnullptrだった場合、初期化を行う
 //!
 //! @param Environment
-void Field::solvePoisson(const int cx, const int cy, const int cz) {
+void Field::solvePoissonMKL(const int cx, const int cy, const int cz) {
     if(psn == nullptr) initializePoisson(cx, cy, cz);
 
     //! space charge を phi 配列に copy
@@ -166,6 +166,28 @@ void Field::solvePoisson(const int cx, const int cy, const int cz) {
     //! rho(1D) -> phi(1D)
     d_Helmholtz_3D(phi.data(), psn->b_lx, psn->b_lx, psn->b_ly, psn->b_ly, psn->b_lz, psn->b_lz, psn->xhandle, psn->yhandle, psn->ipar, psn->dpar, &(psn->stat));
     if(psn->stat != 0) cout << Environment::rankStr() << format("[Poisson Solve] stat == %d") % psn->stat << endl;
+}
+
+//! @brief SOR法
+void Field::solvePoissonSOR(const int loopnum, const double dx) {
+    double omega = 2.0/(1.0 + M_PI/phi.shape()[0]); // spectral radius
+    double rho_coeff = 6.0 * dx / Utils::Normalizer::normalizeEpsilon(eps0);
+
+    for(int loop = 0; loop < loopnum; ++loop) {
+        for(int k = 1; k < phi.shape()[2] - 1; ++k){
+            for(int j = 1; j < phi.shape()[1] - 1; ++j){
+                for(int i = 1; i < phi.shape()[0] - 1; ++i){
+                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff*rho[i][j][k])/6.0;
+                }
+            }
+        }
+    }
+}
+
+//! Poissonソルバを呼び出す
+void Field::solvePoisson(const int loopnum, const double dx) {
+    // this->solvePoissonMKL(cx, cy, cz);
+    this->solvePoissonSOR(loopnum, dx);
 }
 
 //! @brief 電場を更新する

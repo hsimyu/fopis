@@ -106,6 +106,9 @@ void Grid::initializeField(void){
     field->getPhi().resize(tdExtents[cx][cy][cz]);
     field->getRho().resize(tdExtents[cx][cy][cz]);
 
+    // @note: Dirichlet Boundary
+    Utils::clearBoundaryValues(field->getPhi(), cx, cy, cz);
+
     field->getEx().resize(tdExtents[cx-1][cy][cz]);
     field->getEy().resize(tdExtents[cx][cy-1][cz]);
     field->getEz().resize(tdExtents[cx][cy][cz-1]);
@@ -187,7 +190,7 @@ Grid::Grid(void){
         //! particle_number分のコンストラクタが呼ばれる
         particles[id].resize(pnum);
 
-        const double deviation = Utils::Normalizer::normalizeVelocity( Environment::ptype[id].calcDeviation() );
+        const double deviation = Environment::ptype[id].calcDeviation();
         std::normal_distribution<> dist_vx(0.0, deviation);
         std::normal_distribution<> dist_vy(0.0, deviation);
         std::normal_distribution<> dist_vz(0.0, deviation);
@@ -308,13 +311,11 @@ void Grid::updateRho() {
             rho[i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
         }
     }
-
-    // clear values on glue cell
-    Utils::clearBoundaryValues(rho, nx+2, ny+2, nz+2);
 }
 
 void Grid::solvePoisson(void) {
-    field->solvePoisson(nx, ny, nz);
+    const int DEFAULT_ITERATION_LOOP = 20;
+    field->solvePoisson(DEFAULT_ITERATION_LOOP, dx);
 }
 
 void Grid::updateEfield(void) {
@@ -354,7 +355,7 @@ void Grid::updateParticleVelocity(void) {
                 + v5*exref[i][j][k+1]
                 + v6*exref[i+1][j][k+1]
                 + v7*exref[i][j+1][k+1]
-            + v8*exref[i+1][j+1][k+1];
+                + v8*exref[i+1][j+1][k+1];
             double ey =  v1*eyref[i][j][k]
                 + v2*eyref[i+1][j][k]
                 + v3*eyref[i][j+1][k]
@@ -362,7 +363,7 @@ void Grid::updateParticleVelocity(void) {
                 + v5*eyref[i][j][k+1]
                 + v6*eyref[i+1][j][k+1]
                 + v7*eyref[i][j+1][k+1]
-            + v8*eyref[i+1][j+1][k+1];
+                + v8*eyref[i+1][j+1][k+1];
             double ez =  v1*ezref[i][j][k]
                 + v2*ezref[i+1][j][k]
                 + v3*ezref[i][j+1][k]
@@ -370,7 +371,7 @@ void Grid::updateParticleVelocity(void) {
                 + v5*ezref[i][j][k+1]
                 + v6*ezref[i+1][j][k+1]
                 + v7*ezref[i][j+1][k+1]
-            + v8*ezref[i+1][j+1][k+1];
+                + v8*ezref[i+1][j+1][k+1];
             double bx = 0.0;
             double by = 0.0;
             double bz = 0.0;
