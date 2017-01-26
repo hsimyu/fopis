@@ -87,6 +87,178 @@ namespace Utils {
         return x1D;
     }
 
+    float* getTrueEdges(const tdArray& x3D, const int axis){
+        int nx = x3D.shape()[0];
+        int ny = x3D.shape()[1];
+        int nz = x3D.shape()[2];
+
+        const int c_indexing = 0;
+        const int fortran_indexing = 0;
+        const int indexing = c_indexing;
+
+        // Add extra slot to axis
+        switch(axis){
+            case 0:
+                nx += 1;
+                break;
+            case 1:
+                ny += 1;
+                break;
+            case 2:
+                nz += 1;
+                break;
+            default:
+                throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
+                break;
+        }
+
+        float* x1D = new float[(nx-2)*(ny-2)*(nz-2)];
+
+        if(indexing == c_indexing) {
+            for(int i = 1; i < nx - 1; ++i){
+                for(int j = 1; j < ny - 1; ++j){
+                    for(int k = 1; k < nz - 1; ++k){
+                        switch(axis){
+                            case 0:
+                                if(i != (nx - 2)) {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 1:
+                                if(j != (ny - 2)) {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 2:
+                                if(k != (nz - 2)) {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            default:
+                                throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
+                                break;
+                        }
+                    }
+                }
+            }
+        } else {
+            for(int k = 1; k < nz - 1; ++k){
+                for(int j = 1; j < ny - 1; ++j){
+                    for(int i = 1; i < nx - 1; ++i){
+                        switch(axis){
+                            case 0:
+                                if(i != (nx - 2)) {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 1:
+                                if(j != (ny - 2)) {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 2:
+                                if(k != (nz - 2)) {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            default:
+                                throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return x1D;
+    }
+
+    float* getTrueFaces(const tdArray& x3D, const int axis){
+        int nx = x3D.shape()[0];
+        int ny = x3D.shape()[1];
+        int nz = x3D.shape()[2];
+
+        const int c_indexing = 0;
+        const int fortran_indexing = 0;
+        const int indexing = c_indexing;
+
+        // Add extra slot to axis
+        switch(axis){
+            case 0:
+                ny += 1; nz += 1;
+                break;
+            case 1:
+                nx += 1; nz += 1;
+                break;
+            case 2:
+                ny += 1; nz += 1;
+                break;
+            default:
+                throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
+                break;
+        }
+
+        float* x1D = new float[(nx-2)*(ny-2)*(nz-2)];
+
+        if(indexing == c_indexing) {
+            for(int i = 1; i < nx - 1; ++i){
+                for(int j = 1; j < ny - 1; ++j){
+                    for(int k = 1; k < nz - 1; ++k){
+                        switch(axis){
+                            case 0:
+                                if(j != (ny - 2) && k != (nz - 2)) {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 1:
+                                if(i != (nx - 2) && k != (nz - 2)) {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 2:
+                                if(i != (nx - 2) && j != (ny - 2)) {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            default:
+                                throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
+                                break;
+                        }
+                    }
+                }
+            }
+        } else {
+            for(int k = 1; k < nz - 1; ++k){
+                for(int j = 1; j < ny - 1; ++j){
+                    for(int i = 1; i < nx - 1; ++i){
+                        switch(axis){
+                            case 0:
+                                if(j != (ny - 2) && k != (nz - 2)) {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 1:
+                                if(i != (nx - 2) && k != (nz - 2)) {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            case 2:
+                                if(i != (nx - 2) && j != (ny - 2)) {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                }
+                                break;
+                            default:
+                                throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return x1D;
+    }
+
     void convert1Dto3Darray(double* x1D, const int nx, const int ny, const int nz, tdArray& x3D){
         // convert to 3D array
         for(int i = 0; i < nx; ++i){

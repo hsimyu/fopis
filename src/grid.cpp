@@ -591,35 +591,30 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, char* coordnames[
 
     if(dataTypeName == "potential") {
         const char* varnames[1] = {dataTypeName.c_str()};
-        // double* tdArray = Utils::getTrueCells(this->getField()->getPhi());
-        float* vars[1] = {Utils::getTrueCells(this->getField()->getPhi())};
-        // DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
-        DBPutQuadvar(file, v, m, 1, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
-        delete [] vars[0];
+        float* tdArray = Utils::getTrueCells(this->getField()->getPhi());
+        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
+        delete [] tdArray;
     } else if(dataTypeName == "rho") {
         float* tdArray = Utils::getTrueCells(this->getField()->getRho());
-        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
+        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "efield") {
-        char* varnames[3];
-        varnames[0] = const_cast<char*>("ex");
-        varnames[1] = const_cast<char*>("ey");
-        varnames[2] = const_cast<char*>("ez");
-
-        float* vars[] = {Utils::getTrueCells(field->getEx()), Utils::getTrueCells(field->getEy()), Utils::getTrueCells(field->getEz())};
-        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
-
+        const char* varnames[3] = {"ex", "ey", "ez"};
+        float* vars[3];
+        vars[0] = Utils::getTrueEdges(this->getField()->getEx(), 0);
+        vars[1] = Utils::getTrueEdges(this->getField()->getEy(), 1);
+        vars[2] = Utils::getTrueEdges(this->getField()->getEz(), 2);
+        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_EDGECENT, NULL);
         delete [] vars[0];
         delete [] vars[1];
         delete [] vars[2];
     } else if(dataTypeName == "bfield") {
-        char* varnames[3];
-        varnames[0] = const_cast<char*>("ex");
-        varnames[1] = const_cast<char*>("ey");
-        varnames[2] = const_cast<char*>("ez");
-        float* vars[] = {Utils::getTrueCells(field->getBx()), Utils::getTrueCells(field->getBy()), Utils::getTrueCells(field->getBz())};
-        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_DOUBLE, DB_NODECENT, optListVar);
-
+        const char* varnames[3] = {"bx", "by", "bz"};
+        float* vars[3];
+        vars[0] = Utils::getTrueFaces(this->getField()->getBx(), 0);
+        vars[1] = Utils::getTrueFaces(this->getField()->getBy(), 1);
+        vars[2] = Utils::getTrueFaces(this->getField()->getBz(), 2);
+        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_FACECENT, NULL);
         delete [] vars[0];
         delete [] vars[1];
         delete [] vars[2];
