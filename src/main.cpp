@@ -10,7 +10,6 @@
 int main(int argc, char* argv[]){
     //! MPI Environmentを初期化
     MPIw::Environment mpiEnv(argc, argv);
-    // MPIw::Communicator world;
 
     Grid* root_grid;
     Initializer::initTDPIC(root_grid);
@@ -19,14 +18,24 @@ int main(int argc, char* argv[]){
         cout << "--  Begin A Loop  --" << endl;
     }
 
-    // particle -> space charge
+    // first update
     root_grid->updateRho();
-
-    // space charge -> potential
     root_grid->solvePoisson();
-
-    // potential -> efield
     root_grid->updateEfield();
+
+    for(int timestep = 0; timestep < Environment::max_iteration; ++timestep) {
+        // new particle position
+        root_grid->updateParticleVelocity();
+        root_grid->updateParticlePosition();
+        root_grid->updateRho();
+        root_grid->solvePoisson();
+        root_grid->updateEfield();
+        IO::plotEnergy(root_grid, timestep);
+        IO::writeDataInParallel(root_grid, timestep, "potential");
+        IO::writeDataInParallel(root_grid, timestep, "rho");
+        IO::writeDataInParallel(root_grid, timestep, "efield");
+        IO::writeDataInParallel(root_grid, timestep, "bfield");
+    }
 
     if( Environment::isRootNode ) {
         cout << "--  End A Loop  --" << endl;
@@ -46,14 +55,6 @@ int main(int argc, char* argv[]){
 
         // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
     }
-
-    int timestep = 0;
-    IO::plotEnergy(root_grid, timestep);
-    IO::writeDataInParallel(root_grid, 0, "potential");
-    IO::writeDataInParallel(root_grid, 1, "potential");
-    IO::writeDataInParallel(root_grid, 0, "rho");
-    IO::writeDataInParallel(root_grid, 0, "efield");
-    IO::writeDataInParallel(root_grid, 0, "bfield");
     return 0;
 }
 #endif
