@@ -404,6 +404,7 @@ namespace Utils {
             // static member
             static double x_unit;
             static double t_unit;
+            static double m_unit;
             static double e_unit;
 
             static double normalizeLength(const double);
@@ -418,10 +419,16 @@ namespace Utils {
             static double normalizeCharge(const double);
             static double unnormalizeCharge(const double);
 
+            static double normalizeMass(const double);
+            static double unnormalizeMass(const double);
+
+            static double normalizeEnergy(const double);
+            static double unnormalizeEnergy(const double);
     };
 }
 
 namespace IO {
+    void plotEnergy(Grid*, int);
     void writeDataInParallel(Grid*, int, std::string);
     void print3DArray(const tdArray&, const int, const int, const int);
     void outputParticlePositions(const ParticleArray&, std::string filename = "data/particlePositions.csv");

@@ -31,6 +31,7 @@ namespace Initializer {
         // initialize normalizer
         Utils::Normalizer::x_unit = Environment::dx;
         Utils::Normalizer::t_unit = Environment::dt;
+        Utils::Normalizer::m_unit = me;
         Utils::Normalizer::e_unit = e;
 
         if( Environment::isRootNode ) {

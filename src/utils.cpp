@@ -4,9 +4,11 @@
 
 namespace Utils {
     // Normalizedのstatic変数の実体
+    //! @note: Normalizer は基本的にRoot Gridのグリッド幅しか保持していない
     double Normalizer::x_unit = 1.0;
     double Normalizer::t_unit = 1.0;
     double Normalizer::e_unit = 1.0;
+    double Normalizer::m_unit = 1.0;
 
     // Normalize Utilities
     double Normalizer::normalizeLength(double raw_x) {
@@ -39,6 +41,24 @@ namespace Utils {
 
     double Normalizer::unnormalizeCharge(double normalized_e) {
         return normalized_e * e_unit;
+    }
+
+    double Normalizer::normalizeMass(double raw_mass) {
+        return raw_mass / m_unit;
+    }
+
+    double Normalizer::unnormalizeMass(double normalized_mass) {
+        return normalized_mass * m_unit;
+    }
+
+    //! kg*m^2/s^2 -> 1;
+    double Normalizer::normalizeEnergy(double raw_energy) {
+        return raw_energy * pow(t_unit, 2) / (m_unit * pow(x_unit, 2));
+    }
+
+    //! 1 -> kg*m^2/s^2;
+    double Normalizer::unnormalizeEnergy(double normalized_energy) {
+        return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2); //kg * m^2/s^2;
     }
 
     void clearBoundaryValues(tdArray& x, const int nx, const int ny, const int nz) {
