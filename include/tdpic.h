@@ -8,16 +8,16 @@
 #include <algorithm>
 #include <memory>
 #include <map>
+#include <mpi.h>
 #include <boost/format.hpp>
 #include <boost/multi_array.hpp>
 #include <silo.h>
 #include <picojson.h>
 #include <mkl.h> // Intel Math Kernel Library
-#include <mpi_wrapper.hpp>
 
 #define ARRAY_LENGTH(ARR) (sizeof(ARR) / sizeof((ARR)[0]))
 
-// proto types
+// Prototype宣言のみ書く
 class Particle;
 class ParticleType;
 
@@ -171,13 +171,13 @@ class Position {
 };
 
 class Particle {
-    private:
+    public:
         // 8byte * 6
         // + 4byte   = 52 byte
+        int typeId;
         double x, y, z;
         double vx, vy, vz;
-        int typeId;
-    public:
+
         Particle();
         ~Particle();
 
@@ -205,6 +205,8 @@ class Particle {
         double getSquaredMagnitudeOfVelocity(void) const;
 
         void updatePosition(void);
+
+        friend std::ostream& operator<<(std::ostream&, const Particle&);
 };
 
 class ParticleType {
@@ -468,4 +470,62 @@ namespace IO {
     void print3DArray(const tdArray&);
     void outputParticlePositions(const ParticleArray&, std::string filename = "data/particlePositions.csv");
 }
+
+namespace MPIw {
+    class Communicator {
+        private:
+            MPI_Comm comm;
+
+        public:
+            Communicator();
+            Communicator(MPI_Comm);
+            //デストラクタは特に必要ない
+
+            MPI_Comm getComm(void);
+            void setComm(MPI_Comm);
+
+            // -- communicate methods --
+            void barrier();
+
+            // summation
+            double sum(double, const int);
+            int sum(int, const int);
+
+            // send
+            void send(Particle const&, const int, const int);
+            void recv(Particle&, const int, const int);
+            void sendVector(std::vector<Particle> const&, const int, const int);
+            void recvVector(std::vector<Particle>&, const int, const int);
+    };
+
+    MPI_Datatype registerParticleType(void);
+    void deregisterMpiType(MPI_Datatype);
+
+    //! MPI ランク保持用のクラス
+    class Environment {
+        private:
+            static void finalize(void);
+
+        public:
+            Environment(int, char**);
+            ~Environment();
+
+            //! MPIのランクとプロセス数はstaticに持つ
+            //! int rank = MPI::Environment::rank; でアクセスする
+            static int rank;
+            static int numprocs;
+            static int xrank, yrank, zrank;
+
+            //! 通信用の型
+            static MPI_Datatype MPI_PARTICLE;
+
+            //! コミュニケータのリスト
+            static std::map<std::string, Communicator*> Comms;
+
+            static std::string rankStr(void);
+            static void exitWithFinalize(int);
+
+    };
+
+};
 #endif

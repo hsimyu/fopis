@@ -60,3 +60,12 @@ void Particle::updatePosition(void) {
     y += vy;
     z += vz;
 }
+
+// util
+std::ostream& operator<<(std::ostream& ost, const Particle& p){
+    ost << "[  Particle  ]" << std::endl;
+    ost << "         id: " << p.getTypeId() << std::endl;
+    ost << "   position: " << format("%f, %f, %f") % p.getX() % p.getY() % p.getZ() << std::endl;
+    ost << "   velocity: " << format("%f, %f, %f") % p.getVX() % p.getVY() % p.getVZ() << std::endl;
+    return ost;
+}

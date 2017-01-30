@@ -48,15 +48,15 @@ double ParticleType::calcDeviation() const {
 
 // util
 std::ostream& operator<<(std::ostream& ost, const ParticleType& ptype){
-    ost << "[Particle  : " << ptype.getName() << "]" << std::endl;
-    ost << "         id: " << ptype.getId() << std::endl;
-    ost << "       type: " << ptype.getType() << std::endl;
-    ost << "       mass: " << ptype.getMass() << std::endl;
-    ost << "     charge: " << ptype.getCharge() << std::endl;
-    ost << "    density: " << ptype.getDensity() << std::endl;
-    ost << "temperature: " << ptype.getTemperature() << std::endl;
-    ost << "       size: " << ptype.getSize() << std::endl;
-    ost << "   per_cell: " << ptype.getPcell() << std::endl;
-    ost << "totalNumber: " << ptype.getTotalNumber() << std::endl;
+    ost << "[ParticleType  : " << ptype.getName() << "]" << std::endl;
+    ost << "             id: " << ptype.getId() << std::endl;
+    ost << "           type: " << ptype.getType() << std::endl;
+    ost << "           mass: " << ptype.getMass() << std::endl;
+    ost << "         charge: " << ptype.getCharge() << std::endl;
+    ost << "        density: " << ptype.getDensity() << std::endl;
+    ost << "    temperature: " << ptype.getTemperature() << std::endl;
+    ost << "           size: " << ptype.getSize() << std::endl;
+    ost << "       per_cell: " << ptype.getPcell() << std::endl;
+    ost << "    totalNumber: " << ptype.getTotalNumber() << std::endl;
     return ost;
 }
