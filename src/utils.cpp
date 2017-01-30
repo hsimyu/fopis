@@ -337,15 +337,20 @@ namespace Utils {
         std::string res;
         std::string ifs_buffer;
 
-        ifs.open(filename, std::ios::in);
+        boost::filesystem::path p(filename);
 
-        while(!ifs.eof()){
-            std::getline(ifs, ifs_buffer);
-            res += ifs_buffer;
+        if(boost::filesystem::exists(p)) {
+            ifs.open(filename, std::ios::in);
+
+            while(!ifs.eof()){
+                std::getline(ifs, ifs_buffer);
+                res += ifs_buffer;
+            }
+        } else {
+            throw std::invalid_argument("[ERROR] input.json does not exist.");
+            MPIw::Environment::exitWithFinalize(1);
         }
-
         return res;
-
     }
 
     picojson::value::object readJSONFile(const std::string& filename){
