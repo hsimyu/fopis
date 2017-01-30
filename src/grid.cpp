@@ -199,7 +199,7 @@ Grid::Grid(void){
         for(int i = 0; i < pnum; ++i){
             particles[id][i].setPosition(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
             particles[id][i].setVelocity(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
-            particles[id][i].setTypeId(id);
+            particles[id][i].typeId = id;
         }
     }
 }
@@ -377,25 +377,50 @@ void Grid::updateParticleVelocity(void) {
             double bz = 0.0;
             double boris = 2.0/(1.0 + (bx*bx+by*by+bz*bz));
 
-            double vx1 = p.getVX() + ex;
-            double vy1 = p.getVY() + ey;
-            double vz1 = p.getVZ() + ez;
+            double vx1 = p.vx + ex;
+            double vy1 = p.vy + ey;
+            double vz1 = p.vz + ez;
 
             double vxt = vx1 + vy1*bz - vz1 * by;
             double vyt = vy1 + vz1*bx - vx1 * bz;
             double vzt = vz1 + vx1*by - vy1 * bx;
 
-            p.setVX(vx1 + ex + boris*(vyt*bz - vzt*by));
-            p.setVY(vy1 + ey + boris*(vzt*bx - vxt*bz));
-            p.setVZ(vz1 + ez + boris*(vxt*by - vyt*bx));
+            p.vx = vx1 + ex + boris*(vyt*bz - vzt*by);
+            p.vy = vy1 + ey + boris*(vzt*bx - vxt*bz);
+            p.vz = vz1 + ez + boris*(vxt*by - vyt*bx);
         }
     }
 }
 
 void Grid::updateParticlePosition(void) {
+    std::vector< std::vector<Particle> > pbuff(6);
+
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         for(int i = 0; i < particles[pid].size(); ++i){
-            particles[pid][i].updatePosition();
+            Particle& p = particles[pid][i];
+            if(p.isValid) {
+                p.updatePosition();
+
+                if(p.x < 0.0) {
+                    pbuff[0].push_back(p);
+                    p.isValid = false;
+                } else if (p.x > dx*nx) {
+                    pbuff[1].push_back(p);
+                    p.isValid = false;
+                } else if (p.y < 0.0) {
+                    pbuff[2].push_back(p);
+                    p.isValid = false;
+                } else if (p.y > dx*ny) {
+                    pbuff[3].push_back(p);
+                    p.isValid = false;
+                } else if (p.z < 0.0) {
+                    pbuff[4].push_back(p);
+                    p.isValid = false;
+                } else if (p.z > dx*nz) {
+                    pbuff[5].push_back(p);
+                    p.isValid = false;
+                }
+            }
         }
     }
 }

@@ -1,10 +1,20 @@
 #include <tdpic.h>
 
-Particle::Particle(){
-    // std::cout << "Particle Constructer is called" << std::endl;
+Particle::Particle(){}
+
+// Copy Constructer
+Particle::Particle(const Particle& p){
+    x = p.x;
+    y = p.y;
+    z = p.z;
+    vx = p.vx;
+    vy = p.vy;
+    vz = p.vz;
+    typeId = p.typeId;
 }
+
 Particle::~Particle(){
-    // std::cout << "Particle Destructor is called" << std::endl;
+    std::cout << "Particle Destructor is called" << std::endl;
 }
 
 void Particle::setPosition(const Position& pos){
@@ -30,20 +40,6 @@ void Particle::setVelocity(double _vx, double _vy, double _vz){
     vz = _vz;
 }
 
-double Particle::getX()  const { return x; }
-double Particle::getY()  const { return y; }
-double Particle::getZ()  const { return z; }
-double Particle::getVX() const { return vx; }
-double Particle::getVY() const { return vy; }
-double Particle::getVZ() const { return vz; }
-
-void Particle::setVX(const double _vx) { vx = _vx; }
-void Particle::setVY(const double _vy) { vy = _vy; }
-void Particle::setVZ(const double _vz) { vz = _vz; }
-
-void Particle::setTypeId(const int _id) { typeId = _id; }
-int Particle::getTypeId(void) const { return typeId; }
-
 //! 個別計算用
 double Particle::getEnergy(void) const {
     return 0.5 * (vx*vx + vy*vy + vz*vz) * Environment::ptype[typeId].getMass();
@@ -64,8 +60,8 @@ void Particle::updatePosition(void) {
 // util
 std::ostream& operator<<(std::ostream& ost, const Particle& p){
     ost << "[  Particle  ]" << std::endl;
-    ost << "         id: " << p.getTypeId() << std::endl;
-    ost << "   position: " << format("%f, %f, %f") % p.getX() % p.getY() % p.getZ() << std::endl;
-    ost << "   velocity: " << format("%f, %f, %f") % p.getVX() % p.getVY() % p.getVZ() << std::endl;
+    ost << "         id: " << p.typeId << std::endl;
+    ost << "   position: " << format("%f, %f, %f") % p.x % p.y % p.z << std::endl;
+    ost << "   velocity: " << format("%f, %f, %f") % p.vx % p.vy % p.vz << std::endl;
     return ost;
 }

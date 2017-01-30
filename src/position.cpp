@@ -10,7 +10,7 @@ Position::Position(const int _i, const int _j, const int _k){
 }
 
 Position::Position(const Particle& p){
-    this->setXYZ(p.getX(), p.getY(), p.getZ());
+    this->setXYZ(p.x, p.y, p.z);
 }
 
 Position::~Position(){}

@@ -172,13 +172,15 @@ class Position {
 
 class Particle {
     public:
-        // 8byte * 6
-        // + 4byte   = 52 byte
+        // MPIで送るためにoffsetofを使う必要があり、
+        // publicにする必要がある
         int typeId;
         double x, y, z;
         double vx, vy, vz;
+        bool isValid;
 
         Particle();
+        Particle(const Particle&);
         ~Particle();
 
         void setPosition(const Position&);
@@ -187,25 +189,10 @@ class Particle {
         void setVelocity(const Velocity&);
         void setVelocity(double, double, double);
 
-        double getX(void) const;
-        double getY(void) const;
-        double getZ(void) const;
-
-        double getVX(void) const;
-        double getVY(void) const;
-        double getVZ(void) const;
-        void setVX(const double);
-        void setVY(const double);
-        void setVZ(const double);
-
-        void setTypeId(const int);
-        int getTypeId(void) const;
-
         double getEnergy(void) const;
         double getSquaredMagnitudeOfVelocity(void) const;
 
         void updatePosition(void);
-
         friend std::ostream& operator<<(std::ostream&, const Particle&);
 };
 
