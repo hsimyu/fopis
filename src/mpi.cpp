@@ -52,11 +52,12 @@ namespace MPIw {
     }
 
     MPI_Datatype registerParticleType() {
-        const size_t num_members = 7;
-        int lengths[num_members] = {1, 1, 1, 1, 1, 1, 1};
+        const size_t num_members = 8;
+        int lengths[num_members] = {1, 1, 1, 1, 1, 1, 1, 1};
 
         MPI_Aint offsets[num_members] = {
             offsetof(Particle, typeId),
+            offsetof(Particle, isValid),
             offsetof(Particle, x),
             offsetof(Particle, y),
             offsetof(Particle, z),
@@ -64,7 +65,7 @@ namespace MPIw {
             offsetof(Particle, vy),
             offsetof(Particle, vz)
         };
-        MPI_Datatype types[num_members] = {MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
+        MPI_Datatype types[num_members] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
 
         MPI_Datatype newType;
         MPI_Type_create_struct(num_members, lengths, offsets, types, &newType);
