@@ -460,6 +460,13 @@ namespace IO {
 }
 
 namespace MPIw {
+    extern const int MPI_TAG_SEND_PARTICLE;
+    extern const int MPI_TAG_RECV_PARTICLE;
+    extern const int MPI_TAG_SEND_PARTICLE_LENGTH;
+    extern const int MPI_TAG_RECV_PARTICLE_LENGTH;
+    extern const int MPI_TAG_SENDRECV_PARTICLE;
+    extern const int MPI_TAG_SENDRECV_PARTICLE_LENGTH;
+
     class Communicator {
         private:
             MPI_Comm comm;
@@ -480,10 +487,11 @@ namespace MPIw {
             int sum(int, const int);
 
             // send
-            void send(Particle const&, const int, const int);
-            void recv(Particle&, const int, const int);
-            void sendVector(std::vector<Particle> const&, const int, const int);
-            void recvVector(std::vector<Particle>&, const int, const int);
+            void send(Particle const&, const int);
+            void recv(Particle&, const int);
+            void sendVector(std::vector<Particle> const&, const int);
+            void recvVector(std::vector<Particle>&, const int);
+            void sendRecvVector(std::vector<Particle> const&, std::vector<Particle>&, const int, const int);
     };
 
     MPI_Datatype registerParticleType(void);

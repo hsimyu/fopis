@@ -27,9 +27,7 @@ Particle& Particle::operator=(Particle const& rhs){
     isValid = rhs.isValid;
 }
 
-Particle::~Particle(){
-    std::cout << "Particle Destructor is called" << std::endl;
-}
+Particle::~Particle(){}
 
 void Particle::setPosition(Position const& pos){
     x = pos.x;

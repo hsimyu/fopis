@@ -2,6 +2,13 @@
 #include <cstddef>
 
 namespace MPIw {
+    const int MPI_TAG_SEND_PARTICLE = 0x0001;
+    const int MPI_TAG_RECV_PARTICLE = 0x0002;
+    const int MPI_TAG_SEND_PARTICLE_LENGTH = 0x0003;
+    const int MPI_TAG_RECV_PARTICLE_LENGTH = 0x0004;
+    const int MPI_TAG_SENDRECV_PARTICLE = 0x0005;
+    const int MPI_TAG_SENDRECV_PARTICLE_LENGTH = 0x0006;
+
     // Environmentのstatic変数の実体
     int Environment::rank = -1;
     int Environment::numprocs = -1;
@@ -91,35 +98,57 @@ namespace MPIw {
         comm = _comm;
     }
 
-    void Communicator::send(Particle const& p, const int dest, const int tag) {
-        MPI_Send(&p, 1, Environment::MPI_PARTICLE, dest, tag, comm);
+    void Communicator::send(Particle const& p, const int dest) {
+        MPI_Send(&p, 1, Environment::MPI_PARTICLE, dest, MPI_TAG_SEND_PARTICLE, comm);
     }
 
-    void Communicator::recv(Particle& p, const int src, const int tag) {
+    void Communicator::recv(Particle& p, const int src) {
         MPI_Status s;
-        MPI_Recv(&p, 1, Environment::MPI_PARTICLE, src, tag, comm, &s);
+        MPI_Recv(&p, 1, Environment::MPI_PARTICLE, src, MPI_TAG_RECV_PARTICLE, comm, &s);
     }
 
-    void Communicator::sendVector(std::vector<Particle> const& parray, const int dest, const int tag) {
+    void Communicator::sendVector(std::vector<Particle> const& parray, const int dest) {
         unsigned int len = parray.size();
-        MPI_Send(&len, 1, MPI_UNSIGNED, dest, tag, comm);
+        MPI_Send(&len, 1, MPI_UNSIGNED, dest, MPI_TAG_SEND_PARTICLE_LENGTH, comm);
 
         if(len != 0) {
-            MPI_Send(parray.data(), len, Environment::MPI_PARTICLE, dest, tag, comm);
+            MPI_Send(parray.data(), len, Environment::MPI_PARTICLE, dest, MPI_TAG_SEND_PARTICLE, comm);
         }
     }
 
-    void Communicator::recvVector(std::vector<Particle>& parray, const int src, const int tag) {
+    void Communicator::recvVector(std::vector<Particle>& parray, const int src) {
         MPI_Status s;
         unsigned int len;
-        MPI_Recv(&len, 1, MPI_UNSIGNED, src, tag, comm, &s);
+        MPI_Recv(&len, 1, MPI_UNSIGNED, src, MPI_TAG_RECV_PARTICLE_LENGTH, comm, &s);
 
         if(len != 0) {
             parray.resize(len);
-            MPI_Recv(parray.data(), len, Environment::MPI_PARTICLE, src, tag, comm, &s);
+            MPI_Recv(parray.data(), len, Environment::MPI_PARTICLE, src, MPI_TAG_RECV_PARTICLE, comm, &s);
         } else {
             parray.clear();
             parray.shrink_to_fit();
+        }
+    }
+
+    void Communicator::sendRecvVector(std::vector<Particle> const& sendArray, std::vector<Particle>& recvArray, const int dest, const int src) {
+        unsigned int sendlen = sendArray.size();
+        unsigned int recvlen;
+        MPI_Status s;
+        MPI_Sendrecv(&sendlen, 1, MPI_UNSIGNED, dest, MPI_TAG_SENDRECV_PARTICLE_LENGTH, &recvlen, 1, MPI_UNSIGNED, src, MPI_TAG_SENDRECV_PARTICLE_LENGTH, comm, &s);
+
+        if(sendlen != 0 && recvlen != 0) {
+            recvArray.resize(recvlen);
+            MPI_Sendrecv(sendArray.data(), sendlen, Environment::MPI_PARTICLE, dest, MPI_TAG_SENDRECV_PARTICLE, recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, MPI_TAG_SENDRECV_PARTICLE, comm, &s);
+        } else if(sendlen != 0) {
+            MPI_Send(sendArray.data(), sendlen, Environment::MPI_PARTICLE, dest, MPI_TAG_SENDRECV_PARTICLE, comm);
+            recvArray.clear();
+            recvArray.shrink_to_fit();
+        } else if(recvlen != 0) {
+            recvArray.resize(recvlen);
+            MPI_Recv(recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, MPI_TAG_SENDRECV_PARTICLE, comm, &s);
+        } else {
+            recvArray.clear();
+            recvArray.shrink_to_fit();
         }
     }
 

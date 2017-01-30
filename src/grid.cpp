@@ -399,6 +399,7 @@ void Grid::updateParticleVelocity(void) {
 
 void Grid::updateParticlePosition(void) {
     std::vector< std::vector<Particle> > pbuff(6);
+    std::vector< std::vector<Particle> > pbuffRecv(6);
 
     const double slx = dx * nx;
     const double sly = dx * ny;
@@ -410,36 +411,40 @@ void Grid::updateParticlePosition(void) {
             if(p.isValid) {
                 p.updatePosition();
 
+                //! push_backだと多分遅い
+                //! 先にある程度reserveしておく？
                 if(p.x < 0.0) {
-                    pbuff[0].push_back(p);
+                    if(!Environment::onLowXedge) pbuff[0].push_back(p);
                     p.isValid = 0;
                 } else if (p.x > slx) {
-                    pbuff[1].push_back(p);
+                    if(!Environment::onHighXedge) pbuff[1].push_back(p);
                     p.isValid = 0;
                 } else if (p.y < 0.0) {
-                    pbuff[2].push_back(p);
+                    if(!Environment::onLowYedge) pbuff[2].push_back(p);
                     p.isValid = 0;
                 } else if (p.y > sly) {
-                    pbuff[3].push_back(p);
+                    if(!Environment::onHighYedge) pbuff[3].push_back(p);
                     p.isValid = 0;
                 } else if (p.z < 0.0) {
-                    pbuff[4].push_back(p);
+                    if(!Environment::onLowZedge) pbuff[4].push_back(p);
                     p.isValid = 0;
                 } else if (p.z > slz) {
-                    pbuff[5].push_back(p);
+                    if(!Environment::onHighZedge) pbuff[5].push_back(p);
                     p.isValid = 0;
                 }
             }
         }
     }
 
+    MPIw::Environment::Comms["world"]->sendRecvVector(pbuff[0], pbuffRecv[1], MPIw::Environment::adj[0], MPIw::Environment::adj[1]);
+    MPIw::Environment::Comms["world"]->sendRecvVector(pbuff[1], pbuffRecv[0], MPIw::Environment::adj[1], MPIw::Environment::adj[0]);
+
     for(int i = 0; i < 6; ++i) {
-        cout << MPIw::Environment::rankStr() << " pbuff to " << i << endl;
-        for(auto& p : pbuff[i]){
+        cout << MPIw::Environment::rankStr() << " pbuff from " << i << endl;
+        for(auto& p : pbuffRecv[i]){
             cout << p << endl;
         }
     }
-
     // pbuffはここで破棄される
 }
 
