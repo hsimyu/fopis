@@ -8,6 +8,10 @@ namespace MPIw {
     int Environment::xrank = -1;
     int Environment::yrank = -1;
     int Environment::zrank = -1;
+
+    // 各方向への隣接プロセスランク
+    int Environment::adj[6];
+
     std::map<std::string, Communicator*> Environment::Comms;
     MPI_Datatype Environment::MPI_PARTICLE;
 

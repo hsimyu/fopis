@@ -503,6 +503,7 @@ namespace MPIw {
             static int rank;
             static int numprocs;
             static int xrank, yrank, zrank;
+            static int adj[6];
 
             //! 通信用の型
             static MPI_Datatype MPI_PARTICLE;

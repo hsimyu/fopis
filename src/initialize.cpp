@@ -108,6 +108,21 @@ namespace Initializer {
                         MPIw::Environment::xrank = i;
                         MPIw::Environment::yrank = j;
                         MPIw::Environment::zrank = k;
+
+                        // for visiblity
+                        int npux = Environment::proc_x;
+                        int npuy = Environment::proc_y;
+                        int npuz = Environment::proc_z;
+
+                        // set adjacent ranks
+                        MPIw::Environment::adj[0] = ( ((npux + i-1) % npux) + npux*j + npux*npuy*k);
+                        MPIw::Environment::adj[1] = ( ((i+1) % npux) + npux*j + npux*npuy*k);
+
+                        MPIw::Environment::adj[2] = (i + npux*((npuy+j-1) % npuy) + npux*npuy*k);
+                        MPIw::Environment::adj[3] = (i + npux*((j+1) % npuy) + npux*npuy*k);
+
+                        MPIw::Environment::adj[4] = (i + npux*j + npux*npuy*((npuz+k-1) % npuz));
+                        MPIw::Environment::adj[5] = (i + npux*j + npux*npuy*((k+1) % npuz));
                     }
                 }
             }
