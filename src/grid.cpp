@@ -474,8 +474,12 @@ void Grid::updateParticlePosition(void) {
         cout << MPIw::Environment::rankStr() << " pbuff from " << i << endl;
         for(auto& p : pbuffRecv[i]){
             cout << p << endl;
+            particles[ p.typeId ].push_back(p);
+            cout << "capacity: " << particles[ p.typeId ].capacity() << endl;
+            cout << "size: "     << particles[ p.typeId ].size() << endl;
         }
     }
+
     // pbuffはここで破棄される
 }
 
