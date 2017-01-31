@@ -410,28 +410,9 @@ void Grid::updateParticlePosition(void) {
             Particle& p = particles[pid][i];
             if(p.isValid) {
                 p.updatePosition();
-
-                //! push_backだと多分遅い
-                //! 先にある程度reserveしておく？
-                if(p.x < 0.0) {
-                    if(!Environment::onLowXedge) pbuff[0].push_back(p);
-                    p.isValid = 0;
-                } else if (p.x > slx) {
-                    if(!Environment::onHighXedge) pbuff[1].push_back(p);
-                    p.isValid = 0;
-                } else if (p.y < 0.0) {
-                    if(!Environment::onLowYedge) pbuff[2].push_back(p);
-                    p.isValid = 0;
-                } else if (p.y > sly) {
-                    if(!Environment::onHighYedge) pbuff[3].push_back(p);
-                    p.isValid = 0;
-                } else if (p.z < 0.0) {
-                    if(!Environment::onLowZedge) pbuff[4].push_back(p);
-                    p.isValid = 0;
-                } else if (p.z > slz) {
-                    if(!Environment::onHighZedge) pbuff[5].push_back(p);
-                    p.isValid = 0;
-                }
+                checkXBoundary(pbuff, p, slx);
+                checkYBoundary(pbuff, p, sly);
+                checkZBoundary(pbuff, p, slz);
             }
         }
     }
@@ -449,19 +430,8 @@ void Grid::updateParticlePosition(void) {
                 p.x += slx;
             }
 
-            if (p.y < 0.0) {
-                if(!Environment::onLowYedge) pbuff[2].push_back(p);
-                p.isValid = 0;
-            } else if (p.y > sly) {
-                if(!Environment::onHighYedge) pbuff[3].push_back(p);
-                p.isValid = 0;
-            } else if (p.z < 0.0) {
-                if(!Environment::onLowZedge) pbuff[4].push_back(p);
-                p.isValid = 0;
-            } else if (p.z > slz) {
-                if(!Environment::onHighZedge) pbuff[5].push_back(p);
-                p.isValid = 0;
-            }
+            checkYBoundary(pbuff, p, sly);
+            checkZBoundary(pbuff, p, slz);
         }
     }
 
@@ -477,14 +447,7 @@ void Grid::updateParticlePosition(void) {
             } else {
                 p.x += sly;
             }
-
-            if (p.z < 0.0) {
-                if(!Environment::onLowZedge) pbuff[4].push_back(p);
-                p.isValid = 0;
-            } else if (p.z > slz) {
-                if(!Environment::onHighZedge) pbuff[5].push_back(p);
-                p.isValid = 0;
-            }
+            checkZBoundary(pbuff, p, slz);
         }
     }
 

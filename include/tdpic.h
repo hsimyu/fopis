@@ -391,6 +391,37 @@ class Grid {
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);
+
+        //! inline functions
+        void checkXBoundary(std::vector< std::vector<Particle> >& pbuff, Particle& p, const double slx) {
+            if(p.x < 0.0) {
+                if(!Environment::onLowXedge) pbuff[0].push_back(p);
+                p.isValid = 0;
+            } else if (p.x > slx) {
+                if(!Environment::onHighXedge) pbuff[1].push_back(p);
+                p.isValid = 0;
+            }
+        }
+
+        void checkYBoundary(std::vector< std::vector<Particle> >& pbuff, Particle& p, const double sly) {
+            if(p.y < 0.0) {
+                if(!Environment::onLowYedge) pbuff[2].push_back(p);
+                p.isValid = 0;
+            } else if (p.y > sly) {
+                if(!Environment::onHighYedge) pbuff[3].push_back(p);
+                p.isValid = 0;
+            }
+        }
+
+        void checkZBoundary(std::vector< std::vector<Particle> >& pbuff, Particle& p, const double slz) {
+            if(p.z < 0.0) {
+                if(!Environment::onLowZedge) pbuff[4].push_back(p);
+                p.isValid = 0;
+            } else if (p.z > slz) {
+                if(!Environment::onHighZedge) pbuff[5].push_back(p);
+                p.isValid = 0;
+            }
+        }
 };
 
 namespace Initializer {
