@@ -216,8 +216,7 @@ namespace Initializer {
 
             // print particle info
             if(Environment::isRootNode) {
-                std::cout << ptype[ii];
-                Utils::printTotalMemory(ptype[ii]);
+                cout << ptype[ii];
             }
 
             ++ii;

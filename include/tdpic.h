@@ -243,6 +243,7 @@ class ParticleType {
         int calcSize(void);
         int calcTotalNumber(void);
         double calcDeviation(void) const;
+        std::string calcMemory(void) const;
 
         friend std::ostream& operator<<(std::ostream&, const ParticleType&);
         friend std::istream& operator<<(std::istream&, const ParticleType&);
@@ -436,8 +437,8 @@ namespace Initializer {
 }
 
 namespace Utils {
-    void printTotalMemory(const ParticleType&);
-    void printParticleMemory(const ParticleType&);
+    void printTotalMemory(void);
+    std::string prettyMemoryString(double);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
 

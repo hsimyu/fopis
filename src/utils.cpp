@@ -300,7 +300,7 @@ namespace Utils {
         }
     }
 
-    static std::string computeMemory(double mem){
+    std::string prettyMemoryString(double mem){
         std::string suffix = "B";
         if(mem > 1048.0){
             mem /= 1048.0;
@@ -315,22 +315,9 @@ namespace Utils {
             suffix = "GB";
         }
 
-        return (format("%6.2f") % mem).str() + suffix;
+        return (format("%-6.2f") % mem).str() + suffix;
     }
 
-    void printTotalMemory(const ParticleType& pinfo){
-        cout << "Memory Info:" << endl;
-        printParticleMemory(pinfo);
-    }
-
-    void printParticleMemory(const ParticleType& pinfo){
-        static const double memory_per_particle = 50.0;
-
-        double pmem = static_cast<double>(pinfo.getTotalNumber()) * memory_per_particle;
-
-        cout << "    Particle[" << pinfo.getTotalNumber() << "]:";
-        cout << computeMemory(pmem) << endl;
-    }
 
     std::string readFile(const std::string& filename){
         std::ifstream ifs;
