@@ -512,8 +512,10 @@ namespace MPIw {
             //! コミュニケータのリスト
             static std::map<std::string, Communicator*> Comms;
 
+            //! Utility member functions
             static std::string rankStr(void);
             static void exitWithFinalize(int);
+            static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
 
     };
 

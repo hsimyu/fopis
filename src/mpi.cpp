@@ -64,6 +64,23 @@ namespace MPIw {
         return (format("[RANK P%04d] ") % rank).str();
     }
 
+    void Environment::sendRecvParticles(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
+        //! X-axis
+        int prev = 0; int next = 1;
+        Comms["world"]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
+        Comms["world"]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+
+        //! Y-axis
+        prev = 2; next = 3;
+        Comms["world"]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
+        Comms["world"]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+
+        //! Z-axis
+        prev = 4; next = 5;
+        Comms["world"]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
+        Comms["world"]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+    }
+
     MPI_Datatype registerParticleType() {
         const size_t num_members = 8;
         int lengths[num_members] = {1, 1, 1, 1, 1, 1, 1, 1};

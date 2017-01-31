@@ -436,8 +436,7 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
-    MPIw::Environment::Comms["world"]->sendRecvVector(pbuff[0], pbuffRecv[1], MPIw::Environment::adj[0], MPIw::Environment::adj[1]);
-    MPIw::Environment::Comms["world"]->sendRecvVector(pbuff[1], pbuffRecv[0], MPIw::Environment::adj[1], MPIw::Environment::adj[0]);
+    MPIw::Environment::sendRecvParticles(pbuff, pbuffRecv);
 
     for(int i = 0; i < 6; ++i) {
         cout << MPIw::Environment::rankStr() << " pbuff from " << i << endl;
