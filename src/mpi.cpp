@@ -64,21 +64,27 @@ namespace MPIw {
         return (format("[RANK P%04d] ") % rank).str();
     }
 
-    void Environment::sendRecvParticles(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
+    void Environment::sendRecvParticles(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv, const int prev, const int next, std::string commName){
+        Comms[commName]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
+        Comms[commName]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+    }
+
+    void Environment::sendRecvParticlesX(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
         //! X-axis
         int prev = 0; int next = 1;
-        Comms["world"]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
-        Comms["world"]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+        sendRecvParticles(pbuff, pbuffRecv, prev, next, "world");
+    }
 
+    void Environment::sendRecvParticlesY(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
         //! Y-axis
-        prev = 2; next = 3;
-        Comms["world"]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
-        Comms["world"]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+        int prev = 2; int next = 3;
+        sendRecvParticles(pbuff, pbuffRecv, prev, next, "world");
+    }
 
+    void Environment::sendRecvParticlesZ(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
         //! Z-axis
-        prev = 4; next = 5;
-        Comms["world"]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
-        Comms["world"]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+        int prev = 4; int next = 5;
+        sendRecvParticles(pbuff, pbuffRecv, prev, next, "world");
     }
 
     MPI_Datatype registerParticleType() {

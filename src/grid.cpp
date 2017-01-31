@@ -436,7 +436,72 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
-    MPIw::Environment::sendRecvParticles(pbuff, pbuffRecv);
+    MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
+
+    for(int axis = 0; axis < 2; ++axis) {
+        for(int i = 0; i < pbuffRecv[axis].size(); ++i){
+            Particle& p = pbuffRecv[axis][i];
+
+            // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
+            if(axis == 0) {
+                p.x -= slx;
+            } else {
+                p.x += slx;
+            }
+
+            if (p.y < 0.0) {
+                if(!Environment::onLowYedge) pbuff[2].push_back(p);
+                p.isValid = 0;
+            } else if (p.y > sly) {
+                if(!Environment::onHighYedge) pbuff[3].push_back(p);
+                p.isValid = 0;
+            } else if (p.z < 0.0) {
+                if(!Environment::onLowZedge) pbuff[4].push_back(p);
+                p.isValid = 0;
+            } else if (p.z > slz) {
+                if(!Environment::onHighZedge) pbuff[5].push_back(p);
+                p.isValid = 0;
+            }
+        }
+    }
+
+    MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
+
+    for(int axis = 2; axis < 4; ++axis) {
+        for(int i = 0; i < pbuffRecv[axis].size(); ++i){
+            Particle& p = pbuffRecv[axis][i];
+
+            // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
+            if(axis == 2) {
+                p.x -= sly;
+            } else {
+                p.x += sly;
+            }
+
+            if (p.z < 0.0) {
+                if(!Environment::onLowZedge) pbuff[4].push_back(p);
+                p.isValid = 0;
+            } else if (p.z > slz) {
+                if(!Environment::onHighZedge) pbuff[5].push_back(p);
+                p.isValid = 0;
+            }
+        }
+    }
+
+    MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
+
+    for(int axis = 4; axis < 6; ++axis) {
+        for(int i = 0; i < pbuffRecv[axis].size(); ++i){
+            Particle& p = pbuffRecv[axis][i];
+
+            // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
+            if(axis == 4) {
+                p.x -= slz;
+            } else {
+                p.x += slz;
+            }
+        }
+    }
 
     for(int i = 0; i < 6; ++i) {
         cout << MPIw::Environment::rankStr() << " pbuff from " << i << endl;

@@ -515,7 +515,10 @@ namespace MPIw {
             //! Utility member functions
             static std::string rankStr(void);
             static void exitWithFinalize(int);
-            static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
+            static void sendRecvParticlesX(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
+            static void sendRecvParticlesY(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
+            static void sendRecvParticlesZ(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
+            static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&, const int, const int, std::string);
 
     };
 
