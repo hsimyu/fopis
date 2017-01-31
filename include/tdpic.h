@@ -460,13 +460,6 @@ namespace IO {
 }
 
 namespace MPIw {
-    extern const int MPI_TAG_SEND_PARTICLE;
-    extern const int MPI_TAG_RECV_PARTICLE;
-    extern const int MPI_TAG_SEND_PARTICLE_LENGTH;
-    extern const int MPI_TAG_RECV_PARTICLE_LENGTH;
-    extern const int MPI_TAG_SENDRECV_PARTICLE;
-    extern const int MPI_TAG_SENDRECV_PARTICLE_LENGTH;
-
     class Communicator {
         private:
             MPI_Comm comm;
