@@ -518,7 +518,7 @@ double Grid::getParticleEnergy(void) {
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         double eachEnergy = 0.0;
         for(int i = 0; i < particles[pid].size(); ++i){
-            eachEnergy += particles[pid][i].getSquaredMagnitudeOfVelocity();
+            if(particles[pid][i].isValid) eachEnergy += particles[pid][i].getSquaredMagnitudeOfVelocity();
         }
         res += (0.5 * Environment::ptype[id].getMass() * eachEnergy);
     }
