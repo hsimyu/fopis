@@ -234,6 +234,7 @@ class ParticleType {
         double getMass() const;
         double getDensity() const;
         double getTemperature() const;
+        double getTrueTemperature() const;
         int getSize() const;
         int getTotalNumber() const;
         int getPcell() const;

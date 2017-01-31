@@ -26,7 +26,8 @@ std::string ParticleType::getName() const { return name; }
 double ParticleType::getCharge() const { return charge; }
 double ParticleType::getMass() const { return mass; }
 double ParticleType::getDensity() const { return density; }
-double ParticleType::getTemperature() const { return temperature; }
+double ParticleType::getTemperature() const { return temperature / e; }
+double ParticleType::getTrueTemperature() const { return temperature; }
 int ParticleType::getPcell() const { return particle_per_cell; }
 int ParticleType::getSize() const { return size; }
 int ParticleType::getTotalNumber() const { return totalNumber; }
