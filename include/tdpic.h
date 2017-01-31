@@ -56,6 +56,7 @@ struct Poisson {
 
 struct Environment {
     public:
+        static int max_particle_num;
         static int num_of_particle_types;
         static double dx;
         static double dt;

@@ -8,13 +8,16 @@ namespace Initializer {
         std::string filename = "input.json";
         auto inputs = Utils::readJSONFile(filename);
         Initializer::loadEnvironment(inputs);
-        Initializer::loadParticleType(inputs);
-#else
-        Initializer::setTestEnvirontment();
-#endif
 
         // EnvironmentにMPIw::Environment情報をセット
         Initializer::setMPIInfoToEnv();
+
+        // 粒子情報セット
+        Initializer::loadParticleType(inputs);
+#else
+        Initializer::setTestEnvirontment();
+        Initializer::setMPIInfoToEnv();
+#endif
 
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
@@ -61,6 +64,7 @@ namespace Initializer {
         Environment::cell_y = Environment::ny/Environment::proc_y;
         Environment::cell_z = Environment::nz/Environment::proc_z;
 
+        Environment::max_particle_num = 100000;
         Environment::num_of_particle_types = 2;
         Environment::ptype = new ParticleType[Environment::num_of_particle_types];
 
@@ -135,7 +139,7 @@ namespace Initializer {
         // 0のノードをルートとして扱う
         Environment::isRootNode = (MPIw::Environment::rank == 0);
 
-        if(Environment::isRootNode) cout << format("[MPIINFO] allocated processes: %d") % MPIw::Environment::numprocs << endl;
+        if(Environment::isRootNode) cout << format("    [MPIINFO] allocated processes: %d") % MPIw::Environment::numprocs << endl;
     }
 
     void loadEnvironment(picojson::object& inputs){
@@ -175,6 +179,8 @@ namespace Initializer {
                 std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
             }
         }
+
+        Environment::max_particle_num = 100000;
 
         // 1プロセスあたりのグリッド数
         // これに2を加えた数がのりしろ分になる

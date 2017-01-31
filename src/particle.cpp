@@ -25,6 +25,8 @@ Particle& Particle::operator=(Particle const& rhs){
     vz = rhs.vz;
     typeId = rhs.typeId;
     isValid = rhs.isValid;
+    
+    return *this;
 }
 
 Particle::~Particle(){}

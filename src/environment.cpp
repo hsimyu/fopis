@@ -1,6 +1,7 @@
 #include <tdpic.h>
 
 // static variables
+int Environment::max_particle_num;
 int Environment::num_of_particle_types;
 double Environment::dx;
 double Environment::dt;
@@ -21,6 +22,7 @@ ParticleType* Environment::ptype;
 void Environment::printInfo(void){
     cout << "[Environment]" << std::endl;
     cout << "    jobtype: " << jobtype << std::endl;
+    cout << "   max_pnum: " << max_particle_num << std::endl;
     cout << "  iteration: " << max_iteration << std::endl;
     cout << "         dx: " << (format("%8.2f") % dx).str() << "   m" << std::endl;
     cout << "         dt: " << (format("%6.2e") % dt).str() << " sec" << std::endl;

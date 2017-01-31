@@ -187,6 +187,10 @@ Grid::Grid(void){
 
     for(int id = 0; id < Environment::num_of_particle_types; ++id){
         int pnum = Environment::ptype[id].getTotalNumber();
+
+        //! 各粒子分のメモリをreserve
+        particles[id].reserve(Environment::max_particle_num);
+
         //! particle_number分のコンストラクタが呼ばれる
         particles[id].resize(pnum);
 
