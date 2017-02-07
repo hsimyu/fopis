@@ -140,11 +140,11 @@ class Grid {
         }
 
         void updateEfield(void) {
-            field->updateEfield(nx, ny, nz);
+            field->updateEfield(dx, nx, ny, nz);
         }
 
         void updateBfield(void) {
-            field->updateBfield(nx, ny, nz);
+            field->updateBfield(dx, nx, ny, nz);
         }
 
         // update particles

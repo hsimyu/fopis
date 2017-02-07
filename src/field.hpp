@@ -152,8 +152,8 @@ class Field {
         }
 
         void initializePoisson(const int, const int, const int);
-        void updateEfield(const int, const int, const int);
-        void updateBfield(const int, const int, const int);
+        void updateEfield(const double, const int, const int, const int);
+        void updateBfield(const double, const int, const int, const int);
 
         //! solver の実体
         void solvePoissonMKL(const int, const int, const int);

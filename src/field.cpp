@@ -96,19 +96,20 @@ void Field::solvePoisson(const int loopnum, const double dx) {
 
 //! @brief 電場を更新する
 //! e = - (p_+1 - p_+0)/dx
-void Field::updateEfield(const int nx, const int ny, const int nz) {
+void Field::updateEfield(const double dx, const int nx, const int ny, const int nz) {
     const int nx_with_glue = nx + 1; // (cx + 2) - 1
     const int ny_with_glue = ny + 1;
     const int nz_with_glue = nz + 1;
+    const double dxm = 1.0f/dx;
 
     //! phiは通信してあるとする -> 0番目のedgeも計算可能
     for(int i = 0; i < nx_with_glue; ++i){
         for(int j = 0; j < ny_with_glue; ++j){
             for(int k = 0; k < nz_with_glue; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
-                if(i < nx_with_glue - 1) ex[i][j][k] = phi[i][j][k] - phi[i + 1][j][k];
-                if(j < ny_with_glue - 1) ey[i][j][k] = phi[i][j][k] - phi[i][j + 1][k];
-                if(k < nz_with_glue - 1) ez[i][j][k] = phi[i][j][k] - phi[i][j][k + 1];
+                if(i < nx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * dxm;
+                if(j < ny_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * dxm;
+                if(k < nz_with_glue - 1) ez[i][j][k] = (phi[i][j][k] - phi[i][j][k + 1]) * dxm;
             }
         }
     }
@@ -129,23 +130,25 @@ void Field::updateEfield(const int nx, const int ny, const int nz) {
 
 //! @brief 磁場を更新する(FDTD)
 //!
-void Field::updateBfield(const int nx, const int ny, const int nz) {
-    const double dx = Environment::dx;
-    const double dt = Environment::dt;
-    //const double DT = 0.1 * DX/c
-    const double eta = 1.0/(c * eps0);
-    const double epsilon_r = 1.0;
-    const double mu_r = 1.0;
-    const double sigma = 1.0;
-    const double sigma_m = 1.0;
-    const double c1 = epsilon_r/(epsilon_r + eta * sigma * c * dt);
-    const double c2 = 1.0/(epsilon_r + eta * sigma * c * dt);
-    const double d1 = mu_r/(mu_r + sigma_m * c * dt / eta);
-    const double d2 = 1.0/(mu_r + sigma_m * c * dt / eta);
+void Field::updateBfield(const double dx, const int nx, const int ny, const int nz) {
+    const double dt = Utils::Normalizer::normalizeTime(Environment::dt);
 
-    cout << "c1 = " << c1 << ", c2 = " << c2 << endl;
+    const double mu0 = 4.0 * M_PI * 1e-7; // H/m
+    const double epsilon_r = 1.0; //! 比誘電率
+    const double sigma = 1.0; //! 導電率 (各Faceでの)
+    const double mu_r = 1.0; //! 透磁率 (各Faceでの)
+    const double sigma_m = 0.0; //! 導磁率?
+    //
+    // // 電場への係数
+    // const double c1 = epsilon_r/(epsilon_r + eta * sigma * c * dt);
+    // const double c2 = 1.0/(epsilon_r + eta * sigma * c * dt);
+
+    // 磁束密度更新時の係数
+    const double d1 = mu_r/(mu_r + sigma_m * dt / mu0);
+    const double d2 = dt/(mu_r + sigma_m * dt / mu0);
+
+    // cout << "c1 = " << c1 << ", c2 = " << c2 << endl;
     cout << "d1 = " << d1 << ", d2 = " << d2 << endl;
-    cout << "eta = " << eta << endl;
 
     const int cx_with_glue = nx + 1;
     const int cy_with_glue = nx + 1;
@@ -155,12 +158,12 @@ void Field::updateBfield(const int nx, const int ny, const int nz) {
     for(int i = 1; i < cx_with_glue; ++i){
         for(int j = 1; j < cy_with_glue; ++j){
             for(int k = 1; k < cz_with_glue; ++k){
-                // bx[i][j][k] = d1 * bx[i][j][k] - d2 * ((ez[i][j + 1][k] - ez[i][j][k]) / (dx/(c * dt)) - (ey[i][j][k + 1] - ey[i][j][k]) / (dx/(c * dt))) / eta;
-                // by[i][j][k] = d1 * by[i][j][k] - d2 * ((ex[i][j][k + 1] - ex[i][j][k]) / (dx/(c * dt)) - (ez[i + 1][j][k] - ez[i][j][k]) / (dx/(c * dt))) / eta;
-                // bz[i][j][k] = d1 * bz[i][j][k] - d2 * ((ey[i + 1][j][k] - ey[i][j][k]) / (dx/(c * dt)) - (ex[i][j + 1][k] - ex[i][j][k]) / (dx/(c * dt))) / eta;
-                // hx[i][j][k] = d1 * hx[i][j][k] - d2 * ((ez[i][j + 1][k] - ez[i][j][k]) / (DY/(c * DT)) - (ey[i][j][k + 1] - ey[i][j][k]) / (DZ/(c * DT))) / eta
-                // hy[i][j][k] = d1 * hy[i][j][k] - d2 * ((ex[i][j][k + 1] - ex[i][j][k]) / (DZ/(c * DT)) - (ez[i + 1][j][k] - ez[i][j][k]) / (DX/(c * DT))) / eta
-                // hz[i][j][k] = d1 * hz[i][j][k] - d2 * ((ey[i + 1][j][k] - ey[i][j][k]) / (DX/(c * DT)) - (ex[i][j + 1][k] - ex[i][j][k]) / (DY/(c * DT))) / eta
+                if(j != cy_with_glue - 1 && k != cz_with_glue - 1)
+                    bx[i][j][k] = d1 * bx[i][j][k] - d2 * (ez[i][j + 1][k] - ez[i][j][k] - ey[i][j][k + 1] + ey[i][j][k]) / dx;
+                if(i != cx_with_glue - 1 && k != cz_with_glue - 1)
+                    by[i][j][k] = d1 * by[i][j][k] - d2 * (ex[i][j][k + 1] - ex[i][j][k] - ez[i + 1][j][k] + ez[i][j][k]) / dx;
+                if(i != cx_with_glue - 1 && j != cy_with_glue - 1)
+                    bz[i][j][k] = d1 * bz[i][j][k] - d2 * (ey[i + 1][j][k] - ey[i][j][k] - ex[i][j + 1][k] + ex[i][j][k]) / dx;
             }
         }
     }

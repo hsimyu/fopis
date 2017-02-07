@@ -408,8 +408,6 @@ void Grid::updateParticlePosition(void) {
             particles[ p.typeId ].push_back(p);
         }
     }
-
-    // pbuffはここで破棄される
 }
 
 double Grid::getParticleEnergy(void) {

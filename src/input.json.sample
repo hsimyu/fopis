@@ -11,7 +11,7 @@
         "proc_x": 2,
         "proc_y": 1,
         "proc_z": 1,
-        "dx": 1.0,
+        "dx": 0.1,
         "dt": 1e-8
     },
     "Plasma": {
