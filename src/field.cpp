@@ -170,3 +170,19 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
 
 }
 
+double Field::getEnergy(const int nx, const int ny, const int nz) {
+    double energy = 0.0f;
+    double normalized_eps0 = Utils::Normalizer::normalizeEpsilon(eps0);
+
+    for(int i = 1; i < nx - 1; ++i){
+        for(int j = 1; j < ny - 1; ++j){
+            for(int k = 1; k < nz - 1; ++k){
+                //! 各点のエネルギーを計算する(Yee格子内のエネルギーの計算方法は?)
+                energy += pow(exref[i][j][k],2) + pow(eyref[i][j][k], 2) + pow(ezref[i][j][k], 2);
+            }
+        }
+    }
+
+    return 0.5f * Utils::Normalizer::normalizeEpsilon(eps0) * energy;
+}
+

@@ -29,12 +29,16 @@ int main(int argc, char* argv[]){
     root_grid->updateEfield();
 
     for(int timestep = 0; timestep < Environment::max_iteration; ++timestep) {
+        if( Environment::isRootNode ) {
+            cout << "--  Iteration " << timestep << "  --" << endl;
+        }
         // new particle position
         root_grid->updateParticleVelocity();
         root_grid->updateParticlePosition();
         root_grid->updateRho();
         root_grid->solvePoisson();
         root_grid->updateEfield();
+        // root_grid->updateBfield();
         IO::plotEnergy(root_grid, timestep);
         IO::writeDataInParallel(root_grid, timestep, "potential");
         IO::writeDataInParallel(root_grid, timestep, "rho");

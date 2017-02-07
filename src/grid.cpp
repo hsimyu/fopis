@@ -425,6 +425,11 @@ double Grid::getParticleEnergy(void) {
     return res;
 }
 
+//! @note: childrenのエネルギーも取る?
+double Grid::getFieldEnergy(void) {
+    return field->getEnergy(nx, ny, nz);
+}
+
 // 子グリッドへ場の値をコピーする
 // この実装はノード to ノードの場合
 void Grid::copyScalarToChildren(std::string varname){

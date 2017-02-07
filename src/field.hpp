@@ -159,6 +159,8 @@ class Field {
         void solvePoissonMKL(const int, const int, const int);
         void solvePoissonSOR(const int, const double);
         void solvePoisson(const int, const double);
+
+        double getEnergy(const int, const int, const int);
 };
 
 
