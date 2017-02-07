@@ -399,12 +399,13 @@ void Grid::updateParticlePosition(void) {
     }
 
     for(int i = 0; i < 6; ++i) {
-        cout << MPIw::Environment::rankStr() << " pbuff from " << i << endl;
         for(auto& p : pbuffRecv[i]){
-            cout << p << endl;
+#ifdef DEBUG
+            if( particles[ p.typeId ].capacity() == particles[ p.typeId ].size() ) {
+                cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::ptype[ p.typeId ].getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
+            }
+#endif
             particles[ p.typeId ].push_back(p);
-            cout << "capacity: " << particles[ p.typeId ].capacity() << endl;
-            cout << "size: "     << particles[ p.typeId ].size() << endl;
         }
     }
 

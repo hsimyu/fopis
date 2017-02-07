@@ -70,7 +70,7 @@ namespace Initializer {
         Environment::cell_y = Environment::ny/Environment::proc_y;
         Environment::cell_z = Environment::nz/Environment::proc_z;
 
-        Environment::max_particle_num = 100000;
+        Environment::max_particle_num = MAX_PARTICLE_NUM;
         Environment::num_of_particle_types = 2;
         Environment::ptype = new ParticleType[Environment::num_of_particle_types];
 
@@ -186,7 +186,7 @@ namespace Initializer {
             }
         }
 
-        Environment::max_particle_num = 100000;
+        Environment::max_particle_num = MAX_PARTICLE_NUM;
 
         // 1プロセスあたりのグリッド数
         // これに2を加えた数がのりしろ分になる
