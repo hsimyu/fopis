@@ -4,7 +4,12 @@
  * 帯電解析用 & マルチグリッド解析用のPICコード
  **/
 
-#include <tdpic.h>
+#include "global.hpp"
+#include "initialize.hpp"
+#include "mpiw.hpp"
+#include "grid.hpp"
+#include "environment.hpp"
+#include "dataio.hpp"
 
 #ifndef BUILD_TEST
 int main(int argc, char* argv[]){

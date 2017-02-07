@@ -1,4 +1,6 @@
-#include <tdpic.h>
+#include "global.hpp"
+#include "particle.hpp"
+#include "environment.hpp"
 
 Particle::Particle(void){
     isValid = 1;
@@ -25,7 +27,7 @@ Particle& Particle::operator=(Particle const& rhs){
     vz = rhs.vz;
     typeId = rhs.typeId;
     isValid = rhs.isValid;
-    
+
     return *this;
 }
 
@@ -74,10 +76,10 @@ void Particle::updatePosition(void) {
 
 // util
 std::ostream& operator<<(std::ostream& ost, Particle const& p){
-    ost << "[  Particle  ]" << std::endl;
-    ost << "         id: " << p.typeId << std::endl;
-    ost << "   position: " << format("%f, %f, %f") % p.x % p.y % p.z << std::endl;
-    ost << "   velocity: " << format("%f, %f, %f") % p.vx % p.vy % p.vz << std::endl;
-    ost << "    isValid: " << format("%s") % p.isValid << std::endl;
+    ost << "[  Particle  ]" << endl;
+    ost << "         id: " << p.typeId << endl;
+    ost << "   position: " << format("%f, %f, %f") % p.x % p.y % p.z << endl;
+    ost << "   velocity: " << format("%f, %f, %f") % p.vx % p.vy % p.vz << endl;
+    ost << "    isValid: " << format("%s") % p.isValid << endl;
     return ost;
 }

@@ -1,4 +1,7 @@
-#include <tdpic.h>
+#include "global.hpp"
+#include "mpiw.hpp"
+#include "environment.hpp"
+#include "particle.hpp"
 #include <cstddef>
 
 namespace MPIw {

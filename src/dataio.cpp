@@ -1,7 +1,11 @@
-#include <tdpic.h>
+#include "global.hpp"
+#include "environment.hpp"
+#include "dataio.hpp"
+#include "grid.hpp"
+#include "mpiw.hpp"
+#include "utils.hpp"
 #include <numeric>
-#include <fstream>
-
+#include <silo.h>
 #include <mpi.h>
 #include <pmpio.h>
 

@@ -1,4 +1,7 @@
-#include <tdpic.h>
+#include "global.hpp"
+#include "environment.hpp"
+#include "field.hpp"
+#include "utils.hpp"
 
 Field::Field() :
     rho(boost::extents[0][0][0], boost::fortran_storage_order()),

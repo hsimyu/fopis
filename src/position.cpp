@@ -1,4 +1,5 @@
-#include <tdpic.h>
+#include "global.hpp"
+#include "particle.hpp"
 
 // Position Class
 Position::Position(const double _x, const double _y, const double _z){

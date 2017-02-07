@@ -1,4 +1,7 @@
-#include <tdpic.h>
+#include "global.hpp"
+#include "environment.hpp"
+#include "particle.hpp"
+#include "utils.hpp"
 
 // ParticleType Class
 ParticleType::ParticleType(){}

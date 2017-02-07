@@ -1,4 +1,10 @@
-#include <tdpic.h>
+#include "global.hpp"
+#include "initialize.hpp"
+#include "environment.hpp"
+#include "utils.hpp"
+#include "grid.hpp"
+#include "particle.hpp"
+#include "mpiw.hpp"
 #include <tdpic_configure.h>
 
 namespace Initializer {

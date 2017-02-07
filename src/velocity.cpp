@@ -1,4 +1,4 @@
-#include <tdpic.h>
+#include "particle.hpp"
 
 Velocity::Velocity(){}
 Velocity::~Velocity(){}
