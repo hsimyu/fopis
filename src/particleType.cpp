@@ -3,38 +3,6 @@
 #include "particle.hpp"
 #include "utils.hpp"
 
-// ParticleType Class
-ParticleType::ParticleType(){}
-
-// setter
-void ParticleType::setId(int _id){ id = _id; }
-void ParticleType::setCharge(double _charge){ charge = _charge; }
-void ParticleType::setMass(double _mass){ mass = _mass; }
-void ParticleType::setDensity(double _density){ density = _density; }
-void ParticleType::setTemperature(double _temp){
-    //! eV形式で入力されると仮定
-    //! 内部的にはkB Teの値で持つ => eをかけて保存
-    temperature = e * _temp;
-}
-void ParticleType::setName(std::string _name){ name = _name; }
-void ParticleType::setType(std::string _type){ type = _type; }
-void ParticleType::setSize(int _size){ size = _size; }
-void ParticleType::setTotalNumber(int _num){ totalNumber = _num; }
-void ParticleType::setPcell(int _pcell){ particle_per_cell = _pcell; }
-
-// getter
-int ParticleType::getId() const { return id; }
-std::string ParticleType::getType() const { return type; }
-std::string ParticleType::getName() const { return name; }
-double ParticleType::getCharge() const { return charge; }
-double ParticleType::getMass() const { return mass; }
-double ParticleType::getDensity() const { return density; }
-double ParticleType::getTemperature() const { return temperature / e; }
-double ParticleType::getTrueTemperature() const { return temperature; }
-int ParticleType::getPcell() const { return particle_per_cell; }
-int ParticleType::getSize() const { return size; }
-int ParticleType::getTotalNumber() const { return totalNumber; }
-
 int ParticleType::calcSize(void){
     size = static_cast<int>(pow(Environment::dx, 3) * density / static_cast<double>(particle_per_cell));
     return size;
