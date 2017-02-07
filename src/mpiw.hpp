@@ -8,20 +8,29 @@
 class Particle;
 
 namespace MPIw {
+    //! @class: MPI通信をラップするためのクラス
+    //! 内部的に持つcommunicatorを使って通信する
     class Communicator {
         private:
             MPI_Comm comm;
 
         public:
-            Communicator();
-            Communicator(MPI_Comm);
-            //デストラクタは特に必要ない
+            // Communicator
+            Communicator(void) {
+                comm = MPI_COMM_WORLD;
+            }
+
+            Communicator(MPI_Comm _comm) {
+                comm = _comm;
+            }
 
             MPI_Comm getComm(void);
             void setComm(MPI_Comm);
 
             // -- communicate methods --
-            void barrier();
+            void barrier(void) {
+                MPI_Barrier(comm);
+            }
 
             // summation
             double sum(double, const int);
@@ -45,7 +54,11 @@ namespace MPIw {
 
         public:
             Environment(int, char**);
-            ~Environment();
+
+            // 破棄時にFinalize()する
+            ~Environment() {
+                finalize();
+            }
 
             //! MPIのランクとプロセス数はstaticに持つ
             //! int rank = MPI::Environment::rank; でアクセスする

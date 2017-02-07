@@ -53,11 +53,6 @@ namespace MPIw {
 #endif
     }
 
-    // 破棄時にFinalize()する
-    Environment::~Environment() {
-        finalize();
-    }
-
     void Environment::exitWithFinalize(int code) {
         finalize();
         exit(code);
@@ -115,15 +110,6 @@ namespace MPIw {
 
     void deregisterMpiType(MPI_Datatype type){
         MPI_Type_free(&type);
-    }
-
-    // Communicator
-    Communicator::Communicator(void) {
-        comm = MPI_COMM_WORLD;
-    }
-
-    Communicator::Communicator(MPI_Comm _comm) {
-        comm = _comm;
     }
 
     void Communicator::send(Particle const& p, const int dest) {
@@ -190,9 +176,5 @@ namespace MPIw {
         int res = 0;
         MPI_Reduce(&value, &res, 1, MPI_INT, MPI_SUM, target_rank, comm);
         return res;
-    }
-
-    void Communicator::barrier(void) {
-        MPI_Barrier(comm);
     }
 }
