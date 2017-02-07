@@ -7,56 +7,8 @@
 #include <silo.h>
 #include <random>
 
-// Unique ID
+// Unique ID の実体
 unsigned int Grid::nextID = 0;
-unsigned int Grid::getNextID(void) {
-    return Grid::nextID++;
-}
-
-void Grid::resetNextID(void) {
-    nextID = 0;
-}
-unsigned int Grid::getID(void) const { return id; }
-
-// accessors
-void   Grid::setFromIX(int _ix) { from_ix = _ix; }
-void   Grid::setFromIY(int _iy) { from_iy = _iy; }
-void   Grid::setFromIZ(int _iz) { from_iz = _iz; }
-int    Grid::getFromIX(void) const { return from_ix; }
-int    Grid::getFromIY(void) const { return from_iy; }
-int    Grid::getFromIZ(void) const { return from_iz; }
-
-void   Grid::setToIX(int _ix) { to_ix = _ix; }
-void   Grid::setToIY(int _iy) { to_iy = _iy; }
-void   Grid::setToIZ(int _iz) { to_iz = _iz; }
-int    Grid::getToIX(void) const { return to_ix; }
-int    Grid::getToIY(void) const { return to_iy; }
-int    Grid::getToIZ(void) const { return to_iz; }
-
-void   Grid::setBaseX(double _x){ base_x = _x; }
-void   Grid::setBaseY(double _y){ base_y = _y; }
-void   Grid::setBaseZ(double _z){ base_z = _z; }
-double Grid::getBaseX(void)  const { return base_x; }
-double Grid::getBaseY(void)  const { return base_y; }
-double Grid::getBaseZ(void)  const { return base_z; }
-
-void Grid::setNX(int _x){ nx = _x; }
-void Grid::setNY(int _y){ ny = _y; }
-void Grid::setNZ(int _z){ nz = _z; }
-int  Grid::getNX(void) const { return nx; }
-int  Grid::getNY(void) const { return ny; }
-int  Grid::getNZ(void) const { return nz; }
-
-void Grid::setLevel(int l){ level = l; }
-int  Grid::getLevel(void) const { return level; }
-void   Grid::setDX(double _dx){ dx = _dx; }
-double Grid::getDX(void) const { return dx; }
-
-void Grid::setField(Field* f){ field = f; }
-Field* Grid::getField(void){ return field; }
-
-void  Grid::setParent(Grid* g){ parent = g; }
-Grid* Grid::getParent(void){ return parent; }
 
 void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix, const int _to_iy, const int _to_iz) {
     Grid* child = new Grid(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz);
@@ -66,23 +18,6 @@ void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz,
 
 void Grid::addChild(Grid* child) {
     children.push_back(child);
-}
-
-std::vector<Grid*>& Grid::getChildren(void) {
-    // 参照にしないと新しいポインタが生まれてしまう？
-    return children;
-}
-
-int Grid::getChildrenLength(void) const {
-    return children.size();
-}
-
-int Grid::getSumOfChild(void) const {
-    return sumTotalNumOfChildGrids;
-}
-
-void Grid::setSumOfChild(const int s) {
-    sumTotalNumOfChildGrids = s;
 }
 
 void Grid::decrementSumOfChild() {
@@ -323,19 +258,6 @@ void Grid::updateRho() {
             }
         }
     }
-}
-
-void Grid::solvePoisson(void) {
-    const int DEFAULT_ITERATION_LOOP = 20;
-    field->solvePoisson(DEFAULT_ITERATION_LOOP, dx);
-}
-
-void Grid::updateEfield(void) {
-    field->updateEfield(nx, ny, nz);
-}
-
-void Grid::updateBfield(void) {
-    field->updateBfield(nx, ny, nz);
 }
 
 void Grid::updateParticleVelocity(void) {
@@ -597,10 +519,6 @@ int Grid::getMaxLevel() {
     }
 
     return maxLevel;
-}
-
-int Grid::getMaxChildLevel() {
-    return this->getMaxLevel() - level;
 }
 
 //! 各レベルの子パッチの数を再帰的に返す

@@ -4,11 +4,9 @@
 #include <map>
 #include <silo.h>
 #include "particle.hpp"
+#include "field.hpp"
 #include "environment.hpp"
 #include "utils.hpp"
-
-class Field;
-class Particle;
 
 //! @class Grid
 class Grid {
@@ -46,51 +44,55 @@ class Grid {
 
         ~Grid();
 
-        unsigned int getID(void) const;
-        unsigned int getNextID(void);
+        unsigned int getNextID(void) {
+            return nextID++;
+        }
+
         // IDへのsetterは提供しない、代わりにresetterを用意
-        static void resetNextID(void);
+        void resetNextID(void) {
+            nextID = 0;
+        }
+        unsigned int getID(void) const { return id; }
 
-        void setFromIX(int);
-        void setFromIY(int);
-        void setFromIZ(int);
-        int  getFromIX() const;
-        int  getFromIY() const;
-        int  getFromIZ() const;
-        void setToIX(int);
-        void setToIY(int);
-        void setToIZ(int);
-        int  getToIX() const;
-        int  getToIY() const;
-        int  getToIZ() const;
+        // accessors
+        void   setFromIX(int _ix) { from_ix = _ix; }
+        void   setFromIY(int _iy) { from_iy = _iy; }
+        void   setFromIZ(int _iz) { from_iz = _iz; }
+        int    getFromIX(void) const { return from_ix; }
+        int    getFromIY(void) const { return from_iy; }
+        int    getFromIZ(void) const { return from_iz; }
 
-        void setBaseX(double);
-        void setBaseY(double);
-        void setBaseZ(double);
+        void   setToIX(int _ix) { to_ix = _ix; }
+        void   setToIY(int _iy) { to_iy = _iy; }
+        void   setToIZ(int _iz) { to_iz = _iz; }
+        int    getToIX(void) const { return to_ix; }
+        int    getToIY(void) const { return to_iy; }
+        int    getToIZ(void) const { return to_iz; }
 
-        double getBaseX() const;
-        double getBaseY() const;
-        double getBaseZ() const;
+        void   setBaseX(double _x){ base_x = _x; }
+        void   setBaseY(double _y){ base_y = _y; }
+        void   setBaseZ(double _z){ base_z = _z; }
+        double getBaseX(void)  const { return base_x; }
+        double getBaseY(void)  const { return base_y; }
+        double getBaseZ(void)  const { return base_z; }
 
-        void setNX(int);
-        void setNY(int);
-        void setNZ(int);
+        void setNX(int _x){ nx = _x; }
+        void setNY(int _y){ ny = _y; }
+        void setNZ(int _z){ nz = _z; }
+        int  getNX(void) const { return nx; }
+        int  getNY(void) const { return ny; }
+        int  getNZ(void) const { return nz; }
 
-        int  getNX() const;
-        int  getNY() const;
-        int  getNZ() const;
+        void setLevel(int l){ level = l; }
+        int  getLevel(void) const { return level; }
+        void   setDX(double _dx){ dx = _dx; }
+        double getDX(void) const { return dx; }
 
-        void setLevel(int);
-        int getLevel() const;
+        void setField(Field* f){ field = f; }
+        Field* getField(void){ return field; }
 
-        void setDX(double);
-        double getDX() const;
-
-        void setParent(Grid*);
-        Grid* getParent();
-
-        void setField(Field*);
-        Field* getField();
+        void  setParent(Grid* g){ parent = g; }
+        Grid* getParent(void){ return parent; }
 
         // Field 初期化
         void initializeField(void);
@@ -102,14 +104,27 @@ class Grid {
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(Grid*);
-        std::vector<Grid*>& getChildren();
-        int getChildrenLength(void) const;
         void removeChild(const int);
         void checkGridValidness(void);
 
+        std::vector<Grid*>& getChildren(void) {
+            // 参照にしないと新しいポインタが生まれてしまう？
+            return children;
+        }
+
+        int getChildrenLength(void) const {
+            return children.size();
+        }
+
         // child gridの総数を保存するためのメソッド
-        int getSumOfChild(void) const;
-        void setSumOfChild(const int);
+        int getSumOfChild(void) const {
+            return sumTotalNumOfChildGrids;
+        }
+
+        void setSumOfChild(const int s) {
+            sumTotalNumOfChildGrids = s;
+        }
+
         void incrementSumOfChild(void);
         void decrementSumOfChild(void);
 
@@ -118,9 +133,19 @@ class Grid {
 
         // update fields
         void updateRho(void);
-        void solvePoisson(void);
-        void updateEfield(void);
-        void updateBfield(void);
+
+        void solvePoisson(void) {
+            const int DEFAULT_ITERATION_LOOP = 20;
+            field->solvePoisson(DEFAULT_ITERATION_LOOP, dx);
+        }
+
+        void updateEfield(void) {
+            field->updateEfield(nx, ny, nz);
+        }
+
+        void updateBfield(void) {
+            field->updateBfield(nx, ny, nz);
+        }
 
         // update particles
         void updateParticleVelocity(void);
@@ -136,7 +161,10 @@ class Grid {
         int* getNumOfPatches(void);
         int* getChildIdMap(void);
         int getMaxLevel(void);
-        int getMaxChildLevel(void);
+
+        int getMaxChildLevel() {
+            return this->getMaxLevel() - level;
+        }
 
         // {id: [子のIDを格納したvector]}のmapを作成する
         std::map<int, std::vector<int> > getChildMapOnRoot(void);
