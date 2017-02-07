@@ -8,9 +8,9 @@
 class Particle;
 
 namespace MPIw {
-    //! @class: MPI通信をラップするためのクラス
-    //! 内部的に持つcommunicatorを使って通信する
+    //! MPI通信をラップするためのクラス
     class Communicator {
+        //! 内部的に持つcommunicatorを使って通信する
         private:
             MPI_Comm comm;
 
@@ -47,7 +47,7 @@ namespace MPIw {
     MPI_Datatype registerParticleType(void);
     void deregisterMpiType(MPI_Datatype);
 
-    //! MPI ランク保持用のクラス
+    //! MPIランク保持用のクラス
     class Environment {
         private:
             static void finalize(void);
@@ -55,7 +55,7 @@ namespace MPIw {
         public:
             Environment(int, char**);
 
-            // 破棄時にFinalize()する
+            //! 破棄時にFinalize()する
             ~Environment() {
                 finalize();
             }

@@ -54,8 +54,6 @@ void Field::initializePoisson(const int cx, const int cy, const int cz){
 
 //! @brief MKLのPoisson Solverを呼び出す
 //! もしPoisson用構造体のポインタがnullptrだった場合、初期化を行う
-//!
-//! @param Environment
 void Field::solvePoissonMKL(const int cx, const int cy, const int cz) {
     if(psn == nullptr) initializePoisson(cx, cy, cz);
 
@@ -98,7 +96,6 @@ void Field::solvePoisson(const int loopnum, const double dx) {
 
 //! @brief 電場を更新する
 //! e = - (p_+1 - p_+0)/dx
-//! @param const Environment*
 void Field::updateEfield(const int nx, const int ny, const int nz) {
     const int nx_with_glue = nx + 1; // (cx + 2) - 1
     const int ny_with_glue = ny + 1;

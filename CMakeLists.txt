@@ -51,7 +51,7 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
         CONFIGURE_FILE(${DOXYGEN_CONF_FILE}.in ${DOXYGEN_CONF_PATH})
 
         ADD_CUSTOM_TARGET(${DOXYGEN_TARGET}
-            ${DOXYGEN_EXECUTABLE} ${DOXYGEN_CONF_PATH}
+            ${DOXYGEN_EXECUTABLE} ${DOXYGEN_CONF_PATH} && open ${CMAKE_BINARY_DIR}/doc/html/index.html
             DEPENDS  ${DOXYGEN_CONF_PATH})
     ELSE(DOXYGEN_FOUND)
         MESSAGE (WARNING "Doxygen binary couldn't be found")
