@@ -12,67 +12,6 @@ namespace Utils {
     double Normalizer::e_unit = 1.0;
     double Normalizer::m_unit = 1.0;
 
-    // Normalize Utilities
-    double Normalizer::normalizeLength(double raw_x) {
-        return raw_x / x_unit;
-    }
-
-    double Normalizer::unnormalizeLength(double normalized_x) {
-        return normalized_x * x_unit;
-    }
-
-    double Normalizer::normalizeVelocity(double raw_v) {
-        return t_unit * raw_v / x_unit;
-    }
-
-    double Normalizer::unnormalizeVelocity(double normalized_v) {
-        return normalized_v * x_unit / t_unit;
-    }
-
-    double Normalizer::normalizeTime(double raw_t) {
-        return raw_t / t_unit;
-    }
-
-    double Normalizer::unnormalizeTime(double normalized_t) {
-        return normalized_t * t_unit;
-    }
-
-    double Normalizer::normalizeCharge(double raw_e) {
-        return raw_e / e_unit;
-    }
-
-    double Normalizer::unnormalizeCharge(double normalized_e) {
-        return normalized_e * e_unit;
-    }
-
-    double Normalizer::normalizeMass(double raw_mass) {
-        return raw_mass / m_unit;
-    }
-
-    double Normalizer::unnormalizeMass(double normalized_mass) {
-        return normalized_mass * m_unit;
-    }
-
-    //! kg*m^2/s^2 -> 1;
-    double Normalizer::normalizeEnergy(double raw_energy) {
-        return raw_energy * pow(t_unit, 2) / (m_unit * pow(x_unit, 2));
-    }
-
-    //! 1 -> kg*m^2/s^2;
-    double Normalizer::unnormalizeEnergy(double normalized_energy) {
-        return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2); //kg * m^2/s^2;
-    }
-
-    //! s^4*A^2/kg*m^3 == C^2*s^2/kg*m^3 -> 1;
-    double Normalizer::normalizeEpsilon(double raw_epsilon) {
-        return raw_epsilon * (pow(x_unit, 3) * m_unit) / (pow(e_unit, 2) * pow(t_unit, 2));
-    }
-
-    //! 1 -> C^2*s^2/kg*m^3;
-    double Normalizer::unnormalizeEpsilon(double normalized_eps) {
-        return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (pow(x_unit, 3) * m_unit);
-    }
-
     void clearBoundaryValues(tdArray& x, const int nx, const int ny, const int nz) {
         for(int i = 0; i < nx; i += nx - 1) {
             for(int j = 0; j < ny; ++j){

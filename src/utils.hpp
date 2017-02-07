@@ -18,39 +18,80 @@ namespace Utils {
 
     void createDir(std::string);
 
+    //! 物理量を無次元量として扱う際の正規化を担当するクラス
     class Normalizer {
         protected:
-            // static class
             Normalizer();
             ~Normalizer();
 
         public:
-            // static member
+            //! @note: initializeの際に次元単位をセットする必要がある
             static double x_unit;
             static double t_unit;
             static double m_unit;
             static double e_unit;
 
-            static double normalizeLength(const double);
-            static double unnormalizeLength(const double);
+            // Normalize Utilities
+            static double normalizeLength(double raw_x) {
+                return raw_x / x_unit;
+            }
 
-            static double normalizeVelocity(const double);
-            static double unnormalizeVelocity(const double);
+            static double unnormalizeLength(double normalized_x) {
+                return normalized_x * x_unit;
+            }
 
-            static double normalizeTime(const double);
-            static double unnormalizeTime(const double);
+            static double normalizeVelocity(double raw_v) {
+                return t_unit * raw_v / x_unit;
+            }
 
-            static double normalizeCharge(const double);
-            static double unnormalizeCharge(const double);
+            static double unnormalizeVelocity(double normalized_v) {
+                return normalized_v * x_unit / t_unit;
+            }
 
-            static double normalizeMass(const double);
-            static double unnormalizeMass(const double);
+            static double normalizeTime(double raw_t) {
+                return raw_t / t_unit;
+            }
 
-            static double normalizeEnergy(const double);
-            static double unnormalizeEnergy(const double);
+            static double unnormalizeTime(double normalized_t) {
+                return normalized_t * t_unit;
+            }
 
-            static double normalizeEpsilon(const double);
-            static double unnormalizeEpsilon(const double);
+            static double normalizeCharge(double raw_e) {
+                return raw_e / e_unit;
+            }
+
+            static double unnormalizeCharge(double normalized_e) {
+                return normalized_e * e_unit;
+            }
+
+            static double normalizeMass(double raw_mass) {
+                return raw_mass / m_unit;
+            }
+
+            static double unnormalizeMass(double normalized_mass) {
+                return normalized_mass * m_unit;
+            }
+
+            //! kg*m^2/s^2 -> 1;
+            static double normalizeEnergy(double raw_energy) {
+                return raw_energy * pow(t_unit, 2) / (m_unit * pow(x_unit, 2));
+            }
+
+            //! 1 -> kg*m^2/s^2;
+            static double unnormalizeEnergy(double normalized_energy) {
+                return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2); //kg * m^2/s^2;
+            }
+
+            //! s^4*A^2/kg*m^3 == C^2*s^2/kg*m^3 -> 1;
+            static double normalizeEpsilon(double raw_epsilon) {
+                return raw_epsilon * (pow(x_unit, 3) * m_unit) / (pow(e_unit, 2) * pow(t_unit, 2));
+            }
+
+            //! 1 -> C^2*s^2/kg*m^3;
+            static double unnormalizeEpsilon(double normalized_eps) {
+                return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (pow(x_unit, 3) * m_unit);
+            }
+
     };
 }
 
