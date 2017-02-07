@@ -67,8 +67,13 @@ class Particle {
             z += vz;
         }
 
+        //! 個別にエネルギーを計算するためのメンバ関数
         double getEnergy(void) const;
-        double getSquaredMagnitudeOfVelocity(void) const;
+
+        //! まとめてエネルギーを計算する時のためのメンバ関数
+        double getSquaredMagnitudeOfVelocity(void) const {
+            return (vx*vx + vy*vy + vz*vz);
+        }
 
         friend std::ostream& operator<<(std::ostream&, Particle const&);
 };

@@ -33,7 +33,3 @@ void Environment::printInfo(void){
     cout << "       cell: " << format("%1%x%2%x%3%") % cell_x % cell_y % cell_z << " grids [/proc] " << endl;
     cout << "    cell(+): " << format("%1%x%2%x%3%") % (cell_x + 2) % (cell_y + 2) % (cell_z + 2) << " grids [/proc] (with glue cells) " << endl;
 }
-
-std::string Environment::rankStr(void) {
-    return MPIw::Environment::rankStr();
-}

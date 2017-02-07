@@ -1,5 +1,7 @@
 #ifndef __TDPIC_ENVIRONMENT_H_INCLUDED__
 #define __TDPIC_ENVIRONMENT_H_INCLUDED__
+#include "mpiw.hpp"
+
 class ParticleType;
 
 struct Environment {
@@ -26,7 +28,10 @@ struct Environment {
         static ParticleType* ptype;
 
         //! 中身はMPI::Environment::getRankStr()と同様
-        static std::string rankStr(void);
+        static std::string rankStr(void) {
+            return MPIw::Environment::rankStr();
+        }
+
         static void printInfo(void);
 };
 #endif

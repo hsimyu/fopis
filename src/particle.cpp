@@ -8,14 +8,8 @@ void Particle::setPosition(Position const& pos){
     z = pos.z;
 }
 
-//! 個別計算用
 double Particle::getEnergy(void) const {
     return 0.5 * (vx*vx + vy*vy + vz*vz) * Environment::ptype[typeId].getMass();
-}
-
-//! まとめて計算する時用
-double Particle::getSquaredMagnitudeOfVelocity(void) const {
-    return (vx*vx + vy*vy + vz*vz);
 }
 
 // util

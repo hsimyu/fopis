@@ -60,6 +60,17 @@ namespace MPIw {
                 finalize();
             }
 
+            //! 例外時などの終了処理のために呼び出す
+            static void exitWithFinalize(int code) {
+                finalize();
+                exit(code);
+            }
+
+            //! MPIランクを接頭辞として出力する時のための関数
+            static std::string rankStr(void) {
+                return (format("[RANK P%04d] ") % rank).str();
+            }
+
             //! MPIのランクとプロセス数はstaticに持つ
             //! int rank = MPI::Environment::rank; でアクセスする
             static int rank;
@@ -73,9 +84,7 @@ namespace MPIw {
             //! コミュニケータのリスト
             static std::map<std::string, Communicator*> Comms;
 
-            //! Utility member functions
-            static std::string rankStr(void);
-            static void exitWithFinalize(int);
+            //! MPI通信をラップするためのメンバ関数群
             static void sendRecvParticlesX(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
             static void sendRecvParticlesY(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
             static void sendRecvParticlesZ(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);

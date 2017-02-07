@@ -53,15 +53,6 @@ namespace MPIw {
 #endif
     }
 
-    void Environment::exitWithFinalize(int code) {
-        finalize();
-        exit(code);
-    }
-
-    std::string Environment::rankStr(void) {
-        return (format("[RANK P%04d] ") % rank).str();
-    }
-
     void Environment::sendRecvParticles(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv, const int prev, const int next, std::string commName){
         Comms[commName]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
         Comms[commName]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
