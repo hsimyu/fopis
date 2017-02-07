@@ -79,7 +79,7 @@ Grid::Grid(void){
     nx = Environment::cell_x;
     ny = Environment::cell_y;
     nz = Environment::cell_z;
-    dx = Environment::dx;
+    dx = Utils::Normalizer::normalizeLength(Environment::dx);
 
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
@@ -90,6 +90,7 @@ Grid::Grid(void){
     to_ix = from_ix + nx;
     to_iy = from_iy + ny;
     to_iz = from_iz + nz;
+    //! @note: base_x, base_y, base_zは正規化された長さ
     base_x = dx * static_cast<double>(from_ix);
     base_y = dx * static_cast<double>(from_iy);
     base_z = dx * static_cast<double>(from_iz);
@@ -596,18 +597,23 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
 float** Grid::getMeshNodes(int dim) {
     // the array of coordinate arrays
     // @note: メモリリーク防止のため必ずdeleteする
+    const float real_dx = Utils::Normalizer::unnormalizeLength(dx);
+    const float real_base_x = Utils::Normalizer::unnormalizeLength(base_x);
+    const float real_base_y = Utils::Normalizer::unnormalizeLength(base_y);
+    const float real_base_z = Utils::Normalizer::unnormalizeLength(base_z);
+
     float** coordinates = new float*[dim];
     coordinates[0] = new float[nx];
     for(int i = 0; i < nx; ++i) {
-	coordinates[0][i] = base_x + dx * i;
+	coordinates[0][i] = real_base_x + real_dx * i;
     }
     coordinates[1] = new float[ny];
     for(int i = 0; i < ny; ++i) {
-	coordinates[1][i] = base_y + dx * i;
+	coordinates[1][i] = real_base_y + real_dx * i;
     }
     coordinates[2] = new float[nz];
     for(int i = 0; i < nz; ++i) {
-	coordinates[2][i] = base_z + dx * i;
+	coordinates[2][i] = real_base_z + real_dx * i;
     }
     return coordinates;
 }
@@ -744,12 +750,12 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     if(g->getLevel() > 0) ost << tab << "--- child [" << childnum << "] ---" << endl;
     ost << tab << "id: " << g->getID() << endl;
     ost << tab << "level: " << g->getLevel() << endl;
-    ost << tab << "dx: " << format("%10.5e") % g->getDX() << "m" << endl;
+    ost << tab << "dx: " << format("%10.5e") % Utils::Normalizer::unnormalizeLength(g->getDX()) << "m" << endl;
     ost << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % g->getNX() % g->getNY() % g->getNZ() << " grids [total]" << endl;
     ost << tab << "nx,ny,nz(+): " << format("%1%x%2%x%3%") % (g->getNX() + 2) % (g->getNY() + 2) % (g->getNZ() + 2) << " grids [with glue cells]" << endl;
     ost << tab << "parent from: " << format("%1%,%2%,%3%") % g->getFromIX() % g->getFromIY() % g->getFromIZ() << endl;
     ost << tab << "parent to  : " << format("%1%,%2%,%3%") % g->getToIX() % g->getToIY() % g->getToIZ() << endl;
-    ost << tab << "base positions: " << format("%1%,%2%,%3%") % g->getBaseX() % g->getBaseY() % g->getBaseZ() << endl;
+    ost << tab << "base positions (normalized): " << format("%1%,%2%,%3%") % g->getBaseX() % g->getBaseY() % g->getBaseZ() << endl;
     ost << tab << "sumNumOfChild: " << g->getSumOfChild() << endl;
     ost << tab << "numOfChild: " << g->getChildrenLength() << endl;
 
