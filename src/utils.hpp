@@ -92,6 +92,29 @@ namespace Utils {
                 return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (pow(x_unit, 3) * m_unit);
             }
 
+            static double normalizeDensity(double raw_density) {
+                return raw_density * pow(x_unit, 3);
+            }
+
+            static double unnormalizeDensity(double normalized_density) {
+                return normalized_density / pow(x_unit, 3);
+            }
+
+            static double normalizeFlux(double raw_flux) {
+                return raw_flux * pow(x_unit, 2) * t_unit;
+            }
+
+            static double unnormalizeFlux(double normalized_flux) {
+                return normalized_flux / (pow(x_unit, 2) * t_unit);
+            }
+
+            static double normalizeArea(double raw_area) {
+                return raw_area / pow(x_unit, 2);
+            }
+
+            static double unnormalizeArea(double normalized_area) {
+                return normalized_area * pow(x_unit, 2);
+            }
     };
 }
 
