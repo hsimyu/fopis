@@ -49,6 +49,13 @@ class Field {
         tdArray bz;
 
         Poisson* psn = nullptr;
+
+        void setDirichletPhi(void);
+
+        //! solver の実体
+        void solvePoissonMKL(const int, const int, const int);
+        void solvePoissonPSOR(const int, const double);
+        void initializePoisson(const int, const int, const int);
     public:
         Field(void) :
             rho(boost::extents[0][0][0], boost::fortran_storage_order()),
@@ -151,13 +158,8 @@ class Field {
             return bz;
         }
 
-        void initializePoisson(const int, const int, const int);
-        void updateEfield(const double, const int, const int, const int);
+        void updateEfield(const double);
         void updateBfield(const double, const int, const int, const int);
-
-        //! solver の実体
-        void solvePoissonMKL(const int, const int, const int);
-        void solvePoissonSOR(const int, const double);
         void solvePoisson(const int, const double);
 
         double getEnergy(const int, const int, const int);

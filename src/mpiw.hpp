@@ -42,6 +42,7 @@ namespace MPIw {
             void sendVector(std::vector<Particle> const&, const int);
             void recvVector(std::vector<Particle>&, const int);
             void sendRecvVector(std::vector<Particle> const&, std::vector<Particle>&, const int, const int);
+            void sendRecvField(tdArray&, const int, const int);
     };
 
     MPI_Datatype registerParticleType(void);
@@ -90,6 +91,7 @@ namespace MPIw {
             static void sendRecvParticlesZ(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
             static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&, const int, const int, std::string);
 
+            static void sendRecvPhi(tdArray&);
     };
 
 };

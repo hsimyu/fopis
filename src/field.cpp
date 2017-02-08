@@ -2,6 +2,7 @@
 #include "environment.hpp"
 #include "field.hpp"
 #include "utils.hpp"
+#include "mpiw.hpp"
 
 void Field::initializePoisson(const int cx, const int cy, const int cz){
 #ifdef DEBUG
@@ -73,16 +74,90 @@ void Field::solvePoissonMKL(const int cx, const int cy, const int cz) {
 }
 
 //! @brief SOR法
-void Field::solvePoissonSOR(const int loopnum, const double dx) {
+void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     double omega = 2.0/(1.0 + M_PI/phi.shape()[0]); // spectral radius
     double rho_coeff = 6.0 * dx / Utils::Normalizer::normalizeEpsilon(eps0);
 
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    this->setDirichletPhi();
+
     for(int loop = 0; loop < loopnum; ++loop) {
-        for(int k = 1; k < phi.shape()[2] - 1; ++k){
-            for(int j = 1; j < phi.shape()[1] - 1; ++j){
-                for(int i = 1; i < phi.shape()[0] - 1; ++i){
-                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff*rho[i][j][k])/6.0;
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
+                for(int j = 1; j < cy_with_glue - 1; ++j){
+                    if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
+                        for(int i = 1; i < cx_with_glue - 1; ++i){
+                            if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
+                                phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff*rho[i][j][k])/6.0;
+                            }
+                        }
+                    }
                 }
+            }
+        }
+
+        //! ここで通信する必要がある
+        MPIw::Environment::sendRecvPhi(phi);
+        //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
+    }
+}
+
+void Field::setDirichletPhi(void){
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    //! Dirichlet境界条件に値を設定 (V=0V)
+    if(Environment::onLowZedge) {
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                phi[i][j][1] = 0.0f;
+            }
+        }
+    }
+
+    if(Environment::onHighZedge) {
+        int k = cz_with_glue - 2;
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                phi[i][j][k] = 0.0f;
+            }
+        }
+    }
+
+    if(Environment::onLowYedge) {
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                phi[i][1][k] = 0.0f;
+            }
+        }
+    }
+
+    if(Environment::onHighYedge) {
+        int j = cy_with_glue - 2;
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                phi[i][j][k] = 0.0f;
+            }
+        }
+    }
+
+    if(Environment::onLowXedge) {
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                phi[1][j][k] = 0.0f;
+            }
+        }
+    }
+
+    if(Environment::onHighXedge) {
+        int i = cx_with_glue - 2;
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                phi[i][j][k] = 0.0f;
             }
         }
     }
@@ -91,25 +166,25 @@ void Field::solvePoissonSOR(const int loopnum, const double dx) {
 //! Poissonソルバを呼び出す
 void Field::solvePoisson(const int loopnum, const double dx) {
     // this->solvePoissonMKL(cx, cy, cz);
-    this->solvePoissonSOR(loopnum, dx);
+    this->solvePoissonPSOR(loopnum, dx);
 }
 
 //! @brief 電場を更新する
 //! e = - (p_+1 - p_+0)/dx
-void Field::updateEfield(const double dx, const int nx, const int ny, const int nz) {
-    const int nx_with_glue = nx + 1; // (cx + 2) - 1
-    const int ny_with_glue = ny + 1;
-    const int nz_with_glue = nz + 1;
+void Field::updateEfield(const double dx) {
+    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
     const double dxm = 1.0f/dx;
 
     //! phiは通信してあるとする -> 0番目のedgeも計算可能
-    for(int i = 0; i < nx_with_glue; ++i){
-        for(int j = 0; j < ny_with_glue; ++j){
-            for(int k = 0; k < nz_with_glue; ++k){
+    for(int i = 0; i < cx_with_glue; ++i){
+        for(int j = 0; j < cy_with_glue; ++j){
+            for(int k = 0; k < cz_with_glue; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
-                if(i < nx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * dxm;
-                if(j < ny_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * dxm;
-                if(k < nz_with_glue - 1) ez[i][j][k] = (phi[i][j][k] - phi[i][j][k + 1]) * dxm;
+                if(i < cx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * dxm;
+                if(j < cy_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * dxm;
+                if(k < cz_with_glue - 1) ez[i][j][k] = (phi[i][j][k] - phi[i][j][k + 1]) * dxm;
             }
         }
     }
@@ -117,15 +192,17 @@ void Field::updateEfield(const double dx, const int nx, const int ny, const int 
     //! @note:隣と通信しなくてもいい？？
 
     //! reference 更新
-    for(int i = 1; i < nx_with_glue; ++i){
-        for(int j = 1; j < ny_with_glue; ++j){
-            for(int k = 1; k < nz_with_glue; ++k){
+    for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
                 exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
                 eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
                 ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
             }
         }
     }
+
+    //! exrefを送る必要？
 }
 
 //! @brief 磁場を更新する(FDTD)

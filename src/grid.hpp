@@ -140,7 +140,7 @@ class Grid {
         }
 
         void updateEfield(void) {
-            field->updateEfield(dx, nx, ny, nz);
+            field->updateEfield(dx);
         }
 
         void updateBfield(void) {

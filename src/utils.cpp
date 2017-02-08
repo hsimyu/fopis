@@ -45,7 +45,7 @@ namespace Utils {
         int nz = x3D.shape()[2];
         float* x1D = new float[(nx-2)*(ny-2)*(nz-2)];
 
-        //! Fortran-based indicing
+        //! C-based indicing
         //! without glue cells
         for(int k = 1; k < nz - 1; ++k){
             for(int j = 1; j < ny - 1; ++j){

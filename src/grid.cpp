@@ -702,7 +702,7 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
         vars[0] = Utils::getTrueEdges(this->getField()->getEx(), 0);
         vars[1] = Utils::getTrueEdges(this->getField()->getEy(), 1);
         vars[2] = Utils::getTrueEdges(this->getField()->getEz(), 2);
-        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_EDGECENT, NULL);
+        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_EDGECENT, optListVar);
         delete [] vars[0];
         delete [] vars[1];
         delete [] vars[2];
