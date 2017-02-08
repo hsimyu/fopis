@@ -441,9 +441,9 @@ namespace IO {
     void plotEnergy(Grid* g, int timestep){
         const double datatime = timestep * Environment::dt;
         double particleEnergy = g->getParticleEnergy();
-        double waveEnergy = g->getFieldEnergy();
+        double fieldEnergy = g->getFieldEnergy();
         double receivedParticleEnergy = MPIw::Environment::Comms["world"]->sum(particleEnergy, 0);
-        double receivedWaveEnergy = MPIw::Environment::Comms["world"]->sum(waveEnergy, 0);
+        double receivedFieldEnergy = MPIw::Environment::Comms["world"]->sum(fieldEnergy, 0);
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
@@ -451,13 +451,13 @@ namespace IO {
             std::ofstream ofs(filename, openmode);
 
             if(timestep == 0) {
-                ofs << "# " << format("%8s %10s %15s %15s %15s") % "timestep" % "time" % "Energy[J]" % "Of Particle[J]" % "Of Wave[J]" << endl;
+                ofs << "# " << format("%8s %10s %15s %15s %15s") % "timestep" % "time" % "Energy [J]" % "Particle [J]" % "Field [J]" << endl;
             }
 
             ofs << format("%10d %10.5f %15.7e %15.7e %15.7e") % timestep % datatime %
-                Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedWaveEnergy) %
+                Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedFieldEnergy) %
                 Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
-                Utils::Normalizer::unnormalizeEnergy(receivedWaveEnergy) << endl;
+                Utils::Normalizer::unnormalizeEnergy(receivedFieldEnergy) << endl;
         }
     }
 
