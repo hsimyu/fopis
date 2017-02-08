@@ -5,6 +5,7 @@
 #include "global.hpp"
 
 class Position;
+class Grid;
 
 class Particle {
     public:
@@ -122,12 +123,15 @@ class ParticleType {
         double getDensity() const { return density; }
         double getTemperature() const { return temperature / e; }
         double getTrueTemperature() const { return temperature; }
+
         int getPcell() const { return particle_per_cell; }
         int getSize() const { return size; }
         int getTotalNumber() const { return totalNumber; }
 
         int calcSize(void);
         int calcTotalNumber(void);
+        double calcThermalVelocity(void) const;
+        std::vector<double> calcFlux(Grid const&) const;
         double calcDeviation(void) const;
         std::string calcMemory(void) const;
 

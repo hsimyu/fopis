@@ -314,8 +314,8 @@ namespace IO {
         }
         DBAddOption(optListVar, DBOPT_UNITS, unit);
 
-        int major_order = 1;
-        DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // column-major (Fortran) order
+        int major_order = 0;
+        DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // row-major (C-based) order
 
         g->putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
 

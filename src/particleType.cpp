@@ -1,6 +1,7 @@
 #include "global.hpp"
 #include "environment.hpp"
 #include "particle.hpp"
+#include "grid.hpp"
 #include "utils.hpp"
 
 int ParticleType::calcSize(void){
@@ -12,6 +13,53 @@ int ParticleType::calcSize(void){
 int ParticleType::calcTotalNumber(void){
     totalNumber = Environment::cell_x * Environment::cell_y * Environment::cell_z * particle_per_cell;
     return totalNumber;
+}
+
+double ParticleType::calcThermalVelocity() const {
+    return Utils::Normalizer::normalizeVelocity(sqrt(2.0f * temperature / (mass * me)));
+}
+
+std::vector<double> ParticleType::calcFlux(Grid const& g) const {
+    //
+    // const double ddv = 1e-3;
+    // const double nvx = 12.0f/ddv;
+    //
+    // double fluxx1 = 0.0f;
+    // double fluxx2 = 0.0f;
+    //
+    // //! -6.0から6.0まで積分
+    // //! x * exp(-x^2)?
+    // //! @note: これはv = 0を境目にして、どちらの方向へのフラックスが多いのかを計算する
+    // //! 完全に等方的 (drift速度がゼロ) の場合は0.5ずつ
+    // for(int i = 0; i < nvx - 1; ++i) {
+    //     double arg1 = i*ddv - 6.0f;
+    //     double argx1 = pow(arg1, 2);
+    //
+    //     if(arg1 > 0.0f) {
+    //         fluxx1 += arg1 * exp(-argx1) * ddv;
+    //     } else {
+    //         fluxx2 += arg1 * exp(-argx1) * ddv;
+    //     }
+    // }
+    //
+    // fluxx1 *= this->calcThermalVelocity()/sqrt(M_PI);
+    // fluxx2 *= -1.0f * this->calcThermalVelocity()/sqrt(M_PI);
+
+    std::vector<double> flux(6);
+    //! 等方的なfluxを仮定
+    const double flux0 = 0.5f * this->calcThermalVelocity()/sqrt(M_PI) * Utils::Normalizer::normalizeDensity(this->getDensity());
+    const double areax = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNY();
+    const double areay = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNX();
+    const double areaz = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNX() * g.getNY();
+
+    flux[0] = areax*flux0 / this->getSize();
+    flux[1] = areax*flux0 / this->getSize();
+    flux[2] = areay*flux0 / this->getSize();
+    flux[3] = areay*flux0 / this->getSize();
+    flux[4] = areaz*flux0 / this->getSize();
+    flux[5] = areaz*flux0 / this->getSize();
+
+    return flux;
 }
 
 double ParticleType::calcDeviation() const {
