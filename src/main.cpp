@@ -28,9 +28,9 @@ int main(int argc, char* argv[]){
     root_grid->solvePoisson();
     root_grid->updateEfield();
 
-    for(int timestep = 0; timestep < Environment::max_iteration; ++timestep) {
+    for(; Environment::timestep < Environment::max_iteration; ++Environment::timestep) {
         if( Environment::isRootNode ) {
-            cout << "--  Iteration " << timestep << "  --" << endl;
+            cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }
         // new particle position
         // root_grid->updateParticleVelocity();
@@ -39,11 +39,11 @@ int main(int argc, char* argv[]){
         root_grid->solvePoisson();
         root_grid->updateEfield();
         // root_grid->updateBfield();
-        IO::plotEnergy(root_grid, timestep);
-        IO::writeDataInParallel(root_grid, timestep, "potential");
-        IO::writeDataInParallel(root_grid, timestep, "rho");
-        IO::writeDataInParallel(root_grid, timestep, "efield");
-        IO::writeDataInParallel(root_grid, timestep, "bfield");
+        IO::plotEnergy(root_grid, Environment::timestep);
+        IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
+        IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
+        IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
+        IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
     }
 
     if( !Environment::isRootNode ) {

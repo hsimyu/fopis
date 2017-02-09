@@ -151,6 +151,10 @@ namespace Initializer {
     void loadEnvironment(picojson::object& inputs){
         auto env_inputs = inputs["Environment"].get<picojson::object>();
 
+        //! 読み込まなくてよい部分
+        Environment::max_particle_num = MAX_PARTICLE_NUM;
+        Environment::timestep = 0;
+
         for(auto it = env_inputs.begin();
                  it != env_inputs.end();
                  ++it){
@@ -185,8 +189,6 @@ namespace Initializer {
                 std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
             }
         }
-
-        Environment::max_particle_num = MAX_PARTICLE_NUM;
 
         // 1プロセスあたりのグリッド数
         // これに2を加えた数がのりしろ分になる

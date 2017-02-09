@@ -8,6 +8,7 @@ struct Environment {
     public:
         static int max_particle_num;
         static int num_of_particle_types;
+        static int timestep;
         static double dx;
         static double dt;
         static int nx, ny, nz;
