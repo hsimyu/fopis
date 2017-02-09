@@ -152,7 +152,7 @@ class Grid {
         void updateParticlePosition(void);
 
         //! 粒子注入
-        void injectParticles(std::vector< std::vector< Particle > >&);
+        void injectParticles(void);
 
         //! エネルギーを計算する
         double getParticleEnergy(void);
