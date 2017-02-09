@@ -39,7 +39,7 @@ namespace Utils {
     }
 
     //! for DATA IO
-    float* getTrueCells(const tdArray& x3D){
+    float* getTrueNodes(const tdArray& x3D){
         int nx = x3D.shape()[0];
         int ny = x3D.shape()[1];
         int nz = x3D.shape()[2];
@@ -58,34 +58,99 @@ namespace Utils {
         return x1D;
     }
 
+    float* getTrueEdges2(tdArray const& xvalue, tdArray const& yvalue, tdArray const& zvalue){
+        int nx = yvalue.shape()[0];
+        int ny = xvalue.shape()[1];
+        int nz = xvalue.shape()[2];
+
+        const int c_indexing = 0;
+        const int fortran_indexing = 1;
+        const int indexing = c_indexing;
+
+        const int length = (nx-2)*(ny-2)*(nz-2);
+        const int yoffset = length;
+        const int zoffset = 2 * length;
+        float* x1D = new float[length];
+
+        if(indexing == fortran_indexing) {
+            for(int i = 1; i < nx - 1; ++i){
+                for(int j = 1; j < ny - 1; ++j){
+                    for(int k = 1; k < nz - 1; ++k){
+                        if(i != (nx - 2)) {
+                            x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(xvalue[i][j][k]);
+                        } else {
+                            x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = 0.0f;
+                        }
+
+                        if(j != (ny - 2)) {
+                            x1D[yoffset + (k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(yvalue[i][j][k]);
+                        } else {
+                            x1D[yoffset + (k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = 0.0f;
+                        }
+
+                        if(k != (nz - 2)) {
+                            x1D[zoffset + (k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(zvalue[i][j][k]);
+                        } else {
+                            x1D[zoffset + (k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = 0.0f;
+                        }
+                    }
+                }
+            }
+        } else {
+            for(int k = 1; k < nz - 1; ++k){
+                for(int j = 1; j < ny - 1; ++j){
+                    for(int i = 1; i < nx - 1; ++i){
+                        if(i != (nx - 2)) {
+                            x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(xvalue[i][j][k]);
+                        } else {
+                            x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = 0.0f;
+                        }
+                        if(j != (ny - 2)) {
+                            x1D[yoffset + (i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(yvalue[i][j][k]);
+                        } else {
+                            x1D[yoffset + (i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = 0.0f;
+                        }
+                        if(k != (nz - 2)) {
+                            x1D[zoffset + (i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(zvalue[i][j][k]);
+                        } else {
+                            x1D[zoffset + (i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = 0.0f;
+                        }
+                    }
+                }
+            }
+        }
+
+        return x1D;
+    }
+
     float* getTrueEdges(const tdArray& x3D, const int axis){
         int nx = x3D.shape()[0];
         int ny = x3D.shape()[1];
         int nz = x3D.shape()[2];
 
         const int c_indexing = 0;
-        const int fortran_indexing = 0;
+        const int fortran_indexing = 1;
         const int indexing = c_indexing;
 
         // Add extra slot to axis
-        switch(axis){
-            case 0:
-                nx += 1;
-                break;
-            case 1:
-                ny += 1;
-                break;
-            case 2:
-                nz += 1;
-                break;
-            default:
-                throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
-                break;
-        }
-
+        // switch(axis){
+        //     case 0:
+        //         nx += 1;
+        //         break;
+        //     case 1:
+        //         ny += 1;
+        //         break;
+        //     case 2:
+        //         nz += 1;
+        //         break;
+        //     default:
+        //         throw std::invalid_argument("[ERROR] Unknown edge axis was passed to getTrueEdges.");
+        //         break;
+        // }
+        //
         float* x1D = new float[(nx-2)*(ny-2)*(nz-2)];
 
-        if(indexing == c_indexing) {
+        if(indexing == fortran_indexing) {
             for(int i = 1; i < nx - 1; ++i){
                 for(int j = 1; j < ny - 1; ++j){
                     for(int k = 1; k < nz - 1; ++k){
@@ -93,16 +158,22 @@ namespace Utils {
                             case 0:
                                 if(i != (nx - 2)) {
                                     x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                } else {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = 0.0f;
                                 }
                                 break;
                             case 1:
                                 if(j != (ny - 2)) {
                                     x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                } else {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = 0.0f;
                                 }
                                 break;
                             case 2:
                                 if(k != (nz - 2)) {
                                     x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                } else {
+                                    x1D[(k-1) + (j-1)*(nz-2) + (i-1)*(nz-2)*(ny-2)] = 0.0f;
                                 }
                                 break;
                             default:
@@ -120,16 +191,22 @@ namespace Utils {
                             case 0:
                                 if(i != (nx - 2)) {
                                     x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                } else {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = 0.0f;
                                 }
                                 break;
                             case 1:
                                 if(j != (ny - 2)) {
                                     x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                } else {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = 0.0f;
                                 }
                                 break;
                             case 2:
                                 if(k != (nz - 2)) {
                                     x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = static_cast<float>(x3D[i][j][k]);
+                                } else {
+                                    x1D[(i-1) + (j-1)*(nx-2) + (k-1)*(nx-2)*(ny-2)] = 0.0f;
                                 }
                                 break;
                             default:
@@ -150,7 +227,7 @@ namespace Utils {
         int nz = x3D.shape()[2];
 
         const int c_indexing = 0;
-        const int fortran_indexing = 0;
+        const int fortran_indexing = 1;
         const int indexing = c_indexing;
 
         // Add extra slot to axis
@@ -171,7 +248,7 @@ namespace Utils {
 
         float* x1D = new float[(nx-2)*(ny-2)*(nz-2)];
 
-        if(indexing == c_indexing) {
+        if(indexing == fortran_indexing) {
             for(int i = 1; i < nx - 1; ++i){
                 for(int j = 1; j < ny - 1; ++j){
                     for(int k = 1; k < nz - 1; ++k){

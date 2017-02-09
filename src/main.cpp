@@ -33,7 +33,7 @@ int main(int argc, char* argv[]){
             cout << "--  Iteration " << timestep << "  --" << endl;
         }
         // new particle position
-        root_grid->updateParticleVelocity();
+        // root_grid->updateParticleVelocity();
         root_grid->updateParticlePosition();
         root_grid->updateRho();
         root_grid->solvePoisson();
@@ -46,8 +46,11 @@ int main(int argc, char* argv[]){
         IO::writeDataInParallel(root_grid, timestep, "bfield");
     }
 
-    if( Environment::isRootNode ) {
+    if( !Environment::isRootNode ) {
         cout << "--  End A Loop  --" << endl;
+        // IO::print3DArray(root_grid->getField()->getEx());
+        // IO::print3DArray(root_grid->getField()->getEy());
+        // IO::print3DArray(root_grid->getField()->getEz());
 
 #ifdef DEBUG
         IO::outputParticlePositions(root_grid->particles);

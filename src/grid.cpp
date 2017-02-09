@@ -682,20 +682,29 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
 
     if(dataTypeName == "potential") {
         const char* varnames[1] = {dataTypeName.c_str()};
-        float* tdArray = Utils::getTrueCells(this->getField()->getPhi());
+        float* tdArray = Utils::getTrueNodes(this->getField()->getPhi());
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "rho") {
-        float* tdArray = Utils::getTrueCells(this->getField()->getRho());
+        float* tdArray = Utils::getTrueNodes(this->getField()->getRho());
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "efield") {
+        // const char* varnames[3] = {"ex", "ey", "ez"};
+        // float* vars[3];
+        // vars[0] = Utils::getTrueEdges(this->getField()->getEx(), 0);
+        // vars[1] = Utils::getTrueEdges(this->getField()->getEy(), 1);
+        // vars[2] = Utils::getTrueEdges(this->getField()->getEz(), 2);
+        // DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_EDGECENT, optListVar);
+        // delete [] vars[0];
+        // delete [] vars[1];
+        // delete [] vars[2];
         const char* varnames[3] = {"ex", "ey", "ez"};
         float* vars[3];
-        vars[0] = Utils::getTrueEdges(this->getField()->getEx(), 0);
-        vars[1] = Utils::getTrueEdges(this->getField()->getEy(), 1);
-        vars[2] = Utils::getTrueEdges(this->getField()->getEz(), 2);
-        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_EDGECENT, optListVar);
+        vars[0] = Utils::getTrueNodes(this->getField()->getExRef());
+        vars[1] = Utils::getTrueNodes(this->getField()->getEyRef());
+        vars[2] = Utils::getTrueNodes(this->getField()->getEzRef());
+        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] vars[0];
         delete [] vars[1];
         delete [] vars[2];

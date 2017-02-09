@@ -10,8 +10,9 @@ namespace Utils {
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
 
-    float* getTrueCells(const tdArray&);
-    float* getTrueEdges(const tdArray&, const int);
+    float* getTrueNodes(const tdArray&);
+    float* getTrueEdges2(tdArray const&, tdArray const&, tdArray const&);
+    float* getTrueEdges(tdArray const&, const int);
     float* getTrueFaces(const tdArray&, const int);
     void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
     void clearBoundaryValues(tdArray&, const int, const int, const int);
