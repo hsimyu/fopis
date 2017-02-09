@@ -1,4 +1,5 @@
 #include "global.hpp"
+#include "position.hpp"
 #include "grid.hpp"
 #include "field.hpp"
 #include "particle.hpp"
@@ -99,53 +100,27 @@ Grid::Grid(void){
     // Field初期化
     this->initializeField();
 
-    //! 粒子位置の上限を設定
-    //! [0, max_x)になるよう1e-20を引いておく
+    //! - 粒子位置の上限を設定
+    //! - [0, max_x)になるよう1e-20を引いておく
     const double max_x = static_cast<double>(Environment::cell_x) - 1e-20;
     const double max_y = static_cast<double>(Environment::cell_y) - 1e-20;
     const double max_z = static_cast<double>(Environment::cell_z) - 1e-20;
 
-    // std::random_device rnd;
-    const int random_src_x = 10684930 + MPIw::Environment::rank;
-    const int random_src_y = 99881 + MPIw::Environment::rank;
-    const int random_src_z = 861200045 + MPIw::Environment::rank;
-    const int random_src_vx = 930 + MPIw::Environment::rank;
-    const int random_src_vy = 98076621 + MPIw::Environment::rank;
-    const int random_src_vz = 7662566 + MPIw::Environment::rank;
-    std::mt19937 mt_x(random_src_x);
-    std::mt19937 mt_y(random_src_y);
-    std::mt19937 mt_z(random_src_z);
-    std::mt19937 mt_vx(random_src_vx);
-    std::mt19937 mt_vy(random_src_vy);
-    std::mt19937 mt_vz(random_src_vz);
-
-    std::uniform_real_distribution<> dist_x(0.0, max_x);
-    std::uniform_real_distribution<> dist_y(0.0, max_y);
-    std::uniform_real_distribution<> dist_z(0.0, max_z);
-
-    // particlesは空のstd::vector< std::vector<Particle> >として宣言されている
-    // particle types 分だけresize
+    //! - particlesは空のstd::vector< std::vector<Particle> >として宣言されている
+    //! - particle types 分だけresize
     particles.resize(Environment::num_of_particle_types);
 
     for(int id = 0; id < Environment::num_of_particle_types; ++id){
         int pnum = Environment::ptype[id].getTotalNumber();
 
-        //! 各粒子分のメモリをreserve
+        //! 各粒子分のメモリをreserveしておく
         particles[id].reserve(Environment::max_particle_num);
 
-        //! particle_number分のコンストラクタが呼ばれる
-        particles[id].resize(pnum);
-
-        const double deviation = Environment::ptype[id].calcDeviation();
-        std::normal_distribution<> dist_vx(0.0, deviation);
-        std::normal_distribution<> dist_vy(0.0, deviation);
-        std::normal_distribution<> dist_vz(0.0, deviation);
-
-        //! - 粒子はレベル0グリッドにのみ所属します
         for(int i = 0; i < pnum; ++i){
-            particles[id][i].setPosition(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
-            particles[id][i].setVelocity(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
-            particles[id][i].typeId = id;
+            Particle p(id);
+            p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, max_z);
+            p.generateNewVelocity();
+            particles[id].push_back(p);
         }
     }
 }
@@ -334,6 +309,8 @@ void Grid::updateParticlePosition(void) {
     std::vector< std::vector<Particle> > pbuff(6);
     std::vector< std::vector<Particle> > pbuffRecv(6);
 
+    cout << Environment::rankStr() << "[BEFORE ENERGY] " << this->getParticleEnergy() << endl;
+
     const double slx = dx * nx;
     const double sly = dx * ny;
     const double slz = dx * nz;
@@ -399,6 +376,8 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
+    this->injectParticles(pbuffRecv);
+
     for(int i = 0; i < 6; ++i) {
         for(auto& p : pbuffRecv[i]){
 #ifdef DEBUG
@@ -406,7 +385,21 @@ void Grid::updateParticlePosition(void) {
                 cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::ptype[ p.typeId ].getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
             }
 #endif
-            particles[ p.typeId ].push_back(p);
+            if(p.isValid) {
+                particles[ p.typeId ].push_back(p);
+            }
+        }
+    }
+
+    cout << Environment::rankStr() << "[AFTER ENERGY] " << this->getParticleEnergy() << endl;
+}
+
+void Grid::injectParticles(std::vector< std::vector< Particle > >& pbuff) {
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        std::vector<double> flux = Environment::ptype[pid].calcFlux(*this);
+
+        if(Environment::onLowXedge) {
+            const int inject_num = flux[0];
         }
     }
 }

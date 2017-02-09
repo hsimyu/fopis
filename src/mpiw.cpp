@@ -155,6 +155,7 @@ namespace MPIw {
         MPI_Sendrecv(&sendlen, 1, MPI_UNSIGNED, dest, TAG::SENDRECV_PARTICLE_LENGTH, &recvlen, 1, MPI_UNSIGNED, src, TAG::SENDRECV_PARTICLE_LENGTH, comm, &s);
 
         if(sendlen != 0 && recvlen != 0) {
+            //! ここでParticleのコンストラクタが呼ばれてしまうことに注意
             recvArray.resize(recvlen);
             MPI_Sendrecv(sendArray.data(), sendlen, Environment::MPI_PARTICLE, dest, TAG::SENDRECV_PARTICLE, recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, TAG::SENDRECV_PARTICLE, comm, &s);
         } else if(sendlen != 0) {
@@ -162,6 +163,7 @@ namespace MPIw {
             recvArray.clear();
             recvArray.shrink_to_fit();
         } else if(recvlen != 0) {
+            //! ここでParticleのコンストラクタが呼ばれてしまうことに注意
             recvArray.resize(recvlen);
             MPI_Recv(recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, TAG::SENDRECV_PARTICLE, comm, &s);
         } else {

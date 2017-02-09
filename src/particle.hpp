@@ -2,82 +2,12 @@
 #define __TDPIC_PARTICLE_H_INCLUDED__
 #include <vector>
 #include <string>
+#include <random>
 #include "global.hpp"
 
 class Position;
+class Velocity;
 class Grid;
-
-class Particle {
-    public:
-        // MPIで送るためにoffsetofを使う必要があり、
-        // publicにする必要がある
-        int typeId;
-        int isValid;
-        double x, y, z;
-        double vx, vy, vz;
-
-        Particle(void){
-            isValid = 1;
-        }
-
-        ~Particle(){};
-
-        // Copy Constructer
-        Particle(Particle const& p){
-            x = p.x;
-            y = p.y;
-            z = p.z;
-            vx = p.vx;
-            vy = p.vy;
-            vz = p.vz;
-            typeId = p.typeId;
-            isValid = p.isValid;
-        }
-
-        Particle& operator=(Particle const& rhs){
-            x = rhs.x;
-            y = rhs.y;
-            z = rhs.z;
-            vx = rhs.vx;
-            vy = rhs.vy;
-            vz = rhs.vz;
-            typeId = rhs.typeId;
-            isValid = rhs.isValid;
-
-            return *this;
-        }
-
-        void setPosition(const double _x, const double _y, const double _z){
-            x = _x;
-            y = _y;
-            z = _z;
-        }
-        //! Position class はまだ定義されていないのでinlineで書けない
-        void setPosition(Position const&);
-
-        void setVelocity(const double _vx, const double _vy, const double _vz){
-            vx = _vx;
-            vy = _vy;
-            vz = _vz;
-        }
-
-        //! 位置の更新
-        void updatePosition(void) {
-            x += vx;
-            y += vy;
-            z += vz;
-        }
-
-        //! 個別にエネルギーを計算するためのメンバ関数
-        double getEnergy(void) const;
-
-        //! まとめてエネルギーを計算する時のためのメンバ関数
-        double getSquaredMagnitudeOfVelocity(void) const {
-            return (vx*vx + vy*vy + vz*vz);
-        }
-
-        friend std::ostream& operator<<(std::ostream&, Particle const&);
-};
 
 class ParticleType {
     private:
@@ -95,8 +25,16 @@ class ParticleType {
         // for computation
         int particle_per_cell;
         int totalNumber;
+
+        // random number generator
+        std::mt19937 mt_x;
+        std::mt19937 mt_y;
+        std::mt19937 mt_z;
+        std::mt19937 mt_vx;
+        std::mt19937 mt_vy;
+        std::mt19937 mt_vz;
     public:
-        ParticleType(){}
+        ParticleType(void);
 
         // setters
         void setId(int _id){ id = _id; }
@@ -135,68 +73,95 @@ class ParticleType {
         double calcDeviation(void) const;
         std::string calcMemory(void) const;
 
+        Position generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
+        Velocity generateNewVelocity(void);
+
         friend std::ostream& operator<<(std::ostream&, const ParticleType&);
         friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
 
-typedef std::vector< std::vector<Particle> > ParticleArray;
-
-class Position {
-    private:
-        void updateDelta(void){
-            // delta xyz is automatically updated
-            dx1 = x - (i - 1);
-            dy1 = y - (j - 1);
-            dz1 = z - (k - 1);
-            dx2 = 1.0 - dx1;
-            dy2 = 1.0 - dy1;
-            dz2 = 1.0 - dz1;
-        }
-
+class Particle {
     public:
-        int i, j, k;
+        //! - MPIで送るためにoffsetofを使う必要があり、データメンバをpublicにする必要がある
         double x, y, z;
-        double dx1, dy1, dz1, dx2, dy2, dz2;
+        double vx, vy, vz;
+        int typeId;
 
-        // Position Class
-        Position(const double _x, const double _y, const double _z){
-            this->setXYZ(_x, _y, _z);
+        //! - MPI_BoolがCpp Bindingでしか有効でないため、int型でisValidを保存する
+        //! - 0 == false, 1 == true
+        int isValid;
+
+        Particle(const int _typeId) {
+            typeId = _typeId;
+            isValid = 1;
         }
 
-        Position(const int _i, const int _j, const int _k){
-            this->setIJK(_i, _j, _k);
+        Particle(void) { isValid = 0; }
+
+        ~Particle(){};
+
+        // Copy Constructer
+        Particle(Particle const& p){
+            x = p.x;
+            y = p.y;
+            z = p.z;
+            vx = p.vx;
+            vy = p.vy;
+            vz = p.vz;
+            typeId = p.typeId;
+            isValid = p.isValid;
         }
 
-        Position(const Particle& p){
-            this->setXYZ(p.x, p.y, p.z);
+        Particle& operator=(Particle const& rhs){
+            x = rhs.x;
+            y = rhs.y;
+            z = rhs.z;
+            vx = rhs.vx;
+            vy = rhs.vy;
+            vz = rhs.vz;
+            typeId = rhs.typeId;
+            isValid = rhs.isValid;
+
+            return *this;
         }
 
-        ~Position(){}
-
-        void setXYZ(const double _x, const double _y, const double _z){
+        void setPosition(const double _x, const double _y, const double _z){
             x = _x;
             y = _y;
             z = _z;
-
-            i = floor(x) + 1;
-            j = floor(y) + 1;
-            k = floor(z) + 1;
-
-            this->updateDelta();
         }
 
-        void setIJK(const int _i, const int _j, const int _k){
-            i = _i;
-            j = _j;
-            k = _k;
-
-            // x, y, zはglue cellなしの座標系にする
-            x = static_cast<double>(i - 1);
-            y = static_cast<double>(j - 1);
-            z = static_cast<double>(k - 1);
-
-            this->updateDelta();
+        void setVelocity(const double _vx, const double _vy, const double _vz){
+            vx = _vx;
+            vy = _vy;
+            vz = _vz;
         }
+
+        void setVelocity(Velocity const&);
+        void setPosition(Position const&);
+
+        //! 位置の更新
+        void updatePosition(void) {
+            x += vx;
+            y += vy;
+            z += vz;
+        }
+
+        //! 個別にエネルギーを計算するためのメンバ関数
+        double getEnergy(void) const;
+
+        //! まとめてエネルギーを計算する時のためのメンバ関数
+        double getSquaredMagnitudeOfVelocity(void) const {
+            return (vx*vx + vy*vy + vz*vz);
+        }
+
+        //! 粒子生成時用の位置速度生成関数
+        //! - 内部的にはParticleTypeの同名メンバ関数を呼び出すだけ
+        void generateNewVelocity(void);
+        void generateNewPosition(const double, const double, const double, const double, const double, const double);
+
+        friend std::ostream& operator<<(std::ostream&, Particle const&);
 };
 
+typedef std::vector< std::vector<Particle> > ParticleArray;
 #endif

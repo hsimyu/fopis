@@ -1,8 +1,18 @@
 #include "global.hpp"
 #include "environment.hpp"
+#include "position.hpp"
 #include "particle.hpp"
 #include "grid.hpp"
 #include "utils.hpp"
+#include <random>
+
+ParticleType::ParticleType(void) :
+    mt_x(10684930 + MPIw::Environment::rank),
+    mt_y(99881 + MPIw::Environment::rank),
+    mt_z(861200045 + MPIw::Environment::rank),
+    mt_vx(930 + MPIw::Environment::rank),
+    mt_vy(98076621 + MPIw::Environment::rank),
+    mt_vz(7662566 + MPIw::Environment::rank) {}
 
 int ParticleType::calcSize(void){
     size = static_cast<int>(pow(Environment::dx, 3) * density / static_cast<double>(particle_per_cell));
@@ -17,6 +27,29 @@ int ParticleType::calcTotalNumber(void){
 
 double ParticleType::calcThermalVelocity() const {
     return Utils::Normalizer::normalizeVelocity(sqrt(2.0f * temperature / (mass * me)));
+}
+
+Position ParticleType::generateNewPosition(
+        const double min_x, const double max_x,
+        const double min_y, const double max_y,
+        const double min_z, const double max_z) {
+
+    std::uniform_real_distribution<> dist_x(min_x, max_x);
+    std::uniform_real_distribution<> dist_y(min_y, max_y);
+    std::uniform_real_distribution<> dist_z(min_z, max_z);
+
+    Position p(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
+    return p;
+}
+
+Velocity ParticleType::generateNewVelocity(void) {
+    const double deviation = this->calcDeviation();
+    std::normal_distribution<> dist_vx(0.0, deviation);
+    std::normal_distribution<> dist_vy(0.0, deviation);
+    std::normal_distribution<> dist_vz(0.0, deviation);
+
+    Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+    return v;
 }
 
 std::vector<double> ParticleType::calcFlux(Grid const& g) const {
