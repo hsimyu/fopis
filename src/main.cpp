@@ -26,7 +26,7 @@ int main(int argc, char* argv[]){
     // first update
     root_grid->updateRho();
     root_grid->solvePoisson();
-    root_grid->updateEfield();
+    // root_grid->updateEfield();
 
     for(; Environment::timestep < Environment::max_iteration; ++Environment::timestep) {
         if( Environment::isRootNode ) {
@@ -34,16 +34,18 @@ int main(int argc, char* argv[]){
         }
         // new particle position
         // root_grid->updateParticleVelocity();
+        // root_grid->updateEfield();
+        // root_grid->updateBfield();
+        if(Environment::plotEnergy())       IO::plotEnergy(root_grid, Environment::timestep);
+        if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
+        if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
+        if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
+        if(Environment::plotBfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
+        if(Environment::plotEnergyDist())   root_grid->plotParticleEnergyDistribution();
+        if(Environment::plotVelocityDist()) root_grid->plotParticleVelocityDistribution();
         root_grid->updateParticlePosition();
         root_grid->updateRho();
         root_grid->solvePoisson();
-        root_grid->updateEfield();
-        // root_grid->updateBfield();
-        IO::plotEnergy(root_grid, Environment::timestep);
-        IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
-        IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
-        IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
-        IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
     }
 
     if( !Environment::isRootNode ) {

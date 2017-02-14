@@ -150,6 +150,7 @@ namespace Initializer {
 
     void loadEnvironment(picojson::object& inputs){
         auto env_inputs = inputs["Environment"].get<picojson::object>();
+        auto io_inputs = inputs["IO"].get<picojson::object>();
 
         //! 読み込まなくてよい部分
         Environment::max_particle_num = MAX_PARTICLE_NUM;
@@ -195,6 +196,28 @@ namespace Initializer {
         Environment::cell_x = Environment::nx/Environment::proc_x;
         Environment::cell_y = Environment::ny/Environment::proc_y;
         Environment::cell_z = Environment::nz/Environment::proc_z;
+
+        for(auto it = io_inputs.begin(); it != io_inputs.end(); ++it){
+            if(it->first == "plot_energy_dist_width"){
+                Environment::plot_energy_dist_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_velocity_dist_width"){
+                Environment::plot_velocity_dist_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_potential_width"){
+                Environment::plot_potential_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_rho_width"){
+                Environment::plot_rho_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_efield_width"){
+                Environment::plot_efield_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_bfield_width"){
+                Environment::plot_bfield_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_particle_width"){
+                Environment::plot_particle_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_energy_width"){
+                Environment::plot_energy_width = static_cast<int>(it->second.get<double>());
+            } else {
+                std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
+            }
+        }
     }
 
     void loadParticleType(picojson::object& inputs){

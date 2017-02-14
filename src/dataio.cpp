@@ -458,8 +458,6 @@ namespace IO {
                 Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedFieldEnergy) %
                 Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
                 Utils::Normalizer::unnormalizeEnergy(receivedFieldEnergy) << endl;
-
-            g->plotParticleEnergyDistribution();
         }
     }
 

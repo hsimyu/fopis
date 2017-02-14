@@ -31,5 +31,15 @@
             "temperature": 12.0,
             "particle_per_cell": 20
         }
+    },
+    "IO": {
+        "plot_energy_dist_width": 1,
+        "plot_velocity_dist_width": 1,
+        "plot_potential_width": 1,
+        "plot_rho_width": 1,
+        "plot_efield_width": 1,
+        "plot_bfield_width": 1,
+        "plot_particle_width": 1,
+        "plot_energy_width": 1
     }
 }
