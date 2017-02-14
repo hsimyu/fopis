@@ -38,6 +38,9 @@ class Grid {
         // Class Unique ID
         static unsigned int nextID;
 
+        //! 速度分布とエネルギー分布をプロットするためのメンバ関数
+        void plotParticleDistribution(const std::string);
+
     public:
         Grid(void);
         Grid(Grid*, const int, const int, const int, const int, const int, const int);
@@ -157,6 +160,7 @@ class Grid {
         //! エネルギーを計算する
         double getParticleEnergy(void);
         void plotParticleEnergyDistribution(void);
+        void plotParticleVelocityDistribution(void);
         double getFieldEnergy(void);
 
         // create mesh nodes array
