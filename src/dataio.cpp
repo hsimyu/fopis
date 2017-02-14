@@ -438,10 +438,10 @@ namespace IO {
         PMPIO_Finish(bat);
     }
 
-    void plotEnergy(Grid* g, int timestep){
+    void plotEnergy(Grid const& g, int timestep){
         const double datatime = timestep * Environment::dt;
-        double particleEnergy = g->getParticleEnergy();
-        double fieldEnergy = g->getFieldEnergy();
+        double particleEnergy = g.getParticleEnergy();
+        double fieldEnergy = g.getFieldEnergy();
         double receivedParticleEnergy = MPIw::Environment::Comms["world"]->sum(particleEnergy, 0);
         double receivedFieldEnergy = MPIw::Environment::Comms["world"]->sum(fieldEnergy, 0);
 
@@ -451,13 +451,104 @@ namespace IO {
             std::ofstream ofs(filename, openmode);
 
             if(timestep == 0) {
-                ofs << "# " << format("%8s %10s %15s %15s %15s") % "timestep" % "time" % "Energy [J]" % "Particle [J]" % "Field [J]" << endl;
+                ofs << "# " << format("%8s %15s %15s %15s %15s") % "timestep" % "time" % "Energy [J]" % "Particle [J]" % "Field [J]" << endl;
             }
 
-            ofs << format("%10d %10.5f %15.7e %15.7e %15.7e") % timestep % datatime %
+            ofs << format("%10d %15.7e %15.7e %15.7e %15.7e") % timestep % datatime %
                 Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedFieldEnergy) %
                 Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
                 Utils::Normalizer::unnormalizeEnergy(receivedFieldEnergy) << endl;
+        }
+    }
+    void plotParticleVelocityDistribution(Grid const& g) {
+        plotParticleDistribution(g, "velocity");
+    }
+
+    void plotParticleEnergyDistribution(Grid const& g) {
+        plotParticleDistribution(g, "energy");
+    }
+
+    void plotParticleDistribution(Grid const& g, const std::string type) {
+        constexpr int dist_size = 200;
+        std::vector<double> max_value(Environment::num_of_particle_types);
+
+        //! 最大値を取得
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            for(int i = 0; i < g.particles[pid].size(); ++i){
+                if(g.particles[pid][i].isValid) {
+                    double val;
+                    if(type == "velocity") {
+                        val = g.particles[pid][i].getMagnitudeOfVelocity();
+                    } else {
+                        val = g.particles[pid][i].getEnergy();
+                    }
+                    max_value[pid] = std::max(max_value[pid], val);
+                }
+            }
+        }
+
+        std::vector<double> unit_value(Environment::num_of_particle_types);
+
+        if(type == "velocity") {
+            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                unit_value[pid] = max_value[pid]/dist_size; //! m/s
+            }
+        } else {
+            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                unit_value[pid] = max_value[pid]/dist_size; //! eV
+            }
+        }
+
+        std::vector< std::vector<int> > pdist(Environment::num_of_particle_types);
+
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            pdist[pid].resize(dist_size + 1);
+            for(int i = 0; i < g.particles[pid].size(); ++i){
+                if(g.particles[pid][i].isValid) {
+                    double val;
+                    if(type == "velocity") {
+                        val = g.particles[pid][i].getMagnitudeOfVelocity();
+                    } else {
+                        val = g.particles[pid][i].getEnergy();
+                    }
+                    int index = floor(val/unit_value[pid]);
+                    pdist[pid][index] += 1;
+                }
+            }
+        }
+
+        std::string filename;
+        std::string header;
+
+        if(type == "velocity") {
+            filename = (format("data/velocity_distribution_%04d_%04d.csv") % MPIw::Environment::rank % Environment::timestep).str();
+            header = "Velocity [km/s]";
+        } else {
+            filename = (format("data/energy_distribution_%04d_%04d.csv") % MPIw::Environment::rank % Environment::timestep).str();
+            header = "Energy [eV]";
+        }
+
+        std::ofstream ofs(filename, std::ios::out);
+
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            ofs << format("# %s") % Environment::ptype[pid].getName() << endl;
+            ofs << format("# %11s %11s") % header % "Ratio" << endl;
+
+            int maxElement = *std::max_element(pdist[pid].begin(), pdist[pid].end());
+
+            double raw_unit_value;
+            if(type == "velocity") {
+                raw_unit_value = Utils::Normalizer::unnormalizeVelocity(unit_value[pid]) * 1e-3; // km/s単位
+            } else {
+                raw_unit_value = Utils::Normalizer::unnormalizeEnergy(unit_value[pid]) / e; // eV単位
+            }
+
+            for(int i = 0; i < pdist[pid].size(); ++i){
+                double ratio = static_cast<double>(pdist[pid][i]) / maxElement;
+                ofs << format("  %11.4f %11.4f") % (raw_unit_value * (i+1)) % ratio << endl;
+            }
+
+            ofs << endl << endl;
         }
     }
 

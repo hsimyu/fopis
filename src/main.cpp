@@ -36,13 +36,13 @@ int main(int argc, char* argv[]){
         // root_grid->updateParticleVelocity();
         // root_grid->updateEfield();
         // root_grid->updateBfield();
-        if(Environment::plotEnergy())       IO::plotEnergy(root_grid, Environment::timestep);
         if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
         if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
         if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
         if(Environment::plotBfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
-        if(Environment::plotEnergyDist())   root_grid->plotParticleEnergyDistribution();
-        if(Environment::plotVelocityDist()) root_grid->plotParticleVelocityDistribution();
+        if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
+        if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(*root_grid);
+        if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(*root_grid);
         root_grid->updateParticlePosition();
         root_grid->updateRho();
         root_grid->solvePoisson();

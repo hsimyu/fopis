@@ -238,7 +238,7 @@ void Grid::updateRho() {
 }
 
 //! @note: childrenのエネルギーも取る?
-double Grid::getFieldEnergy(void) {
+double Grid::getFieldEnergy(void) const {
     return field->getEnergy(nx, ny, nz);
 }
 
