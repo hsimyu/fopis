@@ -351,7 +351,7 @@ void Grid::plotParticleEnergyDistribution(void) {
 
 void Grid::plotParticleDistribution(const std::string type) {
     constexpr int dist_size = 200;
-    double max_value = 0.0;
+    std::vector<double> max_value(Environment::num_of_particle_types);
 
     //! 最大値を取得
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
@@ -363,21 +363,25 @@ void Grid::plotParticleDistribution(const std::string type) {
                 } else {
                     val = particles[pid][i].getEnergy();
                 }
-                max_value = std::max(max_value, val);
+                max_value[pid] = std::max(max_value[pid], val);
             }
         }
     }
 
-    double unit_value;
+    std::vector<double> unit_value(Environment::num_of_particle_types);
 
     if(type == "velocity") {
-        unit_value = max_value/dist_size; //! m/s
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            unit_value[pid] = max_value[pid]/dist_size; //! m/s
+        }
     } else {
-        unit_value = max_value/dist_size; //! eV
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            unit_value[pid] = max_value[pid]/dist_size; //! eV
+        }
     }
 
-    std::vector< std::vector<int> > pdist;
-    pdist.resize(Environment::num_of_particle_types);
+    std::vector< std::vector<int> > pdist(Environment::num_of_particle_types);
+
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         pdist[pid].resize(dist_size + 1);
         for(int i = 0; i < particles[pid].size(); ++i){
@@ -388,7 +392,7 @@ void Grid::plotParticleDistribution(const std::string type) {
                 } else {
                     val = particles[pid][i].getEnergy();
                 }
-                int index = floor(val/unit_value);
+                int index = floor(val/unit_value[pid]);
                 pdist[pid][index] += 1;
             }
         }
@@ -396,16 +400,13 @@ void Grid::plotParticleDistribution(const std::string type) {
 
     std::string filename;
     std::string header;
-    double raw_unit_value;
 
     if(type == "velocity") {
         filename = (format("data/velocity_distribution_%04d_%04d.csv") % MPIw::Environment::rank % Environment::timestep).str();
         header = "Velocity [km/s]";
-        raw_unit_value = Utils::Normalizer::unnormalizeVelocity(unit_value) * 1e-3; // km/s単位
     } else {
         filename = (format("data/energy_distribution_%04d_%04d.csv") % MPIw::Environment::rank % Environment::timestep).str();
         header = "Energy [eV]";
-        raw_unit_value = Utils::Normalizer::unnormalizeEnergy(unit_value) / e; // eV単位
     }
 
     std::ofstream ofs(filename, std::ios::out);
@@ -415,6 +416,13 @@ void Grid::plotParticleDistribution(const std::string type) {
         ofs << format("# %11s %11s") % header % "Ratio" << endl;
 
         int maxElement = *std::max_element(pdist[pid].begin(), pdist[pid].end());
+
+        double raw_unit_value;
+        if(type == "velocity") {
+            raw_unit_value = Utils::Normalizer::unnormalizeVelocity(unit_value[pid]) * 1e-3; // km/s単位
+        } else {
+            raw_unit_value = Utils::Normalizer::unnormalizeEnergy(unit_value[pid]) / e; // eV単位
+        }
 
         for(int i = 0; i < pdist[pid].size(); ++i){
             double ratio = static_cast<double>(pdist[pid][i]) / maxElement;
