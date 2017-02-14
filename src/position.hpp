@@ -78,5 +78,9 @@ class Velocity {
         Velocity(const Particle&);
 
         ~Velocity(){}
+
+        double getMagnitude(void) {
+            return vx*vx + vy*vy + vz*vz;
+        }
 };
 #endif

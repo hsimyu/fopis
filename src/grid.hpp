@@ -156,6 +156,7 @@ class Grid {
 
         //! エネルギーを計算する
         double getParticleEnergy(void);
+        void plotParticleEnergyDistribution(void);
         double getFieldEnergy(void);
 
         // create mesh nodes array

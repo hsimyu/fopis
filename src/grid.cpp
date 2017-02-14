@@ -7,6 +7,7 @@
 #include "mpiw.hpp"
 #include <silo.h>
 #include <random>
+#include <algorithm>
 
 // Unique ID の実体
 unsigned int Grid::nextID = 0;
@@ -541,12 +542,60 @@ double Grid::getParticleEnergy(void) {
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         double eachEnergy = 0.0;
         for(int i = 0; i < particles[pid].size(); ++i){
-            if(particles[pid][i].isValid) eachEnergy += particles[pid][i].getSquaredMagnitudeOfVelocity();
+            if(particles[pid][i].isValid) {
+                eachEnergy += particles[pid][i].getSquaredMagnitudeOfVelocity();
+            }
         }
-        res += Environment::ptype[id].getSize() * (0.5 * Environment::ptype[id].getMass() * eachEnergy);
+        res += 0.5 * Environment::ptype[pid].getMass() * eachEnergy * Environment::ptype[pid].getSize();
     }
 
     return res;
+}
+
+void Grid::plotParticleEnergyDistribution(void) {
+    const double unit_energy = Utils::Normalizer::normalizeVelocity(10.0 * 1.0e3); //! eV
+    double max_energy = 0.0;
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        for(int i = 0; i < particles[pid].size(); ++i){
+            if(particles[pid][i].isValid) {
+                double ene = particles[pid][i].getMagnitudeOfVelocity();
+                max_energy = std::max(max_energy, ene);
+            }
+        }
+    }
+
+    int dist_size = static_cast<int>(floor(max_energy/unit_energy)) + 1;
+
+    std::vector< std::vector<int> > pdist;
+    pdist.resize(Environment::num_of_particle_types);
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        pdist[pid].resize(dist_size);
+        for(int i = 0; i < particles[pid].size(); ++i){
+            if(particles[pid][i].isValid) {
+                double ene = particles[pid][i].getMagnitudeOfVelocity();
+                int index = floor(ene/unit_energy);
+                pdist[pid][index] += 1;
+            }
+        }
+    }
+
+    std::string filename = (format("data/energy_distribution_%04d_%04d.csv") % MPIw::Environment::rank % Environment::timestep).str();
+    std::ofstream ofs(filename, std::ios::out);
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        ofs << format("# %s") % Environment::ptype[pid].getName() << endl;
+        ofs << format("# %11s %11s") % "Velocity [km/s]" % "Ratio" << endl;
+
+        int maxElement = *std::max_element(pdist[pid].begin(), pdist[pid].end());
+
+        for(int i = 0; i < dist_size; ++i){
+            double ratio = static_cast<double>(pdist[pid][i]) / maxElement;
+            ofs << format("  %11.4f %11.4f") % (10.0 * (i+1)) % ratio << endl;
+        }
+
+        ofs << endl << endl;
+    }
 }
 
 //! @note: childrenのエネルギーも取る?

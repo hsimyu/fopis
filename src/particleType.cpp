@@ -14,6 +14,16 @@ ParticleType::ParticleType(void) :
     mt_vy(98076621 + MPIw::Environment::rank),
     mt_vz(7662566 + MPIw::Environment::rank) {}
 
+void ParticleType::setId(int _id){
+    id = _id;
+    mt_x.seed(10684930 + MPIw::Environment::rank + 106*_id);
+    mt_y.seed(99881 + MPIw::Environment::rank + 171*_id);
+    mt_z.seed(861200045 + MPIw::Environment::rank + 95*_id);
+    mt_vx.seed(930 + MPIw::Environment::rank + 2*_id);
+    mt_vy.seed(98076621 + MPIw::Environment::rank - 50 * _id);
+    mt_vz.seed(7662566 + MPIw::Environment::rank + 4 * _id);
+}
+
 int ParticleType::calcSize(void){
     size = static_cast<int>(pow(Environment::dx, 3) * density / static_cast<double>(particle_per_cell));
     return size;
@@ -26,7 +36,11 @@ int ParticleType::calcTotalNumber(void){
 }
 
 double ParticleType::calcThermalVelocity() const {
-    return Utils::Normalizer::normalizeVelocity(sqrt(2.0f * temperature / (mass * me)));
+    return Utils::Normalizer::normalizeVelocity(sqrt(2.0 * temperature / (mass * me)));
+}
+
+double ParticleType::calcDeviation() const {
+    return Utils::Normalizer::normalizeVelocity(sqrt(temperature / (mass * me)));
 }
 
 Position ParticleType::generateNewPosition(
@@ -80,7 +94,7 @@ std::vector<double> ParticleType::calcFlux(Grid const& g) const {
 
     std::vector<double> flux(6);
     //! 等方的なfluxを仮定
-    const double flux0 = 0.5f * this->calcThermalVelocity()/sqrt(M_PI) * Utils::Normalizer::normalizeDensity(this->getDensity());
+    const double flux0 = 0.5 * this->calcThermalVelocity()/sqrt(M_PI) * Utils::Normalizer::normalizeDensity(this->getDensity());
     const double areax = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNY();
     const double areay = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNX();
     const double areaz = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNX() * g.getNY();
@@ -93,10 +107,6 @@ std::vector<double> ParticleType::calcFlux(Grid const& g) const {
     flux[5] = areaz*flux0 / this->getSize();
 
     return flux;
-}
-
-double ParticleType::calcDeviation() const {
-    return Utils::Normalizer::normalizeVelocity(sqrt(temperature / (mass * me)));
 }
 
 std::string ParticleType::calcMemory() const {

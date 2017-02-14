@@ -37,7 +37,7 @@ class ParticleType {
         ParticleType(void);
 
         // setters
-        void setId(int _id){ id = _id; }
+        void setId(int);
         void setCharge(double _charge){ charge = _charge; }
         void setMass(double _mass){ mass = _mass; }
         void setDensity(double _density){ density = _density; }
@@ -153,6 +153,10 @@ class Particle {
         //! まとめてエネルギーを計算する時のためのメンバ関数
         double getSquaredMagnitudeOfVelocity(void) const {
             return (vx*vx + vy*vy + vz*vz);
+        }
+
+        double getMagnitudeOfVelocity(void) const {
+            return sqrt(vx*vx + vy*vy + vz*vz);
         }
 
         //! 粒子生成時用の位置速度生成関数
