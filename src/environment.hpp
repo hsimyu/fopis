@@ -8,14 +8,14 @@ class ParticleType;
 struct Environment {
     private:
         static bool isPlot(const std::string type) {
-            if(type == "potential") return (timestep % plot_potential_width == 0);
-            if(type == "rho") return (timestep % plot_rho_width == 0);
-            if(type == "efield") return (timestep % plot_efield_width == 0);
-            if(type == "bfield") return (timestep % plot_bfield_width == 0);
-            if(type == "particle") return (timestep % plot_particle_width == 0);
-            if(type == "energy") return (timestep % plot_energy_width == 0);
-            if(type == "energy_dist") return (timestep % plot_energy_dist_width == 0);
-            if(type == "velocity_dist") return (timestep % plot_velocity_dist_width == 0);
+            if(type == "potential"     && plot_potential_width     != 0) return (timestep % plot_potential_width == 0);
+            if(type == "rho"           && plot_rho_width           != 0) return (timestep % plot_rho_width == 0);
+            if(type == "efield"        && plot_efield_width        != 0) return (timestep % plot_efield_width == 0);
+            if(type == "bfield"        && plot_bfield_width        != 0) return (timestep % plot_bfield_width == 0);
+            if(type == "particle"      && plot_particle_width      != 0) return (timestep % plot_particle_width == 0);
+            if(type == "energy"        && plot_energy_width        != 0) return (timestep % plot_energy_width == 0);
+            if(type == "energy_dist"   && plot_energy_dist_width   != 0) return (timestep % plot_energy_dist_width == 0);
+            if(type == "velocity_dist" && plot_velocity_dist_width != 0) return (timestep % plot_velocity_dist_width == 0);
             return false;
         }
 
