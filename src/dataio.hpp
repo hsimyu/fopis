@@ -6,9 +6,9 @@ class Grid;
 
 namespace IO {
     void plotEnergy(Grid const&, int);
-    void plotParticleVelocityDistribution(Grid const&);
-    void plotParticleEnergyDistribution(Grid const&);
-    void plotParticleDistribution(Grid const&, const std::string);
+    void plotParticleVelocityDistribution(ParticleArray const&);
+    void plotParticleEnergyDistribution(ParticleArray const&);
+    void plotParticleDistribution(ParticleArray const&, const std::string);
 
     void writeDataInParallel(Grid*, int, std::string);
     void print3DArray(const tdArray&);

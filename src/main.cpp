@@ -26,33 +26,32 @@ int main(int argc, char* argv[]){
     // first update
     root_grid->updateRho();
     root_grid->solvePoisson();
-    // root_grid->updateEfield();
+    root_grid->updateEfield();
 
     for(; Environment::timestep < Environment::max_iteration; ++Environment::timestep) {
         if( Environment::isRootNode ) {
             cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }
         // new particle position
-        // root_grid->updateParticleVelocity();
-        // root_grid->updateEfield();
-        // root_grid->updateBfield();
+        root_grid->updateParticleVelocity();
+        root_grid->updateParticlePosition();
+        root_grid->updateRho();
+        root_grid->solvePoisson();
+        root_grid->updateEfield();
+        root_grid->updateBfield();
+
         if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
         if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
         if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
         if(Environment::plotBfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
         if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
-        if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(*root_grid);
-        if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(*root_grid);
-        root_grid->updateParticlePosition();
-        root_grid->updateRho();
-        root_grid->solvePoisson();
+        if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->particles);
+        if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->particles);
     }
 
+    /*
     if( !Environment::isRootNode ) {
         cout << "--  End A Loop  --" << endl;
-        // IO::print3DArray(root_grid->getField()->getEx());
-        // IO::print3DArray(root_grid->getField()->getEy());
-        // IO::print3DArray(root_grid->getField()->getEz());
 
 #ifdef DEBUG
         IO::outputParticlePositions(root_grid->particles);
@@ -68,7 +67,7 @@ int main(int argc, char* argv[]){
         root_grid->getChildren()[0]->copyScalarToChildren("potential");
 
         // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
-    }
+    }*/
     return 0;
 }
 #endif

@@ -460,27 +460,27 @@ namespace IO {
                 Utils::Normalizer::unnormalizeEnergy(receivedFieldEnergy) << endl;
         }
     }
-    void plotParticleVelocityDistribution(Grid const& g) {
-        plotParticleDistribution(g, "velocity");
+    void plotParticleVelocityDistribution(ParticleArray const& particles) {
+        plotParticleDistribution(particles, "velocity");
     }
 
-    void plotParticleEnergyDistribution(Grid const& g) {
-        plotParticleDistribution(g, "energy");
+    void plotParticleEnergyDistribution(ParticleArray const& particles) {
+        plotParticleDistribution(particles, "energy");
     }
 
-    void plotParticleDistribution(Grid const& g, const std::string type) {
+    void plotParticleDistribution(ParticleArray const& particles, const std::string type) {
         constexpr int dist_size = 200;
         std::vector<double> max_value(Environment::num_of_particle_types);
 
         //! 最大値を取得
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            for(int i = 0; i < g.particles[pid].size(); ++i){
-                if(g.particles[pid][i].isValid) {
+            for(int i = 0; i < particles[pid].size(); ++i){
+                if(particles[pid][i].isValid) {
                     double val;
                     if(type == "velocity") {
-                        val = g.particles[pid][i].getMagnitudeOfVelocity();
+                        val = particles[pid][i].getMagnitudeOfVelocity();
                     } else {
-                        val = g.particles[pid][i].getEnergy();
+                        val = particles[pid][i].getEnergy();
                     }
                     max_value[pid] = std::max(max_value[pid], val);
                 }
@@ -503,13 +503,13 @@ namespace IO {
 
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
             pdist[pid].resize(dist_size + 1);
-            for(int i = 0; i < g.particles[pid].size(); ++i){
-                if(g.particles[pid][i].isValid) {
+            for(int i = 0; i < particles[pid].size(); ++i){
+                if(particles[pid][i].isValid) {
                     double val;
                     if(type == "velocity") {
-                        val = g.particles[pid][i].getMagnitudeOfVelocity();
+                        val = particles[pid][i].getMagnitudeOfVelocity();
                     } else {
-                        val = g.particles[pid][i].getEnergy();
+                        val = particles[pid][i].getEnergy();
                     }
                     int index = floor(val/unit_value[pid]);
                     pdist[pid][index] += 1;
