@@ -460,20 +460,21 @@ namespace IO {
                 Utils::Normalizer::unnormalizeEnergy(receivedFieldEnergy) << endl;
         }
     }
-    void plotParticleVelocityDistribution(ParticleArray const& particles) {
-        plotParticleDistribution(particles, "velocity");
+    void plotParticleVelocityDistribution(ParticleArray const& particles, const std::string filename_header) {
+        plotParticleDistribution(particles, "velocity", filename_header);
     }
 
-    void plotParticleEnergyDistribution(ParticleArray const& particles) {
-        plotParticleDistribution(particles, "energy");
+    void plotParticleEnergyDistribution(ParticleArray const& particles, const std::string filename_header) {
+        plotParticleDistribution(particles, "energy", filename_header);
     }
 
-    void plotParticleDistribution(ParticleArray const& particles, const std::string type) {
+    void plotParticleDistribution(ParticleArray const& particles, const std::string type, const std::string filename_header) {
         constexpr int dist_size = 200;
-        std::vector<double> max_value(Environment::num_of_particle_types);
+        const int ptypes = particles.size();
+        std::vector<double> max_value(ptypes);
 
         //! 最大値を取得
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        for(int pid = 0; pid < ptypes; ++pid) {
             for(int i = 0; i < particles[pid].size(); ++i){
                 if(particles[pid][i].isValid) {
                     double val;
@@ -487,21 +488,21 @@ namespace IO {
             }
         }
 
-        std::vector<double> unit_value(Environment::num_of_particle_types);
+        std::vector<double> unit_value(ptypes);
 
         if(type == "velocity") {
-            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            for(int pid = 0; pid < ptypes; ++pid) {
                 unit_value[pid] = max_value[pid]/dist_size; //! m/s
             }
         } else {
-            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            for(int pid = 0; pid < ptypes; ++pid) {
                 unit_value[pid] = max_value[pid]/dist_size; //! eV
             }
         }
 
-        std::vector< std::vector<int> > pdist(Environment::num_of_particle_types);
+        std::vector< std::vector<int> > pdist(ptypes);
 
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        for(int pid = 0; pid < ptypes; ++pid) {
             pdist[pid].resize(dist_size + 1);
             for(int i = 0; i < particles[pid].size(); ++i){
                 if(particles[pid][i].isValid) {
@@ -519,19 +520,18 @@ namespace IO {
 
         std::string filename;
         std::string header;
+        filename = (format("data/%s_distribution_%04d_%04d.csv") % (filename_header + type) % MPIw::Environment::rank % Environment::timestep).str();
 
         if(type == "velocity") {
-            filename = (format("data/velocity_distribution_%04d_%04d.csv") % MPIw::Environment::rank % Environment::timestep).str();
             header = "Velocity [km/s]";
         } else {
-            filename = (format("data/energy_distribution_%04d_%04d.csv") % MPIw::Environment::rank % Environment::timestep).str();
             header = "Energy [eV]";
         }
 
         std::ofstream ofs(filename, std::ios::out);
 
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            ofs << format("# %s") % Environment::ptype[pid].getName() << endl;
+        for(int pid = 0; pid < ptypes; ++pid) {
+            ofs << format("# %s") % Environment::ptype[ particles[pid][0].typeId ].getName() << endl;
             ofs << format("# %11s %11s") % header % "Ratio" << endl;
 
             int maxElement = *std::max_element(pdist[pid].begin(), pdist[pid].end());
