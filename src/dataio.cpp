@@ -11,7 +11,7 @@
 
 namespace IO {
     void writeGroupelMap(
-            DBfile* file, Grid* root_grid, const int maxAMRLevel, const int numOfPatches,
+            DBfile* file, Grid const& root_grid, const int maxAMRLevel, const int numOfPatches,
             int* numOfPatchesOnLevel, std::vector< std::vector<int> >& idMap, std::map<int, std::vector<int> >& childMap)
     {
         // ARMの最大レベルと、パッチの総数、各レベルでのパッチ数は事前にMPI通信で確認しておく
@@ -175,7 +175,7 @@ namespace IO {
 
             rdata[0] = new float[numOfPatches];
 
-            root_grid->addExtent(data, sdata, rdata);
+            root_grid.addExtent(data, sdata, rdata);
 
             DBPutMrgvar(file, "ijkExts", "mrgTree", 6, compnames, numOfPatches, patchRegnNames, DB_INT, data, 0);
             DBPutMrgvar(file, "xyzExts", "mrgTree", 6, scompnames, numOfPatches, patchRegnNames, DB_FLOAT, sdata, 0);
@@ -285,7 +285,7 @@ namespace IO {
         DBFreeOptlist(optList);
     }
 
-    void writeBlock(DBfile* file, Grid* g, int rankInGroup, std::string dataTypeName){
+    void writeBlock(DBfile* file, Grid& g, int rankInGroup, std::string dataTypeName){
         // dimension
         const int dim = 3;
         // names of the coordinates
@@ -317,7 +317,7 @@ namespace IO {
         int major_order = 0;
         DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // row-major (C-based) order
 
-        g->putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
+        g.putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
 
         // Free optList
         DBFreeOptlist(optListMesh);
@@ -344,7 +344,7 @@ namespace IO {
         DBClose(static_cast<DBfile*>(file));
     }
 
-    void writeDataInParallel(Grid* g, int timestep, std::string dataTypeName) {
+    void writeDataInParallel(Grid& g, int timestep, std::string dataTypeName) {
         //! @note: 事前に全てのプロセスの持つパッチ数などを云々しておく
         const float datatime = static_cast<float>(timestep * Environment::dt + 101);
         const int maxIOUnit = 4;
@@ -367,7 +367,7 @@ namespace IO {
             for(int process_num = 0; process_num < MPIw::Environment::numprocs; ++process_num) {
                 // 各プロセスの持つパッチ数
                 if(process_num == 0) {
-                    patchesOnEachProcess[process_num] = g->getSumOfChild() + 1;
+                    patchesOnEachProcess[process_num] = g.getSumOfChild() + 1;
                 } else {
                     patchesOnEachProcess[process_num] = 1;
                 }
@@ -428,11 +428,11 @@ namespace IO {
         */
 
         /*
-        int maxAMRLevel = g->getMaxLevel();
-        int* numPatchesOnLevel = g->getNumOfPatches();
-        std::map<int, std::vector<int> > childMap = g->getChildMapOnRoot();
-        std::vector< std::vector<int> > idMap = g->getIDMapOnRoot();
-        writeGroupelMap(file, g, maxAMRLevel, g->getSumOfChild() + 1, numPatchesOnLevel, idMap, childMap);
+        int maxAMRLevel = g.getMaxLevel();
+        int* numPatchesOnLevel = g.getNumOfPatches();
+        std::map<int, std::vector<int> > childMap = g.getChildMapOnRoot();
+        std::vector< std::vector<int> > idMap = g.getIDMapOnRoot();
+        writeGroupelMap(file, g, maxAMRLevel, g.getSumOfChild() + 1, numPatchesOnLevel, idMap, childMap);
         */
         PMPIO_HandOffBaton(bat, file);
         PMPIO_Finish(bat);

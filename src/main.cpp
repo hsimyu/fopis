@@ -24,26 +24,27 @@ int main(int argc, char* argv[]){
     }
 
     // first update
-    root_grid->updateRho();
-    root_grid->solvePoisson();
-    root_grid->updateEfield();
+    // root_grid->updateRho();
+    // root_grid->solvePoisson();
+    // root_grid->updateEfield();
 
     for(; Environment::timestep < Environment::max_iteration; ++Environment::timestep) {
         if( Environment::isRootNode ) {
             cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }
         // new particle position
-        root_grid->updateParticleVelocity();
+        // root_grid->updateParticleVelocity();
         root_grid->updateParticlePosition();
-        root_grid->updateRho();
-        root_grid->solvePoisson();
-        root_grid->updateEfield();
-        root_grid->updateBfield();
+        // root_grid->updateRho();
+        // root_grid->solvePoisson();
+        // root_grid->updateEfield();
+        // root_grid->updateBfield();
 
-        if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
-        if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
-        if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
-        if(Environment::plotBfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
+        if(Environment::plotPotential())    IO::writeDataInParallel(*root_grid, Environment::timestep, "potential");
+        if(Environment::plotRho())          IO::writeDataInParallel(*root_grid, Environment::timestep, "rho");
+        if(Environment::plotEfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "efield");
+        if(Environment::plotBfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "bfield");
+        // if(Environment::plotDensity())       IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
         if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
         if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->particles);
         if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->particles);
