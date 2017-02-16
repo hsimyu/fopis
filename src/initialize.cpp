@@ -210,6 +210,8 @@ namespace Initializer {
                 Environment::plot_efield_width = static_cast<int>(it->second.get<double>());
             } else if(it->first == "plot_bfield_width"){
                 Environment::plot_bfield_width = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "plot_density_width"){
+                Environment::plot_density_width = static_cast<int>(it->second.get<double>());
             } else if(it->first == "plot_particle_width"){
                 Environment::plot_particle_width = static_cast<int>(it->second.get<double>());
             } else if(it->first == "plot_energy_width"){

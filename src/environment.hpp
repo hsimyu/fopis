@@ -12,6 +12,7 @@ struct Environment {
             if(type == "rho"           && plot_rho_width           != 0) return (timestep % plot_rho_width == 0);
             if(type == "efield"        && plot_efield_width        != 0) return (timestep % plot_efield_width == 0);
             if(type == "bfield"        && plot_bfield_width        != 0) return (timestep % plot_bfield_width == 0);
+            if(type == "density"       && plot_density_width       != 0) return (timestep % plot_density_width == 0);
             if(type == "particle"      && plot_particle_width      != 0) return (timestep % plot_particle_width == 0);
             if(type == "energy"        && plot_energy_width        != 0) return (timestep % plot_energy_width == 0);
             if(type == "energy_dist"   && plot_energy_dist_width   != 0) return (timestep % plot_energy_dist_width == 0);
@@ -33,6 +34,7 @@ struct Environment {
         static int plot_potential_width, plot_rho_width;
         static int plot_efield_width, plot_bfield_width;
         static int plot_particle_width, plot_energy_width;
+        static int plot_density_width;
         static bool isRootNode;
 
         static bool onLowXedge, onHighXedge;

@@ -188,7 +188,7 @@ class Grid {
         friend std::ostream& operator<<(std::ostream&, Grid*);
 
         //! inline functions
-        void checkXBoundary(std::vector< std::vector<Particle> >& pbuff, Particle& p, const double slx) {
+        void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) {
             if(p.x < 0.0) {
                 if(!Environment::onLowXedge) pbuff[0].push_back(p);
                 p.isValid = 0;
@@ -198,7 +198,7 @@ class Grid {
             }
         }
 
-        void checkYBoundary(std::vector< std::vector<Particle> >& pbuff, Particle& p, const double sly) {
+        void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) {
             if(p.y < 0.0) {
                 if(!Environment::onLowYedge) pbuff[2].push_back(p);
                 p.isValid = 0;
@@ -208,7 +208,7 @@ class Grid {
             }
         }
 
-        void checkZBoundary(std::vector< std::vector<Particle> >& pbuff, Particle& p, const double slz) {
+        void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) {
             if(p.z < 0.0) {
                 if(!Environment::onLowZedge) pbuff[4].push_back(p);
                 p.isValid = 0;
