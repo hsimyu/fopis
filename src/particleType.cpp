@@ -31,7 +31,11 @@ int ParticleType::calcSize(void){
 
 // initializer for ambient plasma
 int ParticleType::calcTotalNumber(void){
-    totalNumber = Environment::cell_x * Environment::cell_y * Environment::cell_z * particle_per_cell;
+    //! 担当するセルの数は上側境界にいるかどうかで変わる
+    int cellX = (Environment::onHighXedge) ? Environment::cell_x - 1 : Environment::cell_x;
+    int cellY = (Environment::onHighYedge) ? Environment::cell_y - 1 : Environment::cell_y;
+    int cellZ = (Environment::onHighZedge) ? Environment::cell_z - 1 : Environment::cell_z;
+    totalNumber = cellX * cellY * cellZ * particle_per_cell;
     return totalNumber;
 }
 

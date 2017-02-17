@@ -204,8 +204,10 @@ class Grid {
             if(p.x < 0.0) {
                 if(!Environment::onLowXedge) pbuff[0].push_back(p);
                 p.isValid = 0;
-            } else if (p.x > slx) {
-                if(!Environment::onHighXedge) pbuff[1].push_back(p);
+            } else if (!Environment::onHighXedge && p.x > slx) {
+                pbuff[1].push_back(p);
+                p.isValid = 0;
+            } else if (Environment::onHighXedge && p.x > slx - dx) {
                 p.isValid = 0;
             }
         }
@@ -214,8 +216,10 @@ class Grid {
             if(p.y < 0.0) {
                 if(!Environment::onLowYedge) pbuff[2].push_back(p);
                 p.isValid = 0;
-            } else if (p.y > sly) {
-                if(!Environment::onHighYedge) pbuff[3].push_back(p);
+            } else if (!Environment::onHighYedge && p.y > sly) {
+                pbuff[3].push_back(p);
+                p.isValid = 0;
+            } else if (Environment::onHighYedge && p.y > sly - dx) {
                 p.isValid = 0;
             }
         }
@@ -224,8 +228,10 @@ class Grid {
             if(p.z < 0.0) {
                 if(!Environment::onLowZedge) pbuff[4].push_back(p);
                 p.isValid = 0;
-            } else if (p.z > slz) {
-                if(!Environment::onHighZedge) pbuff[5].push_back(p);
+            } else if (!Environment::onHighZedge && p.z > slz) {
+                pbuff[5].push_back(p);
+                p.isValid = 0;
+            } else if (Environment::onHighZedge && p.z > slz - dx) {
                 p.isValid = 0;
             }
         }

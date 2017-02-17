@@ -5,6 +5,7 @@
 #include "particle.hpp"
 #include "environment.hpp"
 #include "mpiw.hpp"
+#include "dataio.hpp"
 #include <silo.h>
 #include <random>
 #include <algorithm>
@@ -183,6 +184,9 @@ void Grid::injectParticles(void) {
     static std::vector< std::vector<double> > residual;
     static bool isFirstCall = true;
 
+    ParticleArray inject_parray;
+    inject_parray.resize(2);
+
     //! staticな残余変数の初期化
     if(isFirstCall) {
         residual.resize(Environment::num_of_particle_types);
@@ -201,10 +205,13 @@ void Grid::injectParticles(void) {
     const double dt = 1.0;
 
     //! - 粒子位置の上限を設定
-    //! - [0, max_x)になるよう1e-20を引いておく
-    const double max_x = static_cast<double>(Environment::cell_x) - 1e-20;
-    const double max_y = static_cast<double>(Environment::cell_y) - 1e-20;
-    const double max_z = static_cast<double>(Environment::cell_z) - 1e-20;
+    double max_x = static_cast<double>(Environment::cell_x);
+    double max_y = static_cast<double>(Environment::cell_y);
+    double max_z = static_cast<double>(Environment::cell_z);
+    //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
+    if(Environment::onHighXedge) max_x -= 1.0;
+    if(Environment::onHighYedge) max_y -= 1.0;
+    if(Environment::onHighZedge) max_z -= 1.0;
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         std::vector<double> flux = Environment::ptype[pid].calcFlux(*this);
@@ -212,7 +219,7 @@ void Grid::injectParticles(void) {
         if(Environment::onLowXedge) {
             const int index = 0;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            cout << Environment::rankStr() << "inject from -x = " << inject_num << ", flux = " << flux[index] << ", residual = " << residual[pid][index] << endl;
+            // cout << Environment::rankStr() << "inject from -x = " << inject_num << ", flux = " << flux[index] << ", residual = " << residual[pid][index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -221,17 +228,19 @@ void Grid::injectParticles(void) {
 
                 //! 流入方向速度に変換
                 //! 実際はフラックスを積分して割合を求める必要がある
-                if(p.vx < 0.0) p.vx = -p.vx;
+                while(p.vx <= 0.0) p.generateNewVelocity();
+                // if(p.vx < 0.0) p.vx = -p.vx;
 
                 p.generateNewPosition(0.0, p.vx * dt, 0.0, max_y, 0.0, max_z);
                 particles[pid].push_back(p);
+                inject_parray[pid].push_back(p);
             }
         }
 
         if(Environment::onHighXedge) {
             const int index = 1;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            cout << Environment::rankStr() << "inject from +x = " << inject_num << ", flux = " << flux[index] << ", residual = " << residual[pid][index] << endl;
+            // cout << Environment::rankStr() << "inject from +x = " << inject_num << ", flux = " << flux[index] << ", residual = " << residual[pid][index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -240,18 +249,20 @@ void Grid::injectParticles(void) {
 
                 //! 流入方向速度に変換
                 //! 実際はフラックスを積分して割合を求める必要がある
-                if(p.vx > 0.0) p.vx = -p.vx;
+                // if(p.vx > 0.0) p.vx = -p.vx;
+                while(p.vx >= 0.0) p.generateNewVelocity();
 
                 //! 負方向速度をxの最大値から引いた点までがありうる範囲
                 p.generateNewPosition(max_x + p.vx * dt, max_x, 0.0, max_y, 0.0, max_z);
                 particles[pid].push_back(p);
+                inject_parray[pid].push_back(p);
             }
         }
 
         if(Environment::onLowYedge) {
             const int index = 2;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            cout << Environment::rankStr() << "inject from -y = " << inject_num << ", flux = " << flux[index] << endl;
+            // cout << Environment::rankStr() << "inject from -y = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -260,17 +271,19 @@ void Grid::injectParticles(void) {
 
                 //! 流入方向速度に変換
                 //! 実際はフラックスを積分して割合を求める必要がある
-                if(p.vy < 0.0) p.vy = -p.vy;
+                // if(p.vy < 0.0) p.vy = -p.vy;
+                while(p.vy <= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, p.vy * dt, 0.0, max_z);
                 particles[pid].push_back(p);
+                inject_parray[pid].push_back(p);
             }
         }
 
         if(Environment::onHighYedge) {
             const int index = 3;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            cout << Environment::rankStr() << "inject from +y = " << inject_num << ", flux = " << flux[index] << endl;
+            // cout << Environment::rankStr() << "inject from +y = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -279,17 +292,19 @@ void Grid::injectParticles(void) {
 
                 //! 流入方向速度に変換
                 //! 実際はフラックスを積分して割合を求める必要がある
-                if(p.vy > 0.0) p.vy = -p.vy;
+                // if(p.vy > 0.0) p.vy = -p.vy;
+                while(p.vy >= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, max_y + p.vy * dt, max_y, 0.0, max_z);
                 particles[pid].push_back(p);
+                inject_parray[pid].push_back(p);
             }
         }
 
         if(Environment::onLowZedge) {
             const int index = 4;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            cout << Environment::rankStr() << "inject from -z = " << inject_num << ", flux = " << flux[index] << endl;
+            // cout << Environment::rankStr() << "inject from -z = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -298,17 +313,19 @@ void Grid::injectParticles(void) {
 
                 //! 流入方向速度に変換
                 //! 実際はフラックスを積分して割合を求める必要がある
-                if(p.vz < 0.0) p.vz = -p.vz;
+                // if(p.vz < 0.0) p.vz = -p.vz;
+                while(p.vz <= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, p.vz * dt);
                 particles[pid].push_back(p);
+                inject_parray[pid].push_back(p);
             }
         }
 
         if(Environment::onHighZedge) {
             const int index = 5;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            cout << Environment::rankStr() << "inject from +z = " << inject_num << ", flux = " << flux[index] << endl;
+            // cout << Environment::rankStr() << "inject from +z = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -317,13 +334,18 @@ void Grid::injectParticles(void) {
 
                 //! 流入方向速度に変換
                 //! 実際はフラックスを積分して割合を求める必要がある
-                if(p.vz > 0.0) p.vz = -p.vz;
+                // if(p.vz > 0.0) p.vz = -p.vz;
+                while(p.vz >= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, max_y, max_z + p.vz * dt, max_z);
                 particles[pid].push_back(p);
+                inject_parray[pid].push_back(p);
             }
         }
     }
+
+    IO::plotParticleEnergyDistribution(inject_parray, "inject_");
+    IO::plotParticleVelocityDistribution(inject_parray, "inject_");
 }
 
 double Grid::getParticleEnergy(void) const {
