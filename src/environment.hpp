@@ -60,6 +60,7 @@ struct Environment {
         static bool plotRho(void)          { return isPlot("rho"); }
         static bool plotEfield(void)       { return isPlot("efield"); }
         static bool plotBfield(void)       { return isPlot("bfield"); }
+        static bool plotDensity(void)      { return isPlot("density"); }
         static bool plotParticle(void)     { return isPlot("particle"); }
         static bool plotEnergy(void)       { return isPlot("energy"); }
         static bool plotEnergyDist(void)   { return isPlot("energy_dist"); }

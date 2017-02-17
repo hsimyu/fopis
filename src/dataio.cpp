@@ -309,6 +309,8 @@ namespace IO {
             unit = const_cast<char*>("V/m");
         } else if (dataTypeName == "bfield") {
             unit = const_cast<char*>("T");
+        } else if (dataTypeName == "density") {
+            unit = const_cast<char*>("/m^3");
         } else {
             throw std::invalid_argument("[ERROR] Invalid dataTypeName was passed.");
         }
@@ -346,7 +348,7 @@ namespace IO {
 
     void writeDataInParallel(Grid& g, int timestep, std::string dataTypeName) {
         //! @note: 事前に全てのプロセスの持つパッチ数などを云々しておく
-        const float datatime = static_cast<float>(timestep * Environment::dt + 101);
+        const float datatime = static_cast<float>(timestep * Environment::dt);
         const int maxIOUnit = 4;
         int numfiles = (MPIw::Environment::numprocs <= maxIOUnit) ? MPIw::Environment::numprocs : maxIOUnit;
         int rank = MPIw::Environment::rank;

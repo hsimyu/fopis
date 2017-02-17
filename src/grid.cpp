@@ -237,6 +237,43 @@ void Grid::updateRho() {
     }
 }
 
+//! 粒子の位置から密度を計算する
+float* Grid::getDensity() {
+    float* zone_density = new float[nx*ny*nz];
+    const int maxitr = nx*ny*nz - 1;
+
+    //! initialize
+    for(int i = 0; i < nx; ++i){
+        for(int j = 0; j < ny; ++j){
+            for(int k = 0; k < nz; ++k){
+                zone_density[i + nx*j + nx*ny*k] = 0.0f;
+            }
+        }
+    }
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+        const double size = Environment::ptype[pid].getSize();
+
+        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
+            Particle& p = particles[pid][pnum];
+
+            if(p.isValid) {
+                Position pos(p);
+                // glue cellなしのノード: i - 2
+                // -> Zone centの場合は[i-2][j-2][k-2]の位置に密度を追加すればよい?
+                int i = floor(pos.x), j = floor(pos.y), k = floor(pos.z);
+
+                int itr = i + nx*j + nx*ny*k;
+                if(itr < 0) cout << "error =" << itr << " < 0" << endl << pos << endl;
+                if(itr > maxitr) cout << "error =" << itr << " > " << maxitr << endl << pos << endl;
+                // zone_density[(i-2)+ (nx-1) * (j-2) + (nx-1)*(ny-1)*(k-2)] += static_cast<float>(Utils::Normalizer::unnormalizeDensity(size));
+            }
+        }
+    }
+
+    return zone_density;
+}
+
 //! @note: childrenのエネルギーも取る?
 double Grid::getFieldEnergy(void) const {
     return field->getEnergy(nx, ny, nz);
@@ -537,6 +574,15 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
         delete [] vars[0];
         delete [] vars[1];
         delete [] vars[2];
+    } else if(dataTypeName == "density") {
+        // zone centに変更
+        dimensions[0] = nx - 1;
+        dimensions[1] = ny - 1;
+        dimensions[2] = nz - 1;
+
+        float* tdArray = this->getDensity();
+        // DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
+        delete [] tdArray;
     } else {
         throw std::invalid_argument("[ERROR] Invalid argument was passed to putQuadMesh().");
     }
