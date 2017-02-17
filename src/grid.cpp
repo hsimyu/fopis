@@ -102,10 +102,14 @@ Grid::Grid(void){
     this->initializeField();
 
     //! - 粒子位置の上限を設定
-    //! - [0, max_x)になるよう1e-20を引いておく
-    const double max_x = static_cast<double>(Environment::cell_x) - 1e-20;
-    const double max_y = static_cast<double>(Environment::cell_y) - 1e-20;
-    const double max_z = static_cast<double>(Environment::cell_z) - 1e-20;
+    double max_x = static_cast<double>(Environment::cell_x);
+    double max_y = static_cast<double>(Environment::cell_y);
+    double max_z = static_cast<double>(Environment::cell_z);
+
+    //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
+    if(Environment::onHighXedge) max_x -= 1.0;
+    if(Environment::onHighYedge) max_y -= 1.0;
+    if(Environment::onHighZedge) max_z -= 1.0;
 
     //! - particlesは空のstd::vector< std::vector<Particle> >として宣言されている
     //! - particle types 分だけresize
@@ -235,20 +239,22 @@ void Grid::updateRho() {
             }
         }
     }
+
+    //! rho を隣に送る
 }
 
 //! 粒子の位置から密度を計算する
 float* Grid::getDensity() {
-    float* zone_density = new float[nx*ny*nz];
-    const int maxitr = nx*ny*nz - 1;
+    // ZONECENTなので-1する
+    const int xsize = this->getXNodeSize() - 1;
+    const int ysize = this->getYNodeSize() - 1;
+    const int zsize = this->getZNodeSize() - 1;
+    float* zone_density = new float[xsize * ysize * zsize];
+    const int maxitr = xsize*ysize*zsize - 1;
 
     //! initialize
-    for(int i = 0; i < nx; ++i){
-        for(int j = 0; j < ny; ++j){
-            for(int k = 0; k < nz; ++k){
-                zone_density[i + nx*j + nx*ny*k] = 0.0f;
-            }
-        }
+    for(int i = 0; i < maxitr; ++i){
+        zone_density[i] = 0.0f;
     }
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
@@ -447,6 +453,18 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
     }
 }
 
+int Grid::getXNodeSize(void) const {
+    return (level == 0 && !Environment::onHighXedge) ? nx + 1 : nx;
+}
+
+int Grid::getYNodeSize(void) const {
+    return (level == 0 && !Environment::onHighYedge) ? ny + 1 : ny;
+}
+
+int Grid::getZNodeSize(void) const {
+    return (level == 0 && !Environment::onHighZedge) ? nz + 1 : nz;
+}
+
 // mesh nodesの座標配列を生成
 float** Grid::getMeshNodes(int dim) {
     // the array of coordinate arrays
@@ -457,21 +475,49 @@ float** Grid::getMeshNodes(int dim) {
     const float real_base_z = Utils::Normalizer::unnormalizeLength(base_z);
 
     float** coordinates = new float*[dim];
-    coordinates[0] = new float[nx];
-    for(int i = 0; i < nx; ++i) {
+    // root にいて正方向の端でない場合は+1分出力する
+    int xsize = this->getXNodeSize();
+    coordinates[0] = new float[xsize];
+
+    for(int i = 0; i < xsize; ++i) {
 	coordinates[0][i] = real_base_x + real_dx * i;
     }
-    coordinates[1] = new float[ny];
-    for(int i = 0; i < ny; ++i) {
+
+    int ysize = this->getYNodeSize();
+    coordinates[1] = new float[ysize];
+
+    for(int i = 0; i < ysize; ++i) {
 	coordinates[1][i] = real_base_y + real_dx * i;
     }
-    coordinates[2] = new float[nz];
-    for(int i = 0; i < nz; ++i) {
+
+    int zsize = this->getZNodeSize();
+    coordinates[2] = new float[zsize];
+
+    for(int i = 0; i < zsize; ++i) {
 	coordinates[2][i] = real_base_z + real_dx * i;
     }
     return coordinates;
 }
 
+//! for DATA IO
+float* Grid::getTrueNodes(const tdArray& x3D){
+    int xsize = this->getXNodeSize();
+    int ysize = this->getYNodeSize();
+    int zsize = this->getZNodeSize();
+    float* x1D = new float[xsize*ysize*zsize];
+
+    //! C-based indicing
+    //! without glue cells
+    for(int k = 1; k < zsize + 1; ++k){
+        for(int j = 1; j < ysize + 1; ++j){
+            for(int i = 1; i < xsize + 1; ++i){
+                x1D[(i-1) + (j-1)*xsize + (k-1)*xsize*ysize] = static_cast<float>(x3D[i][j][k]);
+            }
+        }
+    }
+
+    return x1D;
+}
 
 // 渡されたポインタにExtentを入力する
 void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
@@ -521,9 +567,9 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
     // dimensions
     // glue cellは出力しない
     int dimensions[3];
-    dimensions[0] = nx;
-    dimensions[1] = ny;
-    dimensions[2] = nz;
+    dimensions[0] = this->getXNodeSize();
+    dimensions[1] = this->getYNodeSize();
+    dimensions[2] = this->getZNodeSize();
 
     // the array of coordinate arrays
     float** coordinates = this->getMeshNodes(dim);
@@ -538,11 +584,11 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
 
     if(dataTypeName == "potential") {
         const char* varnames[1] = {dataTypeName.c_str()};
-        float* tdArray = Utils::getTrueNodes(this->getField()->getPhi());
+        float* tdArray = this->getTrueNodes(field->getPhi());
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "rho") {
-        float* tdArray = Utils::getTrueNodes(this->getField()->getRho());
+        float* tdArray = this->getTrueNodes(field->getRho());
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "efield") {
@@ -557,9 +603,9 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
         // delete [] vars[2];
         const char* varnames[3] = {"ex", "ey", "ez"};
         float* vars[3];
-        vars[0] = Utils::getTrueNodes(this->getField()->getExRef());
-        vars[1] = Utils::getTrueNodes(this->getField()->getEyRef());
-        vars[2] = Utils::getTrueNodes(this->getField()->getEzRef());
+        vars[0] = getTrueNodes(field->getExRef());
+        vars[1] = getTrueNodes(field->getEyRef());
+        vars[2] = getTrueNodes(field->getEzRef());
         DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] vars[0];
         delete [] vars[1];
@@ -576,12 +622,12 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
         delete [] vars[2];
     } else if(dataTypeName == "density") {
         // zone centに変更
-        dimensions[0] = nx - 1;
-        dimensions[1] = ny - 1;
-        dimensions[2] = nz - 1;
+        dimensions[0] -= 1;
+        dimensions[1] -= 1;
+        dimensions[2] -= 1;
 
         float* tdArray = this->getDensity();
-        // DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
+        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
         delete [] tdArray;
     } else {
         throw std::invalid_argument("[ERROR] Invalid argument was passed to putQuadMesh().");

@@ -9,8 +9,6 @@ namespace Utils {
     std::string prettyMemoryString(double);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
-
-    float* getTrueNodes(const tdArray&);
     float* getTrueEdges2(tdArray const&, tdArray const&, tdArray const&);
     float* getTrueEdges(tdArray const&, const int);
     float* getTrueFaces(const tdArray&, const int);
