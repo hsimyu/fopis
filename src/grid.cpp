@@ -265,14 +265,10 @@ float* Grid::getDensity() {
 
             if(p.isValid) {
                 Position pos(p);
-                // glue cellなしのノード: i - 2
-                // -> Zone centの場合は[i-2][j-2][k-2]の位置に密度を追加すればよい?
-                int i = floor(pos.x), j = floor(pos.y), k = floor(pos.z);
+                int i = pos.i - 1, j = pos.j - 1, k = pos.k - 1;
 
-                int itr = i + nx*j + nx*ny*k;
-                if(itr < 0) cout << "error =" << itr << " < 0" << endl << pos << endl;
-                if(itr > maxitr) cout << "error =" << itr << " > " << maxitr << endl << pos << endl;
-                // zone_density[(i-2)+ (nx-1) * (j-2) + (nx-1)*(ny-1)*(k-2)] += static_cast<float>(Utils::Normalizer::unnormalizeDensity(size));
+                int itr = i + xsize*j + xsize*ysize*k;
+                zone_density[itr] += static_cast<float>(Utils::Normalizer::unnormalizeDensity(size));
             }
         }
     }
