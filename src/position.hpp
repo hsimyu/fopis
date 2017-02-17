@@ -1,6 +1,7 @@
 #ifndef __TDPIC_POSITION_H_INCLUDED__
 #define __TDPIC_POSITION_H_INCLUDED__
 #include <math.h>
+#include <iostream>
 class Particle;
 
 class Position {
@@ -57,6 +58,8 @@ class Position {
 
             this->updateDelta();
         }
+
+        friend std::ostream& operator<<(std::ostream&, Position const&);
 };
 
 class Velocity {
