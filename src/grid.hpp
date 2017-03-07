@@ -194,7 +194,7 @@ class Grid {
         void putQuadMesh(DBfile*, std::string, const char* coordnames[3], int, DBoptlist*, DBoptlist*);
 
         // 出力用に密度を計算して返す
-        float* getDensity(void);
+        float* getDensity(const int);
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);

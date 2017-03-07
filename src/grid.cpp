@@ -248,7 +248,7 @@ void Grid::updateRho() {
 }
 
 //! 粒子の位置から密度を計算する
-float* Grid::getDensity() {
+float* Grid::getDensity(const int pid) {
     // ZONECENTなので-1する
     const int xsize = this->getXNodeSize() - 1;
     const int ysize = this->getYNodeSize() - 1;
@@ -261,19 +261,17 @@ float* Grid::getDensity() {
         zone_density[i] = 0.0f;
     }
 
-    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        const double size = Environment::ptype[pid].getSize();
+    const double size = Environment::ptype[pid].getSize();
 
-        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
-            Particle& p = particles[pid][pnum];
+    for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
+        Particle& p = particles[pid][pnum];
 
-            if(p.isValid) {
-                Position pos(p);
-                int i = pos.i - 1, j = pos.j - 1, k = pos.k - 1;
+        if(p.isValid) {
+            Position pos(p);
+            int i = pos.i - 1, j = pos.j - 1, k = pos.k - 1;
 
-                int itr = i + xsize*j + xsize*ysize*k;
-                zone_density[itr] += static_cast<float>(Utils::Normalizer::unnormalizeDensity(size));
-            }
+            int itr = i + xsize*j + xsize*ysize*k;
+            zone_density[itr] += static_cast<float>(Utils::Normalizer::unnormalizeDensity(size));
         }
     }
 
@@ -626,9 +624,30 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
         dimensions[1] -= 1;
         dimensions[2] -= 1;
 
-        float* tdArray = this->getDensity();
-        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
-        delete [] tdArray;
+        if(Environment::num_of_particle_types == 1) {
+            float* tdArray = this->getDensity(0);
+            const char* vname = Environment::ptype[0].getName().c_str();
+            DBPutQuadvar1(file, vname, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
+            delete [] tdArray;
+        } else {
+            char** vnames = new char*[Environment::num_of_particle_types];
+            float* vars[Environment::num_of_particle_types];
+            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+                std::string pname = Environment::ptype[pid].getName();
+                vnames[pid] = new char[pname.size() + 1];
+                std::strcpy(vnames[pid], pname.c_str());
+
+                vars[pid] = this->getDensity(pid);
+            }
+
+            DBPutQuadvar(file, v, m, Environment::num_of_particle_types, vnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
+
+            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+                delete [] vars[pid];
+                delete [] vnames[pid];
+            }
+            delete [] vnames;
+        }
     } else {
         throw std::invalid_argument("[ERROR] Invalid argument was passed to putQuadMesh().");
     }
