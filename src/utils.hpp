@@ -14,6 +14,7 @@ namespace Utils {
     float* getTrueFaces(const tdArray&, const int);
     void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
     void clearBoundaryValues(tdArray&, const int, const int, const int);
+    void initializeTdarray(tdArray&);
 
     void createDir(std::string);
 

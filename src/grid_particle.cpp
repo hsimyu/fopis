@@ -83,8 +83,6 @@ void Grid::updateParticlePosition(void) {
     std::vector< std::vector<Particle> > pbuff(6);
     std::vector< std::vector<Particle> > pbuffRecv(6);
 
-    cout << Environment::rankStr() << "[BEFORE SENDRECV] " << this->getParticleEnergy() << endl;
-
     const double slx = dx * nx;
     const double sly = dx * ny;
     const double slz = dx * nz;
@@ -101,11 +99,7 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
-    if(pbuff[0].size() > 0) cout << Environment::rankStr() << "pbuff[0] = " << pbuff[0].size() << endl;
-    if(pbuff[1].size() > 0) cout << Environment::rankStr() << "pbuff[1] = " << pbuff[1].size() << endl;
     MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
-    if(pbuffRecv[0].size() > 0) cout << Environment::rankStr() << "pbuffRecv[0] = " << pbuffRecv[0].size() << endl;
-    if(pbuffRecv[1].size() > 0) cout << Environment::rankStr() << "pbuffRecv[1] = " << pbuffRecv[1].size() << endl;
 
     for(int axis = 0; axis < 2; ++axis) {
         for(int i = 0; i < pbuffRecv[axis].size(); ++i){
@@ -123,11 +117,7 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
-    if(pbuff[2].size() > 0) cout << Environment::rankStr() << "pbuff[2] = " << pbuff[2].size() << endl;
-    if(pbuff[3].size() > 0) cout << Environment::rankStr() << "pbuff[3] = " << pbuff[3].size() << endl;
     MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
-    if(pbuffRecv[2].size() > 0) cout << Environment::rankStr() << "pbuffRecv[2] = " << pbuffRecv[2].size() << endl;
-    if(pbuffRecv[3].size() > 0) cout << Environment::rankStr() << "pbuffRecv[3] = " << pbuffRecv[3].size() << endl;
 
     for(int axis = 2; axis < 4; ++axis) {
         for(int i = 0; i < pbuffRecv[axis].size(); ++i){
@@ -143,11 +133,7 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
-    if(pbuff[4].size() > 0) cout << Environment::rankStr() << "pbuff[4] = " << pbuff[4].size() << endl;
-    if(pbuff[5].size() > 0) cout << Environment::rankStr() << "pbuff[5] = " << pbuff[5].size() << endl;
     MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
-    if(pbuffRecv[4].size() > 0) cout << Environment::rankStr() << "pbuffRecv[4] = " << pbuffRecv[4].size() << endl;
-    if(pbuffRecv[5].size() > 0) cout << Environment::rankStr() << "pbuffRecv[5] = " << pbuffRecv[5].size() << endl;
 
     for(int axis = 4; axis < 6; ++axis) {
         for(int i = 0; i < pbuffRecv[axis].size(); ++i){
@@ -175,9 +161,7 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
-    cout << Environment::rankStr() << "[AFTER SENDRECV] " << this->getParticleEnergy() << endl;
     this->injectParticles();
-    cout << Environment::rankStr() << "[AFTER INJECT] " << this->getParticleEnergy() << endl;
 }
 
 void Grid::injectParticles(void) {

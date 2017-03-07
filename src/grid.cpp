@@ -5,6 +5,7 @@
 #include "particle.hpp"
 #include "environment.hpp"
 #include "mpiw.hpp"
+#include "utils.hpp"
 #include <silo.h>
 #include <random>
 #include <algorithm>
@@ -209,6 +210,9 @@ void Grid::checkGridValidness() {
 //! 基本的にはroot_gridに対してのみ呼ぶ
 void Grid::updateRho() {
     tdArray& rho = field->getRho();
+
+    // rhoを初期化
+    Utils::initializeTdarray(rho);
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
         int max_pnum = Environment::ptype[pid].getTotalNumber();

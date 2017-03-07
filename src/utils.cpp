@@ -12,6 +12,16 @@ namespace Utils {
     double Normalizer::e_unit = 1.0;
     double Normalizer::m_unit = 1.0;
 
+    void initializeTdarray(tdArray& x) {
+        for(int i = 0; i < x.shape()[0]; ++i) {
+            for(int j = 0; j < x.shape()[1]; ++j) {
+                for(int k = 0; k < x.shape()[2]; ++k) {
+                    x[i][j][k] = 0.0;
+                }
+            }
+        }
+    }
+
     void clearBoundaryValues(tdArray& x, const int nx, const int ny, const int nz) {
         for(int i = 0; i < nx; i += nx - 1) {
             for(int j = 0; j < ny; ++j){
