@@ -114,7 +114,7 @@ void Field::setDirichletPhi(void){
     if(Environment::onLowZedge) {
         for(int j = 1; j < cy_with_glue - 1; ++j){
             for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][j][1] = 0.0f;
+                phi[i][j][1] = 0.0;
             }
         }
     }
@@ -123,7 +123,7 @@ void Field::setDirichletPhi(void){
         int k = cz_with_glue - 2;
         for(int j = 1; j < cy_with_glue - 1; ++j){
             for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][j][k] = 0.0f;
+                phi[i][j][k] = 0.0;
             }
         }
     }
@@ -131,7 +131,7 @@ void Field::setDirichletPhi(void){
     if(Environment::onLowYedge) {
         for(int k = 1; k < cz_with_glue - 1; ++k){
             for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][1][k] = 0.0f;
+                phi[i][1][k] = 0.0;
             }
         }
     }
@@ -140,7 +140,7 @@ void Field::setDirichletPhi(void){
         int j = cy_with_glue - 2;
         for(int k = 1; k < cz_with_glue - 1; ++k){
             for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][j][k] = 0.0f;
+                phi[i][j][k] = 0.0;
             }
         }
     }
@@ -148,7 +148,7 @@ void Field::setDirichletPhi(void){
     if(Environment::onLowXedge) {
         for(int k = 1; k < cz_with_glue - 1; ++k){
             for(int j = 1; j < cy_with_glue - 1; ++j){
-                phi[1][j][k] = 0.0f;
+                phi[1][j][k] = 0.0;
             }
         }
     }
@@ -157,7 +157,7 @@ void Field::setDirichletPhi(void){
         int i = cx_with_glue - 2;
         for(int k = 1; k < cz_with_glue - 1; ++k){
             for(int j = 1; j < cy_with_glue - 1; ++j){
-                phi[i][j][k] = 0.0f;
+                phi[i][j][k] = 0.0;
             }
         }
     }
@@ -175,7 +175,7 @@ void Field::updateEfield(const double dx) {
     const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
     const int cy_with_glue = ey.shape()[1] + 1;
     const int cz_with_glue = ez.shape()[2] + 1;
-    const double dxm = 1.0f/dx;
+    const double dxm = 1.0/dx;
 
     //! phiは通信してあるとする -> 0番目のedgeも計算可能
     for(int i = 0; i < cx_with_glue; ++i){
@@ -248,7 +248,7 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
 }
 
 double Field::getEnergy(const int nx, const int ny, const int nz) {
-    double energy = 0.0f;
+    double energy = 0.0;
     double normalized_eps0 = Utils::Normalizer::normalizeEpsilon(eps0);
 
     for(int i = 1; i < nx - 1; ++i){
@@ -260,6 +260,6 @@ double Field::getEnergy(const int nx, const int ny, const int nz) {
         }
     }
 
-    return 0.5f * Utils::Normalizer::normalizeEpsilon(eps0) * energy;
+    return 0.5 * Utils::Normalizer::normalizeEpsilon(eps0) * energy;
 }
 
