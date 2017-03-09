@@ -449,10 +449,10 @@ namespace IO {
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
-            auto openmode = (timestep == 0) ? std::ios::out : std::ios::app;
+            auto openmode = (timestep == 1) ? std::ios::out : std::ios::app;
             std::ofstream ofs(filename, openmode);
 
-            if(timestep == 0) {
+            if(timestep == 1) {
                 ofs << "# " << format("%8s %15s %15s %15s %15s") % "timestep" % "time" % "Energy [J]" % "Particle [J]" % "Field [J]" << endl;
             }
 

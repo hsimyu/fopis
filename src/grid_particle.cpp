@@ -213,7 +213,6 @@ void Grid::injectParticles(void) {
                 //! 流入方向速度に変換
                 //! 実際はフラックスを積分して割合を求める必要がある
                 while(p.vx <= 0.0) p.generateNewVelocity();
-                // if(p.vx < 0.0) p.vx = -p.vx;
 
                 p.generateNewPosition(0.0, p.vx * dt, 0.0, max_y, 0.0, max_z);
                 particles[pid].push_back(p);
@@ -231,9 +230,6 @@ void Grid::injectParticles(void) {
                 Particle p(pid);
                 p.generateNewVelocity();
 
-                //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある
-                // if(p.vx > 0.0) p.vx = -p.vx;
                 while(p.vx >= 0.0) p.generateNewVelocity();
 
                 //! 負方向速度をxの最大値から引いた点までがありうる範囲
@@ -253,9 +249,6 @@ void Grid::injectParticles(void) {
                 Particle p(pid);
                 p.generateNewVelocity();
 
-                //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある
-                // if(p.vy < 0.0) p.vy = -p.vy;
                 while(p.vy <= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, p.vy * dt, 0.0, max_z);
@@ -274,9 +267,6 @@ void Grid::injectParticles(void) {
                 Particle p(pid);
                 p.generateNewVelocity();
 
-                //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある
-                // if(p.vy > 0.0) p.vy = -p.vy;
                 while(p.vy >= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, max_y + p.vy * dt, max_y, 0.0, max_z);
@@ -295,9 +285,6 @@ void Grid::injectParticles(void) {
                 Particle p(pid);
                 p.generateNewVelocity();
 
-                //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある
-                // if(p.vz < 0.0) p.vz = -p.vz;
                 while(p.vz <= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, p.vz * dt);
@@ -316,9 +303,6 @@ void Grid::injectParticles(void) {
                 Particle p(pid);
                 p.generateNewVelocity();
 
-                //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある
-                // if(p.vz > 0.0) p.vz = -p.vz;
                 while(p.vz >= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, max_y, max_z + p.vz * dt, max_z);

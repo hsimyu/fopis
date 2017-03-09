@@ -337,7 +337,6 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
 
 double Field::getEnergy(const int nx, const int ny, const int nz) {
     double energy = 0.0;
-    double normalized_eps0 = Utils::Normalizer::normalizeEpsilon(eps0);
 
     for(int i = 1; i < nx - 1; ++i){
         for(int j = 1; j < ny - 1; ++j){

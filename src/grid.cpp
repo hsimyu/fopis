@@ -215,10 +215,9 @@ void Grid::updateRho() {
     Utils::initializeTdarray(rho);
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        int max_pnum = Environment::ptype[pid].getTotalNumber();
         double q = Environment::ptype[pid].getCharge();
 
-        for(int pnum = 0; pnum < max_pnum; ++pnum){
+        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
             Particle& p = particles[pid][pnum];
             if(p.isValid) {
                 Position pos(p);
