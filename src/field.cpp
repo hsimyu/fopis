@@ -3,6 +3,7 @@
 #include "field.hpp"
 #include "utils.hpp"
 #include "mpiw.hpp"
+#include <algorithm>
 
 void Field::initializePoisson(const int cx, const int cy, const int cz){
 #ifdef DEBUG
@@ -75,7 +76,7 @@ void Field::solvePoissonMKL(const int cx, const int cy, const int cz) {
 
 //! @brief SOR法
 void Field::solvePoissonPSOR(const int loopnum, const double dx) {
-    double omega = 2.0/(1.0 + M_PI/phi.shape()[0]); // spectral radius
+    double omega = 2.0/(1.0 + sqrt(1.0 - pow(cos(M_PI/(phi.shape()[0] - 2)), 2))); // spectral radius
     double rho_coeff = 6.0 * dx / Utils::Normalizer::normalizeEpsilon(eps0);
 
     const int cx_with_glue = phi.shape()[0];
@@ -84,7 +85,9 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
 
     this->setDirichletPhi();
 
-    for(int loop = 0; loop < loopnum; ++loop) {
+    const double required_error = 1.0e-3;
+
+    for(int loop = 1; loop <= loopnum; ++loop) {
         for(int k = 1; k < cz_with_glue - 1; ++k){
             if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
                 for(int j = 1; j < cy_with_glue - 1; ++j){
@@ -99,8 +102,54 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
             }
         }
 
+        if(MPIw::Environment::numprocs > 1) {
+            //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
+            MPIw::Environment::sendRecvField(phi);
+        }
+
+        if(loop % 10 == 0) {
+            double residual = this->checkPhiResidual();
+
+            if (Environment::isRootNode) cout << format("[ITR %d] residual = %s") % loop % residual << endl;
+            if (residual < required_error) break;
+        }
+    }
+}
+
+//! @brief Jacobi法
+void Field::solvePoissonJacobi(const int loopnum, const double dx) {
+    double rho_coeff = dx / Utils::Normalizer::normalizeEpsilon(eps0);
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    this->setDirichletPhi();
+
+    cout << format("initial residual = %s") % this->checkPhiResidual() << endl;
+    const double required_error = 1.0e-3;
+
+    for(int loop = 0; loop < loopnum; ++loop) {
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
+                for(int j = 1; j < cy_with_glue - 1; ++j){
+                    if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
+                        for(int i = 1; i < cx_with_glue - 1; ++i){
+                            if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
+                                phi[i][j][k] = (phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1])/6.0 + rho_coeff*rho[i][j][k];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        double residual = this->checkPhiResidual();
+
+        cout << format("[ITR %d] residual = %s") % loop % residual << endl;
+        if (residual < required_error) break;
         //! ここで通信する必要がある
-        MPIw::Environment::sendRecvPhi(phi);
+        // MPIw::Environment::sendRecvPhi(phi);
         //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
     }
 }
@@ -167,6 +216,41 @@ void Field::setDirichletPhi(void){
 void Field::solvePoisson(const int loopnum, const double dx) {
     // this->solvePoissonMKL(cx, cy, cz);
     this->solvePoissonPSOR(loopnum, dx);
+    // this->solvePoissonJacobi(loopnum, dx);
+}
+
+//! 電位分布の残差の最大ノルムを返す
+double Field::checkPhiResidual() {
+    double residual = 0.0;
+    double rho_max = 0.0;
+    double normalized_eps = Utils::Normalizer::normalizeEpsilon(eps0);
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
+                    for(int i = 1; i < cx_with_glue - 1; ++i){
+                        if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
+                            double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k])/6.0 + rho[i][j][k]/normalized_eps;
+                            residual = std::max(residual, fabs(tmp_res));
+                            rho_max = std::max(rho_max, fabs(rho[i][j][k]));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if(MPIw::Environment::numprocs > 1) {
+        residual = MPIw::Environment::Comms["world"]->max(residual);
+        rho_max =  MPIw::Environment::Comms["world"]->max(rho_max);
+    }
+
+    return residual/(rho_max/normalized_eps);
 }
 
 //! @brief 電場を更新する
@@ -202,7 +286,11 @@ void Field::updateEfield(const double dx) {
         }
     }
 
-    //! exrefを送る必要？
+    if(MPIw::Environment::numprocs > 1) {
+        MPIw::Environment::sendRecvField(exref);
+        MPIw::Environment::sendRecvField(eyref);
+        MPIw::Environment::sendRecvField(ezref);
+    }
 }
 
 //! @brief 磁場を更新する(FDTD)

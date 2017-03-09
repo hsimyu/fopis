@@ -55,7 +55,9 @@ class Field {
         //! solver の実体
         void solvePoissonMKL(const int, const int, const int);
         void solvePoissonPSOR(const int, const double);
+        void solvePoissonJacobi(const int, const double);
         void initializePoisson(const int, const int, const int);
+        double checkPhiResidual(void);
     public:
         Field(void) :
             rho(boost::extents[0][0][0], boost::fortran_storage_order()),
