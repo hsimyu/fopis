@@ -99,51 +99,57 @@ void Grid::updateParticlePosition(void) {
         }
     }
 
-    MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
+    if(Environment::proc_x > 1) {
+        MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
 
-    for(int axis = 0; axis < 2; ++axis) {
-        for(int i = 0; i < pbuffRecv[axis].size(); ++i){
-            Particle& p = pbuffRecv[axis][i];
+        for(int axis = 0; axis < 2; ++axis) {
+            for(int i = 0; i < pbuffRecv[axis].size(); ++i){
+                Particle& p = pbuffRecv[axis][i];
 
-            // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
-            if(axis == 0) {
-                p.x -= slx;
-            } else {
-                p.x += slx;
+                // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
+                if(axis == 0) {
+                    p.x -= slx;
+                } else {
+                    p.x += slx;
+                }
+
+                checkYBoundary(pbuff, p, sly);
+                checkZBoundary(pbuff, p, slz);
             }
-
-            checkYBoundary(pbuff, p, sly);
-            checkZBoundary(pbuff, p, slz);
         }
     }
 
-    MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
+    if(Environment::proc_y > 1) {
+        MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
 
-    for(int axis = 2; axis < 4; ++axis) {
-        for(int i = 0; i < pbuffRecv[axis].size(); ++i){
-            Particle& p = pbuffRecv[axis][i];
+        for(int axis = 2; axis < 4; ++axis) {
+            for(int i = 0; i < pbuffRecv[axis].size(); ++i){
+                Particle& p = pbuffRecv[axis][i];
 
-            // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
-            if(axis == 2) {
-                p.x -= sly;
-            } else {
-                p.x += sly;
+                // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
+                if(axis == 2) {
+                    p.y -= sly;
+                } else {
+                    p.y += sly;
+                }
+                checkZBoundary(pbuff, p, slz);
             }
-            checkZBoundary(pbuff, p, slz);
         }
     }
 
-    MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
+    if(Environment::proc_z > 1) {
+        MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
 
-    for(int axis = 4; axis < 6; ++axis) {
-        for(int i = 0; i < pbuffRecv[axis].size(); ++i){
-            Particle& p = pbuffRecv[axis][i];
+        for(int axis = 4; axis < 6; ++axis) {
+            for(int i = 0; i < pbuffRecv[axis].size(); ++i){
+                Particle& p = pbuffRecv[axis][i];
 
-            // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
-            if(axis == 4) {
-                p.x -= slz;
-            } else {
-                p.x += slz;
+                // 0方向(下側)からやってきた時、領域長分だけ座標をずらす
+                if(axis == 4) {
+                    p.z -= slz;
+                } else {
+                    p.z += slz;
+                }
             }
         }
     }

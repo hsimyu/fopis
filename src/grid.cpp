@@ -224,9 +224,8 @@ void Grid::updateRho() {
                 int i = pos.i, j = pos.j, k = pos.k;
 
 #ifdef DEBUG
-                if( (i >= nx + 2) || (j >= ny + 2) || (k >= nz + 2)) {
-                    cout << Environment::rankStr() << format("[Particle Position Error]: xyz: %5f %5f %5f") % pos.x % pos.y % pos.z << endl;
-                    cout << Environment::rankStr() << format("[Particle Position Error]: ijk: %d %d %d") % i % j % k << endl;
+                if( (i < 0) || (j < 0) || (k < 0) || (i >= rho.shape()[0] - 1) || (j >= rho.shape()[1] - 1) || (k >= rho.shape()[2] - 1)) {
+                    cout << Environment::rankStr() << pos << endl;
                 }
 #endif
 
