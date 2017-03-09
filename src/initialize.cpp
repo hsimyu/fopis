@@ -154,7 +154,7 @@ namespace Initializer {
 
         //! 読み込まなくてよい部分
         Environment::max_particle_num = MAX_PARTICLE_NUM;
-        Environment::timestep = 0;
+        Environment::timestep = 1;
 
         for(auto it = env_inputs.begin();
                  it != env_inputs.end();

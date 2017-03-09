@@ -245,6 +245,9 @@ void Grid::updateRho() {
     }
 
     //! rho を隣に送る
+    if(MPIw::Environment::numprocs > 1) {
+        MPIw::Environment::sendRecvField(rho);
+    }
 }
 
 //! 粒子の位置から密度を計算する

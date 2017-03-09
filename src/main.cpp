@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
     Initializer::initTDPIC(root_grid);
 
     if( Environment::isRootNode ) {
-        cout << "--  Begin A Loop  --" << endl;
+        cout << "--  Begin Main Loop  --" << endl;
     }
 
     // first update
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]){
     root_grid->solvePoisson();
     root_grid->updateEfield();
 
-    for(; Environment::timestep < Environment::max_iteration; ++Environment::timestep) {
+    for(; Environment::timestep <= Environment::max_iteration; ++Environment::timestep) {
         if( Environment::isRootNode ) {
             cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }
@@ -42,8 +42,8 @@ int main(int argc, char* argv[]){
 
         if(Environment::plotPotential())    IO::writeDataInParallel(*root_grid, Environment::timestep, "potential");
         if(Environment::plotRho())          IO::writeDataInParallel(*root_grid, Environment::timestep, "rho");
-        // if(Environment::plotEfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "efield");
-        // if(Environment::plotBfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "bfield");
+        if(Environment::plotEfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "efield");
+        if(Environment::plotBfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "bfield");
         if(Environment::plotDensity())      IO::writeDataInParallel(*root_grid, Environment::timestep, "density");
         if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
         if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->particles);

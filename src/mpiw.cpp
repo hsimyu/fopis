@@ -54,14 +54,23 @@ namespace MPIw {
 #endif
     }
 
-    void Environment::sendRecvPhi(tdArray& phi){
-        int prev = 0; int next = 1;
-        Comms["world"]->sendRecvField(phi, adj[prev], adj[next]);
-        // prev = 2; next = 3;
-        // Comms["world"]->sendRecvField(phi, adj[prev], adj[next]);
-        // prev = 4; next = 5;
-        // Comms["world"]->sendRecvField(phi, adj[prev], adj[next]);
-        // Comms["world"]->sendRecvField(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+    void Environment::sendRecvField(tdArray& x3D){
+        int prev, next;
+
+        if(::Environment::proc_x > 1) {
+            prev = 0; next = 1;
+            Comms["world"]->sendRecvFieldX(x3D, adj[prev], adj[next]);
+        }
+
+        if(::Environment::proc_y > 1) {
+            prev = 2; next = 3;
+            Comms["world"]->sendRecvFieldY(x3D, adj[prev], adj[next]);
+        }
+
+        if(::Environment::proc_z > 1) {
+            prev = 4; next = 5;
+            Comms["world"]->sendRecvFieldZ(x3D, adj[prev], adj[next]);
+        }
     }
 
     //! -- Particle Communication --
@@ -73,7 +82,6 @@ namespace MPIw {
     void Environment::sendRecvParticlesX(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
         //! X-axis
         int prev = 0; int next = 1;
-        //! @note: Xboundにいる時は片方へのsendのみに変更する方がよい
         sendRecvParticles(pbuff, pbuffRecv, prev, next, "world");
     }
 
@@ -184,7 +192,31 @@ namespace MPIw {
         return res;
     }
 
-    void Communicator::sendRecvField(tdArray& tdValue, const int prev, const int next) {
+    double Communicator::sum(double value) {
+        double res = 0.0;
+        MPI_Allreduce(&value, &res, 1, MPI_DOUBLE, MPI_SUM, comm);
+        return res;
+    }
+
+    int Communicator::sum(int value) {
+        int res = 0;
+        MPI_Allreduce(&value, &res, 1, MPI_INT, MPI_SUM, comm);
+        return res;
+    }
+
+    double Communicator::max(double value) {
+        double res = 0.0;
+        MPI_Allreduce(&value, &res, 1, MPI_DOUBLE, MPI_MAX, comm);
+        return res;
+    }
+
+    double Communicator::min(double value) {
+        double res = 0.0;
+        MPI_Allreduce(&value, &res, 1, MPI_DOUBLE, MPI_MIN, comm);
+        return res;
+    }
+
+    void Communicator::sendRecvFieldX(tdArray& tdValue, const int prev, const int next) {
         MPI_Status s;
         boost::multi_array<double, 2> buff(boost::extents[ tdValue.shape()[1] ][ tdValue.shape()[2] ]);
 
@@ -241,5 +273,122 @@ namespace MPIw {
             }
         }
 
+    }
+
+    void Communicator::sendRecvFieldY(tdArray& tdValue, const int prev, const int next) {
+        MPI_Status s;
+        boost::multi_array<double, 2> buff(boost::extents[ tdValue.shape()[0] ][ tdValue.shape()[2] ]);
+
+        //! X方向通信の場合
+        for(int i = 0; i < tdValue.shape()[0]; ++i) {
+            for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                buff[i][k] = tdValue[i][1][k];
+            }
+        }
+
+        int length = tdValue.shape()[0] * tdValue.shape()[2];
+
+        if(::Environment::onHighYedge) {
+            //! +x側境界にいる場合は prev に送るだけ
+            MPI_Send(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, comm);
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    buff[i][k] = tdValue[i][ tdValue.shape()[1] - 2 ][k];
+                }
+            }
+
+        } else {
+            if(::Environment::onLowYedge) {
+                //! -x側境界にいる場合は next から受け取るだけ
+                MPI_Recv(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, comm, &s);
+            } else {
+                MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
+            }
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[i][tdValue.shape()[1] - 1][k] = buff[i][k];
+                    buff[i][k] = tdValue[i][tdValue.shape()[1] - 2][k];
+                }
+            }
+        }
+
+        if(::Environment::onLowYedge) {
+            //! -x側境界にいる場合は next に送るだけ
+            MPI_Send(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, comm);
+        } else {
+            if(::Environment::onHighYedge) {
+                //! +x側境界にいる場合は prev から受け取るだけ
+                MPI_Recv(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, comm, &s);
+            } else {
+                MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+            }
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[i][0][k] = buff[i][k];
+                }
+            }
+        }
+
+    }
+
+    void Communicator::sendRecvFieldZ(tdArray& tdValue, const int prev, const int next) {
+        MPI_Status s;
+        boost::multi_array<double, 2> buff(boost::extents[ tdValue.shape()[0] ][ tdValue.shape()[1] ]);
+
+        //! X方向通信の場合
+        for(int i = 0; i < tdValue.shape()[0]; ++i) {
+            for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                buff[i][j] = tdValue[i][j][1];
+            }
+        }
+
+        int length = tdValue.shape()[0] * tdValue.shape()[1];
+
+        if(::Environment::onHighZedge) {
+            //! +x側境界にいる場合は prev に送るだけ
+            MPI_Send(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, comm);
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                    buff[i][j] = tdValue[i][j][ tdValue.shape()[2] - 2 ];
+                }
+            }
+
+        } else {
+            if(::Environment::onLowZedge) {
+                //! -x側境界にいる場合は next から受け取るだけ
+                MPI_Recv(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, comm, &s);
+            } else {
+                MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
+            }
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                    tdValue[i][j][tdValue.shape()[2] - 1] = buff[i][j];
+                    buff[i][j] = tdValue[i][j][tdValue.shape()[2] - 2];
+                }
+            }
+        }
+
+        if(::Environment::onLowZedge) {
+            //! -x側境界にいる場合は next に送るだけ
+            MPI_Send(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, comm);
+        } else {
+            if(::Environment::onHighZedge) {
+                //! +x側境界にいる場合は prev から受け取るだけ
+                MPI_Recv(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, comm, &s);
+            } else {
+                MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+            }
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                    tdValue[i][j][0] = buff[i][j];
+                }
+            }
+        }
     }
 }

@@ -144,7 +144,7 @@ class Grid {
         void updateRho(void);
 
         void solvePoisson(void) {
-            const int DEFAULT_ITERATION_LOOP = 20;
+            const int DEFAULT_ITERATION_LOOP = 100;
             field->solvePoisson(DEFAULT_ITERATION_LOOP, dx);
         }
 

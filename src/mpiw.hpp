@@ -32,9 +32,15 @@ namespace MPIw {
                 MPI_Barrier(comm);
             }
 
-            // summation
+            // summation only on target
             double sum(double, const int);
             int sum(int, const int);
+
+            // all reducer
+            double sum(double);
+            int    sum(int);
+            double max(double);
+            double min(double);
 
             // send
             void send(Particle const&, const int);
@@ -42,7 +48,9 @@ namespace MPIw {
             void sendVector(std::vector<Particle> const&, const int);
             void recvVector(std::vector<Particle>&, const int);
             void sendRecvVector(std::vector<Particle> const&, std::vector<Particle>&, const int, const int);
-            void sendRecvField(tdArray&, const int, const int);
+            void sendRecvFieldX(tdArray&, const int, const int);
+            void sendRecvFieldY(tdArray&, const int, const int);
+            void sendRecvFieldZ(tdArray&, const int, const int);
     };
 
     MPI_Datatype registerParticleType(void);
@@ -91,7 +99,7 @@ namespace MPIw {
             static void sendRecvParticlesZ(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
             static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&, const int, const int, std::string);
 
-            static void sendRecvPhi(tdArray&);
+            static void sendRecvField(tdArray&);
     };
 
 };
