@@ -26,7 +26,7 @@ int main(int argc, char* argv[]){
     // first update
     root_grid->updateRho();
     root_grid->solvePoisson();
-    root_grid->updateEfield();
+    // root_grid->updateEfield();
 
     for(; Environment::timestep <= Environment::max_iteration; ++Environment::timestep) {
         if( Environment::isRootNode ) {
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]){
         root_grid->updateParticlePosition();
         root_grid->updateRho();
         root_grid->solvePoisson();
-        root_grid->updateEfield();
+        // root_grid->updateEfield();
         // root_grid->updateBfield();
 
         if(Environment::plotPotential())    IO::writeDataInParallel(*root_grid, Environment::timestep, "potential");

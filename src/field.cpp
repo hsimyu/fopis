@@ -76,8 +76,8 @@ void Field::solvePoissonMKL(const int cx, const int cy, const int cz) {
 
 //! @brief SOR法
 void Field::solvePoissonPSOR(const int loopnum, const double dx) {
-    double omega = 2.0/(1.0 + sqrt(1.0 - pow(cos(M_PI/(phi.shape()[0] - 2)), 2))); // spectral radius
-    double rho_coeff = 6.0 * dx / Utils::Normalizer::normalizeEpsilon(eps0);
+    double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
+    double rho_coeff = pow(dx, 3) / Utils::Normalizer::normalizeEpsilon(eps0);
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -85,7 +85,7 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
 
     this->setDirichletPhi();
 
-    const double required_error = 1.0e-3;
+    const double required_error = 1.0e-5;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
         for(int k = 1; k < cz_with_glue - 1; ++k){
@@ -94,7 +94,7 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
                     if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
                         for(int i = 1; i < cx_with_glue - 1; ++i){
                             if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
-                                phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff*rho[i][j][k])/6.0;
+                                phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[i][j][k])/6.0;
                             }
                         }
                     }
@@ -126,8 +126,7 @@ void Field::solvePoissonJacobi(const int loopnum, const double dx) {
 
     this->setDirichletPhi();
 
-    cout << format("initial residual = %s") % this->checkPhiResidual() << endl;
-    const double required_error = 1.0e-3;
+    const double required_error = 1.0e-5;
 
     for(int loop = 0; loop < loopnum; ++loop) {
         for(int k = 1; k < cz_with_glue - 1; ++k){
@@ -235,7 +234,7 @@ double Field::checkPhiResidual() {
                 if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
                     for(int i = 1; i < cx_with_glue - 1; ++i){
                         if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
-                            double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k])/6.0 + rho[i][j][k]/normalized_eps;
+                            double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]) + rho[i][j][k]/normalized_eps;
                             residual = std::max(residual, fabs(tmp_res));
                             rho_max = std::max(rho_max, fabs(rho[i][j][k]));
                         }
@@ -282,6 +281,61 @@ void Field::updateEfield(const double dx) {
                 exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
                 eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
                 ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
+            }
+        }
+    }
+
+    //! 外側境界の条件設定
+    if(Environment::onLowXedge) {
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                exref[0][j][k] = 0.0;
+                exref[1][j][k] = 0.5 * (phi[3][j][k] - 4.0 * phi[2][j][k] + 3.0 * phi[1][j][k]);
+            }
+        }
+    }
+
+    if(Environment::onHighXedge) {
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                exref[cx_with_glue - 1][j][k] = 0.0;
+                exref[cx_with_glue - 2][j][k] = 0.5 * (-phi[cx_with_glue - 4][j][k] + 4.0 * phi[cx_with_glue - 3][j][k] - 3.0 * phi[cx_with_glue - 2][j][k]);
+            }
+        }
+    }
+
+    if(Environment::onLowYedge) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                eyref[i][0][k] = 0.0;
+                eyref[i][1][k] = 0.5 * (phi[i][3][k] - 4.0 * phi[i][2][k] + 3.0 * phi[i][1][k]);
+            }
+        }
+    }
+
+    if(Environment::onHighYedge) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                eyref[i][cy_with_glue - 1][k] = 0.0;
+                eyref[i][cy_with_glue - 2][k] = 0.5 * (-phi[i][cy_with_glue - 4][k] + 4.0 * phi[i][cy_with_glue - 3][k] - 3.0 * phi[i][cy_with_glue - 2][k]);
+            }
+        }
+    }
+
+    if(Environment::onLowZedge) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                ezref[i][j][0] = 0.0;
+                ezref[i][j][1] = 0.5 * (phi[i][j][3] - 4.0 * phi[i][j][2] + 3.0 * phi[i][j][1]);
+            }
+        }
+    }
+
+    if(Environment::onHighZedge) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                ezref[i][j][cz_with_glue - 1] = 0.0;
+                ezref[i][j][cz_with_glue - 2] = 0.5 * (-phi[i][j][cz_with_glue - 4] + 4.0 * phi[i][j][cz_with_glue - 3] - 3.0 * phi[i][j][cz_with_glue - 2]);
             }
         }
     }
