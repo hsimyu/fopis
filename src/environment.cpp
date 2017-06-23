@@ -27,11 +27,43 @@ std::string Environment::boundary;
 std::string Environment::dimension;
 ParticleType* Environment::ptype;
 
+/*
+* @params
+* const std::string axis: "x", "y", or "z"
+* const std::string low_or_up: "l" or "u"
+*/
+std::string Environment::getBoundaryCondition(const std::string axis, const std::string low_or_up) {
+    int axisIndex;
+
+    if (axis == "x") {
+        axisIndex = 0;
+    } else if (axis == "y") {
+        axisIndex = 2;
+    } else if (axis == "z") {
+        axisIndex = 4;
+    } else {
+        throw std::invalid_argument( (format("Unknown axis type was passed. axis = %s, low_or_up = %s") % axis % low_or_up).str() );
+    }
+
+    std::string res;
+
+    if (low_or_up == "l") {
+        res = boundary.substr(axisIndex, 1);
+    } else if (low_or_up == "u") {
+        res = boundary.substr(axisIndex + 1, 1);
+    } else {
+        throw std::invalid_argument( (format("Unknown low_or_up type was passed. axis = %s, low_or_up = %s") % axis % low_or_up).str() );
+    }
+
+    return res;
+}
+
 void Environment::printInfo(void){
     cout << "[Environment]" << endl;
     cout << "      jobtype: " << jobtype << endl;
     cout << "     max_pnum: " << max_particle_num << endl;
     cout << "    iteration: " << max_iteration << endl;
+    cout << "boundary cond: " << boundary << endl;
     cout << "           dx: " << (format("%8.2f") % dx).str() << "   m" << endl;
     cout << "           dt: " << (format("%6.2e") % dt).str() << " sec" << endl;
     cout << "   nx, ny, nz: " << format("%1%x%2%x%3%") % nx % ny % nz << " grids [total]" << endl;

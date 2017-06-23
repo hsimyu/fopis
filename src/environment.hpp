@@ -53,6 +53,9 @@ struct Environment {
             return MPIw::Environment::rankStr();
         }
 
+        // 各方向の境界条件を取得する
+        static std::string getBoundaryCondition(const std::string, const std::string);
+
         static void printInfo(void);
 
         // plot timing

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <stdexcept>
 #include <boost/format.hpp>
 #include <boost/multi_array.hpp>
 
