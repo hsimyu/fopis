@@ -14,12 +14,14 @@ maxwellian(x, kbte) = (4.0 * pi) * (x**2) * ((me/(2.0*pi*kbte*e))**1.5) * exp(-1
 
 set output 'energy_distribution_electron.pdf'
 plot \
-'data/energy_distribution_0000_0000.csv' ind 0 u 1:2 w boxes lw 3 ti "electron, t = 0"
+'data/energy_distribution_0000_0000.csv' ind 0 u 1:2 w boxes lw 3 ti "electron, t = 0",\
+'data/energy_distribution_0000_0090.csv' ind 0 u 1:2 w boxes lw 3 ti "electron, t = 90"
 unset output
 
 set output 'energy_distribution_proton.pdf'
 plot \
-'data/energy_distribution_0000_0000.csv' ind 1 u 1:2 w boxes lw 3 ti "proton, t = 0"
+'data/energy_distribution_0000_0000.csv' ind 1 u 1:2 w boxes lw 3 ti "proton, t = 0",\
+'data/energy_distribution_0000_0090.csv' ind 1 u 1:2 w boxes lw 3 ti "proton, t = 90"
 unset output
 
 # example plot maxwellian(x*1e3, 1.0)/maxwellian(ev_to_velo(1.0), 1.0) lw 3

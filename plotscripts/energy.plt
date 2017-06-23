@@ -9,5 +9,7 @@ set tmargin 1.5
 
 set output 'energy_history.pdf'
 plot 'data/energy.txt' u 2:3 w l lw 3 ti "total",\
-'' u 2:4 w l lw 3 ti "particle"
+'data/energy_with_inject.txt' u 2:3 w l lw 3 ti "w/ inject, total"
 unset output
+
+system('open ./')
