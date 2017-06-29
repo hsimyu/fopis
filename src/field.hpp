@@ -1,36 +1,6 @@
 #ifndef __TDPIC_FIELD_H_INCLUDED__
 #define __TDPIC_FIELD_H_INCLUDED__
 #include "global.hpp"
-#include <mkl.h>
-
-struct Poisson {
-    public:
-        ~Poisson(void){
-            delete [] ipar;
-            delete [] dpar;
-            delete [] b_lx;
-            delete [] b_ly;
-            delete [] b_lz;
-            delete [] xhandle;
-            delete [] yhandle;
-            delete [] rho1D;
-        }
-
-        MKL_INT nx;
-        MKL_INT ny;
-        MKL_INT nz;
-
-        MKL_INT* ipar;
-        double* dpar;
-        MKL_INT stat;
-        DFTI_DESCRIPTOR_HANDLE* xhandle;
-        DFTI_DESCRIPTOR_HANDLE* yhandle;
-        double* b_lx;
-        double* b_ly;
-        double* b_lz;
-
-        double* rho1D;
-};
 
 class Field {
     private:
@@ -48,9 +18,8 @@ class Field {
         tdArray by;
         tdArray bz;
 
-        Poisson* psn = nullptr;
-
-        void setDirichletPhi(void);
+        void setBoundaryConditionPhi(void);
+        void setDirichletPhi(const std::string, const std::string);
 
         //! solver の実体
         void solvePoissonPSOR(const int, const double);
@@ -71,9 +40,7 @@ class Field {
             bz(boost::extents[0][0][0], boost::fortran_storage_order()) {}
 
         // destructor
-        ~Field(){
-            delete psn;
-        }
+        ~Field(){}
 
         // potential
         void setPhi(tdArray& _phi){

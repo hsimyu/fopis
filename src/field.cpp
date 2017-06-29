@@ -20,12 +20,10 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
-    // boundary condition
-    this->setDirichletPhi();
-
     const double required_error = 1.0e-10;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
+        //! @note: 周期境界の場合はIterationの際に反対側を見る必要がある
         for(int k = 1; k < cz_with_glue - 1; ++k){
             if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
                 for(int j = 1; j < cy_with_glue - 1; ++j){
@@ -51,6 +49,7 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
             if (residual < required_error) break;
         }
     }
+    this->setBoundaryConditionPhi();
 }
 
 //! @brief Jacobi法
@@ -60,8 +59,6 @@ void Field::solvePoissonJacobi(const int loopnum, const double dx) {
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
-
-    this->setDirichletPhi();
 
     const double required_error = 1.0e-5;
 
@@ -86,61 +83,62 @@ void Field::solvePoissonJacobi(const int loopnum, const double dx) {
         if (residual < required_error) break;
         //! ここで通信する必要がある
     }
+
+    this->setBoundaryConditionPhi();
 }
 
-void Field::setDirichletPhi(void){
+void Field::setBoundaryConditionPhi(void) {
+    const std::vector< std::string > axisArray{"x", "y", "z"};
+    const std::vector< std::string > luArray{"l", "u"};
+
+    for (auto axis : axisArray) {
+        for (auto low_or_up : luArray) {
+            std::string boundary = Environment::getBoundaryCondition(axis, low_or_up);
+
+            if (boundary == "D") {
+                this->setDirichletPhi(axis, low_or_up);
+            } else {
+                throw std::invalid_argument( 
+                    (format("Unknown boundary condition type was used: boundary = %s, axis = %s, low_or_up = %s") % boundary % axis % low_or_up).str()
+                );
+            }
+        }
+    }
+}
+
+void Field::setDirichletPhi(const std::string axis, const std::string low_or_up) {
+    const int max_index = phi.shape()[ Utils::getAxisIndex(axis) ];
+
+    int lowOrUpIndex = Utils::getLowOrUpIndex(low_or_up);
+    int fixedIndex;
+    if (lowOrUpIndex == 0) {
+        fixedIndex = 1;
+    } else {
+        fixedIndex = max_index - 2;
+    }
+
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
-    //! Dirichlet境界条件に値を設定 (V=0V)
-    if(Environment::onLowZedge) {
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][j][1] = 0.0;
+    if ( Environment::isOnEdge(axis, low_or_up) ) {
+        if (axis == "x") {
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                for(int j = 1; j < cy_with_glue - 1; ++j){
+                    phi[fixedIndex][j][k] = 0.0;
+                }
             }
-        }
-    }
-
-    if(Environment::onHighZedge) {
-        int k = cz_with_glue - 2;
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][j][k] = 0.0;
+        } else if (axis == "y") {
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                for(int i = 1; i < cx_with_glue - 1; ++i){
+                    phi[i][fixedIndex][k] = 0.0;
+                }
             }
-        }
-    }
-
-    if(Environment::onLowYedge) {
-        for(int k = 1; k < cz_with_glue - 1; ++k){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][1][k] = 0.0;
-            }
-        }
-    }
-
-    if(Environment::onHighYedge) {
-        int j = cy_with_glue - 2;
-        for(int k = 1; k < cz_with_glue - 1; ++k){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                phi[i][j][k] = 0.0;
-            }
-        }
-    }
-
-    if(Environment::onLowXedge) {
-        for(int k = 1; k < cz_with_glue - 1; ++k){
+        } else {
             for(int j = 1; j < cy_with_glue - 1; ++j){
-                phi[1][j][k] = 0.0;
-            }
-        }
-    }
-
-    if(Environment::onHighXedge) {
-        int i = cx_with_glue - 2;
-        for(int k = 1; k < cz_with_glue - 1; ++k){
-            for(int j = 1; j < cy_with_glue - 1; ++j){
-                phi[i][j][k] = 0.0;
+                for(int i = 1; i < cx_with_glue - 1; ++i){
+                    phi[i][j][fixedIndex] = 0.0;
+                }
             }
         }
     }
