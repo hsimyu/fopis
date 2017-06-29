@@ -56,6 +56,9 @@ struct Environment {
         // 各方向の境界条件を取得する
         static std::string getBoundaryCondition(const std::string, const std::string);
 
+        // 対応するEdgeに乗っているかどうかを返す
+        static bool isOnEdge(const std::string, const std::string);
+
         static void printInfo(void);
 
         // plot timing

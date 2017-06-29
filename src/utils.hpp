@@ -9,6 +9,11 @@ namespace Utils {
     std::string prettyMemoryString(double);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
+
+    // 軸方向を指定する文字列をindexに変換する
+    int getAxisIndex(const std::string);
+    int getLowOrUpIndex(const std::string);
+
     float* getTrueEdges2(tdArray const&, tdArray const&, tdArray const&);
     float* getTrueEdges(tdArray const&, const int);
     float* getTrueFaces(const tdArray&, const int);

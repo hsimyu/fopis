@@ -1,5 +1,6 @@
 #include "global.hpp"
 #include "environment.hpp"
+#include "utils.hpp"
 #include "mpiw.hpp"
 
 // static variables
@@ -33,29 +34,45 @@ ParticleType* Environment::ptype;
 * const std::string low_or_up: "l" or "u"
 */
 std::string Environment::getBoundaryCondition(const std::string axis, const std::string low_or_up) {
-    int axisIndex;
+    int axisIndex = Utils::getAxisIndex(axis);
+    int lowOrUpIndex = Utils::getLowOrUpIndex(low_or_up);
 
-    if (axis == "x") {
-        axisIndex = 0;
-    } else if (axis == "y") {
-        axisIndex = 2;
-    } else if (axis == "z") {
-        axisIndex = 4;
-    } else {
-        throw std::invalid_argument( (format("Unknown axis type was passed. axis = %s, low_or_up = %s") % axis % low_or_up).str() );
+    // "DDPPDD"のような文字列が入力されるので
+    // 軸 + 上下からindexを判別して文字列を抜き出す
+    return boundary.substr(2 * axisIndex + lowOrUpIndex, 1);
+}
+
+bool Environment::isOnEdge(const std::string axis, const std::string low_or_up) {
+    int axisIndex = Utils::getAxisIndex(axis);
+    int lowOrUpIndex = Utils::getLowOrUpIndex(low_or_up);
+
+    switch(axisIndex) {
+        case 0:
+            if (lowOrUpIndex == 0) {
+                return onLowXedge;
+            } else {
+                return onHighXedge;
+            }
+            break;
+        case 1:
+            if (lowOrUpIndex == 0) {
+                return onLowYedge;
+            } else {
+                return onHighYedge;
+            }
+            break;
+        case 2:
+            if (lowOrUpIndex == 0) {
+                return onLowZedge;
+            } else {
+                return onHighZedge;
+            }
+            break;
+        default:
+            break;
     }
 
-    std::string res;
-
-    if (low_or_up == "l") {
-        res = boundary.substr(axisIndex, 1);
-    } else if (low_or_up == "u") {
-        res = boundary.substr(axisIndex + 1, 1);
-    } else {
-        throw std::invalid_argument( (format("Unknown low_or_up type was passed. axis = %s, low_or_up = %s") % axis % low_or_up).str() );
-    }
-
-    return res;
+    return false;
 }
 
 void Environment::printInfo(void){

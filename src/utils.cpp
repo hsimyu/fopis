@@ -48,6 +48,28 @@ namespace Utils {
         }
     }
 
+    int getAxisIndex(const std::string axis) {
+        if (axis == "x") {
+            return 0;
+        } else if (axis == "y") {
+            return 1;
+        } else if (axis == "z") {
+            return 2;
+        } else {
+            throw std::invalid_argument( (format("Unknown axis type was passed: axis = %s") % axis).str() );
+        }
+    }
+
+    int getLowOrUpIndex(const std::string low_or_up) {
+        if (low_or_up == "l") {
+            return 0;
+        } else if (low_or_up == "u") {
+            return 1;
+        } else {
+            throw std::invalid_argument( (format("Unknown low_or_up type was passed: low_or_up = %s") % low_or_up).str() );
+        }
+    }
+
     float* getTrueEdges2(tdArray const& xvalue, tdArray const& yvalue, tdArray const& zvalue){
         int nx = yvalue.shape()[0];
         int ny = xvalue.shape()[1];
