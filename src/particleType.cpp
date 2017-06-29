@@ -24,7 +24,11 @@ void ParticleType::setId(int _id){
     mt_vz.seed(7662566 + MPIw::Environment::rank + 4 * _id);
 }
 
-int ParticleType::calcSize(void){
+double ParticleType::calcDebyeLength(void) const {
+    return sqrt( temperature * eps0 / (pow(e, 2) * density));
+}
+
+int ParticleType::calcSize(void) {
     size = static_cast<int>(pow(Environment::dx, 3) * density / static_cast<double>(particle_per_cell));
     return size;
 }
@@ -45,6 +49,10 @@ double ParticleType::calcThermalVelocity() const {
 
 double ParticleType::calcDeviation() const {
     return Utils::Normalizer::normalizeVelocity(sqrt(temperature / (mass * me)));
+}
+
+double ParticleType::calcPlasmaFrequency(void) const {
+    return sqrt(density * pow(e, 2) / (me * eps0));
 }
 
 Position ParticleType::generateNewPosition(

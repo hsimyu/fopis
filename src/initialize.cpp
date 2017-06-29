@@ -25,16 +25,6 @@ namespace Initializer {
         Initializer::setMPIInfoToEnv();
 #endif
 
-        if( Environment::isRootNode ) {
-            cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
-            cout << "    Built on: " << TDPIC_DATE << endl;
-            cout << "Git Revision: " << TDPIC_REVISION << endl << endl;
-
-            Environment::printInfo();
-            //! データ書き込み用ディレクトリを作成
-            Utils::createDir("data");
-        }
-
         //! initialize normalizer
         //! normalizerのセットはGridの生成より先
         Utils::Normalizer::x_unit = Environment::dx;
@@ -42,13 +32,25 @@ namespace Initializer {
         Utils::Normalizer::m_unit = me;
         Utils::Normalizer::e_unit = e;
 
+        if( Environment::isRootNode ) {
+            cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
+            cout << "    Built on: " << TDPIC_DATE << endl;
+            cout << "Git Revision: " << TDPIC_REVISION << endl << endl;
+
+            Environment::printInfo();
+            Environment::checkPlasmaInfo();
+            //! データ書き込み用ディレクトリを作成
+            Utils::createDir("data");
+        }
+
         if(Environment::jobtype == "new") {
             root_grid = Initializer::initializeGrid();
         } else {
+            // load from files
         }
 
         if( Environment::isRootNode ) {
-           cout << "--  End Initializing  --" << endl;
+            cout << "--  End Initializing  --" << endl;
         }
     }
 
@@ -156,9 +158,10 @@ namespace Initializer {
         Environment::max_particle_num = MAX_PARTICLE_NUM;
         Environment::timestep = 1;
 
-        for(auto it = env_inputs.begin();
-                 it != env_inputs.end();
-                 ++it){
+        for (auto it = env_inputs.begin();
+             it != env_inputs.end();
+             ++it)
+        {
             // string で switch したい...
             if(it->first == "nx"){
                 Environment::nx = static_cast<int>(it->second.get<double>());
@@ -236,21 +239,14 @@ namespace Initializer {
             auto plasma = it->second.get<picojson::object>();
             ptype[ii].setId(ii);
             ptype[ii].setName(name);
-
             ptype[ii].setType( plasma["type"].to_str() );
             ptype[ii].setMass( plasma["mass"].get<double>() );
             ptype[ii].setCharge( plasma["charge"].get<double>() );
             ptype[ii].setTemperature( plasma["temperature"].get<double>() );
             ptype[ii].setDensity( plasma["density"].get<double>() );
             ptype[ii].setPcell( static_cast<int>((plasma["particle_per_cell"].get<double>() )) );
-
             ptype[ii].calcTotalNumber();
             ptype[ii].calcSize();
-
-            // print particle info
-            if(Environment::isRootNode) {
-                cout << ptype[ii];
-            }
 
             ++ii;
         }

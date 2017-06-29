@@ -1,7 +1,5 @@
 #ifndef __TDPIC_PARTICLE_H_INCLUDED__
 #define __TDPIC_PARTICLE_H_INCLUDED__
-#include <vector>
-#include <string>
 #include <random>
 #include "global.hpp"
 
@@ -35,6 +33,18 @@ class ParticleType {
         std::mt19937 mt_vz;
     public:
         ParticleType(void);
+        ParticleType(ParticleType const& ptype) {
+            id = ptype.getId();
+            type = ptype.getType();
+            charge = ptype.getCharge();
+            mass = ptype.getMass();
+            density = ptype.getDensity();
+            temperature = ptype.getTemperature();
+            size = ptype.getSize();
+
+            particle_per_cell = ptype.getPcell();
+            totalNumber = ptype.getTotalNumber();
+        };
 
         // setters
         void setId(int);
@@ -68,9 +78,11 @@ class ParticleType {
 
         int calcSize(void);
         int calcTotalNumber(void);
+        double calcDebyeLength(void) const;
         double calcThermalVelocity(void) const;
-        std::vector<double> calcFlux(Grid const&) const;
         double calcDeviation(void) const;
+        double calcPlasmaFrequency(void) const;
+        std::vector<double> calcFlux(Grid const&) const;
         std::string calcMemory(void) const;
 
         Position generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);

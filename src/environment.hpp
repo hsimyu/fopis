@@ -1,7 +1,6 @@
 #ifndef __TDPIC_ENVIRONMENT_H_INCLUDED__
 #define __TDPIC_ENVIRONMENT_H_INCLUDED__
 #include "mpiw.hpp"
-#include <string>
 
 class ParticleType;
 
@@ -60,6 +59,7 @@ struct Environment {
         static bool isOnEdge(const std::string, const std::string);
 
         static void printInfo(void);
+        static void checkPlasmaInfo(void);
 
         // plot timing
         static bool plotPotential(void)    { return isPlot("potential"); }

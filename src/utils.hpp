@@ -120,6 +120,14 @@ namespace Utils {
             static double unnormalizeArea(double normalized_area) {
                 return normalized_area * pow(x_unit, 2);
             }
+
+            static double normalizeFrequency(double raw_freq) {
+                return raw_freq * t_unit;
+            }
+
+            static double unnormalizeFrequency(double normalized_freq) {
+                return normalized_freq / t_unit;
+            }
     };
 }
 
