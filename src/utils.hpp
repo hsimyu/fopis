@@ -77,22 +77,42 @@ namespace Utils {
                 return normalized_mass * m_unit;
             }
 
-            //! kg*m^2/s^2 -> 1;
+            //! V = m^2 kg / s^3 A = m^2 kg C / s^2 -> 1
+            static double normalizePotential(double raw_phi) {
+                return raw_phi * pow(t_unit, 2) / (pow(x_unit, 2) * m_unit * e_unit);
+            }
+
+            //! 1 -> m^2 kg C / s^2 = V
+            static double unnormalizePotential(double normalized_phi) {
+                return normalized_phi * (pow(x_unit, 2) * m_unit * e_unit) / pow(t_unit, 2);
+            }
+
+            //! V/m = m kg / s^3 A = m kg C / s^2 -> 1
+            static double normalizeEfield(double raw_efield) {
+                return raw_efield * pow(t_unit, 2) / (x_unit * m_unit * e_unit);
+            }
+
+            //! 1 -> m kg C / s^2 = V / m
+            static double unnormalizeEfield(double normalized_efield) {
+                return normalized_efield * (x_unit * m_unit * e_unit) / pow(t_unit, 2);
+            }
+
+            //! kg m^2 / s^2 -> 1
             static double normalizeEnergy(double raw_energy) {
                 return raw_energy * pow(t_unit, 2) / (m_unit * pow(x_unit, 2));
             }
 
-            //! 1 -> kg*m^2/s^2;
+            //! 1 -> kg m^2 / s^2
             static double unnormalizeEnergy(double normalized_energy) {
                 return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2); //kg * m^2/s^2;
             }
 
-            //! s^4*A^2/kg*m^3 == C^2*s^2/kg*m^3 -> 1;
+            //! s^4 A^2 / kg m^3 = C^2 s^2 / kg m^3 -> 1
             static double normalizeEpsilon(double raw_epsilon) {
                 return raw_epsilon * (pow(x_unit, 3) * m_unit) / (pow(e_unit, 2) * pow(t_unit, 2));
             }
 
-            //! 1 -> C^2*s^2/kg*m^3;
+            //! 1 -> C^2 s^2 / kg m^3
             static double unnormalizeEpsilon(double normalized_eps) {
                 return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (pow(x_unit, 3) * m_unit);
             }
