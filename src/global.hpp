@@ -19,6 +19,7 @@ typedef boost::multi_array<double, 3> tdArray;
 //! constants
 constexpr double e = 1.60217733e-19;
 constexpr double eps0 = 8.854187817e-12;
+constexpr double mu0 = 4.0 * M_PI * 1.0e-7;
 constexpr double me = 9.1093818872e-31;
 constexpr double c = 2.99792458e8;
 

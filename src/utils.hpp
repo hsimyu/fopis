@@ -117,6 +117,16 @@ namespace Utils {
                 return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (pow(x_unit, 3) * m_unit);
             }
 
+            //! m kg / s^2 A^2 = m kg / C^2 -> 1
+            static double normalizeMu(double raw_mu) {
+                return raw_mu * pow(e_unit, 2) / (m_unit * x_unit);
+            }
+
+            //! 1 -> m kg / C^2
+            static double unnormalizeMu(double normalized_mu) {
+                return normalized_mu * m_unit * x_unit / pow(e_unit, 2);
+            }
+
             static double normalizeDensity(double raw_density) {
                 return raw_density * pow(x_unit, 3);
             }
