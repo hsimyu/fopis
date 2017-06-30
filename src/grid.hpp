@@ -165,7 +165,8 @@ class Grid {
 
         //! エネルギーを計算する
         double getParticleEnergy(void) const;
-        double getFieldEnergy(void) const;
+        double getEFieldEnergy(void) const;
+        double getBFieldEnergy(void) const;
 
         // create mesh nodes array
         float** getMeshNodes(int);

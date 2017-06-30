@@ -280,8 +280,12 @@ float* Grid::getDensity(const int pid) {
 }
 
 //! @note: childrenのエネルギーも取る?
-double Grid::getFieldEnergy(void) const {
-    return field->getEnergy(nx, ny, nz);
+double Grid::getEFieldEnergy(void) const {
+    return field->getEfieldEnergy(nx, ny, nz);
+}
+
+double Grid::getBFieldEnergy(void) const {
+    return field->getBfieldEnergy(nx, ny, nz);
 }
 
 // 子グリッドへ場の値をコピーする

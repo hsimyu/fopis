@@ -129,7 +129,8 @@ class Field {
         void updateBfield(const double, const int, const int, const int);
         void solvePoisson(const int, const double);
 
-        double getEnergy(const int, const int, const int);
+        double getEfieldEnergy(const int, const int, const int);
+        double getBfieldEnergy(const int, const int, const int);
 };
 
 

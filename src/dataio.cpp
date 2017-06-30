@@ -443,9 +443,31 @@ namespace IO {
     void plotEnergy(Grid const& g, int timestep){
         const double datatime = timestep * Environment::dt;
         double particleEnergy = g.getParticleEnergy();
-        double fieldEnergy = g.getFieldEnergy();
+        double eFieldEnergy = g.getEFieldEnergy();
+        double bFieldEnergy = g.getBFieldEnergy();
         double receivedParticleEnergy = MPIw::Environment::Comms["world"]->sum(particleEnergy, 0);
-        double receivedFieldEnergy = MPIw::Environment::Comms["world"]->sum(fieldEnergy, 0);
+        double receivedEFieldEnergy = MPIw::Environment::Comms["world"]->sum(eFieldEnergy, 0);
+        double receivedBFieldEnergy = MPIw::Environment::Comms["world"]->sum(bFieldEnergy, 0);
+
+        if(Environment::isRootNode) {
+            std::string filename = "data/energy.txt";
+            auto openmode = (timestep == 1) ? std::ios::out : std::ios::app;
+            std::ofstream ofs(filename, openmode);
+
+            if(timestep == 1) {
+                ofs << "# " << 
+                    format("%8s %15s %15s %15s %15s %15s") % "timestep" % "time" % "Energy [J]" % "Particle [J]" % "EField [J]" % "BField [J]" 
+                << endl;
+            }
+
+            ofs << format("%10d %15.7e %15.7e %15.7e %15.7e %15.7e") % timestep % datatime %
+                Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedEFieldEnergy + receivedBFieldEnergy) %
+                Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
+                Utils::Normalizer::unnormalizeEnergy(receivedEFieldEnergy) %
+                Utils::Normalizer::unnormalizeEnergy(receivedBFieldEnergy) << endl;
+        }
+    }
+
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
@@ -533,7 +555,7 @@ namespace IO {
         std::ofstream ofs(filename, std::ios::out);
 
         for(int pid = 0; pid < ptypes; ++pid) {
-            ofs << format("# %s") % Environment::ptype[ particles[pid][0].typeId ].getName() << endl;
+            ofs << format("# %s") % Environment::ptype[pid].getName() << endl;
             ofs << format("# %11s %11s") % header % "Ratio" << endl;
 
             int maxElement = *std::max_element(pdist[pid].begin(), pdist[pid].end());

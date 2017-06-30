@@ -20,7 +20,8 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
-    const double required_error = 1.0e-10;
+    constexpr double required_error = 1.0e-10;
+    this->setBoundaryConditionPhi();
 
     for(int loop = 1; loop <= loopnum; ++loop) {
         //! @note: 周期境界の場合はIterationの際に反対側を見る必要がある
@@ -313,14 +314,16 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
 
 }
 
-double Field::getEnergy(const int nx, const int ny, const int nz) {
+double Field::getEfieldEnergy(const int nx, const int ny, const int nz) {
     double energy = 0.0;
 
-    for(int i = 1; i < nx - 1; ++i){
-        for(int j = 1; j < ny - 1; ++j){
-            for(int k = 1; k < nz - 1; ++k){
+    for(int i = 1; i < nx + 1; ++i){
+        for(int j = 1; j < ny + 1; ++j){
+            for(int k = 1; k < nz + 1; ++k){
                 //! 各点のエネルギーを計算する(Yee格子内のエネルギーの計算方法は?)
-                energy += pow(exref[i][j][k],2) + pow(eyref[i][j][k], 2) + pow(ezref[i][j][k], 2);
+                if (i < nx) energy += pow(ex[i][j][k], 2);
+                if (j < ny) energy += pow(ey[i][j][k], 2);
+                if (k < nz) energy += pow(ez[i][j][k], 2);
             }
         }
     }
@@ -328,3 +331,19 @@ double Field::getEnergy(const int nx, const int ny, const int nz) {
     return 0.5 * Utils::Normalizer::normalizeEpsilon(eps0) * energy;
 }
 
+double Field::getBfieldEnergy(const int nx, const int ny, const int nz) {
+    double energy = 0.0;
+
+    for(int i = 1; i < nx + 1; ++i){
+        for(int j = 1; j < ny + 1; ++j){
+            for(int k = 1; k < nz + 1; ++k){
+                //! 各点のエネルギーを計算する(Yee格子内のエネルギーの計算方法は?)
+                if ( (j < ny) && (k < nz) ) energy += pow(bx[i][j][k], 2);
+                if ( (i < nx) && (k < nz) ) energy += pow(by[i][j][k], 2);
+                if ( (i < nx) && (j < ny) ) energy += pow(bz[i][j][k], 2);
+            }
+        }
+    }
+
+    return 0.5 * energy / Utils::Normalizer::normalizeMu(mu0);
+}
