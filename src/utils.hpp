@@ -82,19 +82,19 @@ namespace Utils {
                 return raw_phi * pow(t_unit, 2) / (pow(x_unit, 2) * m_unit * e_unit);
             }
 
-            //! 1 -> m^2 kg C / s^2 = V
+            //! 1 -> m^2 kg / s^2 C = V
             static double unnormalizePotential(double normalized_phi) {
-                return normalized_phi * (pow(x_unit, 2) * m_unit * e_unit) / pow(t_unit, 2);
+                return normalized_phi * (pow(x_unit, 2) * m_unit) / (pow(t_unit, 2) * e_unit);
             }
 
-            //! V/m = m kg / s^3 A = m kg C / s^2 -> 1
+            //! V/m = m kg / s^3 A = m kg / s^2 C -> 1
             static double normalizeEfield(double raw_efield) {
-                return raw_efield * pow(t_unit, 2) / (x_unit * m_unit * e_unit);
+                return raw_efield * pow(t_unit, 2) * e_unit / (x_unit * m_unit);
             }
 
-            //! 1 -> m kg C / s^2 = V / m
+            //! 1 -> m kg / C s^2 = V / m
             static double unnormalizeEfield(double normalized_efield) {
-                return normalized_efield * (x_unit * m_unit * e_unit) / pow(t_unit, 2);
+                return normalized_efield * (x_unit * m_unit) / (pow(t_unit, 2) * e_unit);
             }
 
             //! kg m^2 / s^2 -> 1
@@ -104,7 +104,7 @@ namespace Utils {
 
             //! 1 -> kg m^2 / s^2
             static double unnormalizeEnergy(double normalized_energy) {
-                return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2); //kg * m^2/s^2;
+                return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2);
             }
 
             //! s^4 A^2 / kg m^3 = C^2 s^2 / kg m^3 -> 1
