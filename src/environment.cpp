@@ -127,15 +127,15 @@ void Environment::checkPlasmaInfo(void) {
         if (pt.getType() == "ambient") total_debye += 1.0/pow(debye, 2);
 
         cout << "    [Thermal Velocity]" << endl;
-        cout << "        V_th = " << pt.calcThermalVelocity() << " < 1.0?: "
+        cout << "        Vth = " << pt.calcThermalVelocity() << " < 0.4?: "
             << (pt.calcThermalVelocity() < 1.0 ? "OK" : "*NOT SATISFIED*") << endl << endl;
 
         cout << "    [Plasma Frequency]" << endl;
         double omega_p = pt.calcPlasmaFrequency();
         cout << "        omega_p = " << omega_p << endl;
         cout << "        1 / omega_p = " << 1.0 / omega_p << endl;
-        cout << "        1 / (omega_p * dt) = " << 1.0 / (omega_p * dt) << " > 1.0?: "
-            << ( (1.0 / (omega_p * dt)) > 1.0 ? "OK" : "*NOT SATISFIED*") << endl;
+        cout << "        1 / (omega_p * dt) = " << 1.0 / (omega_p * dt) << " > 5.0?: "
+            << ( (1.0 / (omega_p * dt)) > 5.0 ? "OK" : "*NOT SATISFIED*") << endl;
         cout << "        1 / (omega_p * dt) < total_timestep?: "
             << ( (1.0 / (omega_p * dt)) < max_iteration ? "OK" : "*NOT SATISFIED*") << endl;
         cout << endl;
