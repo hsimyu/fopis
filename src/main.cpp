@@ -28,7 +28,7 @@ int main(int argc, char* argv[]){
     root_grid->solvePoisson();
     root_grid->updateEfield();
 
-    for(; Environment::timestep <= Environment::max_iteration; ++Environment::timestep) {
+    for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
         if( Environment::isRootNode ) {
             cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }

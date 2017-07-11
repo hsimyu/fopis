@@ -179,8 +179,8 @@ namespace Initializer {
                 Environment::dt = it->second.get<double>();
             } else if(it->first == "dx"){
                 Environment::dx = it->second.get<double>();
-            } else if(it->first == "max_iteration"){
-                Environment::max_iteration = static_cast<int>(it->second.get<double>());
+            } else if(it->first == "max_timestep"){
+                Environment::max_timestep = static_cast<int>(it->second.get<double>());
             } else if(it->first == "job_type"){
                 Environment::jobtype = it->second.to_str();
             } else if(it->first == "solver_type"){

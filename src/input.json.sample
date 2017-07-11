@@ -1,6 +1,6 @@
 {
     "Environment": {
-        "max_iteration": 10,
+        "max_timestep": 10,
         "job_type": "new",
         "solver_type": "EM",
         "boundary": "DDDDDD",

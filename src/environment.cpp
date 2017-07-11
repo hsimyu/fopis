@@ -8,12 +8,12 @@
 int Environment::max_particle_num;
 int Environment::num_of_particle_types;
 int Environment::timestep;
+int Environment::max_timestep;
 double Environment::dx;
 double Environment::dt;
 int Environment::nx, Environment::ny, Environment::nz;
 int Environment::proc_x, Environment::proc_y, Environment::proc_z;
 int Environment::cell_x, Environment::cell_y, Environment::cell_z;
-int Environment::max_iteration;
 int Environment::plot_energy_dist_width, Environment::plot_velocity_dist_width;
 int Environment::plot_potential_width, Environment::plot_rho_width;
 int Environment::plot_efield_width, Environment::plot_bfield_width;
@@ -79,8 +79,8 @@ bool Environment::isOnEdge(const std::string axis, const std::string low_or_up) 
 void Environment::printInfo(void){
     cout << "[Environment]" << endl;
     cout << "      jobtype: " << jobtype << endl;
-    cout << "     max_pnum: " << max_particle_num << endl;
-    cout << "    iteration: " << max_iteration << endl;
+    cout << "     max pnum: " << max_particle_num << endl;
+    cout << " max timestep: " << max_timestep << endl;
     cout << "boundary cond: " << boundary << endl;
     cout << "           dx: " << (format("%8.2f") % dx).str() << "   m" << endl;
     cout << "           dt: " << (format("%6.2e") % dt).str() << " sec" << endl;
@@ -137,7 +137,7 @@ void Environment::checkPlasmaInfo(void) {
         cout << "        1 / (omega_p * dt) = " << 1.0 / (omega_p * dt) << " > 5.0?: "
             << ( (1.0 / (omega_p * dt)) > 5.0 ? "OK" : "*NOT SATISFIED*") << endl;
         cout << "        1 / (omega_p * dt) < total_timestep?: "
-            << ( (1.0 / (omega_p * dt)) < max_iteration ? "OK" : "*NOT SATISFIED*") << endl;
+            << ( (1.0 / (omega_p * dt)) < max_timestep ? "OK" : "*NOT SATISFIED*") << endl;
         cout << endl;
     }
 

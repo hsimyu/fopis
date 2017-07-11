@@ -23,12 +23,12 @@ struct Environment {
         static int max_particle_num;
         static int num_of_particle_types;
         static int timestep;
+        static int max_timestep;
         static double dx;
         static double dt;
         static int nx, ny, nz;
         static int proc_x, proc_y, proc_z;
         static int cell_x, cell_y, cell_z;
-        static int max_iteration;
         static int plot_energy_dist_width, plot_velocity_dist_width;
         static int plot_potential_width, plot_rho_width;
         static int plot_efield_width, plot_bfield_width;
