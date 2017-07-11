@@ -57,14 +57,17 @@ void Grid::initializeField(void){
     field->getEy().resize(tdExtents[cx][cy-1][cz]);
     field->getEz().resize(tdExtents[cx][cy][cz-1]);
 
+    field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
+    field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
+    field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
+
     // reference fields have the same size as nodal size
     field->getExRef().resize(tdExtents[cx][cy][cz]);
     field->getEyRef().resize(tdExtents[cx][cy][cz]);
     field->getEzRef().resize(tdExtents[cx][cy][cz]);
-
-    field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
-    field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
-    field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
+    field->getBxRef().resize(tdExtents[cx][cy][cz]);
+    field->getByRef().resize(tdExtents[cx][cy][cz]);
+    field->getBzRef().resize(tdExtents[cx][cy][cz]);
 
     this->setField(field);
 }
@@ -586,7 +589,6 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
     DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, optListMesh);
 
     if(dataTypeName == "potential") {
-        const char* varnames[1] = {dataTypeName.c_str()};
         float* tdArray = this->getTrueNodes(field->getPhi());
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
@@ -616,10 +618,10 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
     } else if(dataTypeName == "bfield") {
         const char* varnames[3] = {"bx", "by", "bz"};
         float* vars[3];
-        vars[0] = Utils::getTrueFaces(this->getField()->getBx(), 0);
-        vars[1] = Utils::getTrueFaces(this->getField()->getBy(), 1);
-        vars[2] = Utils::getTrueFaces(this->getField()->getBz(), 2);
-        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_FACECENT, NULL);
+        vars[0] = getTrueNodes(field->getBxRef());
+        vars[1] = getTrueNodes(field->getByRef());
+        vars[2] = getTrueNodes(field->getBzRef());
+        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] vars[0];
         delete [] vars[1];
         delete [] vars[2];

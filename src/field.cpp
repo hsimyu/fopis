@@ -279,7 +279,6 @@ void Field::updateEfield(const double dx) {
 void Field::updateBfield(const double dx, const int nx, const int ny, const int nz) {
     const double dt = Utils::Normalizer::normalizeTime(Environment::dt);
 
-    const double mu0 = 4.0 * M_PI * 1e-7; // H/m
     const double epsilon_r = 1.0; //! 比誘電率
     const double sigma = 1.0; //! 導電率 (各Faceでの)
     const double mu_r = 1.0; //! 透磁率 (各Faceでの)
@@ -312,6 +311,22 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
         }
     }
 
+    //! reference 更新
+    for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                bxref[i][j][k] = 0.25 * (bx[i][j][k] + bx[i][j-1][k] + bx[i][j][k-1] + bx[i][j-1][k-1]);
+                byref[i][j][k] = 0.25 * (by[i][j][k] + by[i-1][j][k] + by[i][j][k-1] + by[i-1][j][k-1]);
+                bzref[i][j][k] = 0.25 * (bz[i][j][k] + bz[i-1][j][k] + bz[i][j-1][k] + bz[i-1][j-1][k]);
+            }
+        }
+    }
+
+    if(MPIw::Environment::numprocs > 1) {
+        MPIw::Environment::sendRecvField(bxref);
+        MPIw::Environment::sendRecvField(byref);
+        MPIw::Environment::sendRecvField(bzref);
+    }
 }
 
 double Field::getEfieldEnergy(void) const {

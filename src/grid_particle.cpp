@@ -14,6 +14,9 @@ void Grid::updateParticleVelocity(void) {
     tdArray& exref = field->getExRef();
     tdArray& eyref = field->getEyRef();
     tdArray& ezref = field->getEzRef();
+    tdArray& bxref = field->getBxRef();
+    tdArray& byref = field->getByRef();
+    tdArray& bzref = field->getBzRef();
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         double qm = 0.5 * (Environment::ptype[pid].getCharge()) * (Environment::ptype[pid].getMass());
@@ -34,7 +37,7 @@ void Grid::updateParticleVelocity(void) {
                 double v7 = qm * pos.dx2 * pos.dy1 * pos.dz1;
                 double v8 = qm * pos.dx1 * pos.dy1 * pos.dz1;
 
-                double ex =  v1*exref[i][j][k]
+                const double ex =  v1*exref[i][j][k]
                     + v2*exref[i+1][j][k]
                     + v3*exref[i][j+1][k]
                     + v4*exref[i+1][j+1][k]
@@ -42,7 +45,7 @@ void Grid::updateParticleVelocity(void) {
                     + v6*exref[i+1][j][k+1]
                     + v7*exref[i][j+1][k+1]
                     + v8*exref[i+1][j+1][k+1];
-                double ey =  v1*eyref[i][j][k]
+                const double ey =  v1*eyref[i][j][k]
                     + v2*eyref[i+1][j][k]
                     + v3*eyref[i][j+1][k]
                     + v4*eyref[i+1][j+1][k]
@@ -50,7 +53,7 @@ void Grid::updateParticleVelocity(void) {
                     + v6*eyref[i+1][j][k+1]
                     + v7*eyref[i][j+1][k+1]
                     + v8*eyref[i+1][j+1][k+1];
-                double ez =  v1*ezref[i][j][k]
+                const double ez =  v1*ezref[i][j][k]
                     + v2*ezref[i+1][j][k]
                     + v3*ezref[i][j+1][k]
                     + v4*ezref[i+1][j+1][k]
@@ -58,9 +61,30 @@ void Grid::updateParticleVelocity(void) {
                     + v6*ezref[i+1][j][k+1]
                     + v7*ezref[i][j+1][k+1]
                     + v8*ezref[i+1][j+1][k+1];
-                double bx = 0.0;
-                double by = 0.0;
-                double bz = 0.0;
+                const double bx =  v1*bxref[i][j][k]
+                    + v2*bxref[i+1][j][k]
+                    + v3*bxref[i][j+1][k]
+                    + v4*bxref[i+1][j+1][k]
+                    + v5*bxref[i][j][k+1]
+                    + v6*bxref[i+1][j][k+1]
+                    + v7*bxref[i][j+1][k+1]
+                    + v8*bxref[i+1][j+1][k+1];
+                const double by =  v1*byref[i][j][k]
+                    + v2*byref[i+1][j][k]
+                    + v3*byref[i][j+1][k]
+                    + v4*byref[i+1][j+1][k]
+                    + v5*byref[i][j][k+1]
+                    + v6*byref[i+1][j][k+1]
+                    + v7*byref[i][j+1][k+1]
+                    + v8*byref[i+1][j+1][k+1];
+                const double bz =  v1*bzref[i][j][k]
+                    + v2*bzref[i+1][j][k]
+                    + v3*bzref[i][j+1][k]
+                    + v4*bzref[i+1][j+1][k]
+                    + v5*bzref[i][j][k+1]
+                    + v6*bzref[i+1][j][k+1]
+                    + v7*bzref[i][j+1][k+1]
+                    + v8*bzref[i+1][j+1][k+1];
                 double boris = 2.0/(1.0 + (bx*bx+by*by+bz*bz));
 
                 double vx1 = p.vx + ex;

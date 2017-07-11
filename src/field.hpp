@@ -17,6 +17,9 @@ class Field {
         tdArray bx;
         tdArray by;
         tdArray bz;
+        tdArray bxref;
+        tdArray byref;
+        tdArray bzref;
 
         void setBoundaryConditionPhi(void);
         void setDirichletPhi(const std::string, const std::string);
@@ -37,26 +40,21 @@ class Field {
             ezref(boost::extents[0][0][0], boost::fortran_storage_order()),
             bx(boost::extents[0][0][0], boost::fortran_storage_order()),
             by(boost::extents[0][0][0], boost::fortran_storage_order()),
-            bz(boost::extents[0][0][0], boost::fortran_storage_order()) {}
+            bz(boost::extents[0][0][0], boost::fortran_storage_order()),
+            bxref(boost::extents[0][0][0], boost::fortran_storage_order()),
+            byref(boost::extents[0][0][0], boost::fortran_storage_order()),
+            bzref(boost::extents[0][0][0], boost::fortran_storage_order()) {}
 
         // destructor
         ~Field(){}
 
         // potential
-        void setPhi(tdArray& _phi){
-            phi = _phi;
-        }
-        tdArray& getPhi(){
-            return phi;
-        }
+        void setPhi(tdArray& _phi){ phi = _phi; }
+        tdArray& getPhi(){ return phi; }
 
         // charge density
-        void setRho(tdArray& _rho){
-            rho = _rho;
-        }
-        tdArray& getRho(){
-            return rho;
-        }
+        void setRho(tdArray& _rho){ rho = _rho; }
+        tdArray& getRho(){ return rho; }
 
         tdArray& getScalar(std::string varname){
             if(varname == "potential" || varname == "phi") {
@@ -69,61 +67,30 @@ class Field {
         }
 
         // electric fields
-        void setEx(tdArray& _ex){
-            ex = _ex;
-        }
-        tdArray& getEx(){
-            return ex;
-        }
-
-        void setEy(tdArray& _ey){
-            ey = _ey;
-        }
-        tdArray& getEy(){
-            return ey;
-        }
-
-        void setEz(tdArray& _ez){
-            ez = _ez;
-        }
-        tdArray& getEz(){
-            return ez;
-        }
+        void setEx(tdArray& _ex){ ex = _ex; }
+        void setEy(tdArray& _ey){ ey = _ey; }
+        void setEz(tdArray& _ez){ ez = _ez; }
+        tdArray& getEx(){ return ex; }
+        tdArray& getEy(){ return ey; }
+        tdArray& getEz(){ return ez; }
 
         //! reference efield on nodes
-        tdArray& getExRef(){
-            return exref;
-        }
-
-        tdArray& getEyRef(){
-            return eyref;
-        }
-
-        tdArray& getEzRef(){
-            return ezref;
-        }
+        tdArray& getExRef(){ return exref; }
+        tdArray& getEyRef(){ return eyref; }
+        tdArray& getEzRef(){ return ezref; }
 
         // magnetic fields
-        void setBx(tdArray& _bx){
-            bx = _bx;
-        }
-        tdArray& getBx(){
-            return bx;
-        }
+        void setBx(tdArray& _bx){ bx = _bx; }
+        void setBy(tdArray& _by){ by = _by; }
+        void setBz(tdArray& _bz){ bz = _bz; }
+        tdArray& getBx(){ return bx; }
+        tdArray& getBy(){ return by; }
+        tdArray& getBz(){ return bz; }
 
-        void setBy(tdArray& _by){
-            by = _by;
-        }
-        tdArray& getBy(){
-            return by;
-        }
-
-        void setBz(tdArray& _bz){
-            bz = _bz;
-        }
-        tdArray& getBz(){
-            return bz;
-        }
+        //! reference bfield on nodes
+        tdArray& getBxRef(){ return bxref; }
+        tdArray& getByRef(){ return byref; }
+        tdArray& getBzRef(){ return bzref; }
 
         void updateEfield(const double);
         void updateBfield(const double, const int, const int, const int);

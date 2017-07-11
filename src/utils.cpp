@@ -238,9 +238,9 @@ namespace Utils {
         int ny = x3D.shape()[1];
         int nz = x3D.shape()[2];
 
-        const int c_indexing = 0;
-        const int fortran_indexing = 1;
-        const int indexing = c_indexing;
+        enum class INDEXING { C, FORTRAN };
+
+        const auto indexing = INDEXING::C;
 
         // Add extra slot to axis
         switch(axis){
@@ -260,7 +260,7 @@ namespace Utils {
 
         float* x1D = new float[(nx-2)*(ny-2)*(nz-2)];
 
-        if(indexing == fortran_indexing) {
+        if(indexing == INDEXING::FORTRAN) {
             for(int i = 1; i < nx - 1; ++i){
                 for(int j = 1; j < ny - 1; ++j){
                     for(int k = 1; k < nz - 1; ++k){
