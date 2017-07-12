@@ -46,24 +46,22 @@ std::string Environment::getBoundaryCondition(const AXIS axis, const AXIS_SIDE l
 }
 
 bool Environment::isOnEdge(const AXIS axis, const AXIS_SIDE low_or_up) {
-    int axisIndex = Utils::getAxisIndex(axis);
-
-    switch(axisIndex) {
-        case 0:
+    switch(axis) {
+        case AXIS::x:
             if (low_or_up == AXIS_SIDE::low) {
                 return onLowXedge;
             } else {
                 return onHighXedge;
             }
             break;
-        case 1:
+        case AXIS::y:
             if (low_or_up == AXIS_SIDE::low) {
                 return onLowYedge;
             } else {
                 return onHighYedge;
             }
             break;
-        case 2:
+        case AXIS::z:
             if (low_or_up == AXIS_SIDE::low) {
                 return onLowZedge;
             } else {
