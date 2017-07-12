@@ -104,27 +104,28 @@ namespace Initializer {
     }
 
     void setMPIInfoToEnv() {
-        if(MPIw::Environment::numprocs != Environment::proc_x * Environment::proc_y * Environment::proc_z) {
+        // for visiblity
+        const int npux = Environment::proc_x;
+        const int npuy = Environment::proc_y;
+        const int npuz = Environment::proc_z;
+
+        if(MPIw::Environment::numprocs != npux * npuy * npuz) {
             if(MPIw::Environment::rank == 0) {
-                cout << format("[ERROR] Allocated Process Number [%d] is different from [%d] inputted from json.") % MPIw::Environment::numprocs % (Environment::proc_x * Environment::proc_y * Environment::proc_z) << endl;
+                cout << format("[ERROR] Allocated Process Number [%d] is different from [%d] inputted from json.") % MPIw::Environment::numprocs % (npux * npuy * npuz) << endl;
             }
             MPIw::Environment::exitWithFinalize(0);
         }
 
         // Processの積み方は
         // x->y->z
-        for(int k = 0; k < Environment::proc_z; ++k){
-            for(int j = 0; j < Environment::proc_y; ++j){
-                for(int i = 0; i < Environment::proc_x; ++i){
-                    if( (i + Environment::proc_x * j + Environment::proc_x * Environment::proc_y * k) == MPIw::Environment::rank ){
+
+        for(int k = 0; k < npuz; ++k){
+            for(int j = 0; j < npuy; ++j){
+                for(int i = 0; i < npux; ++i){
+                    if( (i + npux * j + npux * npuy * k) == MPIw::Environment::rank ){
                         MPIw::Environment::xrank = i;
                         MPIw::Environment::yrank = j;
                         MPIw::Environment::zrank = k;
-
-                        // for visiblity
-                        int npux = Environment::proc_x;
-                        int npuy = Environment::proc_y;
-                        int npuz = Environment::proc_z;
 
                         // set adjacent ranks
                         MPIw::Environment::adj[0] = ( ((npux + i-1) % npux) + npux*j + npux*npuy*k);
@@ -140,9 +141,12 @@ namespace Initializer {
             }
         }
 
-        Environment::onLowXedge = (MPIw::Environment::xrank == 0); Environment::onHighXedge = (MPIw::Environment::xrank == Environment::proc_x - 1);
-        Environment::onLowYedge = (MPIw::Environment::yrank == 0); Environment::onHighYedge = (MPIw::Environment::yrank == Environment::proc_y - 1);
-        Environment::onLowZedge = (MPIw::Environment::zrank == 0); Environment::onHighZedge = (MPIw::Environment::zrank == Environment::proc_z - 1);
+        Environment::onLowXedge = (MPIw::Environment::xrank == 0);
+        Environment::onHighXedge = (MPIw::Environment::xrank == Environment::proc_x - 1);
+        Environment::onLowYedge = (MPIw::Environment::yrank == 0);
+        Environment::onHighYedge = (MPIw::Environment::yrank == Environment::proc_y - 1);
+        Environment::onLowZedge = (MPIw::Environment::zrank == 0);
+        Environment::onHighZedge = (MPIw::Environment::zrank == Environment::proc_z - 1);
 
         // 0のノードをルートとして扱う
         Environment::isRootNode = (MPIw::Environment::rank == 0);

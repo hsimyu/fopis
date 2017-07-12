@@ -13,8 +13,8 @@ void Field::solvePoisson(const int loopnum, const double dx) {
 
 //! @brief SOR法
 void Field::solvePoissonPSOR(const int loopnum, const double dx) {
-    double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
-    double rho_coeff = pow(dx, 2) / Utils::Normalizer::normalizeEpsilon(eps0);
+    const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
+    const double rho_coeff = pow(dx, 2) / Utils::Normalizer::normalizeEpsilon(eps0);
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
