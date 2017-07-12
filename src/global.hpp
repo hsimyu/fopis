@@ -22,6 +22,9 @@ constexpr double eps0 = 8.854187817e-12;
 constexpr double mu0 = 4.0 * M_PI * 1.0e-7;
 constexpr double me = 9.1093818872e-31;
 constexpr double c = 2.99792458e8;
-
 constexpr int MAX_PARTICLE_NUM = 100000;
+
+//! Enumerators
+enum class AXIS_SIDE {low, up};
+
 #endif

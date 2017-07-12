@@ -32,10 +32,12 @@ ParticleType* Environment::ptype;
 /*
 * @params
 * const std::string axis: "x", "y", or "z"
-* const std::string low_or_up: "l" or "u"
+* const AXIS_SIDE low_or_up: AXIS_SIDE::low or AXIS_SIDE::up
 */
-std::string Environment::getBoundaryCondition(const std::string axis, const std::string low_or_up) {
+std::string Environment::getBoundaryCondition(const std::string axis, const AXIS_SIDE low_or_up) {
     int axisIndex = Utils::getAxisIndex(axis);
+
+    // 列挙型AXIS_SIDEから対応するindexを取る
     int lowOrUpIndex = Utils::getLowOrUpIndex(low_or_up);
 
     // "DDPPDD"のような文字列が入力されるので
@@ -43,27 +45,26 @@ std::string Environment::getBoundaryCondition(const std::string axis, const std:
     return boundary.substr(2 * axisIndex + lowOrUpIndex, 1);
 }
 
-bool Environment::isOnEdge(const std::string axis, const std::string low_or_up) {
+bool Environment::isOnEdge(const std::string axis, const AXIS_SIDE low_or_up) {
     int axisIndex = Utils::getAxisIndex(axis);
-    int lowOrUpIndex = Utils::getLowOrUpIndex(low_or_up);
 
     switch(axisIndex) {
         case 0:
-            if (lowOrUpIndex == 0) {
+            if (low_or_up == AXIS_SIDE::low) {
                 return onLowXedge;
             } else {
                 return onHighXedge;
             }
             break;
         case 1:
-            if (lowOrUpIndex == 0) {
+            if (low_or_up == AXIS_SIDE::low) {
                 return onLowYedge;
             } else {
                 return onHighYedge;
             }
             break;
         case 2:
-            if (lowOrUpIndex == 0) {
+            if (low_or_up == AXIS_SIDE::low) {
                 return onLowZedge;
             } else {
                 return onHighZedge;

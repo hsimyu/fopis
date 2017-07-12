@@ -1,6 +1,5 @@
 #ifndef __TDPIC_UTILS_H_INCLUDED__
 #define __TDPIC_UTILS_H_INCLUDED__
-#include <string>
 #include <picojson.h>
 #include "global.hpp"
 
@@ -12,7 +11,7 @@ namespace Utils {
 
     // 軸方向を指定する文字列をindexに変換する
     int getAxisIndex(const std::string);
-    int getLowOrUpIndex(const std::string);
+    int getLowOrUpIndex(const AXIS_SIDE);
 
     float* getTrueEdges2(tdArray const&, tdArray const&, tdArray const&);
     float* getTrueEdges(tdArray const&, const int);

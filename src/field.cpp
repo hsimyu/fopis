@@ -44,11 +44,7 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
             MPIw::Environment::sendRecvField(phi);
         }
 
-        if(loop % 10 == 0) {
-            double residual = this->checkPhiResidual();
-            // if (Environment::isRootNode) cout << format("[ITR %d] residual = %s") % loop % residual << endl;
-            if (residual < required_error) break;
-        }
+        if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) break;
     }
     this->setBoundaryConditionPhi();
 }
@@ -90,7 +86,7 @@ void Field::solvePoissonJacobi(const int loopnum, const double dx) {
 
 void Field::setBoundaryConditionPhi(void) {
     const std::vector< std::string > axisArray{"x", "y", "z"};
-    const std::vector< std::string > luArray{"l", "u"};
+    const std::vector< AXIS_SIDE > luArray{AXIS_SIDE::low, AXIS_SIDE::up};
 
     for (auto axis : axisArray) {
         for (auto low_or_up : luArray) {
@@ -98,25 +94,22 @@ void Field::setBoundaryConditionPhi(void) {
 
             if (boundary == "D") {
                 this->setDirichletPhi(axis, low_or_up);
+            } else if (boundary == "N") {
+                this->setNeumannPhi(axis, low_or_up);
             } else {
                 throw std::invalid_argument( 
-                    (format("Unknown boundary condition type was used: boundary = %s, axis = %s, low_or_up = %s") % boundary % axis % low_or_up).str()
+                    (format("Unknown boundary condition type was used: boundary = %s, axis = %s") % boundary % axis).str()
                 );
             }
         }
     }
 }
 
-void Field::setDirichletPhi(const std::string axis, const std::string low_or_up) {
+void Field::setNeumannPhi(const std::string axis, const AXIS_SIDE low_or_up) {
     const int max_index = phi.shape()[ Utils::getAxisIndex(axis) ];
 
-    int lowOrUpIndex = Utils::getLowOrUpIndex(low_or_up);
-    int fixedIndex;
-    if (lowOrUpIndex == 0) {
-        fixedIndex = 1;
-    } else {
-        fixedIndex = max_index - 2;
-    }
+    const int boundary_index = (low_or_up == AXIS_SIDE::low) ? 1 : (max_index - 2);
+    const int neighbor_element_index = (low_or_up == AXIS_SIDE::low) ? 2 : (max_index - 3);
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -126,19 +119,50 @@ void Field::setDirichletPhi(const std::string axis, const std::string low_or_up)
         if (axis == "x") {
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 for(int j = 1; j < cy_with_glue - 1; ++j){
-                    phi[fixedIndex][j][k] = 0.0;
+                    phi[boundary_index][j][k] = phi[neighbor_element_index][j][k];
                 }
             }
         } else if (axis == "y") {
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 for(int i = 1; i < cx_with_glue - 1; ++i){
-                    phi[i][fixedIndex][k] = 0.0;
+                    phi[i][boundary_index][k] = phi[i][neighbor_element_index][k];
                 }
             }
         } else {
             for(int j = 1; j < cy_with_glue - 1; ++j){
                 for(int i = 1; i < cx_with_glue - 1; ++i){
-                    phi[i][j][fixedIndex] = 0.0;
+                    phi[i][j][boundary_index] = phi[i][j][neighbor_element_index];
+                }
+            }
+        }
+    }
+}
+
+void Field::setDirichletPhi(const std::string axis, const AXIS_SIDE low_or_up) {
+    const int max_index = phi.shape()[ Utils::getAxisIndex(axis) ];
+    const int boundary_index = (low_or_up == AXIS_SIDE::low) ? 1 : (max_index - 2);
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    if ( Environment::isOnEdge(axis, low_or_up) ) {
+        if (axis == "x") {
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                for(int j = 1; j < cy_with_glue - 1; ++j){
+                    phi[boundary_index][j][k] = 0.0;
+                }
+            }
+        } else if (axis == "y") {
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                for(int i = 1; i < cx_with_glue - 1; ++i){
+                    phi[i][boundary_index][k] = 0.0;
+                }
+            }
+        } else {
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                for(int i = 1; i < cx_with_glue - 1; ++i){
+                    phi[i][j][boundary_index] = 0.0;
                 }
             }
         }
@@ -367,6 +391,13 @@ double Field::getBfieldEnergy(void) const {
             }
         }
     }
+
+    cout << "b^2 = " << energy << endl;
+    cout << "normed energy = " << 0.5 * energy / Utils::Normalizer::normalizeMu(mu0) << endl;
+    cout << "unnormed energy = " << Utils::Normalizer::unnormalizeEnergy(0.5 * energy / Utils::Normalizer::normalizeMu(mu0)) << endl;
+
+    const double test_be = 1.0e-9; // 1nT
+    cout << "Benergy test1: " << (0.5 * pow(test_be, 2) / mu0) << endl;
 
     return 0.5 * energy / Utils::Normalizer::normalizeMu(mu0);
 }

@@ -1,6 +1,5 @@
 #include "utils.hpp"
 #include "mpiw.hpp"
-#include <picojson.h>
 #include <stdexcept>
 #include <boost/filesystem.hpp>
 
@@ -60,13 +59,14 @@ namespace Utils {
         }
     }
 
-    int getLowOrUpIndex(const std::string low_or_up) {
-        if (low_or_up == "l") {
+    int getLowOrUpIndex(const AXIS_SIDE low_or_up) {
+        if (low_or_up == AXIS_SIDE::low) {
             return 0;
-        } else if (low_or_up == "u") {
+        } else if (low_or_up == AXIS_SIDE::up) {
             return 1;
         } else {
-            throw std::invalid_argument( (format("Unknown low_or_up type was passed: low_or_up = %s") % low_or_up).str() );
+            // cout << "[ERROR] low_or_up = " << low_or_up << endl;
+            // throw std::invalid_argument( "Unknown low_or_up type was passed." );
         }
     }
 
