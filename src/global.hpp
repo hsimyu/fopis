@@ -14,7 +14,7 @@ using std::cout;
 using std::endl;
 using boost::format;
 
-typedef boost::multi_array<double, 3> tdArray;
+using tdArray = boost::multi_array<double, 3>;
 
 //! constants
 constexpr double e = 1.60217733e-19;
