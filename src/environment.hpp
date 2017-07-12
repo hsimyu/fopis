@@ -52,11 +52,14 @@ struct Environment {
             return MPIw::Environment::rankStr();
         }
 
-        // 各方向の境界条件を取得する
+        //! 各方向の境界条件を取得する
         static std::string getBoundaryCondition(const AXIS, const AXIS_SIDE);
 
-        // 対応するEdgeに乗っているかどうかを返す
+        //! 対応するEdgeに乗っているかどうかを返す
         static bool isOnEdge(const AXIS, const AXIS_SIDE);
+
+        //! 現在の領域の上限/下限が、計算空間全体の境界でないか、計算空間全体の境界だが周期境界かどうかをチェックする
+        static bool isPeriodic(const AXIS, const AXIS_SIDE);
 
         static void printInfo(void);
         static void checkPlasmaInfo(void);

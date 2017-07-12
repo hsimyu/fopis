@@ -75,6 +75,15 @@ bool Environment::isOnEdge(const AXIS axis, const AXIS_SIDE low_or_up) {
     return false;
 }
 
+//! 現在の領域の上限/下限が、
+//! 計算空間全体の境界でない or 計算空間全体の境界であるが周期境界である
+//! かどうかをチェックする。
+//! どちらかが満たされていれば、その方向の端の要素は境界とみなす必要がない (Iteration時の判定に用いる)
+bool Environment::isPeriodic(const AXIS axis, const AXIS_SIDE low_or_up) {
+    return ( (!Environment::isOnEdge(axis, low_or_up)) || (Environment::getBoundaryCondition(axis, low_or_up) == "P" ) );
+}
+
+
 void Environment::printInfo(void){
     cout << "[Environment]" << endl;
     cout << "      jobtype: " << jobtype << endl;

@@ -24,14 +24,25 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
 
     this->setBoundaryConditionPhi();
 
+    const std::vector<bool> is_periodic = {
+        Environment::isPeriodic(AXIS::x, AXIS_SIDE::low),
+        Environment::isPeriodic(AXIS::x, AXIS_SIDE::up),
+        Environment::isPeriodic(AXIS::y, AXIS_SIDE::low),
+        Environment::isPeriodic(AXIS::y, AXIS_SIDE::up),
+        Environment::isPeriodic(AXIS::z, AXIS_SIDE::low),
+        Environment::isPeriodic(AXIS::z, AXIS_SIDE::up),
+    };
+
     for(int loop = 1; loop <= loopnum; ++loop) {
-        //! @note: 周期境界の場合はIterationの際に反対側を見る必要がある
+        //! is_periodicは各方向の境界について
+        //! 「その境界は計算空間の境界でない」か「その境界が計算空間の境界であり、周期境界である」場合にtrueとなるため
+        //! 各方向の端要素の計算をIterationで計算する場合にチェックする必要がある
         for(int k = 1; k < cz_with_glue - 1; ++k){
-            if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
+            if((k != 1 || is_periodic[4]) && (k != cz_with_glue - 2 || is_periodic[5])) {
                 for(int j = 1; j < cy_with_glue - 1; ++j){
-                    if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
+                    if((j != 1 || is_periodic[2]) && (j != cy_with_glue - 2 || is_periodic[3])) {
                         for(int i = 1; i < cx_with_glue - 1; ++i){
-                            if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
+                            if((i != 1 || is_periodic[0]) && (i != cx_with_glue - 2 || is_periodic[2])) {
                                 phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[i][j][k])/6.0;
                             }
                         }
@@ -63,6 +74,9 @@ void Field::setBoundaryConditionPhi(void) {
                 this->setDirichletPhi(axis, low_or_up);
             } else if (boundary == "N") {
                 this->setNeumannPhi(axis, low_or_up);
+            } else if (boundary == "P") {
+                // 周期境界の場合は特に何もしない
+                // 代わりにiteration時にsetする
             } else {
                 throw std::invalid_argument( 
                     (format("Unknown boundary condition type was used: boundary = %s") % boundary).str()
