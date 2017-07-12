@@ -20,7 +20,8 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
-    constexpr double required_error = 1.0e-10;
+    constexpr double required_error = 1.0e-7;
+
     this->setBoundaryConditionPhi();
 
     for(int loop = 1; loop <= loopnum; ++loop) {
@@ -45,40 +46,6 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
         }
 
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) break;
-    }
-    this->setBoundaryConditionPhi();
-}
-
-//! @brief Jacobi法
-void Field::solvePoissonJacobi(const int loopnum, const double dx) {
-    double rho_coeff = dx / Utils::Normalizer::normalizeEpsilon(eps0);
-
-    const int cx_with_glue = phi.shape()[0];
-    const int cy_with_glue = phi.shape()[1];
-    const int cz_with_glue = phi.shape()[2];
-
-    const double required_error = 1.0e-5;
-
-    for(int loop = 0; loop < loopnum; ++loop) {
-        for(int k = 1; k < cz_with_glue - 1; ++k){
-            if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
-                for(int j = 1; j < cy_with_glue - 1; ++j){
-                    if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
-                        for(int i = 1; i < cx_with_glue - 1; ++i){
-                            if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
-                                phi[i][j][k] = (phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1])/6.0 + rho_coeff*rho[i][j][k];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        MPIw::Environment::sendRecvField(phi);
-        double residual = this->checkPhiResidual();
-        cout << format("[ITR %d] residual = %s") % loop % residual << endl;
-        if (residual < required_error) break;
-        //! ここで通信する必要がある
     }
 
     this->setBoundaryConditionPhi();

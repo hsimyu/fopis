@@ -342,8 +342,8 @@ void Grid::injectParticles(void) {
         }
     }
 
-    IO::plotParticleEnergyDistribution(inject_parray, "inject_");
-    IO::plotParticleVelocityDistribution(inject_parray, "inject_");
+    // IO::plotParticleEnergyDistribution(inject_parray, "inject_");
+    // IO::plotParticleVelocityDistribution(inject_parray, "inject_");
 }
 
 double Grid::getParticleEnergy(void) const {
