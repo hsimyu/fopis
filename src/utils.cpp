@@ -47,15 +47,15 @@ namespace Utils {
         }
     }
 
-    int getAxisIndex(const std::string axis) {
-        if (axis == "x") {
+    int getAxisIndex(const AXIS axis) {
+        if (axis == AXIS::x) {
             return 0;
-        } else if (axis == "y") {
+        } else if (axis == AXIS::y) {
             return 1;
-        } else if (axis == "z") {
+        } else if (axis == AXIS::z) {
             return 2;
         } else {
-            throw std::invalid_argument( (format("Unknown axis type was passed: axis = %s") % axis).str() );
+            throw std::invalid_argument( "Unknown axis type was passed." );
         }
     }
 
@@ -65,8 +65,7 @@ namespace Utils {
         } else if (low_or_up == AXIS_SIDE::up) {
             return 1;
         } else {
-            // cout << "[ERROR] low_or_up = " << low_or_up << endl;
-            // throw std::invalid_argument( "Unknown low_or_up type was passed." );
+            throw std::invalid_argument( "Unknown low_or_up type was passed." );
         }
     }
 

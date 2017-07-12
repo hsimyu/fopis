@@ -25,6 +25,7 @@ constexpr double c = 2.99792458e8;
 constexpr int MAX_PARTICLE_NUM = 100000;
 
 //! Enumerators
+enum class AXIS {x, y, z};
 enum class AXIS_SIDE {low, up};
 
 #endif

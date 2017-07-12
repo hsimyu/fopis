@@ -53,10 +53,10 @@ struct Environment {
         }
 
         // 各方向の境界条件を取得する
-        static std::string getBoundaryCondition(const std::string, const AXIS_SIDE);
+        static std::string getBoundaryCondition(const AXIS, const AXIS_SIDE);
 
         // 対応するEdgeに乗っているかどうかを返す
-        static bool isOnEdge(const std::string, const AXIS_SIDE);
+        static bool isOnEdge(const AXIS, const AXIS_SIDE);
 
         static void printInfo(void);
         static void checkPlasmaInfo(void);

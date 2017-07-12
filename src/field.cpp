@@ -52,7 +52,7 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
 }
 
 void Field::setBoundaryConditionPhi(void) {
-    const std::vector< std::string > axisArray{"x", "y", "z"};
+    const std::vector< AXIS > axisArray{AXIS::x, AXIS::y, AXIS::z};
     const std::vector< AXIS_SIDE > luArray{AXIS_SIDE::low, AXIS_SIDE::up};
 
     for (auto axis : axisArray) {
@@ -65,14 +65,14 @@ void Field::setBoundaryConditionPhi(void) {
                 this->setNeumannPhi(axis, low_or_up);
             } else {
                 throw std::invalid_argument( 
-                    (format("Unknown boundary condition type was used: boundary = %s, axis = %s") % boundary % axis).str()
+                    (format("Unknown boundary condition type was used: boundary = %s") % boundary).str()
                 );
             }
         }
     }
 }
 
-void Field::setNeumannPhi(const std::string axis, const AXIS_SIDE low_or_up) {
+void Field::setNeumannPhi(const AXIS axis, const AXIS_SIDE low_or_up) {
     const int max_index = phi.shape()[ Utils::getAxisIndex(axis) ];
 
     const int boundary_index = (low_or_up == AXIS_SIDE::low) ? 1 : (max_index - 2);
@@ -83,13 +83,13 @@ void Field::setNeumannPhi(const std::string axis, const AXIS_SIDE low_or_up) {
     const int cz_with_glue = phi.shape()[2];
 
     if ( Environment::isOnEdge(axis, low_or_up) ) {
-        if (axis == "x") {
+        if (axis == AXIS::x) {
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 for(int j = 1; j < cy_with_glue - 1; ++j){
                     phi[boundary_index][j][k] = phi[neighbor_element_index][j][k];
                 }
             }
-        } else if (axis == "y") {
+        } else if (axis == AXIS::y) {
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 for(int i = 1; i < cx_with_glue - 1; ++i){
                     phi[i][boundary_index][k] = phi[i][neighbor_element_index][k];
@@ -105,7 +105,7 @@ void Field::setNeumannPhi(const std::string axis, const AXIS_SIDE low_or_up) {
     }
 }
 
-void Field::setDirichletPhi(const std::string axis, const AXIS_SIDE low_or_up) {
+void Field::setDirichletPhi(const AXIS axis, const AXIS_SIDE low_or_up) {
     const int max_index = phi.shape()[ Utils::getAxisIndex(axis) ];
     const int boundary_index = (low_or_up == AXIS_SIDE::low) ? 1 : (max_index - 2);
 
@@ -114,13 +114,13 @@ void Field::setDirichletPhi(const std::string axis, const AXIS_SIDE low_or_up) {
     const int cz_with_glue = phi.shape()[2];
 
     if ( Environment::isOnEdge(axis, low_or_up) ) {
-        if (axis == "x") {
+        if (axis == AXIS::x) {
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 for(int j = 1; j < cy_with_glue - 1; ++j){
                     phi[boundary_index][j][k] = 0.0;
                 }
             }
-        } else if (axis == "y") {
+        } else if (axis == AXIS::y) {
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 for(int i = 1; i < cx_with_glue - 1; ++i){
                     phi[i][boundary_index][k] = 0.0;

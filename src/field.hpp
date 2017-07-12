@@ -22,8 +22,8 @@ class Field {
         tdArray bzref;
 
         void setBoundaryConditionPhi(void);
-        void setDirichletPhi(const std::string, const AXIS_SIDE);
-        void setNeumannPhi(const std::string, const AXIS_SIDE);
+        void setDirichletPhi(const AXIS, const AXIS_SIDE);
+        void setNeumannPhi(const AXIS, const AXIS_SIDE);
 
         //! solver の実体
         void solvePoissonPSOR(const int, const double);

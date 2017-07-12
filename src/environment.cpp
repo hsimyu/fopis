@@ -34,7 +34,7 @@ ParticleType* Environment::ptype;
 * const std::string axis: "x", "y", or "z"
 * const AXIS_SIDE low_or_up: AXIS_SIDE::low or AXIS_SIDE::up
 */
-std::string Environment::getBoundaryCondition(const std::string axis, const AXIS_SIDE low_or_up) {
+std::string Environment::getBoundaryCondition(const AXIS axis, const AXIS_SIDE low_or_up) {
     int axisIndex = Utils::getAxisIndex(axis);
 
     // 列挙型AXIS_SIDEから対応するindexを取る
@@ -45,7 +45,7 @@ std::string Environment::getBoundaryCondition(const std::string axis, const AXIS
     return boundary.substr(2 * axisIndex + lowOrUpIndex, 1);
 }
 
-bool Environment::isOnEdge(const std::string axis, const AXIS_SIDE low_or_up) {
+bool Environment::isOnEdge(const AXIS axis, const AXIS_SIDE low_or_up) {
     int axisIndex = Utils::getAxisIndex(axis);
 
     switch(axisIndex) {

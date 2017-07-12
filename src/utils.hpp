@@ -10,7 +10,7 @@ namespace Utils {
     picojson::value::object readJSONFile(const std::string&);
 
     // 軸方向を指定する文字列をindexに変換する
-    int getAxisIndex(const std::string);
+    int getAxisIndex(const AXIS);
     int getLowOrUpIndex(const AXIS_SIDE);
 
     float* getTrueEdges2(tdArray const&, tdArray const&, tdArray const&);
