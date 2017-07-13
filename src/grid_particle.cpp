@@ -222,10 +222,11 @@ void Grid::injectParticles(void) {
     double max_x = static_cast<double>(Environment::cell_x);
     double max_y = static_cast<double>(Environment::cell_y);
     double max_z = static_cast<double>(Environment::cell_z);
+
     //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(Environment::onHighXedge) max_x -= 1.0;
-    if(Environment::onHighYedge) max_y -= 1.0;
-    if(Environment::onHighZedge) max_z -= 1.0;
+    if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
+    if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
+    if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         std::vector<double> flux = Environment::ptype[pid].calcFlux(*this);
