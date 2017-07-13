@@ -65,7 +65,7 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 message(STATUS "HOME              = ${HOME}")
 
-set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self")
+set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
