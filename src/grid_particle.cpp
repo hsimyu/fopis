@@ -230,10 +230,9 @@ void Grid::injectParticles(void) {
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         std::vector<double> flux = Environment::ptype[pid].calcFlux(*this);
 
-        if(Environment::onLowXedge) {
+        if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            // cout << Environment::rankStr() << "inject from -x = " << inject_num << ", flux = " << flux[index] << ", residual = " << residual[pid][index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -250,10 +249,9 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(Environment::onHighXedge) {
+        if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) {
             const int index = 1;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            // cout << Environment::rankStr() << "inject from +x = " << inject_num << ", flux = " << flux[index] << ", residual = " << residual[pid][index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -269,10 +267,9 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(Environment::onLowYedge) {
+        if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
             const int index = 2;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            // cout << Environment::rankStr() << "inject from -y = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -287,10 +284,9 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(Environment::onHighYedge) {
+        if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) {
             const int index = 3;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            // cout << Environment::rankStr() << "inject from +y = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -305,10 +301,9 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(Environment::onLowZedge) {
+        if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
             const int index = 4;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            // cout << Environment::rankStr() << "inject from -z = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -323,10 +318,9 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(Environment::onHighZedge) {
+        if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) {
             const int index = 5;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            // cout << Environment::rankStr() << "inject from +z = " << inject_num << ", flux = " << flux[index] << endl;
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
