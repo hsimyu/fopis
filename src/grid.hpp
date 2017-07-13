@@ -42,7 +42,6 @@ class Grid {
         float* getTrueNodes(const tdArray&);
 
         //! データ出力用のnodesの数を返す
-        //! glue nodes分を含めるか含めないか判定する
         int getXNodeSize(void) const;
         int getYNodeSize(void) const;
         int getZNodeSize(void) const;

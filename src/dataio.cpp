@@ -326,26 +326,6 @@ namespace IO {
         DBFreeOptlist(optListVar);
     }
 
-
-    // Callback functions for PMPIO
-    void* createFileCallback(const char* fname, const char* dname, void* udata){
-        DBfile* file = DBCreate(fname, DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
-        DBMkDir(file, dname);
-        DBSetDir(file, dname);
-        return file;
-    }
-
-    void* openFileCallback(const char* fname, const char* dname, PMPIO_iomode_t iomode, void* udata){
-        DBfile* file = DBOpen(fname, DB_UNKNOWN, DB_APPEND);
-        DBMkDir(file, dname);
-        DBSetDir(file, dname);
-        return file;
-    }
-
-    void closeFileCallback(void* file, void* udata){
-        DBClose(static_cast<DBfile*>(file));
-    }
-
     void writeDataInParallel(Grid& g, int timestep, std::string dataTypeName) {
         //! @note: 事前に全てのプロセスの持つパッチ数などを云々しておく
         const float datatime = static_cast<float>(timestep * Environment::dt);
@@ -353,7 +333,7 @@ namespace IO {
         int numfiles = (MPIw::Environment::numprocs <= maxIOUnit) ? MPIw::Environment::numprocs : maxIOUnit;
         int rank = MPIw::Environment::rank;
 
-        PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 10000, createFileCallback, openFileCallback, closeFileCallback, NULL);
+        PMPIO_baton_t* bat = PMPIO_Init(numfiles, PMPIO_WRITE, MPI_COMM_WORLD, 10000, PMPIO_DefaultCreate, PMPIO_DefaultOpen, PMPIO_DefaultClose, NULL);
         int groupRank = PMPIO_GroupRank(bat, rank);
         int rankInGroup = PMPIO_RankInGroup(bat, rank);
         std::string filename = (format("%s_%04d_%04d.silo") % dataTypeName % groupRank % timestep).str();

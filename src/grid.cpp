@@ -111,9 +111,9 @@ Grid::Grid(void){
     double max_z = static_cast<double>(Environment::cell_z);
 
     //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(Environment::onHighXedge) max_x -= 1.0;
-    if(Environment::onHighYedge) max_y -= 1.0;
-    if(Environment::onHighZedge) max_z -= 1.0;
+    if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
+    if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
+    if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
     //! - particlesは空のstd::vector< std::vector<Particle> >として宣言されている
     //! - particle types 分だけresize
@@ -258,24 +258,26 @@ float* Grid::getDensity(const int pid) {
     const int ysize = this->getYNodeSize() - 1;
     const int zsize = this->getZNodeSize() - 1;
     float* zone_density = new float[xsize * ysize * zsize];
-    const int maxitr = xsize*ysize*zsize - 1;
+    const int maxitr = xsize*ysize*zsize;
 
     //! initialize
     for(int i = 0; i < maxitr; ++i){
         zone_density[i] = 0.0f;
     }
 
-    const double size = Environment::ptype[pid].getSize();
+    const auto size = static_cast<float>(Utils::Normalizer::unnormalizeDensity(Environment::ptype[pid].getSize()));
 
     for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
         Particle& p = particles[pid][pnum];
 
         if(p.isValid) {
             Position pos(p);
-            int i = pos.i - 1, j = pos.j - 1, k = pos.k - 1;
+            int i = pos.i - 1; // 対応する zone 番号へ変換
+            int j = pos.j - 1;
+            int k = pos.k - 1;
 
             int itr = i + xsize*j + xsize*ysize*k;
-            zone_density[itr] += static_cast<float>(Utils::Normalizer::unnormalizeDensity(size));
+            zone_density[itr] += size;
         }
     }
 
@@ -460,15 +462,17 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
 }
 
 int Grid::getXNodeSize(void) const {
-    return (level == 0 && !Environment::onHighXedge) ? nx + 1 : nx;
+    //! 周期境界の場合は上側境界と下側境界の間の空間も有効な空間となるので、
+    //! 上側のノードを1つ増やす
+    return (level == 0 && Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) ? nx + 1 : nx;
 }
 
 int Grid::getYNodeSize(void) const {
-    return (level == 0 && !Environment::onHighYedge) ? ny + 1 : ny;
+    return (level == 0 && Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) ? ny + 1 : ny;
 }
 
 int Grid::getZNodeSize(void) const {
-    return (level == 0 && !Environment::onHighZedge) ? nz + 1 : nz;
+    return (level == 0 && Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) ? nz + 1 : nz;
 }
 
 // mesh nodesの座標配列を生成
@@ -486,21 +490,21 @@ float** Grid::getMeshNodes(int dim) {
     coordinates[0] = new float[xsize];
 
     for(int i = 0; i < xsize; ++i) {
-	coordinates[0][i] = real_base_x + real_dx * i;
+        coordinates[0][i] = real_base_x + real_dx * i;
     }
 
     int ysize = this->getYNodeSize();
     coordinates[1] = new float[ysize];
 
     for(int i = 0; i < ysize; ++i) {
-	coordinates[1][i] = real_base_y + real_dx * i;
+        coordinates[1][i] = real_base_y + real_dx * i;
     }
 
     int zsize = this->getZNodeSize();
     coordinates[2] = new float[zsize];
 
     for(int i = 0; i < zsize; ++i) {
-	coordinates[2][i] = real_base_z + real_dx * i;
+        coordinates[2][i] = real_base_z + real_dx * i;
     }
     return coordinates;
 }
@@ -513,7 +517,7 @@ float* Grid::getTrueNodes(const tdArray& x3D){
     float* x1D = new float[xsize*ysize*zsize];
 
     //! C-based indicing
-    //! without glue cells
+    //! 上側境界にいない時 or 周期境界である時、上側のglue cellの値も出力する
     for(int k = 1; k < zsize + 1; ++k){
         for(int j = 1; j < ysize + 1; ++j){
             for(int i = 1; i < xsize + 1; ++i){
@@ -588,6 +592,11 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
     const char* v = varname.c_str();
     DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, optListMesh);
 
+    delete [] coordinates[0];
+    delete [] coordinates[1];
+    delete [] coordinates[2];
+    delete [] coordinates;
+
     if(dataTypeName == "potential") {
         float* tdArray = this->getTrueNodes(field->getPhi());
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
@@ -630,41 +639,43 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
         dimensions[0] -= 1;
         dimensions[1] -= 1;
         dimensions[2] -= 1;
+        
+        const auto num_of_ptypes = Environment::num_of_particle_types;
 
-        if(Environment::num_of_particle_types == 1) {
+        if(num_of_ptypes == 1) {
             float* tdArray = this->getDensity(0);
             const char* vname = Environment::ptype[0].getName().c_str();
             DBPutQuadvar1(file, vname, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
             delete [] tdArray;
         } else {
-            char** vnames = new char*[Environment::num_of_particle_types];
-            float* vars[Environment::num_of_particle_types];
-            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+            float** vars = new float*[num_of_ptypes];
+            char** vnames = new char*[num_of_ptypes];
+            for(int pid = 0; pid < num_of_ptypes; ++pid){
                 std::string pname = Environment::ptype[pid].getName();
                 vnames[pid] = new char[pname.size() + 1];
                 std::strcpy(vnames[pid], pname.c_str());
 
+                // 密度配列の取得
                 vars[pid] = this->getDensity(pid);
             }
 
-            DBPutQuadvar(file, v, m, Environment::num_of_particle_types, vnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
+            DBPutQuadvar(file, v, m, num_of_ptypes, vnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
 
-            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+            for(int pid = 0; pid < num_of_ptypes; ++pid){
                 delete [] vars[pid];
                 delete [] vnames[pid];
             }
             delete [] vnames;
+            delete [] vars;
         }
     } else {
         throw std::invalid_argument("[ERROR] Invalid argument was passed to putQuadMesh().");
     }
-
+    
     for(int i = 0; i < children.size(); ++i) {
         children[i]->putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
     }
 
-    delete [] coordinates[0];
-    delete [] coordinates;
 }
 
 Grid::~Grid(){
