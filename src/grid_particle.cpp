@@ -111,11 +111,44 @@ void Grid::updateParticlePosition(void) {
     const double sly = dx * ny;
     const double slz = dx * nz;
 
+    tdArray& jx = field->getJx();
+    tdArray& jy = field->getJy();
+    tdArray& jz = field->getJz();
+
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        const double q_per_dt = Environment::ptype[pid].getCharge() / Utils::Normalizer::normalizeTime(Environment::dt);
+
         for(int i = 0; i < particles[pid].size(); ++i){
             Particle& p = particles[pid][i];
             if(p.isValid) {
+                Position old_position(p);
                 p.updatePosition();
+                Position new_position(p);
+
+                std::vector<double> delta_w = {
+                    q_per_dt * (new_position.dx1 - old_position.dx1),
+                    q_per_dt * (new_position.dy1 - old_position.dy1), 
+                    q_per_dt * (new_position.dz1 - old_position.dz1)};
+                std::vector<double> average_w = {
+                    0.5 * (new_position.dx1 + old_position.dx1),
+                    0.5 * (new_position.dy1 + old_position.dy1), 
+                    0.5 * (new_position.dz1 + old_position.dz1)};
+                
+                jx[old_position.i][old_position.j][old_position.k] += delta_w[0] * (1.0 - average_w[1]) * (1.0 - average_w[2]);
+                jx[old_position.i][old_position.j+1][old_position.k] += delta_w[0] * average_w[1] * (1.0 - average_w[2]);
+                jx[old_position.i][old_position.j][old_position.k+1] += delta_w[0] * (1.0 - average_w[1]) * average_w[2];
+                jx[old_position.i][old_position.j+1][old_position.k+1] += delta_w[0] * average_w[1] * average_w[2];
+
+                jy[old_position.i][old_position.j][old_position.k] += delta_w[1] * (1.0 - average_w[0]) * (1.0 - average_w[2]);
+                jy[old_position.i+1][old_position.j][old_position.k] += delta_w[1] * average_w[0] * (1.0 - average_w[2]);
+                jy[old_position.i][old_position.j][old_position.k+1] += delta_w[1] * (1.0 - average_w[0]) * average_w[2];
+                jy[old_position.i+1][old_position.j][old_position.k+1] += delta_w[1] * average_w[0] * average_w[2];
+
+                jz[old_position.i][old_position.j][old_position.k] += delta_w[2] * (1.0 - average_w[0]) * (1.0 - average_w[1]);
+                jz[old_position.i+1][old_position.j][old_position.k] += delta_w[2] * average_w[0] * (1.0 - average_w[1]);
+                jz[old_position.i][old_position.j+1][old_position.k] += delta_w[2] * (1.0 - average_w[0]) * average_w[1];
+                jz[old_position.i+1][old_position.j+1][old_position.k] += delta_w[2] * average_w[0] * average_w[1];
+
                 checkXBoundary(pbuff, p, slx);
                 checkYBoundary(pbuff, p, sly);
                 checkZBoundary(pbuff, p, slz);

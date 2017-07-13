@@ -21,11 +21,12 @@ class Position {
         double x, y, z;
         double dx1, dy1, dz1, dx2, dy2, dz2;
 
-        // Position Class
+        // 実数座標からのコンストラクタ
         Position(const double _x, const double _y, const double _z){
             this->setXYZ(_x, _y, _z);
         }
 
+        // 整数座標からのコンストラクタ
         Position(const int _i, const int _j, const int _k){
             this->setIJK(_i, _j, _k);
         }
@@ -33,6 +34,10 @@ class Position {
         //! Particle 用のコンストラクタはinlineで書けない
         Position(const Particle&);
         ~Position(){}
+
+        //! コピー演算はデフォルトで良い
+        Position(const Position&) = default;
+        Position& operator=(const Position&) = default;
 
         void setXYZ(const double _x, const double _y, const double _z){
             x = _x;
@@ -57,6 +62,10 @@ class Position {
             z = static_cast<double>(k - 1);
 
             this->updateDelta();
+        }
+
+        const Position operator-(const Position& rhs) {
+            return Position{x - rhs.x, y - rhs.y, z - rhs.z};
         }
 
         friend std::ostream& operator<<(std::ostream&, Position const&);
