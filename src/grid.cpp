@@ -69,6 +69,11 @@ void Grid::initializeField(void){
     field->getByRef().resize(tdExtents[cx][cy][cz]);
     field->getBzRef().resize(tdExtents[cx][cy][cz]);
 
+    //! 電流密度は Edge 要素なので Efield と同じ要素数を持つ
+    field->getJx().resize(tdExtents[cx-1][cy][cz]);
+    field->getJy().resize(tdExtents[cx][cy-1][cz]);
+    field->getJz().resize(tdExtents[cx][cy][cz-1]);
+
     this->setField(field);
 }
 

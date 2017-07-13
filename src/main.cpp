@@ -38,7 +38,10 @@ int main(int argc, char* argv[]){
         root_grid->updateRho();
         root_grid->solvePoisson();
         root_grid->updateEfield();
-        root_grid->updateBfield();
+
+        if ( Environment::solver_type == "EM" ) {
+            root_grid->updateBfield();
+        }
 
         if(Environment::plotPotential())    IO::writeDataInParallel(*root_grid, Environment::timestep, "potential");
         if(Environment::plotRho())          IO::writeDataInParallel(*root_grid, Environment::timestep, "rho");

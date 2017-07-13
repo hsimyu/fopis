@@ -21,6 +21,10 @@ class Field {
         tdArray byref;
         tdArray bzref;
 
+        tdArray jx;
+        tdArray jy;
+        tdArray jz;
+
         void setBoundaryConditionPhi(void);
         void setDirichletPhi(const AXIS, const AXIS_SIDE);
         void setNeumannPhi(const AXIS, const AXIS_SIDE);
@@ -44,7 +48,10 @@ class Field {
             bz(boost::extents[0][0][0], boost::fortran_storage_order()),
             bxref(boost::extents[0][0][0], boost::fortran_storage_order()),
             byref(boost::extents[0][0][0], boost::fortran_storage_order()),
-            bzref(boost::extents[0][0][0], boost::fortran_storage_order()) {}
+            bzref(boost::extents[0][0][0], boost::fortran_storage_order()),
+            jx(boost::extents[0][0][0], boost::fortran_storage_order()),
+            jy(boost::extents[0][0][0], boost::fortran_storage_order()),
+            jz(boost::extents[0][0][0], boost::fortran_storage_order()) {}
 
         // destructor
         ~Field(){}
@@ -92,6 +99,11 @@ class Field {
         tdArray& getBxRef(){ return bxref; }
         tdArray& getByRef(){ return byref; }
         tdArray& getBzRef(){ return bzref; }
+
+        //! current density
+        tdArray& getJx(){ return jx; }
+        tdArray& getJy(){ return jy; }
+        tdArray& getJz(){ return jz; }
 
         void updateEfield(const double);
         void updateBfield(const double, const int, const int, const int);
