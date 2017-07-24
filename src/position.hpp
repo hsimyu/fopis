@@ -2,6 +2,7 @@
 #define __TDPIC_POSITION_H_INCLUDED__
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 class Particle;
 
 class Position {
@@ -66,6 +67,16 @@ class Position {
 
         const Position operator-(const Position& rhs) {
             return Position{x - rhs.x, y - rhs.y, z - rhs.z};
+        }
+
+        Position getReferencePosition(const Position& old) {
+            //! i が floor(x) + 1 としているため、Umeda et al. 2003 と若干形が違っていることに注意
+            //! 実数座標は正しいので問題ない
+            return Position{
+                std::min(static_cast<double>(std::min(i, old.i)), std::max(static_cast<double>(std::max(i, old.i)) - 1.0, 0.5 * (x + old.x))),
+                std::min(static_cast<double>(std::min(j, old.j)), std::max(static_cast<double>(std::max(j, old.j)) - 1.0, 0.5 * (y + old.y))),
+                std::min(static_cast<double>(std::min(k, old.k)), std::max(static_cast<double>(std::max(k, old.k)) - 1.0, 0.5 * (z + old.z)))
+            };
         }
 
         friend std::ostream& operator<<(std::ostream&, Position const&);
