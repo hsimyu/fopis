@@ -46,6 +46,14 @@ class Grid {
         int getYNodeSize(void) const;
         int getZNodeSize(void) const;
 
+        // 粒子更新用のメソッド
+        //! ES: 静電
+        //! EM: 電磁
+        void updateParticleVelocityES(void);
+        void updateParticlePositionES(void);
+        void updateParticleVelocityEM(void);
+        void updateParticlePositionEM(void);
+
     public:
         Grid(void);
         Grid(Grid*, const int, const int, const int, const int, const int, const int);
