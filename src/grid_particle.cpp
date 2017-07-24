@@ -125,15 +125,17 @@ void Grid::updateParticlePosition(void) {
                 p.updatePosition();
                 Position new_position(p);
 
-                std::vector<double> delta_w = {
+                double delta_w[3] = {
                     q_per_dt * (new_position.dx1 - old_position.dx1),
                     q_per_dt * (new_position.dy1 - old_position.dy1), 
                     q_per_dt * (new_position.dz1 - old_position.dz1)};
-                std::vector<double> average_w = {
+                
+                double average_w[3] = {
                     0.5 * (new_position.dx1 + old_position.dx1),
                     0.5 * (new_position.dy1 + old_position.dy1), 
                     0.5 * (new_position.dz1 + old_position.dz1)};
                 
+                // Current Conserving Weighting
                 jx[old_position.i][old_position.j][old_position.k] += delta_w[0] * (1.0 - average_w[1]) * (1.0 - average_w[2]);
                 jx[old_position.i][old_position.j+1][old_position.k] += delta_w[0] * average_w[1] * (1.0 - average_w[2]);
                 jx[old_position.i][old_position.j][old_position.k+1] += delta_w[0] * (1.0 - average_w[1]) * average_w[2];

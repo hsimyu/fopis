@@ -24,7 +24,7 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
 
     this->setBoundaryConditionPhi();
 
-    const std::vector<bool> is_periodic = {
+    const bool is_periodic[6] = {
         Environment::isPeriodic(AXIS::x, AXIS_SIDE::low),
         Environment::isPeriodic(AXIS::x, AXIS_SIDE::up),
         Environment::isPeriodic(AXIS::y, AXIS_SIDE::low),
