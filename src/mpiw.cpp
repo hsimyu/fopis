@@ -233,30 +233,42 @@ namespace MPIw {
         MPI_Status s;
         boost::multi_array<double, 2> buff(boost::extents[ tdValue.shape()[1] ][ tdValue.shape()[2] ]);
 
+        //! 下側の値をバッファへ詰める
         for(int j = 0; j < tdValue.shape()[1]; ++j) {
             for(int k = 0; k < tdValue.shape()[2]; ++k) {
                 buff[j][k] = tdValue[1][j][k];
             }
         }
 
-        int length = tdValue.shape()[1] * tdValue.shape()[2];
-
-        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
-
-        for(int j = 0; j < tdValue.shape()[1]; ++j) {
-            for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                tdValue[tdValue.shape()[0] - 1][j][k] = buff[j][k];
-
-                // 反対側の値を buff に詰める
-                buff[j][k] = tdValue[tdValue.shape()[0] - 2][j][k];
+        if (prev == next) {
+            //! 自分自身への通信
+            //! std::swapのが速いかも
+            for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[0][j][k] = tdValue[tdValue.shape()[0] - 2][j][k];
+                    tdValue[tdValue.shape()[0] - 1][j][k] = buff[j][k];
+                }
             }
-        }
+        } else {
+            int length = tdValue.shape()[1] * tdValue.shape()[2];
 
-        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+            MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
 
-        for(int j = 0; j < tdValue.shape()[1]; ++j) {
-            for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                tdValue[0][j][k] = buff[j][k];
+            for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[tdValue.shape()[0] - 1][j][k] = buff[j][k];
+
+                    // 反対側の値を buff に詰める
+                    buff[j][k] = tdValue[tdValue.shape()[0] - 2][j][k];
+                }
+            }
+
+            MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+
+            for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[0][j][k] = buff[j][k];
+                }
             }
         }
     }
@@ -271,22 +283,31 @@ namespace MPIw {
             }
         }
 
-        int length = tdValue.shape()[0] * tdValue.shape()[2];
-
-        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
-
-        for(int i = 0; i < tdValue.shape()[0]; ++i) {
-            for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                tdValue[i][tdValue.shape()[1] - 1][k] = buff[i][k];
-                buff[i][k] = tdValue[i][tdValue.shape()[1] - 2][k];
+        if (prev == next) {
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[i][0][k] = tdValue[i][tdValue.shape()[1] - 2][k];
+                    tdValue[i][tdValue.shape()[1] - 1][k] = buff[i][k];
+                }
             }
-        }
+        } else {
+            int length = tdValue.shape()[0] * tdValue.shape()[2];
 
-        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+            MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
 
-        for(int i = 0; i < tdValue.shape()[0]; ++i) {
-            for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                tdValue[i][0][k] = buff[i][k];
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[i][tdValue.shape()[1] - 1][k] = buff[i][k];
+                    buff[i][k] = tdValue[i][tdValue.shape()[1] - 2][k];
+                }
+            }
+
+            MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                    tdValue[i][0][k] = buff[i][k];
+                }
             }
         }
     }
@@ -301,22 +322,32 @@ namespace MPIw {
             }
         }
 
-        int length = tdValue.shape()[0] * tdValue.shape()[1];
-
-        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
-
-        for(int i = 0; i < tdValue.shape()[0]; ++i) {
-            for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                tdValue[i][j][tdValue.shape()[2] - 1] = buff[i][j];
-                buff[i][j] = tdValue[i][j][tdValue.shape()[2] - 2];
+        if (prev == next) {
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                    tdValue[i][j][0] = tdValue[i][j][tdValue.shape()[2] - 2];
+                    tdValue[i][j][tdValue.shape()[2] - 1] = buff[i][j];
+                }
             }
-        }
+        } else {
 
-        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+            int length = tdValue.shape()[0] * tdValue.shape()[1];
 
-        for(int i = 0; i < tdValue.shape()[0]; ++i) {
-            for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                tdValue[i][j][0] = buff[i][j];
+            MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                    tdValue[i][j][tdValue.shape()[2] - 1] = buff[i][j];
+                    buff[i][j] = tdValue[i][j][tdValue.shape()[2] - 2];
+                }
+            }
+
+            MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
+
+            for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                    tdValue[i][j][0] = buff[i][j];
+                }
             }
         }
     }
