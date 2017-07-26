@@ -158,26 +158,37 @@ namespace MPIw {
     }
 
     void Communicator::sendRecvVector(std::vector<Particle> const& sendArray, std::vector<Particle>& recvArray, const int dest, const int src) {
-        unsigned int sendlen = sendArray.size();
+        const unsigned int sendlen = sendArray.size();
         unsigned int recvlen;
-        MPI_Status s;
-        MPI_Sendrecv(&sendlen, 1, MPI_UNSIGNED, dest, TAG::SENDRECV_PARTICLE_LENGTH, &recvlen, 1, MPI_UNSIGNED, src, TAG::SENDRECV_PARTICLE_LENGTH, comm, &s);
 
-        if(sendlen != 0 && recvlen != 0) {
-            //! ここでParticleのコンストラクタが呼ばれてしまうことに注意
-            recvArray.resize(recvlen);
-            MPI_Sendrecv(sendArray.data(), sendlen, Environment::MPI_PARTICLE, dest, TAG::SENDRECV_PARTICLE, recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, TAG::SENDRECV_PARTICLE, comm, &s);
-        } else if(sendlen != 0) {
-            MPI_Send(sendArray.data(), sendlen, Environment::MPI_PARTICLE, dest, TAG::SENDRECV_PARTICLE, comm);
-            recvArray.clear();
-            recvArray.shrink_to_fit();
-        } else if(recvlen != 0) {
-            //! ここでParticleのコンストラクタが呼ばれてしまうことに注意
-            recvArray.resize(recvlen);
-            MPI_Recv(recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, TAG::SENDRECV_PARTICLE, comm, &s);
+        if (src == dest) {
+            // send_recvの送信元と受取元が同じ == 自分との通信
+            if (sendlen != 0) {
+                recvArray = sendArray; // 単にコピーする
+            } else {
+                recvArray.clear();
+                recvArray.shrink_to_fit();
+            }
         } else {
-            recvArray.clear();
-            recvArray.shrink_to_fit();
+            MPI_Status s;
+            MPI_Sendrecv(&sendlen, 1, MPI_UNSIGNED, dest, TAG::SENDRECV_PARTICLE_LENGTH, &recvlen, 1, MPI_UNSIGNED, src, TAG::SENDRECV_PARTICLE_LENGTH, comm, &s);
+
+            if(sendlen != 0 && recvlen != 0) {
+                //! ここでParticleのコンストラクタが呼ばれてしまうことに注意
+                recvArray.resize(recvlen);
+                MPI_Sendrecv(sendArray.data(), sendlen, Environment::MPI_PARTICLE, dest, TAG::SENDRECV_PARTICLE, recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, TAG::SENDRECV_PARTICLE, comm, &s);
+            } else if(sendlen != 0) {
+                MPI_Send(sendArray.data(), sendlen, Environment::MPI_PARTICLE, dest, TAG::SENDRECV_PARTICLE, comm);
+                recvArray.clear();
+                recvArray.shrink_to_fit();
+            } else if(recvlen != 0) {
+                //! ここでParticleのコンストラクタが呼ばれてしまうことに注意
+                recvArray.resize(recvlen);
+                MPI_Recv(recvArray.data(), recvlen, Environment::MPI_PARTICLE, src, TAG::SENDRECV_PARTICLE, comm, &s);
+            } else {
+                recvArray.clear();
+                recvArray.shrink_to_fit();
+            }
         }
     }
 
