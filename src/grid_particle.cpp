@@ -24,7 +24,7 @@ void Grid::updateParticleVelocityES(void) {
     tdArray& ezref = field->getEzRef();
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        double qm = 0.5 * (Environment::ptype[pid].getCharge()) * (Environment::ptype[pid].getMass());
+        double qm = 0.5 * (Environment::ptype[pid].getCharge()) / (Environment::ptype[pid].getMass());
 
         for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
             Particle& p = particles[pid][pnum];
@@ -97,7 +97,7 @@ void Grid::updateParticleVelocityEM(void) {
     tdArray& bzref = field->getBzRef();
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        double qm = 0.5 * (Environment::ptype[pid].getCharge()) * (Environment::ptype[pid].getMass());
+        double qm = 0.5 * (Environment::ptype[pid].getCharge()) / (Environment::ptype[pid].getMass());
 
         for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
             Particle& p = particles[pid][pnum];
