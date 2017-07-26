@@ -111,7 +111,9 @@ class Field {
 
         double getEfieldEnergy(void) const;
         double getBfieldEnergy(void) const;
-};
 
+        //! check functions
+        void checkChargeConservation(const tdArray&, const double, const double) const;
+};
 
 #endif

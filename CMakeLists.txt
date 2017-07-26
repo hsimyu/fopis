@@ -6,6 +6,7 @@ option(BUILD_FOR_HOST    "Build for the login node."            ON)
 option(COPY_DEBUG_MPIRUN_SCRIPT   "Copy gdb_mpirun.sh to build dir." ON)
 option(COPY_SAMPLE_INPUT "Copy input.json to build dir."        ON)
 option(DEBUG             "Build in Debug Mode."                 ON)
+option(CHARGE_CONSERVATION "Check charge conservation on each step." ON)
 option(WITH_TEST         "Build Test code."                     ON)
 
 set(CXX_REQUIRED_LIBS "")
@@ -115,22 +116,22 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     endif()
 
     # options for mkl
-    set(MKLROOT "C:/Program\ Files\ (x86)/IntelSWTools/compilers_and_libraries/windows/mkl")
-    set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
-    set(MKL_LIBRARIES "${MKLROOT}/lib/intel64")
+    # set(MKLROOT "C:/Program\ Files\ (x86)/IntelSWTools/compilers_and_libraries/windows/mkl")
+    # set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
+    # set(MKL_LIBRARIES "${MKLROOT}/lib/intel64")
     # add_definitions(-DMKL_ILP64)
-    link_directories(${MKL_LIBRARIES})
-    include_directories(${MKL_INCLUDE_DIRS})
-    find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
-    find_library(MKL_INTEL_LP64 mkl_intel_lp64 HINTS ${MKL_LIBRARIES})
-    find_library(MKL_INTEL_THREAD mkl_intel_thread HINTS ${MKL_LIBRARIES})
-    find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
-    find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
-    find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
+    # link_directories(${MKL_LIBRARIES})
+    # include_directories(${MKL_INCLUDE_DIRS})
+    # find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_INTEL_LP64 mkl_intel_lp64 HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_INTEL_THREAD mkl_intel_thread HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
 
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
+    # set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
 
-    # options for hdf5
+    # options for silo
     set(HOME_ROOT "${HOME}/local/")
     set(HOME_LIBRARIES "${HOME_ROOT}/lib")
     find_library(LIB_SILO silo HINTS ${HOME_LIBRARIES})
@@ -154,26 +155,26 @@ else()
     endif()
 
     # options for mkl
-    set(MKLROOT "/opt/intel/mkl")
-    set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
-    set(MKL_LIBRARIES "${MKLROOT}/lib")
+    # set(MKLROOT "/opt/intel/mkl")
+    # set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
+    # set(MKL_LIBRARIES "${MKLROOT}/lib")
     # add_definitions(-DMKL_ILP64)
-    link_directories(${MKL_LIBRARIES})
-    include_directories(${MKL_INCLUDE_DIRS})
-    find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
-    find_library(MKL_INTEL_LP64 mkl_intel_lp64 HINTS ${MKL_LIBRARIES})
-    find_library(MKL_INTEL_THREAD mkl_intel_thread HINTS ${MKL_LIBRARIES})
-    find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
-    find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
-    find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
-
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
+    # link_directories(${MKL_LIBRARIES})
+    # include_directories(${MKL_INCLUDE_DIRS})
+    # find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_INTEL_LP64 mkl_intel_lp64 HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_INTEL_THREAD mkl_intel_thread HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
+    # find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
+    #
+    # set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
 
     # MPI LIBRARIES
     find_library(MPI_LIBS mpi HINTS /usr/local/lib)
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MPI_LIBS})
 
-    # options for hdf5
+    # options for silo
     set(HOME_ROOT "${HOME}/local/")
     set(HOME_LIBRARIES "${HOME_ROOT}/lib")
     find_library(LIB_HDF5 hdf5 HINTS ${HOME_LIBRARIES})
@@ -184,12 +185,20 @@ else()
     message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 endif()
 
+# enable computation validation
+if(${CHARGE_CONSERVATION})
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DCHARGE_CONSERVATION")
+endif()
+
 # -- check C++11 --
 include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 
-if(COMPILER_SUPPORTS_CXX11)
+if(COMPILER_SUPPORTS_CXX14)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+elseif(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(COMPILER_SUPPORTS_CXX0X)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")

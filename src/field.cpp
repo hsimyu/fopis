@@ -382,3 +382,30 @@ double Field::getBfieldEnergy(void) const {
 
     return 0.5 * energy / Utils::Normalizer::normalizeMu(mu0);
 }
+
+void Field::checkChargeConservation(const tdArray& old_rho, const double dt, const double dx) const {
+    double residual1 = 0.0, residual2 = 0.0;
+    double j1 = 0.0, j2 = 0.0, j3 = 0.0;
+    const int cx_with_glue = rho.shape()[0];
+    const int cy_with_glue = rho.shape()[1];
+    const int cz_with_glue = rho.shape()[2];
+
+    for(int i = 1; i < cx_with_glue - 1; ++i) {
+        for(int j = 1; j < cy_with_glue - 1; ++j) {
+            for(int k = 1; k < cz_with_glue - 1; ++k) {
+                residual1 += (rho[i][j][k])/dt;
+                residual2 += (old_rho[i][j][k])/dt;
+                j1 += (jx[i][j][k] - jx[i - 1][j][k])/dx;
+                j2 += (jy[i][j][k] - jy[i][j - 1][k])/dx;
+                j3 += (jz[i][j][k] - jz[i][j][k - 1])/dx;
+            }
+        }
+    }
+
+    // cout << "[TEST] Charge conservation residual1 = " << residual1 << endl;
+    // cout << "[TEST] Charge conservation residual2 = " << residual2 << endl;
+    // cout << "[TEST] Charge conservation j1 = " << j1 << endl;
+    // cout << "[TEST] Charge conservation j2 = " << j2 << endl;
+    // cout << "[TEST] Charge conservation j3 = " << j3 << endl;
+    cout << "[TEST] Charge conservation residual = " << (residual1 - residual2 + j1 + j2 + j3) << endl;
+}

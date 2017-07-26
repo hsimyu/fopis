@@ -219,6 +219,11 @@ void Grid::checkGridValidness() {
 void Grid::updateRho() {
     tdArray& rho = field->getRho();
 
+#ifdef CHARGE_CONSERVATION
+    // 電荷保存則をcheckするため、古いrhoを保持する
+    tdArray old_rho = rho;
+#endif
+
     // rhoを初期化
     Utils::initializeTdarray(rho);
 
@@ -254,6 +259,13 @@ void Grid::updateRho() {
     if(MPIw::Environment::numprocs > 1) {
         MPIw::Environment::sendRecvField(rho);
     }
+
+#ifdef CHARGE_CONSERVATION
+    if (Environment::solver_type == "EM") {
+        field->checkChargeConservation(old_rho, 1.0, dx);
+    }
+#endif
+
 }
 
 //! 粒子の位置から密度を計算する

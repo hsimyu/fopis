@@ -29,12 +29,15 @@ int main(int argc, char* argv[]){
     root_grid->updateEfield();
 
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
+        // timing: t
         if( Environment::isRootNode ) {
             cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }
 
+        // timing: t + 0.5 dt
         root_grid->updateParticleVelocity();
         root_grid->updateParticlePosition();
+        // timing: t + dt
         root_grid->updateRho();
         root_grid->solvePoisson();
         root_grid->updateEfield();

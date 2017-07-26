@@ -294,6 +294,11 @@ void Grid::updateParticlePositionEM(void) {
     tdArray& jy = field->getJy();
     tdArray& jz = field->getJz();
 
+    // 電流配列を初期化
+    Utils::initializeTdarray(jx);
+    Utils::initializeTdarray(jy);
+    Utils::initializeTdarray(jz);
+
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         //! note: 1/dxdydz 分を係数としてかけておく必要がある？
         const double q_per_dt = Environment::ptype[pid].getCharge() / Utils::Normalizer::normalizeTime(Environment::dt);
@@ -378,6 +383,13 @@ void Grid::updateParticlePositionEM(void) {
                 checkZBoundary(pbuff, p, slz);
             }
         }
+    }
+
+    // 電流通信
+    if(MPIw::Environment::numprocs > 1) {
+        MPIw::Environment::sendRecvField(jx);
+        MPIw::Environment::sendRecvField(jy);
+        MPIw::Environment::sendRecvField(jz);
     }
 
     if(Environment::proc_x > 1) {
