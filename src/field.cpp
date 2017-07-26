@@ -51,10 +51,8 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
             }
         }
 
-        if(MPIw::Environment::numprocs > 1) {
-            //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
-            MPIw::Environment::sendRecvField(phi);
-        }
+        //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
+        MPIw::Environment::sendRecvField(phi);
 
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) break;
     }
@@ -272,11 +270,9 @@ void Field::updateEfield(const double dx) {
         }
     }
 
-    if(MPIw::Environment::numprocs > 1) {
-        MPIw::Environment::sendRecvField(exref);
-        MPIw::Environment::sendRecvField(eyref);
-        MPIw::Environment::sendRecvField(ezref);
-    }
+    MPIw::Environment::sendRecvField(exref);
+    MPIw::Environment::sendRecvField(eyref);
+    MPIw::Environment::sendRecvField(ezref);
 }
 
 //! @brief 磁場を更新する(FDTD)
@@ -327,11 +323,9 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
         }
     }
 
-    if(MPIw::Environment::numprocs > 1) {
-        MPIw::Environment::sendRecvField(bxref);
-        MPIw::Environment::sendRecvField(byref);
-        MPIw::Environment::sendRecvField(bzref);
-    }
+    MPIw::Environment::sendRecvField(bxref);
+    MPIw::Environment::sendRecvField(byref);
+    MPIw::Environment::sendRecvField(bzref);
 }
 
 double Field::getEfieldEnergy(void) const {

@@ -12,7 +12,7 @@
 
 void Grid::updateParticleVelocity(void) {
     if (Environment::solver_type == "ES") {
-        this->updateParticleVelocityES();
+        // this->updateParticleVelocityES();
     } else {
         this->updateParticleVelocityEM();
     }
@@ -211,7 +211,8 @@ void Grid::updateParticlePositionES(void) {
         }
     }
 
-    if(Environment::proc_x > 1) {
+    //! 対象の方向のプロセス数が 1 かつ 周期境界でない場合には通信しなくてよい
+    if( (Environment::proc_x > 1) || Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
 
         for(int axis = 0; axis < 2; ++axis) {
@@ -231,7 +232,7 @@ void Grid::updateParticlePositionES(void) {
         }
     }
 
-    if(Environment::proc_y > 1) {
+    if( (Environment::proc_y > 1) || Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
 
         for(int axis = 2; axis < 4; ++axis) {
@@ -249,7 +250,7 @@ void Grid::updateParticlePositionES(void) {
         }
     }
 
-    if(Environment::proc_z > 1) {
+    if( (Environment::proc_z > 1) || Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
 
         for(int axis = 4; axis < 6; ++axis) {
@@ -386,13 +387,11 @@ void Grid::updateParticlePositionEM(void) {
     }
 
     // 電流通信
-    if(MPIw::Environment::numprocs > 1) {
-        MPIw::Environment::sendRecvField(jx);
-        MPIw::Environment::sendRecvField(jy);
-        MPIw::Environment::sendRecvField(jz);
-    }
+    MPIw::Environment::sendRecvField(jx);
+    MPIw::Environment::sendRecvField(jy);
+    MPIw::Environment::sendRecvField(jz);
 
-    if(Environment::proc_x > 1) {
+    if( (Environment::proc_x > 1) || Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
 
         for(int axis = 0; axis < 2; ++axis) {
@@ -412,7 +411,7 @@ void Grid::updateParticlePositionEM(void) {
         }
     }
 
-    if(Environment::proc_y > 1) {
+    if( (Environment::proc_y > 1) || Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
 
         for(int axis = 2; axis < 4; ++axis) {
@@ -430,7 +429,7 @@ void Grid::updateParticlePositionEM(void) {
         }
     }
 
-    if(Environment::proc_z > 1) {
+    if( (Environment::proc_z > 1) || Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
 
         for(int axis = 4; axis < 6; ++axis) {

@@ -57,17 +57,18 @@ namespace MPIw {
     void Environment::sendRecvField(tdArray& x3D){
         int prev, next;
 
-        if(::Environment::proc_x > 1) {
+        // 対応する方向の proc 数が 1 かつ周期境界でない場合には通信しなくてよい
+        if( (::Environment::proc_x > 1) || ::Environment::isPeriodic(AXIS::x, AXIS_SIDE::low) ) {
             prev = 0; next = 1;
             Comms["world"]->sendRecvFieldX(x3D, adj[prev], adj[next]);
         }
 
-        if(::Environment::proc_y > 1) {
+        if( (::Environment::proc_y > 1) || ::Environment::isPeriodic(AXIS::y, AXIS_SIDE::low) ) {
             prev = 2; next = 3;
             Comms["world"]->sendRecvFieldY(x3D, adj[prev], adj[next]);
         }
 
-        if(::Environment::proc_z > 1) {
+        if( (::Environment::proc_z > 1) || ::Environment::isPeriodic(AXIS::z, AXIS_SIDE::low) ) {
             prev = 4; next = 5;
             Comms["world"]->sendRecvFieldZ(x3D, adj[prev], adj[next]);
         }

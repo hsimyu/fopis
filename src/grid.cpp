@@ -256,9 +256,7 @@ void Grid::updateRho() {
     }
 
     //! rho を隣に送る
-    if(MPIw::Environment::numprocs > 1) {
-        MPIw::Environment::sendRecvField(rho);
-    }
+    MPIw::Environment::sendRecvField(rho);
 
 #ifdef CHARGE_CONSERVATION
     if (Environment::solver_type == "EM") {
