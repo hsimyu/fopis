@@ -12,7 +12,7 @@
 
 void Grid::updateParticleVelocity(void) {
     if (Environment::solver_type == "ES") {
-        // this->updateParticleVelocityES();
+        this->updateParticleVelocityES();
     } else {
         this->updateParticleVelocityEM();
     }
