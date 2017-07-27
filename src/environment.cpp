@@ -83,6 +83,10 @@ bool Environment::isPeriodic(const AXIS axis, const AXIS_SIDE low_or_up) {
     return ( (!Environment::isOnEdge(axis, low_or_up)) || (Environment::getBoundaryCondition(axis, low_or_up) == "P" ) );
 }
 
+bool Environment::isBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
+    return !isPeriodic(axis, low_or_up);
+}
+
 
 void Environment::printInfo(void){
     cout << "[Environment]" << endl;
