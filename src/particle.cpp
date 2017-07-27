@@ -16,8 +16,16 @@ void Particle::setVelocity(Velocity const& v){
     vz = v.vz;
 }
 
+Position&& Particle::getPosition(void) const {
+    return Position{x, y, z};
+}
+
 Position&& Particle::getOldPosition(void) const {
     return Position{x - vx, y - vy, z - vz};
+}
+
+Position&& Particle::getNewPosition(void) const {
+    return Position{x + vx, y + vy, z + vz};
 }
 
 double Particle::getEnergy(void) const {

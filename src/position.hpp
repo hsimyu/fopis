@@ -72,7 +72,7 @@ class Position {
             return Position{x - rhs.x, y - rhs.y, z - rhs.z};
         }
 
-        Position getReferencePosition(const Position& old) {
+        Position&& getReferencePosition(const Position& old) {
             //! i が floor(x) + 1 としているため、Umeda et al. 2003 と若干形が違っていることに注意
             //! 実数座標は正しいので問題ない
             return Position{
