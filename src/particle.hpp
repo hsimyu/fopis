@@ -163,6 +163,10 @@ class Particle {
         Position&& getOldPosition(void) const;
         Position&& getNewPosition(void) const;
 
+        //! 電流配分
+        void distributeCurrentAtOldPosition(const double, tdArray&, tdArray&, tdArray&) const;
+        void distributeCurrentAtNewPosition(const double, tdArray&, tdArray&, tdArray&) const;
+
         //! 個別にエネルギーを計算するためのメンバ関数
         double getEnergy(void) const;
 

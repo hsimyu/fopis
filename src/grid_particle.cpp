@@ -307,81 +307,17 @@ void Grid::updateParticlePositionEM(void) {
         for(int i = 0; i < particles[pid].size(); ++i){
             Particle& p = particles[pid][i];
             if(p.isValid) {
-                Position old_pos(p);
+                p.distributeCurrentAtOldPosition(q_per_dt, jx, jy, jz);
                 p.updatePosition();
-                Position new_pos(p);
-                Position ref_pos = new_pos.getReferencePosition(old_pos);
-
-                // charge flux の計算
-                const double flux1[3] = {
-                    q_per_dt * (ref_pos.x - old_pos.x),
-                    q_per_dt * (ref_pos.y - old_pos.y),
-                    q_per_dt * (ref_pos.z - old_pos.z),
-                };
-
-                const double flux2[3] = {
-                    q_per_dt * (new_pos.x - ref_pos.x),
-                    q_per_dt * (new_pos.y - ref_pos.y),
-                    q_per_dt * (new_pos.z - ref_pos.z),
-                };
-
-                //! 1次の shape factor の計算
-                //! 中点における shape factor を取る
-                //! グリッドをまたいだ時 ref_position の dx1 は 1.0 となるので、
-                const double average_w1[3] = {
-                    0.5 * (ref_pos.x + old_pos.x) - (static_cast<double>(old_pos.i) - 1.0),
-                    0.5 * (ref_pos.y + old_pos.y) - (static_cast<double>(old_pos.j) - 1.0),
-                    0.5 * (ref_pos.z + old_pos.z) - (static_cast<double>(old_pos.k) - 1.0),
-                };
-                const double average_w2[3] = {
-                    0.5 * (ref_pos.x + new_pos.x) - (static_cast<double>(new_pos.i) - 1.0),
-                    0.5 * (ref_pos.y + new_pos.y) - (static_cast<double>(new_pos.j) - 1.0),
-                    0.5 * (ref_pos.z + new_pos.z) - (static_cast<double>(new_pos.k) - 1.0),
-                };
-
-                int pos_i = old_pos.i;
-                int pos_j = old_pos.j;
-                int pos_k = old_pos.k;
-                
-                // Current Conserving Weighting, l = 1 (old cell)
-                jx[pos_i][pos_j    ][pos_k    ] += flux1[0] * (1.0 - average_w1[1]) * (1.0 - average_w1[2]);
-                jx[pos_i][pos_j + 1][pos_k    ] += flux1[0] * average_w1[1] * (1.0 - average_w1[2]);
-                jx[pos_i][pos_j    ][pos_k + 1] += flux1[0] * (1.0 - average_w1[1]) * average_w1[2];
-                jx[pos_i][pos_j + 1][pos_k + 1] += flux1[0] * average_w1[1] * average_w1[2];
-
-                jy[pos_i    ][pos_j][pos_k    ] += flux1[1] * (1.0 - average_w1[0]) * (1.0 - average_w1[2]);
-                jy[pos_i + 1][pos_j][pos_k    ] += flux1[1] * average_w1[0] * (1.0 - average_w1[2]);
-                jy[pos_i    ][pos_j][pos_k + 1] += flux1[1] * (1.0 - average_w1[0]) * average_w1[2];
-                jy[pos_i + 1][pos_j][pos_k + 1] += flux1[1] * average_w1[0] * average_w1[2];
-
-                jz[pos_i    ][pos_j    ][pos_k] += flux1[2] * (1.0 - average_w1[0]) * (1.0 - average_w1[1]);
-                jz[pos_i + 1][pos_j    ][pos_k] += flux1[2] * average_w1[0] * (1.0 - average_w1[1]);
-                jz[pos_i    ][pos_j + 1][pos_k] += flux1[2] * (1.0 - average_w1[0]) * average_w1[1];
-                jz[pos_i + 1][pos_j + 1][pos_k] += flux1[2] * average_w1[0] * average_w1[1];
-
-                pos_i = new_pos.i;
-                pos_j = new_pos.j;
-                pos_k = new_pos.k;
-
-                // Current Conserving Weighting, l = 2 (new cell)
-                jx[pos_i][pos_j    ][pos_k    ] += flux2[0] * (1.0 - average_w2[1]) * (1.0 - average_w2[2]);
-                jx[pos_i][pos_j + 1][pos_k    ] += flux2[0] * average_w2[1] * (1.0 - average_w2[2]);
-                jx[pos_i][pos_j    ][pos_k + 1] += flux2[0] * (1.0 - average_w2[1]) * average_w2[2];
-                jx[pos_i][pos_j + 1][pos_k + 1] += flux2[0] * average_w2[1] * average_w2[2];
-
-                jy[pos_i    ][pos_j][pos_k    ] += flux2[1] * (1.0 - average_w2[0]) * (1.0 - average_w2[2]);
-                jy[pos_i + 1][pos_j][pos_k    ] += flux2[1] * average_w2[0] * (1.0 - average_w2[2]);
-                jy[pos_i    ][pos_j][pos_k + 1] += flux2[1] * (1.0 - average_w2[0]) * average_w2[2];
-                jy[pos_i + 1][pos_j][pos_k + 1] += flux2[1] * average_w2[0] * average_w2[2];
-
-                jz[pos_i    ][pos_j    ][pos_k] += flux2[2] * (1.0 - average_w2[0]) * (1.0 - average_w2[1]);
-                jz[pos_i + 1][pos_j    ][pos_k] += flux2[2] * average_w2[0] * (1.0 - average_w2[1]);
-                jz[pos_i    ][pos_j + 1][pos_k] += flux2[2] * (1.0 - average_w2[0]) * average_w2[1];
-                jz[pos_i + 1][pos_j + 1][pos_k] += flux2[2] * average_w2[0] * average_w2[1];
 
                 checkXBoundary(pbuff, p, slx);
                 checkYBoundary(pbuff, p, sly);
                 checkZBoundary(pbuff, p, slz);
+
+                // check 後も valid であれば配分してOK
+                if (p.isValid) {
+                    p.distributeCurrentAtNewPosition(q_per_dt, jx, jy, jz);
+                }
             }
         }
     }
@@ -454,7 +390,10 @@ void Grid::updateParticlePositionEM(void) {
             }
 #endif
             if(p.isValid) {
-                particles[ p.typeId ].push_back(p);
+                const int pid = p.typeId;
+                const double q_per_dt = Environment::ptype[pid].getCharge() / Utils::Normalizer::normalizeTime(Environment::dt);
+                p.distributeCurrentAtNewPosition(q_per_dt, jx, jy, jz);
+                particles[ pid ].push_back(p);
             }
         }
     }
