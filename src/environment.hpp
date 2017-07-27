@@ -64,6 +64,7 @@ struct Environment {
 
         static void printInfo(void);
         static void checkPlasmaInfo(void);
+        static void checkCFLCondition(void);
 
         // plot timing
         static bool plotPotential(void)    { return isPlot("potential"); }

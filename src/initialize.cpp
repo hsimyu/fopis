@@ -39,6 +39,7 @@ namespace Initializer {
 
             Environment::printInfo();
             Environment::checkPlasmaInfo();
+            Environment::checkCFLCondition();
             //! データ書き込み用ディレクトリを作成
             Utils::createDir("data");
         }

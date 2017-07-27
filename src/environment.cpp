@@ -113,6 +113,18 @@ void Environment::printInfo(void){
     cout << endl;
 }
 
+void Environment::checkCFLCondition(void) {
+    cout << "[CFL Validation]" << endl;
+
+    const auto courant = Utils::Normalizer::normalizeVelocity(c);
+    cout << "    Courant number: " << courant << endl;
+
+    if ( courant > 1.0 ) {
+        cout << "    [ERROR] Courant number exceeds 1.0. " << endl;
+        MPIw::Environment::exitWithFinalize(0);
+    }
+}
+
 void Environment::checkPlasmaInfo(void) {
     cout << "[Plasma Info]" << endl;
 
