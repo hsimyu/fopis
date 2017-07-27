@@ -39,6 +39,9 @@ class Position {
         //! コピー演算はデフォルトで良い
         Position(const Position&) = default;
         Position& operator=(const Position&) = default;
+        //! ムーブ演算
+        Position(Position&& p) = default;
+        Position& operator=(Position&&) = default;
 
         void setXYZ(const double _x, const double _y, const double _z){
             x = _x;

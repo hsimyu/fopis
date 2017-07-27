@@ -159,6 +159,8 @@ class Particle {
             z += vz;
         }
 
+        Position&& getOldPosition(void) const;
+
         //! 個別にエネルギーを計算するためのメンバ関数
         double getEnergy(void) const;
 
