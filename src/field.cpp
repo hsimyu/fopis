@@ -300,7 +300,7 @@ void Field::updateEfieldFDTD(const double dx) {
                 //! 各方向には1つ少ないのでcx-1まで
                 if(i < cx_with_glue - 2) {
                     ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
-                        dt_per_mu0_eps0_dx * (bz[i][j - 1][k] - bz[i][j][k] - by[i][j][k] + by[i][j][k - 1]);
+                        dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
                 }
                 if(j < cy_with_glue - 2) {
                     ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
@@ -345,8 +345,9 @@ void Field::setDampingBoundaryOnEfield(void) {
     if (!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) {
         for(int k = 0; k < cz_with_glue; ++k){
             for(int j = 0; j < cy_with_glue; ++j){
-                ex[cx_with_glue - 1][j][k] = 0.0; // glue cell
-                ex[cx_with_glue - 2][j][k] = 0.0;
+                //! ex は x方向に 1 小さいので、cx_with_glue - 2 が glue cell になる
+                ex[cx_with_glue - 2][j][k] = 0.0; // glue cell
+                ex[cx_with_glue - 3][j][k] = 0.0;
             }
         }
     }
@@ -363,8 +364,8 @@ void Field::setDampingBoundaryOnEfield(void) {
     if (!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) {
         for(int i = 0; i < cx_with_glue; ++i){
             for(int k = 0; k < cz_with_glue; ++k){
-                ex[i][cy_with_glue - 1][k] = 0.0; // glue cell
-                ex[i][cy_with_glue - 2][k] = 0.0;
+                ey[i][cy_with_glue - 2][k] = 0.0; // glue cell
+                ey[i][cy_with_glue - 3][k] = 0.0;
             }
         }
     }
@@ -372,8 +373,8 @@ void Field::setDampingBoundaryOnEfield(void) {
         if (!Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
         for(int i = 0; i < cx_with_glue; ++i){
             for(int j = 0; j < cy_with_glue; ++j){
-                ey[i][j][0] = 0.0; // glue cell
-                ey[i][j][1] = 0.0;
+                ez[i][j][0] = 0.0; // glue cell
+                ez[i][j][1] = 0.0;
             }
         }
     }
@@ -381,8 +382,8 @@ void Field::setDampingBoundaryOnEfield(void) {
     if (!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) {
         for(int i = 0; i < cx_with_glue; ++i){
             for(int j = 0; j < cy_with_glue; ++j){
-                ex[i][j][cz_with_glue - 1] = 0.0; // glue cell
-                ex[i][j][cz_with_glue - 2] = 0.0;
+                ez[i][j][cz_with_glue - 2] = 0.0; // glue cell
+                ez[i][j][cz_with_glue - 3] = 0.0;
             }
         }
     }
@@ -411,15 +412,15 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
         for(int j = 1; j < cy_with_glue; ++j){
             for(int k = 1; k < cz_with_glue; ++k){
                 if (j != cy_with_glue - 1 && k != cz_with_glue - 1) {
-                    bx[i][j][k] = bx[i][j][k] - dt_per_dx * (ez[i][j][k] - ez[i][j - 1][k] - ey[i][j][k] + ey[i][j][k - 1]);
+                    bx[i][j][k] = bx[i][j][k] - dt_per_dx * (ez[i][j - 1][k] - ez[i][j][k] - ey[i][j][k + 1] + ey[i][j][k]);
                 }
 
                 if (i != cx_with_glue - 1 && k != cz_with_glue - 1) {
-                    by[i][j][k] = by[i][j][k] - dt_per_dx * (ex[i][j][k] - ex[i][j][k - 1] - ez[i][j][k] + ez[i - 1][j][k]);
+                    by[i][j][k] = by[i][j][k] - dt_per_dx * (ex[i][j][k + 1] - ex[i][j][k] - ez[i + 1][j][k] + ez[i][j][k]);
                 }
 
                 if (i != cx_with_glue - 1 && j != cy_with_glue - 1) {
-                    bz[i][j][k] = bz[i][j][k] - dt_per_dx * (ey[i][j][k] - ey[i - 1][j][k] - ex[i][j][k] + ex[i][j - 1][k]);
+                    bz[i][j][k] = bz[i][j][k] - dt_per_dx * (ey[i + 1][j][k] - ey[i][j][k] - ex[i][j + 1][k] + ex[i][j][k]);
                 }
             }
         }
