@@ -106,6 +106,10 @@ class Field {
         tdArray& getJz(){ return jz; }
 
         void updateEfield(const double);
+        void updateEfieldFDTD(const double);
+        void updateReferenceEfield(void);
+        void setDampingBoundaryOnEfield(void);
+
         void updateBfield(const double, const int, const int, const int);
         void solvePoisson(const int, const double);
 

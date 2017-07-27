@@ -198,8 +198,6 @@ void Grid::updateParticlePositionES(void) {
     const double slz = dx * nz;
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        const double q_per_dt = Environment::ptype[pid].getCharge() / Utils::Normalizer::normalizeTime(Environment::dt);
-
         for(int i = 0; i < particles[pid].size(); ++i){
             Particle& p = particles[pid][i];
             if(p.isValid) {

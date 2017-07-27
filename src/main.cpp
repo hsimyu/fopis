@@ -27,6 +27,7 @@ int main(int argc, char* argv[]){
     root_grid->updateRho();
     root_grid->solvePoisson();
     root_grid->updateEfield();
+    root_grid->updateBfield();
 
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
         // timing: t
@@ -35,15 +36,27 @@ int main(int argc, char* argv[]){
         }
 
         // timing: t + 0.5 dt
-        root_grid->updateParticleVelocity();
-        root_grid->updateParticlePosition();
-        // timing: t + dt
-        root_grid->updateRho();
-        root_grid->solvePoisson();
-        root_grid->updateEfield();
+        root_grid->updateParticleVelocity(); // 速度更新
+        root_grid->updateParticlePosition(); // jx, jy, jz もここで update される
 
         if ( Environment::solver_type == "EM" ) {
-            root_grid->updateBfield();
+            // 電磁計算の場合
+            // timing: t + dt
+
+            if ( Environment::timestep % 1 == 0 ) {
+                root_grid->updateRho(); // 新しい位置に対応する電荷密度算出
+                root_grid->solvePoisson(); // Poisson を解く (FDTDの場合はたまにでいい?)
+                root_grid->updateEfield(); // 電場更新
+            } else {
+                root_grid->updateEfieldFDTD(); // FDTDで電場更新
+            }
+            root_grid->updateBfield(); // 磁場更新
+        } else {
+            // 静電計算の場合
+            // timing: t + dt
+            root_grid->updateRho(); // 新しい位置に対応する電荷密度算出
+            root_grid->solvePoisson(); // Poisson を解く
+            root_grid->updateEfield(); // 電場更新
         }
 
         if(Environment::plotPotential())    IO::writeDataInParallel(*root_grid, Environment::timestep, "potential");

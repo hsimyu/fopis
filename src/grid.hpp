@@ -159,6 +159,10 @@ class Grid {
             field->updateEfield(dx);
         }
 
+        void updateEfieldFDTD(void) {
+            field->updateEfieldFDTD(dx);
+        }
+
         void updateBfield(void) {
             field->updateBfield(dx, nx, ny, nz);
         }

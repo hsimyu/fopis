@@ -182,7 +182,7 @@ double Field::checkPhiResidual() {
     return residual/(rho_max/normalized_eps);
 }
 
-//! @brief 電場を更新する
+//! @brief 差分法で電場を更新する
 //! e = - (p_+1 - p_+0)/dx
 void Field::updateEfield(const double dx) {
     const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
@@ -190,7 +190,8 @@ void Field::updateEfield(const double dx) {
     const int cz_with_glue = ez.shape()[2] + 1;
     const double dxm = 1.0/dx;
 
-    //! phiは通信してあるとする -> 0番目のedgeも計算可能
+    //! @note:隣と通信しなくてもいい
+    //! phiが通信してあるため、端の要素を通信なしで計算可能
     for(int i = 0; i < cx_with_glue; ++i){
         for(int j = 0; j < cy_with_glue; ++j){
             for(int k = 0; k < cz_with_glue; ++k){
@@ -202,7 +203,14 @@ void Field::updateEfield(const double dx) {
         }
     }
 
-    //! @note:隣と通信しなくてもいい？？
+    this->updateReferenceEfield();
+}
+
+//! Reference Efield (ノード上で定義される電場) を更新する
+void Field::updateReferenceEfield() {
+    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
 
     //! reference 更新
     for(int i = 1; i < cx_with_glue - 1; ++i){
@@ -216,16 +224,18 @@ void Field::updateEfield(const double dx) {
     }
 
     //! 外側境界の条件設定
-    if(Environment::onLowXedge) {
+    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) {
         for(int j = 1; j < cy_with_glue - 1; ++j){
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 exref[0][j][k] = 0.0;
+
+                // Boundary である場合、更新 (これ正しい??)
                 exref[1][j][k] = 0.5 * (phi[3][j][k] - 4.0 * phi[2][j][k] + 3.0 * phi[1][j][k]);
             }
         }
     }
 
-    if(Environment::onHighXedge) {
+    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) {
         for(int j = 1; j < cy_with_glue - 1; ++j){
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 exref[cx_with_glue - 1][j][k] = 0.0;
@@ -234,7 +244,7 @@ void Field::updateEfield(const double dx) {
         }
     }
 
-    if(Environment::onLowYedge) {
+    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) {
         for(int i = 1; i < cx_with_glue - 1; ++i){
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 eyref[i][0][k] = 0.0;
@@ -243,7 +253,7 @@ void Field::updateEfield(const double dx) {
         }
     }
 
-    if(Environment::onHighYedge) {
+    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) {
         for(int i = 1; i < cx_with_glue - 1; ++i){
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 eyref[i][cy_with_glue - 1][k] = 0.0;
@@ -252,7 +262,7 @@ void Field::updateEfield(const double dx) {
         }
     }
 
-    if(Environment::onLowZedge) {
+    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) {
         for(int i = 1; i < cx_with_glue - 1; ++i){
             for(int j = 1; j < cy_with_glue - 1; ++j){
                 ezref[i][j][0] = 0.0;
@@ -261,7 +271,7 @@ void Field::updateEfield(const double dx) {
         }
     }
 
-    if(Environment::onHighZedge) {
+    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) {
         for(int i = 1; i < cx_with_glue - 1; ++i){
             for(int j = 1; j < cy_with_glue - 1; ++j){
                 ezref[i][j][cz_with_glue - 1] = 0.0;
@@ -275,19 +285,122 @@ void Field::updateEfield(const double dx) {
     MPIw::Environment::sendRecvField(ezref);
 }
 
+//! FDTD法ベースで電場を更新する
+void Field::updateEfieldFDTD(const double dx) {
+    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
+    const double dt = Utils::Normalizer::normalizeTime(Environment::dt);
+    const double dt_per_eps0 = dt / Utils::Normalizer::normalizeEpsilon(eps0);
+    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Utils::Normalizer::normalizeMu(mu0) * dx);
+
+    for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                //! 各方向には1つ少ないのでcx-1まで
+                if(i < cx_with_glue - 2) {
+                    ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
+                        dt_per_mu0_eps0_dx * (bz[i][j - 1][k] - bz[i][j][k] - by[i][j][k] + by[i][j][k - 1]);
+                }
+                if(j < cy_with_glue - 2) {
+                    ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
+                        dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+                }
+                if(k < cz_with_glue - 2) {
+                    ez[i][j][k] = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
+                        dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+                }
+            }
+        }
+    }
+
+    // FDTDの場合は通信が必要になる
+    MPIw::Environment::sendRecvField(ex);
+    MPIw::Environment::sendRecvField(ey);
+    MPIw::Environment::sendRecvField(ez);
+
+    //! 境界条件設定
+    this->setDampingBoundaryOnEfield();
+
+    //! phi correction?
+
+    //! Reference 更新
+    this->updateReferenceEfield();
+}
+
+void Field::setDampingBoundaryOnEfield(void) {
+    const int cx_with_glue = ex.shape()[0] + 1;
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
+
+    if (!Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
+        for(int k = 0; k < cz_with_glue; ++k){
+            for(int j = 0; j < cy_with_glue; ++j){
+                ex[0][j][k] = 0.0; // glue cell
+                ex[1][j][k] = 0.0;
+            }
+        }
+    }
+
+    if (!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) {
+        for(int k = 0; k < cz_with_glue; ++k){
+            for(int j = 0; j < cy_with_glue; ++j){
+                ex[cx_with_glue - 1][j][k] = 0.0; // glue cell
+                ex[cx_with_glue - 2][j][k] = 0.0;
+            }
+        }
+    }
+
+    if (!Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
+        for(int i = 0; i < cx_with_glue; ++i){
+            for(int k = 0; k < cz_with_glue; ++k){
+                ey[i][0][k] = 0.0; // glue cell
+                ey[i][1][k] = 0.0;
+            }
+        }
+    }
+
+    if (!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) {
+        for(int i = 0; i < cx_with_glue; ++i){
+            for(int k = 0; k < cz_with_glue; ++k){
+                ex[i][cy_with_glue - 1][k] = 0.0; // glue cell
+                ex[i][cy_with_glue - 2][k] = 0.0;
+            }
+        }
+    }
+
+        if (!Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
+        for(int i = 0; i < cx_with_glue; ++i){
+            for(int j = 0; j < cy_with_glue; ++j){
+                ey[i][j][0] = 0.0; // glue cell
+                ey[i][j][1] = 0.0;
+            }
+        }
+    }
+
+    if (!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) {
+        for(int i = 0; i < cx_with_glue; ++i){
+            for(int j = 0; j < cy_with_glue; ++j){
+                ex[i][j][cz_with_glue - 1] = 0.0; // glue cell
+                ex[i][j][cz_with_glue - 2] = 0.0;
+            }
+        }
+    }
+}
+
 //! @brief 磁場を更新する(FDTD)
 //!
 void Field::updateBfield(const double dx, const int nx, const int ny, const int nz) {
-    const double dt = Utils::Normalizer::normalizeTime(Environment::dt);
+    const double dt_per_dx = Utils::Normalizer::normalizeTime(Environment::dt) / dx;
 
-    const double epsilon_r = 1.0; //! 比誘電率
-    const double sigma = 1.0; //! 導電率 (各Faceでの)
-    const double mu_r = 1.0; //! 透磁率 (各Faceでの)
-    const double sigma_m = 0.0; //! 導磁率?
+    // const double epsilon_r = 1.0; //! 比誘電率
+    // const double sigma = 1.0; //! 導電率 (各Faceでの)
+    // const double mu_r = 1.0; //! 透磁率 (各Faceでの)
+    // const double sigma_m = 0.0; //! 導磁率?
 
     // 磁束密度更新時の係数
-    const double d1 = mu_r/(mu_r + sigma_m * dt / mu0);
-    const double d2 = dt/(mu_r + sigma_m * dt / mu0);
+    // const double d1 = mu_r/(mu_r + sigma_m * dt / mu0);
+    // const double d2 = dt/(mu_r + sigma_m * dt / mu0);
 
     const int cx_with_glue = nx + 1;
     const int cy_with_glue = nx + 1;
@@ -298,19 +411,22 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
         for(int j = 1; j < cy_with_glue; ++j){
             for(int k = 1; k < cz_with_glue; ++k){
                 if (j != cy_with_glue - 1 && k != cz_with_glue - 1) {
-                    bx[i][j][k] = d1 * bx[i][j][k] - d2 * (ez[i][j + 1][k] - ez[i][j][k] - ey[i][j][k + 1] + ey[i][j][k]) / dx;
+                    bx[i][j][k] = bx[i][j][k] - dt_per_dx * (ez[i][j][k] - ez[i][j - 1][k] - ey[i][j][k] + ey[i][j][k - 1]);
                 }
 
                 if (i != cx_with_glue - 1 && k != cz_with_glue - 1) {
-                    by[i][j][k] = d1 * by[i][j][k] - d2 * (ex[i][j][k + 1] - ex[i][j][k] - ez[i + 1][j][k] + ez[i][j][k]) / dx;
+                    by[i][j][k] = by[i][j][k] - dt_per_dx * (ex[i][j][k] - ex[i][j][k - 1] - ez[i][j][k] + ez[i - 1][j][k]);
                 }
 
                 if (i != cx_with_glue - 1 && j != cy_with_glue - 1) {
-                    bz[i][j][k] = d1 * bz[i][j][k] - d2 * (ey[i + 1][j][k] - ey[i][j][k] - ex[i][j + 1][k] + ex[i][j][k]) / dx;
+                    bz[i][j][k] = bz[i][j][k] - dt_per_dx * (ey[i][j][k] - ey[i - 1][j][k] - ex[i][j][k] + ex[i][j - 1][k]);
                 }
             }
         }
     }
+    MPIw::Environment::sendRecvField(bx);
+    MPIw::Environment::sendRecvField(by);
+    MPIw::Environment::sendRecvField(bz);
 
     //! reference 更新
     for(int i = 1; i < cx_with_glue - 1; ++i){
@@ -366,13 +482,6 @@ double Field::getBfieldEnergy(void) const {
             }
         }
     }
-
-    cout << "b^2 = " << energy << endl;
-    cout << "normed energy = " << 0.5 * energy / Utils::Normalizer::normalizeMu(mu0) << endl;
-    cout << "unnormed energy = " << Utils::Normalizer::unnormalizeEnergy(0.5 * energy / Utils::Normalizer::normalizeMu(mu0)) << endl;
-
-    const double test_be = 1.0e-9; // 1nT
-    cout << "Benergy test1: " << (0.5 * pow(test_be, 2) / mu0) << endl;
 
     return 0.5 * energy / Utils::Normalizer::normalizeMu(mu0);
 }
