@@ -4,13 +4,6 @@
 #include <boost/filesystem.hpp>
 
 namespace Utils {
-    // Normalizedのstatic変数の実体
-    //! @note: Normalizer は基本的にRoot Gridのグリッド幅しか保持していない
-    double Normalizer::x_unit = 1.0;
-    double Normalizer::t_unit = 1.0;
-    double Normalizer::e_unit = 1.0;
-    double Normalizer::m_unit = 1.0;
-
     void initializeTdarray(tdArray& x) {
         for(int i = 0; i < x.shape()[0]; ++i) {
             for(int j = 0; j < x.shape()[1]; ++j) {

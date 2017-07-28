@@ -5,6 +5,7 @@
 #include "grid.hpp"
 #include "particle.hpp"
 #include "mpiw.hpp"
+#include "normalizer.hpp"
 #include <tdpic_configure.h>
 
 namespace Initializer {
@@ -27,10 +28,10 @@ namespace Initializer {
 
         //! initialize normalizer
         //! normalizerのセットはGridの生成より先
-        Utils::Normalizer::x_unit = Environment::dx;
-        Utils::Normalizer::t_unit = Environment::dt;
-        Utils::Normalizer::m_unit = me;
-        Utils::Normalizer::e_unit = e;
+        Normalizer::x_unit = Environment::dx;
+        Normalizer::t_unit = Environment::dt;
+        Normalizer::m_unit = me;
+        Normalizer::e_unit = e;
 
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;

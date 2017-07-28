@@ -3,6 +3,7 @@
 #include "field.hpp"
 #include "utils.hpp"
 #include "mpiw.hpp"
+#include "normalizer.hpp"
 #include <cmath>
 #include <algorithm>
 
@@ -15,7 +16,7 @@ void Field::solvePoisson(const int loopnum, const double dx) {
 //! @brief SOR法
 void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
-    const double rho_coeff = pow(dx, 2) / Utils::Normalizer::normalizeEpsilon(eps0);
+    const double rho_coeff = pow(dx, 2) / Normalizer::normalizeEpsilon(eps0);
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -153,7 +154,7 @@ void Field::setDirichletPhi(const AXIS axis, const AXIS_SIDE low_or_up) {
 double Field::checkPhiResidual() {
     double residual = 0.0;
     double rho_max = 0.0;
-    double normalized_eps = Utils::Normalizer::normalizeEpsilon(eps0);
+    double normalized_eps = Normalizer::normalizeEpsilon(eps0);
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -291,9 +292,9 @@ void Field::updateEfieldFDTD(const double dx) {
     const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
     const int cy_with_glue = ey.shape()[1] + 1;
     const int cz_with_glue = ez.shape()[2] + 1;
-    const double dt = Utils::Normalizer::normalizeTime(Environment::dt);
-    const double dt_per_eps0 = dt / Utils::Normalizer::normalizeEpsilon(eps0);
-    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Utils::Normalizer::normalizeMu(mu0) * dx);
+    const double dt = Normalizer::normalizeTime(Environment::dt);
+    const double dt_per_eps0 = dt / Normalizer::normalizeEpsilon(eps0);
+    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Normalizer::normalizeMu(mu0) * dx);
 
     for(int i = 1; i < cx_with_glue - 1; ++i){
         for(int j = 1; j < cy_with_glue - 1; ++j){
@@ -393,7 +394,7 @@ void Field::setDampingBoundaryOnEfield(void) {
 //! @brief 磁場を更新する(FDTD)
 //!
 void Field::updateBfield(const double dx, const int nx, const int ny, const int nz) {
-    const double dt_per_dx = Utils::Normalizer::normalizeTime(Environment::dt) / dx;
+    const double dt_per_dx = Normalizer::normalizeTime(Environment::dt) / dx;
 
     // const double epsilon_r = 1.0; //! 比誘電率
     // const double sigma = 1.0; //! 導電率 (各Faceでの)
@@ -486,7 +487,7 @@ double Field::getEfieldEnergy(void) const {
         }
     }
 
-    return 0.5 * Utils::Normalizer::normalizeEpsilon(eps0) * energy;
+    return 0.5 * Normalizer::normalizeEpsilon(eps0) * energy;
 }
 
 double Field::getBfieldEnergy(void) const {
@@ -507,7 +508,7 @@ double Field::getBfieldEnergy(void) const {
         }
     }
 
-    return 0.5 * energy / Utils::Normalizer::normalizeMu(mu0);
+    return 0.5 * energy / Normalizer::normalizeMu(mu0);
 }
 
 void Field::checkChargeConservation(const tdArray& old_rho, const double dt, const double dx) const {

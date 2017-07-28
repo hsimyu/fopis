@@ -4,6 +4,7 @@
 #include "particle.hpp"
 #include "grid.hpp"
 #include "utils.hpp"
+#include "normalizer.hpp"
 #include <random>
 
 ParticleType::ParticleType(void) :
@@ -44,11 +45,11 @@ int ParticleType::calcTotalNumber(void){
 }
 
 double ParticleType::calcThermalVelocity() const {
-    return Utils::Normalizer::normalizeVelocity(sqrt(2.0 * temperature / (mass * me)));
+    return Normalizer::normalizeVelocity(sqrt(2.0 * temperature / (mass * me)));
 }
 
 double ParticleType::calcDeviation() const {
-    return Utils::Normalizer::normalizeVelocity(sqrt(temperature / (mass * me)));
+    return Normalizer::normalizeVelocity(sqrt(temperature / (mass * me)));
 }
 
 double ParticleType::calcPlasmaFrequency(void) const {
@@ -106,10 +107,10 @@ std::vector<double> ParticleType::calcFlux(Grid const& g) const {
 
     std::vector<double> flux(6);
     //! 等方的なfluxを仮定
-    const double flux0 = 0.5 * this->calcThermalVelocity()/sqrt(M_PI) * Utils::Normalizer::normalizeDensity(this->getDensity());
-    const double areax = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNY();
-    const double areay = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNX();
-    const double areaz = pow(Utils::Normalizer::normalizeLength(Environment::dx), 2) * g.getNX() * g.getNY();
+    const double flux0 = 0.5 * this->calcThermalVelocity()/sqrt(M_PI) * Normalizer::normalizeDensity(this->getDensity());
+    const double areax = pow(Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNY();
+    const double areay = pow(Normalizer::normalizeLength(Environment::dx), 2) * g.getNZ() * g.getNX();
+    const double areaz = pow(Normalizer::normalizeLength(Environment::dx), 2) * g.getNX() * g.getNY();
 
     flux[0] = areax*flux0 / this->getSize();
     flux[1] = areax*flux0 / this->getSize();

@@ -6,6 +6,7 @@
 #include "environment.hpp"
 #include "mpiw.hpp"
 #include "dataio.hpp"
+#include "normalizer.hpp"
 #include <silo.h>
 #include <random>
 #include <algorithm>
@@ -294,11 +295,11 @@ void Grid::updateParticlePositionEM(void) {
     tdArray& jz = field->getJz();
 
     // 電流配列を初期化
-    field->initializeCurrent(Utils::Normalizer::normalizeTime(Environment::dt));
+    field->initializeCurrent(Normalizer::normalizeTime(Environment::dt));
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         //! note: 1/dxdydz 分を係数としてかけておく必要がある？
-        const double q_per_dt = Environment::ptype[pid].getCharge() / Utils::Normalizer::normalizeTime(Environment::dt);
+        const double q_per_dt = Environment::ptype[pid].getCharge() / Normalizer::normalizeTime(Environment::dt);
 
         for(int i = 0; i < particles[pid].size(); ++i){
             Particle& p = particles[pid][i];
@@ -387,7 +388,7 @@ void Grid::updateParticlePositionEM(void) {
 #endif
             if(p.isValid) {
                 const int pid = p.typeId;
-                const double q_per_dt = Environment::ptype[pid].getCharge() / Utils::Normalizer::normalizeTime(Environment::dt);
+                const double q_per_dt = Environment::ptype[pid].getCharge() / Normalizer::normalizeTime(Environment::dt);
                 p.distributeCurrentAtNewPosition(q_per_dt, jx, jy, jz);
                 particles[ pid ].push_back(p);
             }

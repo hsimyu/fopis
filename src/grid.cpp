@@ -6,6 +6,7 @@
 #include "environment.hpp"
 #include "mpiw.hpp"
 #include "utils.hpp"
+#include "normalizer.hpp"
 #include <silo.h>
 #include <random>
 #include <algorithm>
@@ -90,7 +91,7 @@ Grid::Grid(void){
     nx = Environment::cell_x;
     ny = Environment::cell_y;
     nz = Environment::cell_z;
-    dx = Utils::Normalizer::normalizeLength(Environment::dx);
+    dx = Normalizer::normalizeLength(Environment::dx);
 
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
@@ -280,7 +281,7 @@ float* Grid::getDensity(const int pid) {
         zone_density[i] = 0.0f;
     }
 
-    const auto size = static_cast<float>(Utils::Normalizer::unnormalizeDensity(Environment::ptype[pid].getSize()));
+    const auto size = static_cast<float>(Normalizer::unnormalizeDensity(Environment::ptype[pid].getSize()));
 
     for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
         Particle& p = particles[pid][pnum];
@@ -494,10 +495,10 @@ int Grid::getZNodeSize(void) const {
 float** Grid::getMeshNodes(int dim) {
     // the array of coordinate arrays
     // @note: メモリリーク防止のため必ずdeleteする
-    const float real_dx = Utils::Normalizer::unnormalizeLength(dx);
-    const float real_base_x = Utils::Normalizer::unnormalizeLength(base_x);
-    const float real_base_y = Utils::Normalizer::unnormalizeLength(base_y);
-    const float real_base_z = Utils::Normalizer::unnormalizeLength(base_z);
+    const float real_dx = Normalizer::unnormalizeLength(dx);
+    const float real_base_x = Normalizer::unnormalizeLength(base_x);
+    const float real_base_y = Normalizer::unnormalizeLength(base_y);
+    const float real_base_z = Normalizer::unnormalizeLength(base_z);
 
     float** coordinates = new float*[dim];
     // root にいて正方向の端でない場合は+1分出力する
@@ -720,7 +721,7 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     if(g->getLevel() > 0) ost << tab << "--- child [" << childnum << "] ---" << endl;
     ost << tab << "id: " << g->getID() << endl;
     ost << tab << "level: " << g->getLevel() << endl;
-    ost << tab << "dx: " << format("%10.5e") % Utils::Normalizer::unnormalizeLength(g->getDX()) << "m" << endl;
+    ost << tab << "dx: " << format("%10.5e") % Normalizer::unnormalizeLength(g->getDX()) << "m" << endl;
     ost << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % g->getNX() % g->getNY() % g->getNZ() << " grids [total]" << endl;
     ost << tab << "nx,ny,nz(+): " << format("%1%x%2%x%3%") % (g->getNX() + 2) % (g->getNY() + 2) % (g->getNZ() + 2) << " grids [with glue cells]" << endl;
     ost << tab << "parent from: " << format("%1%,%2%,%3%") % g->getFromIX() % g->getFromIY() % g->getFromIZ() << endl;

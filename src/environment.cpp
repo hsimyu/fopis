@@ -2,6 +2,7 @@
 #include "environment.hpp"
 #include "particle.hpp"
 #include "utils.hpp"
+#include "normalizer.hpp"
 #include "mpiw.hpp"
 
 // static variables
@@ -116,7 +117,7 @@ void Environment::printInfo(void){
 void Environment::checkCFLCondition(void) {
     cout << "[CFL Validation]" << endl;
 
-    const auto courant = Utils::Normalizer::normalizeVelocity(c);
+    const auto courant = Normalizer::normalizeVelocity(c);
     cout << "    Courant number: " << courant << endl;
 
     if ( courant > 1.0 ) {
