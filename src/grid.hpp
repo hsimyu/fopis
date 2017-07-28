@@ -32,6 +32,7 @@ class Grid {
         int level;
         int sumTotalNumOfChildGrids;
         double dx;
+        double dt;
 
         Field* field;
 
@@ -101,8 +102,10 @@ class Grid {
 
         void setLevel(int l){ level = l; }
         int  getLevel(void) const { return level; }
-        void   setDX(double _dx){ dx = _dx; }
-        double getDX(void) const { return dx; }
+        void   setDx(double _dx){ dx = _dx; }
+        double getDx(void) const { return dx; }
+        void   setDt(double _dt){ dt = _dt; }
+        double getDt(void) const { return dt; }
 
         void setField(Field* f){ field = f; }
         Field* getField(void){ return field; }
@@ -160,11 +163,11 @@ class Grid {
         }
 
         void updateEfieldFDTD(void) {
-            field->updateEfieldFDTD(dx);
+            field->updateEfieldFDTD(dx, dt);
         }
 
         void updateBfield(void) {
-            field->updateBfield(dx, nx, ny, nz);
+            field->updateBfield(dx, nx, ny, nz, dt);
         }
 
         // update particles

@@ -288,11 +288,10 @@ void Field::updateReferenceEfield() {
 }
 
 //! FDTD法ベースで電場を更新する
-void Field::updateEfieldFDTD(const double dx) {
+void Field::updateEfieldFDTD(const double dx, const double dt) {
     const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
     const int cy_with_glue = ey.shape()[1] + 1;
     const int cz_with_glue = ez.shape()[2] + 1;
-    const double dt = Normalizer::normalizeTime(Environment::dt);
     const double dt_per_eps0 = dt / Normalizer::normalizeEpsilon(eps0);
     const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Normalizer::normalizeMu(mu0) * dx);
 
@@ -393,8 +392,8 @@ void Field::setDampingBoundaryOnEfield(void) {
 
 //! @brief 磁場を更新する(FDTD)
 //!
-void Field::updateBfield(const double dx, const int nx, const int ny, const int nz) {
-    const double dt_per_dx = Normalizer::normalizeTime(Environment::dt) / dx;
+void Field::updateBfield(const double dx, const int nx, const int ny, const int nz, const double dt) {
+    const double dt_per_dx = dt / dx;
 
     // const double epsilon_r = 1.0; //! 比誘電率
     // const double sigma = 1.0; //! 導電率 (各Faceでの)

@@ -105,15 +105,15 @@ class Field {
         tdArray& getJy(){ return jy; }
         tdArray& getJz(){ return jz; }
 
-        void updateEfield(const double);
-        void updateEfieldFDTD(const double);
+        void updateEfield(const double dx);
+        void updateEfieldFDTD(const double dx, const double dt);
         void updateReferenceEfield(void);
         void setDampingBoundaryOnEfield(void);
 
-        void updateBfield(const double, const int, const int, const int);
+        void updateBfield(const double dx, const int, const int, const int, const double dt);
         void solvePoisson(const int, const double);
 
-        void initializeCurrent(const double);
+        void initializeCurrent(const double dt);
 
         double getEfieldEnergy(void) const;
         double getBfieldEnergy(void) const;

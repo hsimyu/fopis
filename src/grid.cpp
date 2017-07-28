@@ -92,6 +92,7 @@ Grid::Grid(void){
     ny = Environment::cell_y;
     nz = Environment::cell_z;
     dx = Normalizer::normalizeLength(Environment::dx);
+    dt = Normalizer::normalizeTime(Environment::dt);
 
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
@@ -165,9 +166,9 @@ Grid::Grid(Grid* g,
     to_ix = _to_ix;
     to_iy = _to_iy;
     to_iz = _to_iz;
-    base_x = g->getBaseX() + g->getDX() * (from_ix - 1);
-    base_y = g->getBaseY() + g->getDX() * (from_iy - 1);
-    base_z = g->getBaseZ() + g->getDX() * (from_iz - 1);
+    base_x = g->getBaseX() + g->getDx() * (from_ix - 1);
+    base_y = g->getBaseY() + g->getDx() * (from_iy - 1);
+    base_z = g->getBaseZ() + g->getDx() * (from_iz - 1);
     //! @}
 
     // patchの大きさを計算
@@ -176,7 +177,8 @@ Grid::Grid(Grid* g,
     nz = (_to_iz - _from_iz) * 2 + 1;
 
     // refineRatioは2で固定
-    dx = g->getDX() / refineRatio;
+    dx = g->getDx() / refineRatio;
+    dt = g->getDt() / refineRatio;
 
     checkGridValidness();
 
@@ -721,7 +723,8 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     if(g->getLevel() > 0) ost << tab << "--- child [" << childnum << "] ---" << endl;
     ost << tab << "id: " << g->getID() << endl;
     ost << tab << "level: " << g->getLevel() << endl;
-    ost << tab << "dx: " << format("%10.5e") % Normalizer::unnormalizeLength(g->getDX()) << "m" << endl;
+    ost << tab << "dx: " << format("%10.5e") % Normalizer::unnormalizeLength(g->getDx()) << "m" << endl;
+    ost << tab << "dt: " << format("%10.5e") % Normalizer::unnormalizeTime(g->getDt()) << "m" << endl;
     ost << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % g->getNX() % g->getNY() % g->getNZ() << " grids [total]" << endl;
     ost << tab << "nx,ny,nz(+): " << format("%1%x%2%x%3%") % (g->getNX() + 2) % (g->getNY() + 2) % (g->getNZ() + 2) << " grids [with glue cells]" << endl;
     ost << tab << "parent from: " << format("%1%,%2%,%3%") % g->getFromIX() % g->getFromIY() % g->getFromIZ() << endl;
