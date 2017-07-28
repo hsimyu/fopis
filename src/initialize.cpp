@@ -28,10 +28,10 @@ namespace Initializer {
 
         //! initialize normalizer
         //! normalizerのセットはGridの生成より先
-        Normalizer::x_unit = Environment::dx;
-        Normalizer::t_unit = Environment::dt;
-        Normalizer::m_unit = me;
-        Normalizer::e_unit = e;
+        Normalizer::setLengthUnit(Environment::dx);
+        Normalizer::setTimeUnit(Environment::dt);
+        Normalizer::setMassUnit(me);
+        Normalizer::setChargeUnit(e);
 
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;

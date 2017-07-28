@@ -3,7 +3,7 @@
 #include "dataio.hpp"
 #include "grid.hpp"
 #include "mpiw.hpp"
-#include "utils.hpp"
+#include "normalizer.hpp"
 #include <numeric>
 #include <silo.h>
 #include <mpi.h>
@@ -441,10 +441,10 @@ namespace IO {
             }
 
             ofs << format("%10d %15.7e %15.7e %15.7e %15.7e %15.7e") % timestep % datatime %
-                Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedEFieldEnergy + receivedBFieldEnergy) %
-                Utils::Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
-                Utils::Normalizer::unnormalizeEnergy(receivedEFieldEnergy) %
-                Utils::Normalizer::unnormalizeEnergy(receivedBFieldEnergy) << endl;
+                Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedEFieldEnergy + receivedBFieldEnergy) %
+                Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
+                Normalizer::unnormalizeEnergy(receivedEFieldEnergy) %
+                Normalizer::unnormalizeEnergy(receivedBFieldEnergy) << endl;
         }
     }
 
@@ -542,9 +542,9 @@ namespace IO {
 
             double raw_unit_value;
             if(type == "velocity") {
-                raw_unit_value = Utils::Normalizer::unnormalizeVelocity(unit_value[pid]) * 1e-3; // km/s単位
+                raw_unit_value = Normalizer::unnormalizeVelocity(unit_value[pid]) * 1e-3; // km/s単位
             } else {
-                raw_unit_value = Utils::Normalizer::unnormalizeEnergy(unit_value[pid]) / e; // eV単位
+                raw_unit_value = Normalizer::unnormalizeEnergy(unit_value[pid]) / e; // eV単位
             }
 
             for(int i = 0; i < pdist[pid].size(); ++i){

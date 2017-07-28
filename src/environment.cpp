@@ -117,7 +117,7 @@ void Environment::printInfo(void){
 void Environment::checkCFLCondition(void) {
     cout << "[CFL Validation]" << endl;
 
-    const auto courant = Normalizer::normalizeVelocity(c);
+    const auto courant = Normalizer::c;
     cout << "    Courant number: " << courant << endl;
 
     if ( courant > 1.0 ) {

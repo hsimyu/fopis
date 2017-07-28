@@ -9,12 +9,44 @@ protected:
     Normalizer();
     ~Normalizer();
 
-public:
     //! @note: initializeの際に次元単位をセットする必要がある
     static double x_unit;
     static double t_unit;
     static double m_unit;
     static double e_unit;
+
+    //! 単位系が変更された際に物理定数を更新する
+    static void updatePhysicalConstants(void) {
+        eps0 = normalizeEpsilon(::eps0);
+        mu0 = normalizeMu(::mu0);
+        c = normalizeVelocity(::c);
+    }
+
+public:
+    //! 正規化された物理定数
+    static double eps0;
+    static double mu0;
+    static double c;
+
+    static void setLengthUnit(const double _u) {
+        x_unit = _u;
+        updatePhysicalConstants();
+    }
+
+    static void setTimeUnit(const double _u) {
+        t_unit = _u;
+        updatePhysicalConstants();
+    }
+
+    static void setMassUnit(const double _u) {
+        m_unit = _u;
+        updatePhysicalConstants();
+    }
+
+    static void setChargeUnit(const double _u) {
+        e_unit = _u;
+        updatePhysicalConstants();
+    }
 
     // Normalize Utilities
     static double normalizeLength(double raw_x) {
