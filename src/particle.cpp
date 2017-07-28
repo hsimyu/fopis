@@ -16,15 +16,15 @@ void Particle::setVelocity(Velocity const& v){
     vz = v.vz;
 }
 
-Position&& Particle::getPosition(void) const {
+Position Particle::getPosition(void) const {
     return Position{x, y, z};
 }
 
-Position&& Particle::getOldPosition(void) const {
+Position Particle::getOldPosition(void) const {
     return Position{x - vx, y - vy, z - vz};
 }
 
-Position&& Particle::getNewPosition(void) const {
+Position Particle::getNewPosition(void) const {
     return Position{x + vx, y + vy, z + vz};
 }
 

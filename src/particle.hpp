@@ -159,9 +159,10 @@ class Particle {
             z += vz;
         }
 
-        Position&& getPosition(void) const;
-        Position&& getOldPosition(void) const;
-        Position&& getNewPosition(void) const;
+        //! 右辺値を返す
+        Position getPosition(void) const;
+        Position getOldPosition(void) const;
+        Position getNewPosition(void) const;
 
         //! 電流配分
         void distributeCurrentAtOldPosition(const double, tdArray&, tdArray&, tdArray&) const;
