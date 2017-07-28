@@ -3,6 +3,7 @@
 #include "field.hpp"
 #include "utils.hpp"
 #include "mpiw.hpp"
+#include <cmath>
 #include <algorithm>
 
 //! Poissonソルバを呼び出す
@@ -443,6 +444,28 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
     MPIw::Environment::sendRecvField(bxref);
     MPIw::Environment::sendRecvField(byref);
     MPIw::Environment::sendRecvField(bzref);
+}
+
+void Field::initializeCurrent(const double dt) {
+    Utils::initializeTdarray(jx);
+    Utils::initializeTdarray(jy);
+    Utils::initializeTdarray(jz);
+
+    const int cx_with_glue = jx.shape()[0] + 1; // Edge 要素は各方向に1少ないので +1 する
+    const int cy_with_glue = jy.shape()[1] + 1;
+    const int cz_with_glue = jz.shape()[2] + 1;
+
+    //! 背景電流などがある場合にはここで設定する
+
+    //! Jz 方向に振動する電流
+    const auto now = dt * static_cast<double>(Environment::timestep);
+    const double freq = 2.0 * M_PI * 1.0; // Hz
+    const double J0 = 1.0;
+    const int half_x = cx_with_glue / 2;
+    const int half_y = cy_with_glue / 2;
+    for (int k = 0; k < cz_with_glue - 1; ++k) {
+        jz[half_x][half_y][k] = J0 * std::sin(freq * now);
+    }
 }
 
 double Field::getEfieldEnergy(void) const {

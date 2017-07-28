@@ -294,9 +294,7 @@ void Grid::updateParticlePositionEM(void) {
     tdArray& jz = field->getJz();
 
     // 電流配列を初期化
-    Utils::initializeTdarray(jx);
-    Utils::initializeTdarray(jy);
-    Utils::initializeTdarray(jz);
+    field->initializeCurrent(Utils::Normalizer::normalizeTime(Environment::dt));
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         //! note: 1/dxdydz 分を係数としてかけておく必要がある？

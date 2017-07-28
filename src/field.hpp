@@ -113,6 +113,8 @@ class Field {
         void updateBfield(const double, const int, const int, const int);
         void solvePoisson(const int, const double);
 
+        void initializeCurrent(const double);
+
         double getEfieldEnergy(void) const;
         double getBfieldEnergy(void) const;
 
