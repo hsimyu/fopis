@@ -16,7 +16,7 @@ void Field::solvePoisson(const int loopnum, const double dx) {
 //! @brief SOR法
 void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
-    const double rho_coeff = pow(dx, 2) / Normalizer::normalizeEpsilon(eps0);
+    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -154,7 +154,7 @@ void Field::setDirichletPhi(const AXIS axis, const AXIS_SIDE low_or_up) {
 double Field::checkPhiResidual() {
     double residual = 0.0;
     double rho_max = 0.0;
-    double normalized_eps = Normalizer::normalizeEpsilon(eps0);
+    const double normalized_eps = Normalizer::eps0;
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -190,7 +190,7 @@ void Field::updateEfield(const double dx) {
     const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
     const int cy_with_glue = ey.shape()[1] + 1;
     const int cz_with_glue = ez.shape()[2] + 1;
-    const double dxm = 1.0/dx;
+    const double per_dx = 1.0 / dx;
 
     //! @note:隣と通信しなくてもいい
     //! phiが通信してあるため、端の要素を通信なしで計算可能
@@ -198,9 +198,9 @@ void Field::updateEfield(const double dx) {
         for(int j = 0; j < cy_with_glue; ++j){
             for(int k = 0; k < cz_with_glue; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
-                if(i < cx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * dxm;
-                if(j < cy_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * dxm;
-                if(k < cz_with_glue - 1) ez[i][j][k] = (phi[i][j][k] - phi[i][j][k + 1]) * dxm;
+                if(i < cx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * per_dx;
+                if(j < cy_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * per_dx;
+                if(k < cz_with_glue - 1) ez[i][j][k] = (phi[i][j][k] - phi[i][j][k + 1]) * per_dx;
             }
         }
     }
@@ -292,8 +292,8 @@ void Field::updateEfieldFDTD(const double dx, const double dt) {
     const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
     const int cy_with_glue = ey.shape()[1] + 1;
     const int cz_with_glue = ez.shape()[2] + 1;
-    const double dt_per_eps0 = dt / Normalizer::normalizeEpsilon(eps0);
-    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Normalizer::normalizeMu(mu0) * dx);
+    const double dt_per_eps0 = dt / Normalizer::eps0;
+    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Normalizer::mu0 * dx);
 
     for(int i = 1; i < cx_with_glue - 1; ++i){
         for(int j = 1; j < cy_with_glue - 1; ++j){
@@ -486,7 +486,7 @@ double Field::getEfieldEnergy(void) const {
         }
     }
 
-    return 0.5 * Normalizer::normalizeEpsilon(eps0) * energy;
+    return 0.5 * Normalizer::eps0 * energy;
 }
 
 double Field::getBfieldEnergy(void) const {
@@ -507,7 +507,7 @@ double Field::getBfieldEnergy(void) const {
         }
     }
 
-    return 0.5 * energy / Normalizer::normalizeMu(mu0);
+    return 0.5 * energy / Normalizer::mu0;
 }
 
 void Field::checkChargeConservation(const tdArray& old_rho, const double dt, const double dx) const {
