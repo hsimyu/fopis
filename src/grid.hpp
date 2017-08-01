@@ -7,12 +7,17 @@
 #include "field.hpp"
 #include "environment.hpp"
 #include "utils.hpp"
+#include "spacecraft.hpp"
 
 //! @class Grid
 class Grid {
     private:
+        //! グリッド関係ツリー
         Grid* parent;
         std::vector<Grid*> children;
+
+        // オブジェクト定義は Node ベース
+        std::vector<Spacecraft> objects;
 
         //! 親のどの座標にくっついているか
         //! @{
@@ -35,7 +40,6 @@ class Grid {
         double dt;
 
         std::unique_ptr<Field> field;
-
 
         // Class Unique ID
         static unsigned int nextID;
@@ -116,6 +120,9 @@ class Grid {
 
         // Field 初期化
         void initializeField(void);
+
+        //! 物体定義初期化
+        void initializeObject(void);
 
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);

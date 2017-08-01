@@ -77,9 +77,14 @@ void Grid::initializeField(void){
 }
 
 void Grid::initializeObject(void) {
-    tdArray::extent_gen tdExtents;
-    // Node ベース
-    object_map.resize(tdExtents[nx][ny][nz]);
+    //! TODO: オブジェクト数を数える
+
+    const size_t max_objects = 1;
+    for(size_t i = 0; i < max_objects; ++i) {
+        Spacecraft spc(nx, ny, nz);
+        cout << spc << endl;
+        objects.emplace_back( spc );
+    }
 }
 
 // root grid constructor
