@@ -21,6 +21,7 @@ configure_file(${CMAKE_SOURCE_DIR}/include/tdpic_configure.h.in ${CMAKE_SOURCE_D
 
 # add submodules
 include_directories(${CMAKE_SOURCE_DIR}/picojson)
+include_directories(${CMAKE_SOURCE_DIR}/HighFive/include)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # check host
