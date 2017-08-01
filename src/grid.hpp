@@ -34,7 +34,8 @@ class Grid {
         double dx;
         double dt;
 
-        Field* field;
+        std::unique_ptr<Field> field;
+
 
         // Class Unique ID
         static unsigned int nextID;
@@ -107,8 +108,8 @@ class Grid {
         void   setDt(double _dt){ dt = _dt; }
         double getDt(void) const { return dt; }
 
-        void setField(Field* f){ field = f; }
-        Field* getField(void){ return field; }
+        // Field内の値へのアクセスを wrap する
+        tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
 
         void  setParent(Grid* g){ parent = g; }
         Grid* getParent(void){ return parent; }

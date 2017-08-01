@@ -5,42 +5,42 @@
         "solver_type": "EM",
         "boundary": "DDDDDD",
         "dimension": "3D",
-        "nx": 16,
-        "ny": 16,
-        "nz": 16,
-        "proc_x": 2,
+        "nx": 32,
+        "ny": 32,
+        "nz": 32,
+        "proc_x": 1,
         "proc_y": 1,
         "proc_z": 1,
-        "dx": 0.1,
-        "dt": 1e-8
+        "dx": 1.0,
+        "dt": 1e-9
     },
     "Plasma": {
         "Electron": {
             "type": "ambient",
             "mass": 1.0,
             "charge": -1.0,
-            "density": 1.0e6,
-            "temperature": 12.0,
+            "density": 1.0e7,
+            "temperature": 1.0,
             "particle_per_cell": 20
         },
         "Proton": {
             "type": "ambient",
             "mass": 1836.0,
             "charge": 1.0,
-            "density": 1.0e6,
-            "temperature": 12.0,
+            "density": 1.0e7,
+            "temperature": 1.0,
             "particle_per_cell": 20
         }
     },
     "IO": {
-        "plot_energy_dist_width": 1,
-        "plot_velocity_dist_width": 1,
+        "plot_energy_dist_width": 0,
+        "plot_velocity_dist_width": 0,
         "plot_potential_width": 1,
         "plot_rho_width": 1,
         "plot_efield_width": 1,
         "plot_bfield_width": 1,
         "plot_density_width": 1,
-        "plot_particle_width": 1,
+        "plot_particle_width": 0,
         "plot_energy_width": 1
     }
 }

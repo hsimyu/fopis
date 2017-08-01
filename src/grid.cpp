@@ -40,8 +40,8 @@ void Grid::incrementSumOfChild() {
     }
 }
 
+//! 場の resize を行う
 void Grid::initializeField(void){
-    Field* field = new Field;
     tdArray::extent_gen tdExtents;
 
     const int cx = nx + 2;
@@ -74,12 +74,16 @@ void Grid::initializeField(void){
     field->getJx().resize(tdExtents[cx-1][cy][cz]);
     field->getJy().resize(tdExtents[cx][cy-1][cz]);
     field->getJz().resize(tdExtents[cx][cy][cz-1]);
+}
 
-    this->setField(field);
+void Grid::initializeObject(void) {
+    tdArray::extent_gen tdExtents;
+    // Node ベース
+    object_map.resize(tdExtents[nx][ny][nz]);
 }
 
 // root grid constructor
-Grid::Grid(void){
+Grid::Grid(void) : field(std::make_unique<Field>()) {
     //! - コンストラクタにEnvironmentクラスが渡された場合、
     //! レベル0のGridを作成します.
     level = 0;
@@ -111,6 +115,9 @@ Grid::Grid(void){
 
     // Field初期化
     this->initializeField();
+
+    // 物体初期化
+    this->initializeObject();
 
     //! - 粒子位置の上限を設定
     double max_x = static_cast<double>(Environment::cell_x);
@@ -146,7 +153,7 @@ Grid::Grid(void){
 //! そのGridを親とした子グリッドを生成します
 Grid::Grid(Grid* g,
         const int _from_ix, const int _from_iy, const int _from_iz,
-        const int _to_ix,   const int _to_iy,   const int _to_iz)
+        const int _to_ix,   const int _to_iy,   const int _to_iz) : field(std::make_unique<Field>())
 {
     const double refineRatio = 2.0;
 
@@ -318,7 +325,7 @@ void Grid::copyScalarToChildren(std::string varname){
 
     // @note: OpenMP
     for(int chidx = 0; chidx < children.size(); ++chidx) {
-        tdArray& childValue = children[chidx]->getField()->getScalar(varname);
+        tdArray& childValue = children[chidx]->getScalar(varname);
 
         int child_from_ix = children[chidx]->getFromIX();
         int child_from_iy = children[chidx]->getFromIY();
@@ -377,7 +384,7 @@ void Grid::copyScalarToParent(std::string varname){
     tdArray& tdValue = field->getScalar(varname);
 
     // @note: OpenMP
-    tdArray& parentValue = parent->getField()->getScalar(varname);
+    tdArray& parentValue = parent->getScalar(varname);
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
@@ -703,8 +710,6 @@ Grid::~Grid(){
 
     // reserveしてあった分を削除する
     particles.shrink_to_fit();
-
-    delete field;
 
     //! delete all children
     std::vector<Grid*>::iterator it = children.begin();
