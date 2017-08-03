@@ -21,9 +21,14 @@ private:
     //! キャパシタンス行列の番号と対応する物体の位置を格納する
     std::map<size_t, Position> capacity_matrix_relation;
 
+    //! 再計算しないために初期化後に保持する
+    double total_cmat_value;
+
     //! コンストラクタ内部処理共通化用
     void construct(const size_t, const size_t, const size_t);
 
+    //! 電荷の総量が変化していないかの check 用
+    auto getTotalCharge(const tdArray&) const;
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz) :
         name("Spacecraft_" + std::to_string(num_of_spacecraft)),
@@ -53,10 +58,13 @@ public:
         capacity_matrix[col][row] = value;
     };
 
+    void setTotalCmatValue(const double val) { total_cmat_value = val; }
+
     bool isIncluded(const Particle&) const;
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
     void applyCharge(tdArray&) const;
+    void redistributeCharge(tdArray&, const tdArray&) const;
     friend std::ostream& operator<<(std::ostream&, const Spacecraft&);
 };
 #endif

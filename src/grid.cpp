@@ -248,6 +248,7 @@ void Grid::initializeObjectsCmatrix(void) {
 
         { //! Progress Manager のライフタイムを区切る
             Utils::ProgressManager pm(num_cmat, "cmat_solve");
+            double total_cmat_value = 0.0;
 
             //! TODO: MPI分割された時にも協調して動作する必要がある
             for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
@@ -261,10 +262,13 @@ void Grid::initializeObjectsCmatrix(void) {
 
                 for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
                     const auto& target_pos = obj.getCmatPos(cmat_row_itr);
-                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, phi[target_pos.i][target_pos.j][target_pos.k]);
+                    const double value = phi[target_pos.i][target_pos.j][target_pos.k];
+                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
+                    total_cmat_value += value;
                 }
             }
 
+            obj.setTotalCmatValue(total_cmat_value);
         }
     }
 }

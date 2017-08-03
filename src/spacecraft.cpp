@@ -56,6 +56,17 @@ Position Spacecraft::getCmatPos(const unsigned int cmat_itr) {
     return capacity_matrix_relation[cmat_itr];
 }
 
+auto Spacecraft::getTotalCharge(const tdArray& rho) const {
+    double total_charge = 0.0;
+
+    for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
+        const auto& pos = capacity_matrix_relation.at(cmat_itr);
+        total_charge += rho[pos.i][pos.j][pos.k];
+    }
+
+    return total_charge;
+}
+
 bool Spacecraft::isIncluded(const Particle& p) const {
     const auto pos = p.getPosition();
 
@@ -100,6 +111,38 @@ void Spacecraft::applyCharge(tdArray& rho) const {
             }
         }
     }
+}
+
+void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) const {
+    cout << "charge before redist: " << getTotalCharge(rho) << endl;
+
+    double charge_before_redist = 0.0;
+    for(const auto& one_node : capacity_matrix_relation) {
+        const auto j = one_node.first;
+        const auto& pos = one_node.second;
+
+        for(size_t i = 0; i < num_cmat; ++i) {
+            charge_before_redist += capacity_matrix[i][j] * phi[pos.i][pos.j][pos.k];
+        }
+    }
+    //! ここで sum とる
+
+    const double new_potential = charge_before_redist / total_cmat_value;
+    cout << "new equipotential = " << new_potential << endl;
+
+    for(unsigned int i = 0; i < num_cmat; ++i) {
+        double delta_rho = 0.0;
+
+        for(unsigned int j = 0; j < num_cmat; ++j) {
+            const auto& pos = capacity_matrix_relation.at(j);
+            delta_rho += capacity_matrix[i][j] * (new_potential - phi[pos.i][pos.j][pos.k]);
+        }
+        //! ここで sum とる
+
+        const auto& target_pos = capacity_matrix_relation.at(i);
+        rho[target_pos.i][target_pos.j][target_pos.k] += delta_rho;
+    }
+    cout << "charge after redist: " << getTotalCharge(rho) << endl;
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {

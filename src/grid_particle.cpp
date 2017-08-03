@@ -447,6 +447,18 @@ void Grid::updateRho() {
     //! rho を隣に送る
     MPIw::Environment::sendRecvField(rho);
 
+    //! 物体が存在する場合、電荷再配分が必要になる
+    if (objects.size() > 0) {
+        //! 一度 Poisson を解いて phi を更新
+        solvePoisson();
+
+        for(auto& obj : objects) {
+            obj.redistributeCharge(rho, field->getPhi());
+        }
+
+        MPIw::Environment::sendRecvField(rho);
+    }
+
 #ifdef CHARGE_CONSERVATION
     if (Environment::solver_type == "EM") {
         field->checkChargeConservation(old_rho, 1.0, dx);
