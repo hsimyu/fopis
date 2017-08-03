@@ -397,6 +397,64 @@ void Grid::updateParticlePositionEM(void) {
     this->injectParticles();
 }
 
+//! 粒子の位置から電荷を空間電荷にする
+//! 基本的にはroot_gridに対してのみ呼ぶ
+void Grid::updateRho() {
+    tdArray& rho = field->getRho();
+
+#ifdef CHARGE_CONSERVATION
+    // 電荷保存則をcheckするため、古いrhoを保持する
+    tdArray old_rho = rho;
+#endif
+
+    // rhoを初期化
+    Utils::initializeTdarray(rho);
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+        double q = Environment::ptype[pid].getCharge();
+
+        for(auto& p : particles[pid]) {
+            if(p.isValid) {
+                for(auto& obj : objects) {
+                    //! 物体中にいた場合には自動的に invalid になる
+                    obj.distributeInnerParticleCharge(p);
+                }
+
+                //! もし物体内でなければ
+                if (p.isValid) {
+                    const auto pos = p.getPosition();
+                    const int i = pos.i, j = pos.j, k = pos.k;
+
+                    rho[i  ][j  ][k] += pos.dx2 * pos.dy2 * pos.dz2 * q;
+                    rho[i+1][j  ][k] += pos.dx1 * pos.dy2 * pos.dz2 * q;
+                    rho[i  ][j+1][k] += pos.dx2 * pos.dy1 * pos.dz2 * q;
+                    rho[i+1][j+1][k] += pos.dx1 * pos.dy1 * pos.dz2 * q;
+
+                    rho[i  ][j  ][k+1] += pos.dx2 * pos.dy2 * pos.dz1 * q;
+                    rho[i+1][j  ][k+1] += pos.dx1 * pos.dy2 * pos.dz1 * q;
+                    rho[i  ][j+1][k+1] += pos.dx2 * pos.dy1 * pos.dz1 * q;
+                    rho[i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
+                }
+            }
+        }
+    }
+
+    //! 物体に配分された電荷を現在の rho に印加する
+    for(auto& obj : objects) {
+        obj.applyCharge(rho);
+    }
+
+    //! rho を隣に送る
+    MPIw::Environment::sendRecvField(rho);
+
+#ifdef CHARGE_CONSERVATION
+    if (Environment::solver_type == "EM") {
+        field->checkChargeConservation(old_rho, 1.0, dx);
+    }
+#endif
+
+}
+
 void Grid::injectParticles(void) {
     static std::vector< std::vector<double> > residual;
     static bool isFirstCall = true;

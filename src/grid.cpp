@@ -147,7 +147,13 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
             Particle p(id);
             p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, max_z);
             p.generateNewVelocity();
-            particles[id].push_back(p);
+
+            //! 物体がある場合は生成時にチェックする
+            for(const auto& obj : objects) {
+                obj.removeInnerParticle(p);
+            }
+
+            if (p.isValid) particles[id].emplace_back(p);
         }
     }
 }
@@ -226,58 +232,6 @@ void Grid::checkGridValidness() {
     }
 
     if(!isValid) MPIw::Environment::exitWithFinalize(1);
-}
-
-//! 粒子の位置から電荷を空間電荷にする
-//! 基本的にはroot_gridに対してのみ呼ぶ
-void Grid::updateRho() {
-    tdArray& rho = field->getRho();
-
-#ifdef CHARGE_CONSERVATION
-    // 電荷保存則をcheckするため、古いrhoを保持する
-    tdArray old_rho = rho;
-#endif
-
-    // rhoを初期化
-    Utils::initializeTdarray(rho);
-
-    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        double q = Environment::ptype[pid].getCharge();
-
-        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
-            Particle& p = particles[pid][pnum];
-            if(p.isValid) {
-                Position pos(p);
-                int i = pos.i, j = pos.j, k = pos.k;
-
-#ifdef DEBUG
-                if( (i < 0) || (j < 0) || (k < 0) || (i >= rho.shape()[0] - 1) || (j >= rho.shape()[1] - 1) || (k >= rho.shape()[2] - 1)) {
-                    cout << Environment::rankStr() << pos << endl;
-                }
-#endif
-
-                rho[i  ][j  ][k] += pos.dx2 * pos.dy2 * pos.dz2 * q;
-                rho[i+1][j  ][k] += pos.dx1 * pos.dy2 * pos.dz2 * q;
-                rho[i  ][j+1][k] += pos.dx2 * pos.dy1 * pos.dz2 * q;
-                rho[i+1][j+1][k] += pos.dx1 * pos.dy1 * pos.dz2 * q;
-
-                rho[i  ][j  ][k+1] += pos.dx2 * pos.dy2 * pos.dz1 * q;
-                rho[i+1][j  ][k+1] += pos.dx1 * pos.dy2 * pos.dz1 * q;
-                rho[i  ][j+1][k+1] += pos.dx2 * pos.dy1 * pos.dz1 * q;
-                rho[i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
-            }
-        }
-    }
-
-    //! rho を隣に送る
-    MPIw::Environment::sendRecvField(rho);
-
-#ifdef CHARGE_CONSERVATION
-    if (Environment::solver_type == "EM") {
-        field->checkChargeConservation(old_rho, 1.0, dx);
-    }
-#endif
-
 }
 
 //! 粒子の位置から密度を計算する

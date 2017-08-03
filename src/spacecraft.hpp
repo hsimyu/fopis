@@ -32,8 +32,10 @@ public:
     void setName(const std::string _name) { name = _name; }
     std::string getName() const { return name; }
 
-    bool isIncluded(const Position&) const;
-    void addCharge(Particle&);
+    bool isIncluded(const Particle&) const;
+    void removeInnerParticle(Particle&) const;
+    void distributeInnerParticleCharge(Particle&);
+    void applyCharge(tdArray&) const;
     friend std::ostream& operator<<(std::ostream&, const Spacecraft&);
 };
 #endif

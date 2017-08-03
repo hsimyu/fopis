@@ -43,7 +43,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     }
 }
 
-bool Spacecraft::isIncluded(const Position& pos) const {
+bool Spacecraft::isIncluded(const Particle& p) const {
+    const auto pos = p.getPosition();
+
     return  object_map[pos.raw_i    ][pos.raw_j    ][pos.raw_k    ] &&
             object_map[pos.raw_i + 1][pos.raw_j    ][pos.raw_k    ] &&
             object_map[pos.raw_i    ][pos.raw_j + 1][pos.raw_k    ] &&
@@ -54,20 +56,37 @@ bool Spacecraft::isIncluded(const Position& pos) const {
             object_map[pos.raw_i + 1][pos.raw_j + 1][pos.raw_k + 1];
 }
 
-void Spacecraft::addCharge(Particle& p) {
-    const auto q = p.getCharge();
-    const auto pos = p.getPosition();
+void Spacecraft::removeInnerParticle(Particle& p) const {
+    if (isIncluded(p)) { p.makeInvalid(); }
+}
 
-    charge_map[pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
-    charge_map[pos.i + 1][pos.j    ][pos.k    ] += q * pos.dx1 * pos.dy2 * pos.dz2;
-    charge_map[pos.i    ][pos.j + 1][pos.k    ] += q * pos.dx2 * pos.dy1 * pos.dz2;
-    charge_map[pos.i + 1][pos.j + 1][pos.k    ] += q * pos.dx1 * pos.dy1 * pos.dz2;
-    charge_map[pos.i    ][pos.j    ][pos.k + 1] += q * pos.dx2 * pos.dy2 * pos.dz1;
-    charge_map[pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
-    charge_map[pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
-    charge_map[pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
+void Spacecraft::distributeInnerParticleCharge(Particle& p) {
+    if (isIncluded(p)) { 
+        const auto q = p.getCharge();
+        const auto pos = p.getPosition();
 
-    p.makeInvalid();
+        charge_map[pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
+        charge_map[pos.i + 1][pos.j    ][pos.k    ] += q * pos.dx1 * pos.dy2 * pos.dz2;
+        charge_map[pos.i    ][pos.j + 1][pos.k    ] += q * pos.dx2 * pos.dy1 * pos.dz2;
+        charge_map[pos.i + 1][pos.j + 1][pos.k    ] += q * pos.dx1 * pos.dy1 * pos.dz2;
+        charge_map[pos.i    ][pos.j    ][pos.k + 1] += q * pos.dx2 * pos.dy2 * pos.dz1;
+        charge_map[pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
+        charge_map[pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
+        charge_map[pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
+
+        p.makeInvalid();
+    }
+}
+
+void Spacecraft::applyCharge(tdArray& rho) const {
+    //! 電荷分布を場に印加する
+    for(size_t i = 0; i < charge_map.shape()[0]; ++i) {
+        for (size_t j = 0; j < charge_map.shape()[1]; ++j) {
+            for (size_t k = 0; k < charge_map.shape()[2]; ++k) {
+                rho[i][j][k] += charge_map[i][j][k];
+            }
+        }
+    }
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
