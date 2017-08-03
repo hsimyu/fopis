@@ -82,7 +82,6 @@ void Grid::initializeObject(void) {
     const size_t max_objects = 1;
     for(size_t i = 0; i < max_objects; ++i) {
         Spacecraft spc(nx, ny, nz);
-        cout << spc << endl;
         objects.emplace_back( spc );
     }
 }
