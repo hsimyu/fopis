@@ -23,30 +23,37 @@ namespace Utils {
 
     class ProgressManager {
     private:
-        std::string activity_name;
-        float report_width;
-        float next_report_target; // %単位
+        //! 時計
+        using Time = std::chrono::high_resolution_clock;
+        Time::time_point begin;
+
         float maximum_step;
+        std::string activity_name;
+        float next_report_target; // %単位
+        float report_width;
 
     public:
         // float に cast 可能な型ならなんでもよい
         template<typename T>
         ProgressManager(const T _max) : 
-            next_report_target{10.0},
-            report_width{10.0},
+            begin{Time::now()},
             maximum_step{static_cast<float>(_max)},
-            activity_name("activity") {}
+            activity_name("activity"),
+            next_report_target{10.0},
+            report_width{10.0} {}
 
         //! S&&はユニバーサル参照
         template<typename T, typename S>
         ProgressManager(const T _max, S&& name) : 
-            next_report_target{10.0},
-            report_width{10.0},
+            begin{Time::now()},
             maximum_step{static_cast<float>(_max)},
-            activity_name(std::forward<S>(name)) {}
+            activity_name(std::forward<S>(name)),
+            next_report_target{10.0},
+            report_width{10.0} {}
 
         ~ProgressManager(void) {
-            cout << "[" << activity_name << "] processed." << endl;
+            const auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(Time::now() - begin);
+            cout << "[" << activity_name << "] Processed. (" << elapsed_time.count() << "sec elapsed.)" << endl;
         }
 
         template<typename T>
@@ -58,7 +65,8 @@ namespace Utils {
         void update(const T step) {
             const auto p = progress(step);
             if ( p > next_report_target ) {
-                cout << "[" << activity_name << "] Progress: " << p << "%. " << endl;
+                const auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(Time::now() - begin);
+                cout << format("[%s] Progress: %4.2f%%. (%ssec elapsed.)") % activity_name % p % elapsed_time.count() << endl;
                 next_report_target += report_width;
             }
         }
