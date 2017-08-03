@@ -230,17 +230,17 @@ class Grid {
                     // 計算空間の端にいるが、周期境界の場合も粒子を送る必要がある -> isPeriodic()でまとめて判定できる
                     pbuff[0].push_back(p);
                 }
-                p.isValid = 0;
+                p.makeInvalid();
             } else if (p.x > (slx - dx)) {
                 if (Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) {
                     //! 計算空間の端でない場合、slx - dx から slx までの空間は下側の空間が担当するため、 slx を超えた場合のみ粒子を送信する
                     //! また、計算空間の端にいるが、周期境界の場合も同様の処理でよいため、isPeriodic()でまとめて判定できる
                     if (p.x > slx) {
                         pbuff[1].push_back(p);
-                        p.isValid = 0;
+                        p.makeInvalid();
                     }
                 } else {
-                    p.isValid = 0;
+                    p.makeInvalid();
                 }
             }
         }
@@ -248,15 +248,15 @@ class Grid {
         void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) {
             if(p.y < 0.0) {
                 if (Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) pbuff[2].push_back(p);
-                p.isValid = 0;
+                p.makeInvalid();
             } else if (p.y > (sly - dx)) {
                 if (Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) {
                     if (p.y > sly) {
                         pbuff[3].push_back(p);
-                        p.isValid = 0;
+                        p.makeInvalid();
                     }
                 } else {
-                    p.isValid = 0;
+                    p.makeInvalid();
                 }
             }
         }
@@ -264,15 +264,15 @@ class Grid {
         void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) {
             if(p.z < 0.0) {
                 if (Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) pbuff[4].push_back(p);
-                p.isValid = 0;
+                p.makeInvalid();
             } else if (p.z > (slz - dx)) {
                 if (Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) {
                     if (p.z > slz) {
                         pbuff[5].push_back(p);
-                        p.isValid = 0;
+                        p.makeInvalid();
                     }
                 } else {
-                    p.isValid = 0;
+                    p.makeInvalid();
                 }
             }
         }
