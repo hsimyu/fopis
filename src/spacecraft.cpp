@@ -21,16 +21,27 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
         }
     }
 
-    // テスト定義
+    //! キャパシタンス行列の要素数
+    num_cmat = 0;
+
+    //! テスト定義
     for(size_t i = nx/4; i < 3 * nx/4; ++i) {
         for (size_t j = ny / 4; j < 3 * ny / 4; ++j) {
             for (size_t k = nz / 4; k < 3 * nz / 4; ++k) {
                 object_map[i][j][k] = true;
+                capacity_matrix_relation[num_cmat][0] = i;
+                capacity_matrix_relation[num_cmat][1] = j;
+                capacity_matrix_relation[num_cmat][2] = k;
+                ++num_cmat;
             }
         }
     }
 
-    // Node ベース, glue cell あり
+    //! キャパシタンス行列のサイズを物体サイズに変更
+    Cmatrix::extent_gen CmatExtents;
+    capacity_matrix.resize(CmatExtents[num_cmat][num_cmat]);
+
+    //! Node ベース, glue cell ありの電荷密度マップ
     tdArray::extent_gen tdExtents;
     charge_map.resize(tdExtents[nx + 2][ny + 2][nz + 2]);
     //! 電荷配列初期化

@@ -234,6 +234,26 @@ void Grid::checkGridValidness() {
     if(!isValid) MPIw::Environment::exitWithFinalize(1);
 }
 
+void Grid::initializeObjectsCmatrix(void) {
+    tdArray& rho = field->getRho();
+    tdArray& phi = field->getPhi();
+
+    for(auto& obj : objects) {
+        const auto num_cmat = obj.getCmatSize();
+
+        for(size_t cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
+            // rhoを初期化
+            Utils::initializeTdarray(rho);
+            rho[0][0][0] = 1.0;
+            solvePoisson();
+
+            for(size_t cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
+                obj.setCmatValue(cmat_col_itr, cmat_row_itr, phi[0][0][0]);
+            }
+        }
+    }
+}
+
 //! 粒子の位置から密度を計算する
 float* Grid::getDensity(const int pid) {
     // ZONECENTなので-1する

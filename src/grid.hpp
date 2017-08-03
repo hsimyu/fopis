@@ -178,6 +178,9 @@ class Grid {
             field->updateBfield(dx, nx, ny, nz, dt);
         }
 
+        //! 所持している行列のキャパシタンス行列初期化
+        void initializeObjectsCmatrix(void);
+
         // update particles
         void updateParticleVelocity(void);
         void updateParticlePosition(void);
