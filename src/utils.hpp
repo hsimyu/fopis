@@ -20,6 +20,49 @@ namespace Utils {
     void clearBoundaryValues(tdArray&, const int, const int, const int);
     void initializeTdarray(tdArray&);
     void createDir(std::string);
+
+    class ProgressManager {
+    private:
+        std::string activity_name;
+        float report_width;
+        float next_report_target; // %単位
+        float maximum_step;
+
+    public:
+        // float に cast 可能な型ならなんでもよい
+        template<typename T>
+        ProgressManager(const T _max) : 
+            next_report_target{10.0},
+            report_width{10.0},
+            maximum_step{static_cast<float>(_max)},
+            activity_name("activity") {}
+
+        //! S&&はユニバーサル参照
+        template<typename T, typename S>
+        ProgressManager(const T _max, S&& name) : 
+            next_report_target{10.0},
+            report_width{10.0},
+            maximum_step{static_cast<float>(_max)},
+            activity_name(std::forward<S>(name)) {}
+
+        ~ProgressManager(void) {
+            cout << "[" << activity_name << "] processed." << endl;
+        }
+
+        template<typename T>
+        float progress(const T step) {
+            return 100.0 * static_cast<float>(step) / maximum_step;
+        }
+
+        template<typename T>
+        void update(const T step) {
+            const auto p = progress(step);
+            if ( p > next_report_target ) {
+                cout << "[" << activity_name << "] Progress: " << p << "%. " << endl;
+                next_report_target += report_width;
+            }
+        }
+    };
 }
 
 #endif

@@ -1,8 +1,8 @@
 #ifndef __TDPIC_SPACECRAFT_H_INCLUDED__
 #define __TDPIC_SPACECRAFT_H_INCLUDED__
 #include "global.hpp"
+#include "position.hpp"
 
-class Position;
 class Particle;
 
 //! @class: Spacecraft
@@ -19,14 +19,14 @@ private:
     Cmatrix capacity_matrix;
 
     //! キャパシタンス行列の番号と対応する物体の位置を格納する
-    std::map<size_t, int[3]> capacity_matrix_relation;
+    std::map<size_t, Position> capacity_matrix_relation;
 
-    //! コンストラクタ共通化用(必要か?)
+    //! コンストラクタ内部処理共通化用
     void construct(const size_t, const size_t, const size_t);
 
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz) :
-        name("spacecraft" + std::to_string(num_of_spacecraft)),
+        name("Spacecraft_" + std::to_string(num_of_spacecraft)),
         object_map(boost::extents[0][0][0]),
         charge_map(boost::extents[0][0][0]) {
         construct(nx, ny, nz);
@@ -43,8 +43,13 @@ public:
     std::string getName() const { return name; }
 
     auto getCmatSize(void) const { return num_cmat; }
+    Position getCmatPos(const unsigned int);
 
-    void setCmatValue(const size_t col, const size_t row, const double value) {
+    auto getCmatValue(const unsigned int col_itr, const unsigned int row_itr) {
+        return capacity_matrix[col_itr][row_itr];
+    }
+
+    void setCmatValue(const unsigned int col, const unsigned int row, const double value) {
         capacity_matrix[col][row] = value;
     };
 

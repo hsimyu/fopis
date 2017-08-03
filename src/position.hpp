@@ -34,9 +34,11 @@ class Position {
         }
 
         // 整数座標からのコンストラクタ
-        Position(const int _i, const int _j, const int _k){
+        Position(const unsigned int _i, const unsigned int _j, const unsigned int _k){
             this->setIJK(_i, _j, _k);
         }
+
+        Position(void) {}
 
         //! Particle 用のコンストラクタはinlineで書けない
         Position(const Particle&);

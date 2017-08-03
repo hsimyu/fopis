@@ -78,10 +78,13 @@ void Grid::initializeField(void){
 
 void Grid::initializeObject(void) {
     //! TODO: オブジェクト数を数える
+    if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
 
     const size_t max_objects = 1;
     for(size_t i = 0; i < max_objects; ++i) {
+        cout << Environment::rankStr() << "Object No. " << i << endl;
         Spacecraft spc(nx, ny, nz);
+        cout << spc << endl;
         objects.emplace_back( spc );
     }
 }
@@ -122,6 +125,7 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
 
     // 物体初期化
     this->initializeObject();
+    this->initializeObjectsCmatrix();
 
     //! - 粒子位置の上限を設定
     double max_x = static_cast<double>(Environment::cell_x);
@@ -235,21 +239,32 @@ void Grid::checkGridValidness() {
 }
 
 void Grid::initializeObjectsCmatrix(void) {
+    if (Environment::isRootNode) cout << "-- Initializing Objects Capacity Matrix --" << endl;
     tdArray& rho = field->getRho();
     tdArray& phi = field->getPhi();
 
     for(auto& obj : objects) {
         const auto num_cmat = obj.getCmatSize();
 
-        for(size_t cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
-            // rhoを初期化
-            Utils::initializeTdarray(rho);
-            rho[0][0][0] = 1.0;
-            solvePoisson();
+        { //! Progress Manager のライフタイムを区切る
+            Utils::ProgressManager pm(num_cmat, "cmat_solve");
 
-            for(size_t cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
-                obj.setCmatValue(cmat_col_itr, cmat_row_itr, phi[0][0][0]);
+            //! TODO: MPI分割された時にも協調して動作する必要がある
+            for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
+                pm.update(cmat_col_itr);
+
+                // rhoを初期化
+                Utils::initializeTdarray(rho);
+                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
+                rho[cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
+                solvePoisson();
+
+                for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
+                    const auto& target_pos = obj.getCmatPos(cmat_row_itr);
+                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, phi[target_pos.i][target_pos.j][target_pos.k]);
+                }
             }
+
         }
     }
 }

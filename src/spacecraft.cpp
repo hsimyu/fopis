@@ -1,5 +1,4 @@
 #include "spacecraft.hpp"
-#include "position.hpp"
 #include "particle.hpp"
 
 //! static 変数の実体
@@ -13,9 +12,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     object_map.resize(objectExtents[nx][ny][nz]);
 
     // 初期化
-    for(size_t i = 0; i < nx; ++i) {
-        for (size_t j = 0; j < ny; ++j) {
-            for (size_t k = 0; k < nz; ++k) {
+    for(unsigned int i = 0; i < nx; ++i) {
+        for (unsigned int j = 0; j < ny; ++j) {
+            for (unsigned int k = 0; k < nz; ++k) {
                 object_map[i][j][k] = false;
             }
         }
@@ -25,13 +24,12 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     num_cmat = 0;
 
     //! テスト定義
-    for(size_t i = nx/4; i < 3 * nx/4; ++i) {
-        for (size_t j = ny / 4; j < 3 * ny / 4; ++j) {
-            for (size_t k = nz / 4; k < 3 * nz / 4; ++k) {
+    for(unsigned int i = 3 * nx / 8; i < 4 * nx / 8; ++i) {
+        for (unsigned int j = 3 * ny / 8; j < 4 * ny / 8; ++j) {
+            for (unsigned int k = 3 * nz / 8; k < 4 * nz / 8; ++k) {
                 object_map[i][j][k] = true;
-                capacity_matrix_relation[num_cmat][0] = i;
-                capacity_matrix_relation[num_cmat][1] = j;
-                capacity_matrix_relation[num_cmat][2] = k;
+                // std::map 内に直接オブジェクトを構築する
+                capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(num_cmat), std::make_tuple(i, j, k));
                 ++num_cmat;
             }
         }
@@ -52,6 +50,10 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
             }
         }
     }
+}
+
+Position Spacecraft::getCmatPos(const unsigned int cmat_itr) {
+    return capacity_matrix_relation[cmat_itr];
 }
 
 bool Spacecraft::isIncluded(const Particle& p) const {
@@ -101,7 +103,8 @@ void Spacecraft::applyCharge(tdArray& rho) const {
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
-    ost << "name:" << spc.getName() << endl;
+    ost << "    name:" << spc.name << endl;
+    ost << "    cmat:" << spc.num_cmat << endl;
 
     return ost;
 }
