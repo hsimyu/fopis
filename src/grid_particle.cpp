@@ -199,8 +199,7 @@ void Grid::updateParticlePositionES(void) {
     const double slz = dx * nz;
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        for(int i = 0; i < particles[pid].size(); ++i){
-            Particle& p = particles[pid][i];
+        for(auto& p : particles[pid]) {
             if(p.isValid) {
                 p.updatePosition();
                 checkXBoundary(pbuff, p, slx);
