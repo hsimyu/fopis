@@ -2,6 +2,9 @@
 #define __TDPIC_SPACECRAFT_H_INCLUDED__
 #include "global.hpp"
 
+class Position;
+class Particle;
+
 //! @class: Spacecraft
 class Spacecraft {
 private:
@@ -29,7 +32,8 @@ public:
     void setName(const std::string _name) { name = _name; }
     std::string getName() const { return name; }
 
-    bool isIncluded(const Position&);
+    bool isIncluded(const Position&) const;
+    void addCharge(Particle&);
     friend std::ostream& operator<<(std::ostream&, const Spacecraft&);
 };
 #endif
