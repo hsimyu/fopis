@@ -1,5 +1,6 @@
 #include "spacecraft.hpp"
 #include "particle.hpp"
+#include "normalizer.hpp"
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
@@ -27,6 +28,8 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     for(unsigned int i = 3 * nx / 8; i < 4 * nx / 8; ++i) {
         for (unsigned int j = 3 * ny / 8; j < 4 * ny / 8; ++j) {
             for (unsigned int k = 3 * nz / 8; k < 4 * nz / 8; ++k) {
+                //! 自分のノード内の座標である時だけ capacity_matrix_relation を追加する
+                //! -> 後々 find() で自動的に処理できる
                 object_map[i][j][k] = true;
                 // std::map 内に直接オブジェクトを構築する
                 capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(num_cmat), std::make_tuple(i, j, k));
@@ -36,8 +39,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     }
 
     //! キャパシタンス行列のサイズを物体サイズに変更
-    Cmatrix::extent_gen CmatExtents;
-    capacity_matrix.resize(CmatExtents[num_cmat][num_cmat]);
+    capacity_matrix.resize(num_cmat, num_cmat);
 
     //! Node ベース, glue cell ありの電荷密度マップ
     tdArray::extent_gen tdExtents;
@@ -122,20 +124,20 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) const {
         const auto& pos = one_node.second;
 
         for(size_t i = 0; i < num_cmat; ++i) {
-            charge_before_redist += capacity_matrix[i][j] * phi[pos.i][pos.j][pos.k];
+            charge_before_redist += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
         }
     }
     //! ここで sum とる
 
     const double new_potential = charge_before_redist / total_cmat_value;
-    cout << "new equipotential = " << new_potential << endl;
+    cout << "new potential = " << Normalizer::unnormalizePotential(new_potential) << " V. " << endl;
 
     for(unsigned int i = 0; i < num_cmat; ++i) {
         double delta_rho = 0.0;
 
         for(unsigned int j = 0; j < num_cmat; ++j) {
             const auto& pos = capacity_matrix_relation.at(j);
-            delta_rho += capacity_matrix[i][j] * (new_potential - phi[pos.i][pos.j][pos.k]);
+            delta_rho += capacity_matrix(i, j) * (new_potential - phi[pos.i][pos.j][pos.k]);
         }
         //! ここで sum とる
 

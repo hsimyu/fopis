@@ -1,6 +1,7 @@
 #ifndef __TDPIC_SPACECRAFT_H_INCLUDED__
 #define __TDPIC_SPACECRAFT_H_INCLUDED__
 #include "global.hpp"
+#include <boost/numeric/ublas/matrix.hpp>
 #include "position.hpp"
 
 class Particle;
@@ -15,7 +16,7 @@ private:
     tdArray charge_map;
 
     //! キャパシタンス行列
-    using Cmatrix = boost::multi_array<double, 2>;
+    using Cmatrix = boost::numeric::ublas::matrix<double>;
     Cmatrix capacity_matrix;
 
     //! キャパシタンス行列の番号と対応する物体の位置を格納する
@@ -33,14 +34,16 @@ public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz) :
         name("Spacecraft_" + std::to_string(num_of_spacecraft)),
         object_map(boost::extents[0][0][0]),
-        charge_map(boost::extents[0][0][0]) {
+        charge_map(boost::extents[0][0][0]),
+        capacity_matrix(0, 0) {
         construct(nx, ny, nz);
     }
 
     Spacecraft(const size_t nx, const size_t ny, const size_t nz, const std::string _name) :
         name(_name),
         object_map(boost::extents[0][0][0]),
-        charge_map(boost::extents[0][0][0]) {
+        charge_map(boost::extents[0][0][0]),
+        capacity_matrix(0, 0) {
         construct(nx, ny, nz);
     }
 
@@ -50,12 +53,12 @@ public:
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
 
-    auto getCmatValue(const unsigned int col_itr, const unsigned int row_itr) {
-        return capacity_matrix[col_itr][row_itr];
+    auto getCmatValue(const unsigned int col, const unsigned int row) {
+        return capacity_matrix(col, row);
     }
 
     void setCmatValue(const unsigned int col, const unsigned int row, const double value) {
-        capacity_matrix[col][row] = value;
+        capacity_matrix(col, row) = value;
     };
 
     void setTotalCmatValue(const double val) { total_cmat_value = val; }
