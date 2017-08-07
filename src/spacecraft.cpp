@@ -26,9 +26,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     num_cmat = 0;
 
     //! テスト定義
-    for(unsigned int i = 2 * nx / 8; i < 6 * nx / 8; ++i) {
-        for (unsigned int j = 2 * ny / 8; j < 6 * ny / 8; ++j) {
-            for (unsigned int k = 2 * nz / 8; k < 6 * nz / 8; ++k) {
+    for(unsigned int i = 3 * nx / 8; i < 4 * nx / 8; ++i) {
+        for (unsigned int j = 3 * ny / 8; j < 4 * ny / 8; ++j) {
+            for (unsigned int k = nz / 8; k < 7 * nz / 8; ++k) {
                 //! 自分のノード内の座標である時だけ capacity_matrix_relation を追加する
                 //! -> 後々 find() で自動的に処理できる
                 object_map[i][j][k] = true;
@@ -130,7 +130,9 @@ void Spacecraft::applyCharge(tdArray& rho) const {
 }
 
 void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) const {
+#ifdef CHARGE_CONSERVATION
     cout << "charge before redist: " << getTotalCharge(rho) << endl;
+#endif
 
     double charge_before_redist = 0.0;
     for(const auto& one_node : capacity_matrix_relation) {
@@ -158,7 +160,10 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) const {
         const auto& target_pos = capacity_matrix_relation.at(i);
         rho[target_pos.i][target_pos.j][target_pos.k] += delta_rho;
     }
+
+#ifdef CHARGE_CONSERVATION
     cout << "charge after redist: " << getTotalCharge(rho) << endl;
+#endif
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
