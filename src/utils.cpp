@@ -2,8 +2,26 @@
 #include "mpiw.hpp"
 #include <stdexcept>
 #include <boost/filesystem.hpp>
+#include <boost/numeric/ublas/lu.hpp>
+#include <boost/numeric/ublas/assignment.hpp>
+#include <boost/numeric/ublas/io.hpp>
 
 namespace Utils {
+
+    //! キャパシティ行列用だけに使うため、受け取った参照先を直接置き換える実装で良い
+    void makeInvert(dMatrix& lhs) {
+        namespace ublas = boost::numeric::ublas;
+
+        dMatrix lhs_copy(lhs);
+        dMatrix inv( ublas::identity_matrix<double>( lhs.size1() ) );
+        ublas::permutation_matrix<> pm( lhs.size1() );
+
+        ublas::lu_factorize(lhs, pm);
+        ublas::lu_substitute(lhs, pm, inv);
+
+        lhs.assign_temporary(inv);
+    }
+
     void initializeTdarray(tdArray& x) {
         for(int i = 0; i < x.shape()[0]; ++i) {
             for(int j = 0; j < x.shape()[1]; ++j) {

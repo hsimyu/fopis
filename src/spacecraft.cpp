@@ -1,6 +1,7 @@
 #include "spacecraft.hpp"
 #include "particle.hpp"
 #include "normalizer.hpp"
+#include "utils.hpp"
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
@@ -25,9 +26,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     num_cmat = 0;
 
     //! テスト定義
-    for(unsigned int i = 3 * nx / 8; i < 4 * nx / 8; ++i) {
-        for (unsigned int j = 3 * ny / 8; j < 4 * ny / 8; ++j) {
-            for (unsigned int k = 3 * nz / 8; k < 4 * nz / 8; ++k) {
+    for(unsigned int i = 2 * nx / 8; i < 6 * nx / 8; ++i) {
+        for (unsigned int j = 2 * ny / 8; j < 6 * ny / 8; ++j) {
+            for (unsigned int k = 2 * nz / 8; k < 6 * nz / 8; ++k) {
                 //! 自分のノード内の座標である時だけ capacity_matrix_relation を追加する
                 //! -> 後々 find() で自動的に処理できる
                 object_map[i][j][k] = true;
@@ -67,6 +68,19 @@ auto Spacecraft::getTotalCharge(const tdArray& rho) const {
     }
 
     return total_charge;
+}
+
+void Spacecraft::makeCmatrixInvert(void) {
+    //! B行列 -> C行列に変換
+    Utils::makeInvert(capacity_matrix);
+
+    total_cmat_value = 0.0;
+    //! C_ij の sum を計算して保存しておく
+    for(size_t col = 0; col < num_cmat; ++col) {
+        for(size_t row = 0; row < num_cmat; ++row) {
+            total_cmat_value += capacity_matrix(col, row);
+        }
+    }
 }
 
 bool Spacecraft::isIncluded(const Particle& p) const {

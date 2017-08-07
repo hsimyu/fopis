@@ -62,6 +62,7 @@ public:
     };
 
     void setTotalCmatValue(const double val) { total_cmat_value = val; }
+    void makeCmatrixInvert(void);
 
     bool isIncluded(const Particle&) const;
     void removeInnerParticle(Particle&) const;

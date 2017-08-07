@@ -2,6 +2,7 @@
 #define __TDPIC_UTILS_H_INCLUDED__
 #include <picojson.h>
 #include "global.hpp"
+#include <boost/numeric/ublas/matrix.hpp>
 
 namespace Utils {
     void printTotalMemory(void);
@@ -20,6 +21,10 @@ namespace Utils {
     void clearBoundaryValues(tdArray&, const int, const int, const int);
     void initializeTdarray(tdArray&);
     void createDir(std::string);
+
+    //! 逆行列を解く
+    using dMatrix = boost::numeric::ublas::matrix<double>;
+    void makeInvert(dMatrix&);
 
     class ProgressManager {
     private:
