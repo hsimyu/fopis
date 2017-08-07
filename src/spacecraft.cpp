@@ -8,6 +8,8 @@ unsigned int Spacecraft::num_of_spacecraft = 0;
 
 void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
     ++num_of_spacecraft;
+    potential = 0.0;
+    potential_bias = 0.0;
 
     // Node ベース, glue cell は要らない?
     objectArray::extent_gen objectExtents;
@@ -129,7 +131,7 @@ void Spacecraft::applyCharge(tdArray& rho) const {
     }
 }
 
-void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) const {
+void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
 #ifdef CHARGE_CONSERVATION
     cout << "charge before redist: " << getTotalCharge(rho) << endl;
 #endif
@@ -143,17 +145,17 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) const {
             charge_before_redist += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
         }
     }
-    //! ここで sum とる
+    //! ここで MPI sum とる
 
-    const double new_potential = charge_before_redist / total_cmat_value;
-    cout << "new potential = " << Normalizer::unnormalizePotential(new_potential) << " V. " << endl;
+    potential = charge_before_redist / total_cmat_value + potential_bias;
+    cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;
 
     for(unsigned int i = 0; i < num_cmat; ++i) {
         double delta_rho = 0.0;
 
         for(unsigned int j = 0; j < num_cmat; ++j) {
             const auto& pos = capacity_matrix_relation.at(j);
-            delta_rho += capacity_matrix(i, j) * (new_potential - phi[pos.i][pos.j][pos.k]);
+            delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
         }
         //! ここで sum とる
 

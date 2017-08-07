@@ -15,6 +15,9 @@ private:
     objectArray object_map;
     tdArray charge_map;
 
+    double potential;
+    double potential_bias;
+
     //! キャパシタンス行列
     using Cmatrix = boost::numeric::ublas::matrix<double>;
     Cmatrix capacity_matrix;
@@ -50,6 +53,10 @@ public:
     void setName(const std::string _name) { name = _name; }
     std::string getName() const { return name; }
 
+    auto getPotential(void) const { return potential; }
+    auto getPotentialBias(void) const { return potential_bias; }
+    void setPotentialBias(const double val) { potential_bias = val; }
+
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
 
@@ -68,7 +75,7 @@ public:
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
     void applyCharge(tdArray&) const;
-    void redistributeCharge(tdArray&, const tdArray&) const;
+    void redistributeCharge(tdArray&, const tdArray&);
     friend std::ostream& operator<<(std::ostream&, const Spacecraft&);
 };
 #endif
