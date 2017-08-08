@@ -63,11 +63,12 @@ namespace MPIw {
         Comms.emplace(std::piecewise_construct, std::make_tuple(new_comm_name), std::make_tuple(new_comm));
     }
 
-    void Environment::participateNewComm(const std::string& new_comm_name, const std::string& source_comm_name) {
-        auto source_comm = Comms[source_comm_name].getComm();
+    void Environment::makeNewComm(const std::string& new_comm_name, const bool is_not_empty_comm) {
+        auto source_comm = Comms["world"].getComm();
         MPI_Comm new_comm;
-        MPI_Comm_create_group(source_comm, MPI_GROUP_EMPTY, TAG::PARTICIPATE_NEW_COMM, &new_comm);
-        addNewComm(new_comm_name, new_comm);
+        int color = (is_not_empty_comm ? 0 : MPI_UNDEFINED);
+        MPI_Comm_split(source_comm, color, rank, &new_comm);
+        if (is_not_empty_comm) addNewComm(new_comm_name, new_comm);
     }
 
     void Environment::sendRecvField(tdArray& x3D){

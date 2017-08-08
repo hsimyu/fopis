@@ -88,7 +88,7 @@ namespace MPIw {
             //! コミュニケータのリスト
             static std::map<std::string, Communicator> Comms;
             static void addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm);
-            static void participateNewComm(const std::string& new_comm_name, const std::string& source_comm_name = "default");
+            static void makeNewComm(const std::string& new_comm_name, const bool is_not_empty_comm);
 
             //! MPI通信をラップするためのメンバ関数群
             static void sendRecvParticlesX(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
