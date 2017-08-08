@@ -124,6 +124,11 @@ class Grid {
                 (k <= Environment::getAssignedZEnd());
         }
 
+        template<typename T>
+        std::array<T, 3> getRelativePosition(const T i, const T j, const T k) {
+            return std::array<T, 3>{{i - Environment::getAssignedXBegin(), j - Environment::getAssignedYBegin(), k - Environment::getAssignedZBegin()}};
+        }
+
         // Field内の値へのアクセスを wrap する
         tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
 
