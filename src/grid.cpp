@@ -108,12 +108,12 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
     //! その上にプロセス分割されたグリッドが乗っていると考える
-    from_ix = MPIw::Environment::xrank * Environment::cell_x;
-    from_iy = MPIw::Environment::yrank * Environment::cell_y;
-    from_iz = MPIw::Environment::zrank * Environment::cell_z;
-    to_ix = from_ix + nx;
-    to_iy = from_iy + ny;
-    to_iz = from_iz + nz;
+    from_ix = Environment::getAssignedXBegin();
+    from_iy = Environment::getAssignedYBegin();
+    from_iz = Environment::getAssignedZBegin();
+    to_ix = Environment::getAssignedXEnd();
+    to_iy = Environment::getAssignedYEnd();
+    to_iz = Environment::getAssignedZEnd();
     //! @note: base_x, base_y, base_zは正規化された長さ
     base_x = dx * static_cast<double>(from_ix);
     base_y = dx * static_cast<double>(from_iy);
