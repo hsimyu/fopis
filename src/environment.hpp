@@ -58,7 +58,7 @@ struct Environment {
         static unsigned int getAssignedYBegin(void) { return ::MPIw::Environment::yrank * cell_y; }
         static unsigned int getAssignedYEnd(void) { return (::MPIw::Environment::yrank + 1) * cell_y - 1; }
         static unsigned int getAssignedZBegin(void) { return ::MPIw::Environment::zrank * cell_z; }
-        static unsigned int getAssignedZEnd(void) { return (::MPIw::Environment::zrank + 1) * cell_y - 1; }
+        static unsigned int getAssignedZEnd(void) { return (::MPIw::Environment::zrank + 1) * cell_z - 1; }
 
         //! 各方向の境界条件を取得する
         static std::string getBoundaryCondition(const AXIS, const AXIS_SIDE);
