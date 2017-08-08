@@ -47,12 +47,16 @@ namespace MPIw {
 
     void Environment::finalize(void) {
 #ifndef BUILD_TEST
-        static bool finalized = false;
+    static bool finalized = false;
         if(!finalized) {
             MPI_Finalize();
             finalized = true;
         }
 #endif
+    }
+
+    void Environment::abort(const int code) {
+        MPI_Abort(MPI_COMM_WORLD, code);
     }
 
     void Environment::addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm) {

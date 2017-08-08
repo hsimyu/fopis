@@ -375,7 +375,7 @@ namespace Utils {
             }
         } else {
             throw std::invalid_argument("[ERROR] input.json does not exist.");
-            MPIw::Environment::exitWithFinalize(1);
+            MPIw::Environment::abort(1);
         }
         return res;
     }

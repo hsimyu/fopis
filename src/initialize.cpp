@@ -115,7 +115,7 @@ namespace Initializer {
             if(MPIw::Environment::rank == 0) {
                 cout << format("[ERROR] Allocated Process Number [%d] is different from [%d] inputted from json.") % MPIw::Environment::numprocs % (npux * npuy * npuz) << endl;
             }
-            MPIw::Environment::exitWithFinalize(0);
+            MPIw::Environment::abort(1);
         }
 
         // Processの積み方は
@@ -164,10 +164,7 @@ namespace Initializer {
         Environment::max_particle_num = MAX_PARTICLE_NUM;
         Environment::timestep = 1;
 
-        for (auto it = env_inputs.begin();
-             it != env_inputs.end();
-             ++it)
-        {
+        for (auto it = env_inputs.begin(); it != env_inputs.end(); ++it) {
             // string で switch したい...
             if(it->first == "nx"){
                 Environment::nx = static_cast<int>(it->second.get<double>());

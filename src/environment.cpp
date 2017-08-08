@@ -122,7 +122,7 @@ void Environment::checkCFLCondition(void) {
 
     if ( courant > 1.0 ) {
         cout << "    [ERROR] Courant number exceeds 1.0. " << endl;
-        MPIw::Environment::exitWithFinalize(0);
+        MPIw::Environment::abort(1);
     }
 }
 

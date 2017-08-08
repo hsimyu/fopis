@@ -235,7 +235,7 @@ void Grid::checkGridValidness() {
         isValid = false;
     }
 
-    if(!isValid) MPIw::Environment::exitWithFinalize(1);
+    if(!isValid) MPIw::Environment::abort(1);
 }
 
 void Grid::initializeObjectsCmatrix(void) {

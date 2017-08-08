@@ -57,22 +57,18 @@ namespace MPIw {
 
     //! MPIランク保持用のクラス
     class Environment {
-        private:
-            static void finalize(void);
-
         public:
             Environment(int, char**);
 
-            //! 破棄時にFinalize()する
             ~Environment() {
                 finalize();
             }
 
+            //! 正常終了時
+            static void finalize(void);
+
             //! 例外時などの終了処理のために呼び出す
-            static void exitWithFinalize(int code) {
-                finalize();
-                exit(code);
-            }
+            static void abort(const int errorcode);
 
             //! MPIランクを接頭辞として出力する時のための関数
             static std::string rankStr(void) {
@@ -91,8 +87,8 @@ namespace MPIw {
 
             //! コミュニケータのリスト
             static std::map<std::string, Communicator> Comms;
-            void addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm);
-            void participateNewComm(const std::string& new_comm_name, const std::string& source_comm_name = "default");
+            static void addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm);
+            static void participateNewComm(const std::string& new_comm_name, const std::string& source_comm_name = "default");
 
             //! MPI通信をラップするためのメンバ関数群
             static void sendRecvParticlesX(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
