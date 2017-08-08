@@ -15,7 +15,7 @@ namespace MPIw {
             MPI_Comm comm;
 
         public:
-            // Communicator
+            // CommunicatorのデフォルトCommはMPI_COMM_WORLDとする
             Communicator(void) {
                 comm = MPI_COMM_WORLD;
             }
@@ -24,8 +24,7 @@ namespace MPIw {
                 comm = _comm;
             }
 
-            MPI_Comm getComm(void);
-            void setComm(MPI_Comm);
+            MPI_Comm getComm(void) const { return comm; }
 
             // -- communicate methods --
             void barrier(void) {
@@ -92,6 +91,8 @@ namespace MPIw {
 
             //! コミュニケータのリスト
             static std::map<std::string, Communicator> Comms;
+            void addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm);
+            void participateNewComm(const std::string& new_comm_name, const std::string& source_comm_name = "default");
 
             //! MPI通信をラップするためのメンバ関数群
             static void sendRecvParticlesX(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);

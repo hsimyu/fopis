@@ -13,6 +13,7 @@ namespace MPIw {
         SENDRECV_PARTICLE,
         SENDRECV_PARTICLE_LENGTH,
         SENDRECV_FIELD,
+        PARTICIPATE_NEW_COMM,
     };
 
     // Environmentのstatic変数の実体
@@ -33,7 +34,7 @@ namespace MPIw {
         MPI_Init(&argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        Comms.emplace(std::piecewise_construct, std::make_tuple("world"), std::make_tuple());
+        addNewComm("world", MPI_COMM_WORLD);
 #else
         rank = 0;
         numprocs = 1;
@@ -52,6 +53,17 @@ namespace MPIw {
             finalized = true;
         }
 #endif
+    }
+
+    void Environment::addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm) {
+        Comms.emplace(std::piecewise_construct, std::make_tuple(new_comm_name), std::make_tuple(new_comm));
+    }
+
+    void Environment::participateNewComm(const std::string& new_comm_name, const std::string& source_comm_name) {
+        auto source_comm = Comms[source_comm_name].getComm();
+        MPI_Comm new_comm;
+        MPI_Comm_create_group(source_comm, MPI_GROUP_EMPTY, TAG::PARTICIPATE_NEW_COMM, &new_comm);
+        addNewComm(new_comm_name, new_comm);
     }
 
     void Environment::sendRecvField(tdArray& x3D){
