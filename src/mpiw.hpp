@@ -91,7 +91,7 @@ namespace MPIw {
             static MPI_Datatype MPI_PARTICLE;
 
             //! コミュニケータのリスト
-            static std::map<std::string, Communicator*> Comms;
+            static std::map<std::string, Communicator> Comms;
 
             //! MPI通信をラップするためのメンバ関数群
             static void sendRecvParticlesX(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);

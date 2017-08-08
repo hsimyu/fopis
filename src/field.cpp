@@ -177,8 +177,8 @@ double Field::checkPhiResidual() {
     }
 
     if(MPIw::Environment::numprocs > 1) {
-        residual = MPIw::Environment::Comms["world"]->max(residual);
-        rho_max =  MPIw::Environment::Comms["world"]->max(rho_max);
+        residual = MPIw::Environment::Comms["world"].max(residual);
+        rho_max =  MPIw::Environment::Comms["world"].max(rho_max);
     }
 
     return residual/(rho_max/normalized_eps);
