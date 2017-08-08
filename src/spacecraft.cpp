@@ -6,7 +6,7 @@
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjNodes& nodes) {
     ++num_of_spacecraft;
     potential = 0.0;
     potential_bias = 0.0;
@@ -24,22 +24,21 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz) {
         }
     }
 
-    //! キャパシタンス行列の要素数
-    num_cmat = 0;
+    int num_cmat = 0;
+    //! 判定はGrid側で既に終わっているので必要なし
+    for(const auto& node_pair : nodes) {
+        const auto cmat_itr = node_pair.first;
+        const auto& node_pos = node_pair.second;
+        const auto i = node_pos[0];
+        const auto j = node_pos[1];
+        const auto k = node_pos[2];
 
-    //! テスト定義
-    for(unsigned int i = 3 * nx / 8; i < 4 * nx / 8; ++i) {
-        for (unsigned int j = 3 * ny / 8; j < 4 * ny / 8; ++j) {
-            for (unsigned int k = nz / 8; k < 7 * nz / 8; ++k) {
-                //! 自分のノード内の座標である時だけ capacity_matrix_relation を追加する
-                //! -> 後々 find() で自動的に処理できる
-                object_map[i][j][k] = true;
-                // std::map 内に直接オブジェクトを構築する
-                capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(num_cmat), std::make_tuple(i, j, k));
-                ++num_cmat;
-            }
-        }
+        object_map[i][j][k] = true;
+        capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
+        ++num_cmat;
     }
+    num_cmat = MPIw::Environment::Comms[name].sum(num_cmat);
+    cout << Environment::rankStr() << "After processed cmat_num: " << num_cmat << endl;
 
     //! キャパシタンス行列のサイズを物体サイズに変更
     capacity_matrix.resize(num_cmat, num_cmat);
