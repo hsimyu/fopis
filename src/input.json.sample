@@ -32,6 +32,18 @@
             "particle_per_cell": 20
         }
     },
+    "Object": {
+        "Spacecraft_0": {
+            "file_name": "sp1.obj",
+            "surface_type": "perfect",
+            "history_width": 1
+        },
+        "Spacecraft_1": {
+            "file_name": "sp2.obj",
+            "surface_type": "perfect",
+            "history_width": 1
+        }
+    },
     "IO": {
         "plot_energy_dist_width": 0,
         "plot_velocity_dist_width": 0,
