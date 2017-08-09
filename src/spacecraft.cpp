@@ -152,7 +152,7 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
             capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
         }
     }
-    MPIw::Environment::Comms[name].sum(capacity_times_phi);
+    capacity_times_phi = MPIw::Environment::Comms[name].sum(capacity_times_phi);
 
     potential = capacity_times_phi / total_cmat_value + potential_bias;
     cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;

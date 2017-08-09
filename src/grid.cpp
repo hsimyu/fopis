@@ -90,7 +90,7 @@ void Grid::initializeObject(void) {
     unsigned int num_cmat = 0;
     for(unsigned int i = 3 * Environment::nx / 8; i < 4 * Environment::nx / 8; ++i) {
         for (unsigned int j = 3 * Environment::ny / 8; j < 4 * Environment::ny / 8; ++j) {
-            for (unsigned int k = Environment::nz / 8; k < 7 * Environment::nz / 8; ++k) {
+            for (unsigned int k = 3 * Environment::nz / 8; k < 4 * Environment::nz / 8; ++k) {
                 temp_obj_node_array[num_cmat] = {{i, j, k}};
                 ++num_cmat;
             }
@@ -142,6 +142,7 @@ void Grid::initializeObjectsCmatrix(void) {
 
                 // rhoを初期化
                 Utils::initializeTdarray(rho);
+                Utils::initializeTdarray(phi);
 
                 if (obj.isMyCmat(cmat_col_itr)) {
                     const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
@@ -156,7 +157,7 @@ void Grid::initializeObjectsCmatrix(void) {
                         value = phi[target_pos.i][target_pos.j][target_pos.k];
                     }
                     // bcastの代わりにsumしてしまう
-                    MPIw::Environment::Comms["world"].sum(value);
+                    value = MPIw::Environment::Comms["world"].sum(value);
                     obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
                 }
             }
