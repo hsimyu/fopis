@@ -453,7 +453,7 @@ void Grid::updateRho() {
         solvePoisson();
 
         for(auto& obj : objects) {
-            obj.redistributeCharge(rho, field->getPhi());
+            if (obj.isDefined()) obj.redistributeCharge(rho, field->getPhi());
         }
 
         MPIw::Environment::sendRecvField(rho);

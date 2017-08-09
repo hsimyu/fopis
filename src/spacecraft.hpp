@@ -12,11 +12,13 @@ private:
     static unsigned int num_of_spacecraft;
     std::string name;
     size_t num_cmat;
-    objectArray object_map;
-    tdArray charge_map;
-
+    bool is_defined_in_this_process;
     double potential;
     double potential_bias;
+
+    //! オブジェクト定義マップとキャパシティ定義マップ
+    objectArray object_map;
+    tdArray charge_map;
 
     //! キャパシタンス行列
     using Cmatrix = boost::numeric::ublas::matrix<double>;
@@ -74,6 +76,8 @@ public:
 
     void setTotalCmatValue(const double val) { total_cmat_value = val; }
     void makeCmatrixInvert(void);
+
+    bool isDefined(void) const { return is_defined_in_this_process; }
 
     bool isIncluded(const Particle&) const;
     void removeInnerParticle(Particle&) const;

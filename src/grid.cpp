@@ -234,7 +234,7 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
 
             //! 物体がある場合は生成時にチェックする
             for(const auto& obj : objects) {
-                obj.removeInnerParticle(p);
+                if (obj.isDefined()) obj.removeInnerParticle(p);
             }
 
             if (p.isValid) particles[id].emplace_back(p);

@@ -7,18 +7,20 @@
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
 void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjNodes& nodes) {
+    //! このオブジェクトがプロセス内で有効かどうかを保存しておく
+    is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
     potential = 0.0;
     potential_bias = 0.0;
 
-    // Node ベース, glue cell は要らない?
+    // Node ベース, Glueセルも必要
     objectArray::extent_gen objectExtents;
-    object_map.resize(objectExtents[nx][ny][nz]);
+    object_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
 
     // 初期化
-    for(unsigned int i = 0; i < nx; ++i) {
-        for (unsigned int j = 0; j < ny; ++j) {
-            for (unsigned int k = 0; k < nz; ++k) {
+    for(unsigned int i = 0; i < nx + 2; ++i) {
+        for (unsigned int j = 0; j < ny + 2; ++j) {
+            for (unsigned int k = 0; k < nz + 2; ++k) {
                 object_map[i][j][k] = false;
             }
         }
@@ -34,9 +36,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         const auto k = node_pos[2];
 
         object_map[i][j][k] = true;
-
-        //! Positionコンストラクタに渡す引数はGlueセル分を考慮して+1する
-        capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i + 1, j + 1, k + 1));
+        capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
         ++num_cmat;
     }
     //! worldで通信し、全てのプロセスのSpacecraftオブジェクトが同じnum_cmatを持つようにしておく
@@ -97,14 +97,14 @@ void Spacecraft::makeCmatrixInvert(void) {
 bool Spacecraft::isIncluded(const Particle& p) const {
     const auto pos = p.getPosition();
 
-    return  object_map[pos.raw_i    ][pos.raw_j    ][pos.raw_k    ] &&
-            object_map[pos.raw_i + 1][pos.raw_j    ][pos.raw_k    ] &&
-            object_map[pos.raw_i    ][pos.raw_j + 1][pos.raw_k    ] &&
-            object_map[pos.raw_i + 1][pos.raw_j + 1][pos.raw_k    ] &&
-            object_map[pos.raw_i    ][pos.raw_j    ][pos.raw_k + 1] &&
-            object_map[pos.raw_i + 1][pos.raw_j    ][pos.raw_k + 1] &&
-            object_map[pos.raw_i    ][pos.raw_j + 1][pos.raw_k + 1] &&
-            object_map[pos.raw_i + 1][pos.raw_j + 1][pos.raw_k + 1];
+    return  object_map[pos.i    ][pos.j    ][pos.k    ] &&
+            object_map[pos.i + 1][pos.j    ][pos.k    ] &&
+            object_map[pos.i    ][pos.j + 1][pos.k    ] &&
+            object_map[pos.i + 1][pos.j + 1][pos.k    ] &&
+            object_map[pos.i    ][pos.j    ][pos.k + 1] &&
+            object_map[pos.i + 1][pos.j    ][pos.k + 1] &&
+            object_map[pos.i    ][pos.j + 1][pos.k + 1] &&
+            object_map[pos.i + 1][pos.j + 1][pos.k + 1];
 }
 
 void Spacecraft::removeInnerParticle(Particle& p) const {
