@@ -540,17 +540,11 @@ void Field::checkChargeConservation(const tdArray& old_rho, const double dt, con
                 j2 = (jy[i][j][k] - jy[i][j - 1][k])/dx;
                 j3 = (jz[i][j][k] - jz[i][j][k - 1])/dx;
 
-                // cout << "[TEST] Charge conservation residual1 = " << residual1 << endl;
-                // cout << "[TEST] Charge conservation residual2 = " << residual2 << endl;
-                // cout << "[TEST] Charge conservation j1 = " << j1 << endl;
-                // cout << "[TEST] Charge conservation j2 = " << j2 << endl;
-                // cout << "[TEST] Charge conservation j3 = " << j3 << endl;
-                // cout << "[TEST] Charge conservation residual = " << (residual1 - residual2 + j1 + j2 + j3) << endl;
-
                 residual += residual1 - residual2 + j1 + j2 + j3;
             }
         }
     }
 
-    cout << "[TEST] Charge conservation residual sum = " << residual << endl;
+    residual = MPIw::Environment::Comms["world"].sum(residual);
+    if (Environment::isRootNode) cout << "[TEST] Charge conservation residual sum = " << residual << endl;
 }
