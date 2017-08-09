@@ -6,7 +6,7 @@
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const objectNodes& nodes, const objectNodes& glue_nodes) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectNodes& nodes, const ObjectNodes& glue_nodes) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -15,7 +15,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
     if (is_defined_in_this_process) {
         // Node ベース, Glueセルも必要
-        objectArray::extent_gen objectExtents;
+        ObjectDefinedMap::extent_gen objectExtents;
         object_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
 
         // 初期化
@@ -99,7 +99,6 @@ void Spacecraft::makeCmatrixInvert(void) {
             total_cmat_value += capacity_matrix(col, row);
         }
     }
-    cout << Environment::rankStr() << "total_cmat_value = " << total_cmat_value << endl;
 }
 
 bool Spacecraft::isIncluded(const Particle& p) const {
@@ -165,7 +164,7 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
     capacity_times_phi = MPIw::Environment::Comms[name].sum(capacity_times_phi);
 
     if (potential_fix != 0.0) {
-        potential = Normalizer::normalizePotential(potential_fix);
+        potential = potential_fix;
     } else {
         potential = capacity_times_phi / total_cmat_value;
     }

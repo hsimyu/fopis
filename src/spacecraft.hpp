@@ -17,7 +17,7 @@ private:
     double potential_fix;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
-    objectArray object_map;
+    ObjectDefinedMap object_map;
     tdArray charge_map;
 
     //! キャパシタンス行列
@@ -31,14 +31,14 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const objectNodes&, const objectNodes&);
+    void construct(const size_t, const size_t, const size_t, const ObjectNodes&, const ObjectNodes&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const tdArray&) const;
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const std::string _name,
-        const objectNodes& nodes, const objectNodes& glue_nodes) :
+        const ObjectNodes& nodes, const ObjectNodes& glue_nodes) :
         name(_name),
         num_cmat(_num_cmat),
         object_map(boost::extents[0][0][0]),

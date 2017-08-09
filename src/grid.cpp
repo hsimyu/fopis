@@ -80,50 +80,77 @@ void Grid::initializeObject(void) {
     //! TODO: オブジェクト数を数える
     if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
 
-    const size_t max_objects = 1;
+    std::map<std::string, ObjectNodes> defined_objects;
+    std::map<std::string, unsigned int> num_cmat_map;
 
-    //! テスト定義
-    bool is_object_in_this_node = false;
-
-    //! ユニークなノード番号 -> 整数座標 の map を作る
-    objectNodes temp_obj_node_array;
-    unsigned int num_cmat = 0;
-    for(unsigned int i = 5; i < 8; ++i) {
-        for (unsigned int j = 5; j < 8; ++j) {
-            for (unsigned int k = 8; k < 25; ++k) {
-                temp_obj_node_array[num_cmat] = {{i, j, k}};
-                ++num_cmat;
+    //! 複数定義テスト
+    {
+        std::string obj_name = "Spacecraft_0";
+        //! ユニークなノード番号 -> 整数座標 の map を作る
+        ObjectNodes temp_obj_node_array;
+        unsigned int num_cmat = 0;
+        for(unsigned int i = 5; i < 8; ++i) {
+            for (unsigned int j = 5; j < 8; ++j) {
+                for (unsigned int k = 8; k < 25; ++k) {
+                    temp_obj_node_array[num_cmat] = {{i, j, k}};
+                    ++num_cmat;
+                }
             }
         }
+        defined_objects[obj_name] = std::move(temp_obj_node_array);
+        num_cmat_map[obj_name] = num_cmat;
     }
 
-    //! innerと判定されたやつだけ渡す
-    objectNodes obj_node_array;
-    objectNodes glue_node_array;
-    for(const auto& node_pair : temp_obj_node_array) {
-        const auto cmat_itr = node_pair.first;
-        const auto& node_pos = node_pair.second;
-
-        const auto i = node_pos[0];
-        const auto j = node_pos[1];
-        const auto k = node_pos[2];
-
-        if (isInnerNode(i, j, k)) {
-            is_object_in_this_node = true;
-            obj_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
-        } else if (isGlueNode(i, j, k)) {
-            glue_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
+    {
+        std::string obj_name = "Spacecraft_1";
+        //! ユニークなノード番号 -> 整数座標 の map を作る
+        ObjectNodes temp_obj_node_array;
+        unsigned int num_cmat = 0;
+        for(unsigned int i = 5; i < 8; ++i) {
+            for (unsigned int j = 20; j < 24; ++j) {
+                for (unsigned int k = 8; k < 25; ++k) {
+                    temp_obj_node_array[num_cmat] = {{i, j, k}};
+                    ++num_cmat;
+                }
+            }
         }
+        defined_objects[obj_name] = std::move(temp_obj_node_array);
+        num_cmat_map[obj_name] = num_cmat;
     }
 
-    for(size_t i = 0; i < max_objects; ++i) {
+    for(const auto& object_nodes : defined_objects) {
+        const auto obj_name = object_nodes.first;
+        const auto& node_array = object_nodes.second;
+
+        //! innerと判定されたやつだけ渡す
+        ObjectNodes inner_node_array;
+        ObjectNodes glue_node_array;
+        bool is_object_in_this_node = false;
+
+        for(const auto& node_pair : node_array) {
+            const auto cmat_itr = node_pair.first;
+            const auto& node_pos = node_pair.second;
+
+            const auto i = node_pos[0];
+            const auto j = node_pos[1];
+            const auto k = node_pos[2];
+
+            if (isInnerNode(i, j, k)) {
+                is_object_in_this_node = true;
+                inner_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
+            } else if (isGlueNode(i, j, k)) {
+                glue_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
+            }
+        }
+
         //! Comm作成 (物体が入っていないならnullになる)
-        MPIw::Environment::makeNewComm("Spacecraft_0", is_object_in_this_node);
+        MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
         if (is_object_in_this_node) {
-            cout << Environment::rankStr() << "Object No. " << i << " was defined in me." << endl;
+            cout << Environment::rankStr() << "Object " << obj_name << " was defined in me." << endl;
         }
+
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
-        Spacecraft spc(nx, ny, nz, num_cmat, "Spacecraft_0", obj_node_array, glue_node_array);
+        Spacecraft spc(nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array);
         if (Environment::isRootNode) cout << spc << endl;
         objects.emplace_back( spc );
     }
