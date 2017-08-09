@@ -396,4 +396,19 @@ namespace Utils {
             boost::filesystem::create_directory(dir);
         }
     }
+
+    ObjectNodes getObjectNodesFromObjFile(const std::string& obj_file_name) {
+        ObjectNodes temp_obj_node_array;
+        unsigned int num_cmat = 0;
+        //! ユニークなノード番号 -> 整数座標 の map を作る
+        for(unsigned int i = 5; i < 8; ++i) {
+            for (unsigned int j = 5; j < 8; ++j) {
+                for (unsigned int k = 8; k < 25; ++k) {
+                    temp_obj_node_array[num_cmat] = {{i, j, k}};
+                    ++num_cmat;
+                }
+            }
+        }
+        return temp_obj_node_array;
+    }
 }

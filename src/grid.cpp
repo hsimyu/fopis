@@ -83,39 +83,11 @@ void Grid::initializeObject(void) {
     std::map<std::string, ObjectNodes> defined_objects;
     std::map<std::string, unsigned int> num_cmat_map;
 
-    //! 複数定義テスト
-    {
-        std::string obj_name = "Spacecraft_0";
-        //! ユニークなノード番号 -> 整数座標 の map を作る
-        ObjectNodes temp_obj_node_array;
-        unsigned int num_cmat = 0;
-        for(unsigned int i = 5; i < 8; ++i) {
-            for (unsigned int j = 5; j < 8; ++j) {
-                for (unsigned int k = 8; k < 25; ++k) {
-                    temp_obj_node_array[num_cmat] = {{i, j, k}};
-                    ++num_cmat;
-                }
-            }
-        }
-        defined_objects[obj_name] = std::move(temp_obj_node_array);
-        num_cmat_map[obj_name] = num_cmat;
-    }
-
-    {
-        std::string obj_name = "Spacecraft_1";
-        //! ユニークなノード番号 -> 整数座標 の map を作る
-        ObjectNodes temp_obj_node_array;
-        unsigned int num_cmat = 0;
-        for(unsigned int i = 5; i < 8; ++i) {
-            for (unsigned int j = 20; j < 24; ++j) {
-                for (unsigned int k = 8; k < 25; ++k) {
-                    temp_obj_node_array[num_cmat] = {{i, j, k}};
-                    ++num_cmat;
-                }
-            }
-        }
-        defined_objects[obj_name] = std::move(temp_obj_node_array);
-        num_cmat_map[obj_name] = num_cmat;
+    for (const auto& object_info : Environment::objects_info) {
+        std::string obj_name = object_info.name;
+        //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
+        defined_objects[obj_name] = Utils::getObjectNodesFromObjFile(object_info.file_name);
+        num_cmat_map[obj_name] = defined_objects[obj_name].size();
     }
 
     for(const auto& object_nodes : defined_objects) {
@@ -145,9 +117,9 @@ void Grid::initializeObject(void) {
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
-        if (is_object_in_this_node) {
-            cout << Environment::rankStr() << "Object " << obj_name << " was defined in me." << endl;
-        }
+        // if (is_object_in_this_node) {
+        //     cout << Environment::rankStr() << "Object " << obj_name << " was defined in me." << endl;
+        // }
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         Spacecraft spc(nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array);

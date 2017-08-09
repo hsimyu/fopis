@@ -21,6 +21,7 @@ namespace Utils {
     void clearBoundaryValues(tdArray&, const int, const int, const int);
     void initializeTdarray(tdArray&);
     void createDir(std::string);
+    ObjectNodes getObjectNodesFromObjFile(const std::string& obj_file_name);
 
     //! 逆行列を解く
     using dMatrix = boost::numeric::ublas::matrix<double>;
