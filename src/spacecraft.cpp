@@ -6,12 +6,12 @@
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjNodes& nodes) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjNodes& nodes, const ObjNodes& glue_nodes) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
     potential = 0.0;
-    potential_bias = 0.0;
+    potential_fix = 0.0;
 
     if (is_defined_in_this_process) {
         // Node ベース, Glueセルも必要
@@ -37,6 +37,16 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
             object_map[i][j][k] = true;
             capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
+        }
+
+        //! Glueノードはobject_map側を更新するだけでよい
+        for(const auto& node_pair : glue_nodes) {
+            const auto& node_pos = node_pair.second;
+            const auto i = node_pos[0];
+            const auto j = node_pos[1];
+            const auto k = node_pos[2];
+
+            object_map[i][j][k] = true;
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
@@ -154,7 +164,11 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
     }
     capacity_times_phi = MPIw::Environment::Comms[name].sum(capacity_times_phi);
 
-    potential = capacity_times_phi / total_cmat_value + potential_bias;
+    if (potential_fix != 0.0) {
+        potential = Normalizer::normalizePotential(potential_fix);
+    } else {
+        potential = capacity_times_phi / total_cmat_value;
+    }
     cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;
 
     for(unsigned int i = 0; i < num_cmat; ++i) {

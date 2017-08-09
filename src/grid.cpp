@@ -88,9 +88,9 @@ void Grid::initializeObject(void) {
     //! ユニークなノード番号 -> 整数座標 の map を作る
     std::map< unsigned int, std::array<unsigned int, 3> > temp_obj_node_array;
     unsigned int num_cmat = 0;
-    for(unsigned int i = 3 * Environment::nx / 8; i < 4 * Environment::nx / 8; ++i) {
-        for (unsigned int j = 3 * Environment::ny / 8; j < 4 * Environment::ny / 8; ++j) {
-            for (unsigned int k = 3 * Environment::nz / 8; k < 4 * Environment::nz / 8; ++k) {
+    for(unsigned int i = 5; i < 8; ++i) {
+        for (unsigned int j = 5; j < 8; ++j) {
+            for (unsigned int k = 8; k < 25; ++k) {
                 temp_obj_node_array[num_cmat] = {{i, j, k}};
                 ++num_cmat;
             }
@@ -99,6 +99,7 @@ void Grid::initializeObject(void) {
 
     //! innerと判定されたやつだけ渡す
     std::map< unsigned int, std::array<unsigned int, 3> > obj_node_array;
+    std::map< unsigned int, std::array<unsigned int, 3> > glue_node_array;
     for(const auto& node_pair : temp_obj_node_array) {
         const auto cmat_itr = node_pair.first;
         const auto& node_pos = node_pair.second;
@@ -110,6 +111,8 @@ void Grid::initializeObject(void) {
         if (isInnerNode(i, j, k)) {
             is_object_in_this_node = true;
             obj_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
+        } else if (isGlueNode(i, j, k)) {
+            glue_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
         }
     }
 
@@ -120,7 +123,7 @@ void Grid::initializeObject(void) {
             cout << Environment::rankStr() << "Object No. " << i << " was defined in me." << endl;
         }
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
-        Spacecraft spc(nx, ny, nz, num_cmat, obj_node_array);
+        Spacecraft spc(nx, ny, nz, num_cmat, "Spacecraft_0", obj_node_array, glue_node_array);
         if (Environment::isRootNode) cout << spc << endl;
         objects.emplace_back( spc );
     }

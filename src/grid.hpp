@@ -124,6 +124,18 @@ class Grid {
                 (k <= Environment::getAssignedZEnd());
         }
 
+        //! Glueノードであるかどうかを判定する
+        //! i, j, k は整数座標(全体の計算空間上の)
+        bool isGlueNode(const int i, const int j, const int k) const {
+            return 
+                (i == (Environment::getAssignedXBegin() - 1)) ||
+                (i == (Environment::getAssignedXEnd() + 1)) ||
+                (j == (Environment::getAssignedYBegin() - 1)) || 
+                (j == (Environment::getAssignedYEnd() + 1)) ||
+                (k == (Environment::getAssignedZBegin() - 1)) ||
+                (k == (Environment::getAssignedZEnd() + 1));
+        }
+
         template<typename T>
         std::array<T, 3> getRelativePosition(const T i, const T j, const T k) {
             //! Glueセルありで返す

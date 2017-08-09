@@ -14,7 +14,7 @@ private:
     size_t num_cmat;
     bool is_defined_in_this_process;
     double potential;
-    double potential_bias;
+    double potential_fix;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
     objectArray object_map;
@@ -32,35 +32,28 @@ private:
 
     //! コンストラクタ内部処理共通化用
     using ObjNodes = std::map< unsigned int, std::array<unsigned int, 3> >;
-    void construct(const size_t, const size_t, const size_t, const ObjNodes&);
+    void construct(const size_t, const size_t, const size_t, const ObjNodes&, const ObjNodes&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const tdArray&) const;
 public:
-    Spacecraft(const size_t nx, const size_t ny, const size_t nz, const unsigned int _num_cmat, const ObjNodes& nodes) :
-        name("Spacecraft_" + std::to_string(num_of_spacecraft)),
-        num_cmat(_num_cmat),
-        object_map(boost::extents[0][0][0]),
-        charge_map(boost::extents[0][0][0]),
-        capacity_matrix(0, 0) {
-        construct(nx, ny, nz, nodes);
-    }
-
-    Spacecraft(const size_t nx, const size_t ny, const size_t nz, const unsigned int _num_cmat, const std::string _name, const ObjNodes& nodes) :
+    Spacecraft(const size_t nx, const size_t ny, const size_t nz,
+        const unsigned int _num_cmat, const std::string _name,
+        const ObjNodes& nodes, const ObjNodes& glue_nodes) :
         name(_name),
         num_cmat(_num_cmat),
         object_map(boost::extents[0][0][0]),
         charge_map(boost::extents[0][0][0]),
         capacity_matrix(0, 0) {
-        construct(nx, ny, nz, nodes);
+        construct(nx, ny, nz, nodes, glue_nodes);
     }
 
     void setName(const std::string _name) { name = _name; }
     std::string getName() const { return name; }
 
     auto getPotential(void) const { return potential; }
-    auto getPotentialBias(void) const { return potential_bias; }
-    void setPotentialBias(const double val) { potential_bias = val; }
+    auto getPotentialFix(void) const { return potential_fix; }
+    void setPotentialFix(const double val) { potential_fix = val; }
 
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
