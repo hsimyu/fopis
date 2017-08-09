@@ -37,16 +37,18 @@ private:
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const tdArray&) const;
 public:
-    Spacecraft(const size_t nx, const size_t ny, const size_t nz, const ObjNodes& nodes) :
+    Spacecraft(const size_t nx, const size_t ny, const size_t nz, const unsigned int _num_cmat, const ObjNodes& nodes) :
         name("Spacecraft_" + std::to_string(num_of_spacecraft)),
+        num_cmat(_num_cmat),
         object_map(boost::extents[0][0][0]),
         charge_map(boost::extents[0][0][0]),
         capacity_matrix(0, 0) {
         construct(nx, ny, nz, nodes);
     }
 
-    Spacecraft(const size_t nx, const size_t ny, const size_t nz, const std::string _name, const ObjNodes& nodes) :
+    Spacecraft(const size_t nx, const size_t ny, const size_t nz, const unsigned int _num_cmat, const std::string _name, const ObjNodes& nodes) :
         name(_name),
+        num_cmat(_num_cmat),
         object_map(boost::extents[0][0][0]),
         charge_map(boost::extents[0][0][0]),
         capacity_matrix(0, 0) {

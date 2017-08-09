@@ -26,7 +26,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         }
     }
 
-    num_cmat = 0;
     //! 判定はGrid側で既に終わっているので必要なし
     for(const auto& node_pair : nodes) {
         const auto cmat_itr = node_pair.first;
@@ -37,10 +36,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
         object_map[i][j][k] = true;
         capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
-        ++num_cmat;
     }
-    //! worldで通信し、全てのプロセスのSpacecraftオブジェクトが同じnum_cmatを持つようにしておく
-    num_cmat = MPIw::Environment::Comms["world"].sum(static_cast<int>(num_cmat));
 
     //! キャパシタンス行列のサイズを物体サイズに変更
     capacity_matrix.resize(num_cmat, num_cmat);

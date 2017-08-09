@@ -120,7 +120,7 @@ void Grid::initializeObject(void) {
             cout << Environment::rankStr() << "Object No. " << i << " was defined in me." << endl;
         }
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
-        Spacecraft spc(nx, ny, nz, obj_node_array);
+        Spacecraft spc(nx, ny, nz, num_cmat, obj_node_array);
         if (Environment::isRootNode) cout << spc << endl;
         objects.emplace_back( spc );
     }
