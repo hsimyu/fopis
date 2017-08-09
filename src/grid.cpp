@@ -144,27 +144,32 @@ void Grid::initializeObjectsCmatrix(void) {
                 Utils::initializeTdarray(rho);
                 Utils::initializeTdarray(phi);
 
+                //! 各頂点に単位電荷を付与
                 if (obj.isMyCmat(cmat_col_itr)) {
                     const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
                     rho[cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
                 }
+
                 solvePoisson();
 
                 for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
                     double value = 0.0;
                     if (obj.isMyCmat(cmat_row_itr)) {
+                        //! phiの値がB_{ij}の値になっている
                         const auto& target_pos = obj.getCmatPos(cmat_row_itr);
                         value = phi[target_pos.i][target_pos.j][target_pos.k];
                     }
-                    // bcastの代わりにsumしてしまう
-                    value = MPIw::Environment::Comms["world"].sum(value);
-                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
+
+                    if (obj.isDefined()) {
+                        //! bcastの代わりにsumしてしまう
+                        value = MPIw::Environment::Comms[obj.getName()].sum(value);
+                        obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
+                    }
                 }
             }
 
-            //! 全プロセスで同じCmatrixを持つ
-            //! Rootで計算してScatterより解いてしまった方が早そう
-            obj.makeCmatrixInvert();
+            //! 物体が有効でないなら解く必要なし
+            if (obj.isDefined()) obj.makeCmatrixInvert();
         }
     }
 }

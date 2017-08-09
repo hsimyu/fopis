@@ -441,7 +441,7 @@ void Grid::updateRho() {
 
     //! 物体に配分された電荷を現在の rho に印加する
     for(auto& obj : objects) {
-        obj.applyCharge(rho);
+        if (obj.isDefined()) obj.applyCharge(rho);
     }
 
     //! rho を隣に送る

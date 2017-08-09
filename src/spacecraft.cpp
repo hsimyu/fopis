@@ -13,42 +13,44 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     potential = 0.0;
     potential_bias = 0.0;
 
-    // Node ベース, Glueセルも必要
-    objectArray::extent_gen objectExtents;
-    object_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
+    if (is_defined_in_this_process) {
+        // Node ベース, Glueセルも必要
+        objectArray::extent_gen objectExtents;
+        object_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
 
-    // 初期化
-    for(unsigned int i = 0; i < nx + 2; ++i) {
-        for (unsigned int j = 0; j < ny + 2; ++j) {
-            for (unsigned int k = 0; k < nz + 2; ++k) {
-                object_map[i][j][k] = false;
+        // 初期化
+        for(unsigned int i = 0; i < nx + 2; ++i) {
+            for (unsigned int j = 0; j < ny + 2; ++j) {
+                for (unsigned int k = 0; k < nz + 2; ++k) {
+                    object_map[i][j][k] = false;
+                }
             }
         }
-    }
 
-    //! 判定はGrid側で既に終わっているので必要なし
-    for(const auto& node_pair : nodes) {
-        const auto cmat_itr = node_pair.first;
-        const auto& node_pos = node_pair.second;
-        const auto i = node_pos[0];
-        const auto j = node_pos[1];
-        const auto k = node_pos[2];
+        //! 判定はGrid側で既に終わっているので必要なし
+        for(const auto& node_pair : nodes) {
+            const auto cmat_itr = node_pair.first;
+            const auto& node_pos = node_pair.second;
+            const auto i = node_pos[0];
+            const auto j = node_pos[1];
+            const auto k = node_pos[2];
 
-        object_map[i][j][k] = true;
-        capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
-    }
+            object_map[i][j][k] = true;
+            capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
+        }
 
-    //! キャパシタンス行列のサイズを物体サイズに変更
-    capacity_matrix.resize(num_cmat, num_cmat);
+        //! キャパシタンス行列のサイズを物体サイズに変更
+        capacity_matrix.resize(num_cmat, num_cmat);
 
-    //! Node ベース, glue cell ありの電荷密度マップ
-    tdArray::extent_gen tdExtents;
-    charge_map.resize(tdExtents[nx + 2][ny + 2][nz + 2]);
-    //! 電荷配列初期化
-    for(size_t i = 0; i < nx + 2; ++i) {
-        for (size_t j = 0; j < ny + 2; ++j) {
-            for (size_t k = 0; k < nz + 2; ++k) {
-                charge_map[i][j][k] = 0.0;
+        //! Node ベース, glue cell ありの電荷密度マップ
+        tdArray::extent_gen tdExtents;
+        charge_map.resize(tdExtents[nx + 2][ny + 2][nz + 2]);
+        //! 電荷配列初期化
+        for(size_t i = 0; i < nx + 2; ++i) {
+            for (size_t j = 0; j < ny + 2; ++j) {
+                for (size_t k = 0; k < nz + 2; ++k) {
+                    charge_map[i][j][k] = 0.0;
+                }
             }
         }
     }
@@ -91,6 +93,8 @@ void Spacecraft::makeCmatrixInvert(void) {
 }
 
 bool Spacecraft::isIncluded(const Particle& p) const {
+    if (!is_defined_in_this_process) return false;
+
     const auto pos = p.getPosition();
 
     return  object_map[pos.i    ][pos.j    ][pos.k    ] &&
