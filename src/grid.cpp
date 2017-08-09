@@ -81,11 +81,90 @@ void Grid::initializeObject(void) {
     if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
 
     const size_t max_objects = 1;
+
+    //! テスト定義
+    bool is_object_in_this_node = false;
+
+    //! ユニークなノード番号 -> 整数座標 の map を作る
+    std::map< unsigned int, std::array<unsigned int, 3> > temp_obj_node_array;
+    unsigned int num_cmat = 0;
+    for(unsigned int i = 3 * Environment::nx / 8; i < 4 * Environment::nx / 8; ++i) {
+        for (unsigned int j = 3 * Environment::ny / 8; j < 4 * Environment::ny / 8; ++j) {
+            for (unsigned int k = Environment::nz / 8; k < 7 * Environment::nz / 8; ++k) {
+                temp_obj_node_array[num_cmat] = {{i, j, k}};
+                ++num_cmat;
+            }
+        }
+    }
+
+    //! innerと判定されたやつだけ渡す
+    std::map< unsigned int, std::array<unsigned int, 3> > obj_node_array;
+    for(const auto& node_pair : temp_obj_node_array) {
+        const auto cmat_itr = node_pair.first;
+        const auto& node_pos = node_pair.second;
+
+        const auto i = node_pos[0];
+        const auto j = node_pos[1];
+        const auto k = node_pos[2];
+
+        if (isInnerNode(i, j, k)) {
+            is_object_in_this_node = true;
+            obj_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
+        }
+    }
+
     for(size_t i = 0; i < max_objects; ++i) {
-        cout << Environment::rankStr() << "Object No. " << i << endl;
-        Spacecraft spc(nx, ny, nz);
-        cout << spc << endl;
+        //! Comm作成 (物体が入っていないならnullになる)
+        MPIw::Environment::makeNewComm("Spacecraft_0", is_object_in_this_node);
+        if (is_object_in_this_node) {
+            cout << Environment::rankStr() << "Object No. " << i << " was defined in me." << endl;
+        }
+        //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
+        Spacecraft spc(nx, ny, nz, obj_node_array);
+        if (Environment::isRootNode) cout << spc << endl;
         objects.emplace_back( spc );
+    }
+}
+
+void Grid::initializeObjectsCmatrix(void) {
+    if (Environment::isRootNode) cout << "-- Initializing Objects Capacity Matrix --" << endl;
+    tdArray& rho = field->getRho();
+    tdArray& phi = field->getPhi();
+
+    for(auto& obj : objects) {
+        const auto num_cmat = obj.getCmatSize();
+
+        { //! Progress Manager のライフタイムを区切る
+            Utils::ProgressManager pm(num_cmat, "cmat_solve");
+
+            for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
+                if (Environment::isRootNode) pm.update(cmat_col_itr);
+
+                // rhoを初期化
+                Utils::initializeTdarray(rho);
+
+                if (obj.isMyCmat(cmat_col_itr)) {
+                    const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
+                    rho[cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
+                }
+                solvePoisson();
+
+                for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
+                    double value = 0.0;
+                    if (obj.isMyCmat(cmat_row_itr)) {
+                        const auto& target_pos = obj.getCmatPos(cmat_row_itr);
+                        value = phi[target_pos.i][target_pos.j][target_pos.k];
+                    }
+                    // bcastの代わりにsumしてしまう
+                    MPIw::Environment::Comms["world"].sum(value);
+                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
+                }
+            }
+
+            //! 全プロセスで同じCmatrixを持つ
+            //! Rootで計算してScatterより解いてしまった方が早そう
+            obj.makeCmatrixInvert();
+        }
     }
 }
 
@@ -236,39 +315,6 @@ void Grid::checkGridValidness() {
     }
 
     if(!isValid) MPIw::Environment::abort(1);
-}
-
-void Grid::initializeObjectsCmatrix(void) {
-    if (Environment::isRootNode) cout << "-- Initializing Objects Capacity Matrix --" << endl;
-    tdArray& rho = field->getRho();
-    tdArray& phi = field->getPhi();
-
-    for(auto& obj : objects) {
-        const auto num_cmat = obj.getCmatSize();
-
-        { //! Progress Manager のライフタイムを区切る
-            Utils::ProgressManager pm(num_cmat, "cmat_solve");
-
-            //! TODO: MPI分割された時にも協調して動作する必要がある
-            for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
-                pm.update(cmat_col_itr);
-
-                // rhoを初期化
-                Utils::initializeTdarray(rho);
-                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                rho[cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
-                solvePoisson();
-
-                for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
-                    const auto& target_pos = obj.getCmatPos(cmat_row_itr);
-                    const double value = phi[target_pos.i][target_pos.j][target_pos.k];
-                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
-                }
-            }
-
-            obj.makeCmatrixInvert();
-        }
-    }
 }
 
 //! 粒子の位置から密度を計算する

@@ -10,7 +10,6 @@
 //! Poissonソルバを呼び出す
 void Field::solvePoisson(const int loopnum, const double dx) {
     this->solvePoissonPSOR(loopnum, dx);
-    // this->solvePoissonJacobi(loopnum, dx);
 }
 
 //! @brief SOR法
@@ -60,6 +59,49 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     }
 
     this->setBoundaryConditionPhi();
+}
+
+//! 電位分布の残差の最大ノルムを返す
+double Field::checkPhiResidual() {
+    double residual = 0.0;
+    double rho_max = 0.0;
+    const double normalized_eps = Normalizer::eps0;
+
+    const bool is_periodic[6] = {
+        Environment::isPeriodic(AXIS::x, AXIS_SIDE::low),
+        Environment::isPeriodic(AXIS::x, AXIS_SIDE::up),
+        Environment::isPeriodic(AXIS::y, AXIS_SIDE::low),
+        Environment::isPeriodic(AXIS::y, AXIS_SIDE::up),
+        Environment::isPeriodic(AXIS::z, AXIS_SIDE::low),
+        Environment::isPeriodic(AXIS::z, AXIS_SIDE::up),
+    };
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        if((k != 1 || is_periodic[4]) && (k != cz_with_glue - 2 || is_periodic[5])) {
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                if((j != 1 || is_periodic[2]) && (j != cy_with_glue - 2 || is_periodic[3])) {
+                    for(int i = 1; i < cx_with_glue - 1; ++i){
+                        if((i != 1 || is_periodic[0]) && (i != cx_with_glue - 2 || is_periodic[2])) {
+                            double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]) + rho[i][j][k]/normalized_eps;
+                            residual = std::max(residual, fabs(tmp_res));
+                            rho_max = std::max(rho_max, fabs(rho[i][j][k]));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if(MPIw::Environment::numprocs > 1) {
+        residual = MPIw::Environment::Comms["world"].max(residual);
+        rho_max =  MPIw::Environment::Comms["world"].max(rho_max);
+    }
+
+    return residual/(rho_max/normalized_eps);
 }
 
 void Field::setBoundaryConditionPhi(void) {
@@ -148,40 +190,6 @@ void Field::setDirichletPhi(const AXIS axis, const AXIS_SIDE low_or_up) {
             }
         }
     }
-}
-
-//! 電位分布の残差の最大ノルムを返す
-double Field::checkPhiResidual() {
-    double residual = 0.0;
-    double rho_max = 0.0;
-    const double normalized_eps = Normalizer::eps0;
-
-    const int cx_with_glue = phi.shape()[0];
-    const int cy_with_glue = phi.shape()[1];
-    const int cz_with_glue = phi.shape()[2];
-
-    for(int k = 1; k < cz_with_glue - 1; ++k){
-        if((k != 1 || !Environment::onLowZedge) && (k != cz_with_glue - 2 || !Environment::onHighZedge)) {
-            for(int j = 1; j < cy_with_glue - 1; ++j){
-                if((j != 1 || !Environment::onLowYedge) && (j != cy_with_glue - 2 || !Environment::onHighYedge)) {
-                    for(int i = 1; i < cx_with_glue - 1; ++i){
-                        if((i != 1 || !Environment::onLowXedge) && (i != cx_with_glue - 2 || !Environment::onHighXedge)) {
-                            double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]) + rho[i][j][k]/normalized_eps;
-                            residual = std::max(residual, fabs(tmp_res));
-                            rho_max = std::max(rho_max, fabs(rho[i][j][k]));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if(MPIw::Environment::numprocs > 1) {
-        residual = MPIw::Environment::Comms["world"].max(residual);
-        rho_max =  MPIw::Environment::Comms["world"].max(rho_max);
-    }
-
-    return residual/(rho_max/normalized_eps);
 }
 
 //! @brief 差分法で電場を更新する
@@ -459,8 +467,10 @@ void Field::initializeCurrent(const double dt) {
 
     //! Jz 方向に振動する電流
     const auto now = dt * static_cast<double>(Environment::timestep);
-    const double freq = 2.0 * M_PI * 1.0; // Hz
-    const double J0 = 1.0;
+    const double real_freq = 5e7; // Hz
+    // cout << "[NOTICE] " << 1.0 / Normalizer::normalizeFrequency(real_freq) << " step で 1周期です." << endl;
+    const double freq = 2.0 * M_PI * Normalizer::normalizeFrequency(real_freq); // Hz
+    const double J0 = 10.0;
     const int half_x = cx_with_glue / 2;
     const int half_y = cy_with_glue / 2;
     for (int k = 0; k < cz_with_glue - 1; ++k) {

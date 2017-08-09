@@ -24,7 +24,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         }
     }
 
-    int num_cmat = 0;
+    num_cmat = 0;
     //! 判定はGrid側で既に終わっているので必要なし
     for(const auto& node_pair : nodes) {
         const auto cmat_itr = node_pair.first;
@@ -34,11 +34,13 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         const auto k = node_pos[2];
 
         object_map[i][j][k] = true;
-        capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
+
+        //! Positionコンストラクタに渡す引数はGlueセル分を考慮して+1する
+        capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i + 1, j + 1, k + 1));
         ++num_cmat;
     }
-    num_cmat = MPIw::Environment::Comms[name].sum(num_cmat);
-    cout << Environment::rankStr() << "After processed cmat_num: " << num_cmat << endl;
+    //! worldで通信し、全てのプロセスのSpacecraftオブジェクトが同じnum_cmatを持つようにしておく
+    num_cmat = MPIw::Environment::Comms["world"].sum(static_cast<int>(num_cmat));
 
     //! キャパシタンス行列のサイズを物体サイズに変更
     capacity_matrix.resize(num_cmat, num_cmat);
@@ -57,16 +59,23 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 }
 
 Position Spacecraft::getCmatPos(const unsigned int cmat_itr) {
-    return capacity_matrix_relation[cmat_itr];
+    if (isMyCmat(cmat_itr)) {
+        return capacity_matrix_relation[cmat_itr];
+    } else {
+        throw std::invalid_argument("Invalid Cmat number passed to Spacecraft::getCmatPos().");
+    }
 }
 
 auto Spacecraft::getTotalCharge(const tdArray& rho) const {
     double total_charge = 0.0;
 
     for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
-        const auto& pos = capacity_matrix_relation.at(cmat_itr);
-        total_charge += rho[pos.i][pos.j][pos.k];
+        if (isMyCmat(cmat_itr)) {
+            const auto& pos = capacity_matrix_relation.at(cmat_itr);
+            total_charge += rho[pos.i][pos.j][pos.k];
+        }
     }
+    total_charge = MPIw::Environment::Comms[name].sum(total_charge);
 
     return total_charge;
 }
@@ -82,6 +91,7 @@ void Spacecraft::makeCmatrixInvert(void) {
             total_cmat_value += capacity_matrix(col, row);
         }
     }
+    cout << Environment::rankStr() << "total_cmat_value = " << total_cmat_value << endl;
 }
 
 bool Spacecraft::isIncluded(const Particle& p) const {
@@ -121,12 +131,9 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
 
 void Spacecraft::applyCharge(tdArray& rho) const {
     //! 電荷分布を場に印加する
-    for(size_t i = 0; i < charge_map.shape()[0]; ++i) {
-        for (size_t j = 0; j < charge_map.shape()[1]; ++j) {
-            for (size_t k = 0; k < charge_map.shape()[2]; ++k) {
-                rho[i][j][k] += charge_map[i][j][k];
-            }
-        }
+    for(const auto& one_node : capacity_matrix_relation) {
+        const auto& pos = one_node.second;
+        rho[pos.i][pos.j][pos.k] += charge_map[pos.i][pos.j][pos.k];
     }
 }
 
@@ -135,31 +142,36 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
     cout << "charge before redist: " << getTotalCharge(rho) << endl;
 #endif
 
-    double charge_before_redist = 0.0;
+    double capacity_times_phi = 0.0;
+    //! relationの中には元々内部ノードのPositionしか保存されていないので、
+    //! 毎回判定しなくてよい
     for(const auto& one_node : capacity_matrix_relation) {
         const auto j = one_node.first;
         const auto& pos = one_node.second;
-
         for(size_t i = 0; i < num_cmat; ++i) {
-            charge_before_redist += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
+            capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
         }
     }
-    //! ここで MPI sum とる
+    MPIw::Environment::Comms[name].sum(capacity_times_phi);
 
-    potential = charge_before_redist / total_cmat_value + potential_bias;
+    potential = capacity_times_phi / total_cmat_value + potential_bias;
     cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;
 
     for(unsigned int i = 0; i < num_cmat; ++i) {
         double delta_rho = 0.0;
 
         for(unsigned int j = 0; j < num_cmat; ++j) {
-            const auto& pos = capacity_matrix_relation.at(j);
-            delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
+            if (isMyCmat(j)) {
+                const auto& pos = capacity_matrix_relation.at(j);
+                delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
+            }
         }
-        //! ここで sum とる
+        MPIw::Environment::Comms[name].sum(delta_rho);
 
-        const auto& target_pos = capacity_matrix_relation.at(i);
-        rho[target_pos.i][target_pos.j][target_pos.k] += delta_rho;
+        if (isMyCmat(i)) {
+            const auto& target_pos = capacity_matrix_relation.at(i);
+            rho[target_pos.i][target_pos.j][target_pos.k] += delta_rho;
+        }
     }
 
 #ifdef CHARGE_CONSERVATION

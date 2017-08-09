@@ -60,6 +60,9 @@ public:
 
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
+    bool isMyCmat(const unsigned int cmat_number) const {
+        return (capacity_matrix_relation.count(cmat_number) > 0);
+    }
 
     auto getCmatValue(const unsigned int col, const unsigned int row) {
         return capacity_matrix(col, row);
