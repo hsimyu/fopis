@@ -178,8 +178,8 @@ namespace MPIw {
         const unsigned int sendlen = sendArray.size();
         unsigned int recvlen;
 
-        if (src == dest) {
-            // send_recvの送信元と受取元が同じ == 自分との通信
+        if ( (src == Environment::rank) && (dest == Environment::rank) ) {
+            //! 自分との通信
             if (sendlen != 0) {
                 recvArray = sendArray; // 単にコピーする
             } else {
@@ -257,7 +257,7 @@ namespace MPIw {
             }
         }
 
-        if (prev == next) {
+        if ( (prev == Environment::rank) && (next == Environment::rank) ) {
             //! 自分自身への通信
             //! std::swapのが速いかも
             for(int j = 0; j < tdValue.shape()[1]; ++j) {
@@ -300,7 +300,7 @@ namespace MPIw {
             }
         }
 
-        if (prev == next) {
+        if ( (prev == Environment::rank) && (next == Environment::rank) ) {
             for(int i = 0; i < tdValue.shape()[0]; ++i) {
                 for(int k = 0; k < tdValue.shape()[2]; ++k) {
                     tdValue[i][0][k] = tdValue[i][tdValue.shape()[1] - 2][k];
@@ -339,7 +339,7 @@ namespace MPIw {
             }
         }
 
-        if (prev == next) {
+        if ( (prev == Environment::rank) && (next == Environment::rank) ) {
             for(int i = 0; i < tdValue.shape()[0]; ++i) {
                 for(int j = 0; j < tdValue.shape()[1]; ++j) {
                     tdValue[i][j][0] = tdValue[i][j][tdValue.shape()[2] - 2];
