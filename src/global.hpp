@@ -16,6 +16,7 @@ using boost::format;
 
 using tdArray = boost::multi_array<double, 3>;
 using objectArray = boost::multi_array<bool, 3>;
+using objectNodes = std::map< unsigned int, std::array<unsigned int, 3> >;
 
 //! constants
 constexpr double e = 1.60217733e-19;

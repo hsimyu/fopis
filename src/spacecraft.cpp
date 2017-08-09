@@ -6,7 +6,7 @@
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjNodes& nodes, const ObjNodes& glue_nodes) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const objectNodes& nodes, const objectNodes& glue_nodes) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;

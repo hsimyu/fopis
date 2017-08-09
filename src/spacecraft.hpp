@@ -31,15 +31,14 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    using ObjNodes = std::map< unsigned int, std::array<unsigned int, 3> >;
-    void construct(const size_t, const size_t, const size_t, const ObjNodes&, const ObjNodes&);
+    void construct(const size_t, const size_t, const size_t, const objectNodes&, const objectNodes&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const tdArray&) const;
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const std::string _name,
-        const ObjNodes& nodes, const ObjNodes& glue_nodes) :
+        const objectNodes& nodes, const objectNodes& glue_nodes) :
         name(_name),
         num_cmat(_num_cmat),
         object_map(boost::extents[0][0][0]),

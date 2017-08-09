@@ -86,7 +86,7 @@ void Grid::initializeObject(void) {
     bool is_object_in_this_node = false;
 
     //! ユニークなノード番号 -> 整数座標 の map を作る
-    std::map< unsigned int, std::array<unsigned int, 3> > temp_obj_node_array;
+    objectNodes temp_obj_node_array;
     unsigned int num_cmat = 0;
     for(unsigned int i = 5; i < 8; ++i) {
         for (unsigned int j = 5; j < 8; ++j) {
@@ -98,8 +98,8 @@ void Grid::initializeObject(void) {
     }
 
     //! innerと判定されたやつだけ渡す
-    std::map< unsigned int, std::array<unsigned int, 3> > obj_node_array;
-    std::map< unsigned int, std::array<unsigned int, 3> > glue_node_array;
+    objectNodes obj_node_array;
+    objectNodes glue_node_array;
     for(const auto& node_pair : temp_obj_node_array) {
         const auto cmat_itr = node_pair.first;
         const auto& node_pos = node_pair.second;
