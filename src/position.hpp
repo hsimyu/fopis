@@ -21,9 +21,6 @@ class Position {
         //! glue cell ありの座標系に乗る整数値
         int i, j, k;
 
-        //! glue cell なしの座標系に乗る整数値
-        int raw_i, raw_j, raw_k;
-
         //! 実数座標
         double x, y, z;
         double dx1, dy1, dz1, dx2, dy2, dz2;
@@ -56,13 +53,9 @@ class Position {
             y = _y;
             z = _z;
 
-            raw_i = floor(x);
-            raw_j = floor(y);
-            raw_k = floor(z);
-
-            i = raw_i + 1;
-            j = raw_j + 1;
-            k = raw_k + 1;
+            i = floor(x) + 1;
+            j = floor(y) + 1;
+            k = floor(z) + 1;
 
             this->updateDelta();
         }
@@ -71,10 +64,6 @@ class Position {
             i = _i;
             j = _j;
             k = _k;
-
-            raw_i = _i - 1;
-            raw_j = _j - 1;
-            raw_k = _k - 1;
 
             // x, y, zはglue cellなしの座標系にする
             x = static_cast<double>(i - 1);
