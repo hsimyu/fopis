@@ -1,5 +1,8 @@
 #include "utils.hpp"
 #include "mpiw.hpp"
+#include "environment.hpp"
+#include <fstream>
+#include <regex>
 #include <stdexcept>
 #include <boost/filesystem.hpp>
 #include <boost/numeric/ublas/lu.hpp>
@@ -358,26 +361,26 @@ namespace Utils {
         return (format("%-6.2f") % mem).str() + suffix;
     }
 
-
-    std::string readFile(const std::string& filename){
-        std::ifstream ifs;
-        std::string res;
-        std::string ifs_buffer;
-
-        boost::filesystem::path p(filename);
+    std::string readFile(const std::string& file_name){
+        boost::filesystem::path p(file_name);
 
         if(boost::filesystem::exists(p)) {
-            ifs.open(filename, std::ios::in);
+            std::ifstream ifs;
+            std::string res;
+            std::string ifs_buffer;
+
+            ifs.open(file_name, std::ios::in);
 
             while(!ifs.eof()){
                 std::getline(ifs, ifs_buffer);
                 res += ifs_buffer;
             }
+            return res;
         } else {
-            throw std::invalid_argument("[ERROR] input.json does not exist.");
+            std::string error_message = (format("File %s does not exist.") % file_name).str();
+            throw std::invalid_argument(error_message);
             MPIw::Environment::abort(1);
         }
-        return res;
     }
 
     picojson::value::object readJSONFile(const std::string& filename){
@@ -397,18 +400,62 @@ namespace Utils {
         }
     }
 
+    std::vector<std::string> split(const std::string& target, char delim) {
+        std::stringstream ss(target);
+        std::string buffer;
+        std::vector<std::string> res;
+
+        while( std::getline(ss, buffer, delim) ) {
+            res.push_back(buffer);
+        }
+
+        return res;
+    }
+
     ObjectNodes getObjectNodesFromObjFile(const std::string& obj_file_name) {
+        boost::filesystem::path p(obj_file_name);
         ObjectNodes temp_obj_node_array;
-        unsigned int num_cmat = 0;
-        //! ユニークなノード番号 -> 整数座標 の map を作る
-        for(unsigned int i = 5; i < 8; ++i) {
-            for (unsigned int j = 5; j < 8; ++j) {
-                for (unsigned int k = 8; k < 25; ++k) {
-                    temp_obj_node_array[num_cmat] = {{i, j, k}};
-                    ++num_cmat;
+
+        if (boost::filesystem::exists(p)) {
+            ObjectDefinedMap temp_object_map(boost::extents[ Environment::nx ][ Environment::ny ][ Environment::nz ]);
+            //! 初期化
+            for(unsigned int i = 0; i < Environment::nx; ++i) {
+                for (unsigned int j = 0; j < Environment::ny; ++j) {
+                    for (unsigned int k = 0; k < Environment::nz; ++k) {
+                        temp_object_map[i][j][k] = false;
+                    }
                 }
             }
+
+            std::ifstream file_input(obj_file_name, std::ios::in);
+            std::string buffer;
+
+            //! v 始まりの文字列にマッチするパターン
+            std::regex re(R"(^v (.*)$)");
+
+            unsigned int num_cmat = 0;
+            while (!file_input.eof()) {
+                std::getline(file_input, buffer);
+                if (std::regex_match(buffer, re)) {
+                    const auto& splitted = split(buffer, ' ');
+
+                    const unsigned int i = static_cast<unsigned int>(std::stoi(splitted[1]) + Environment::nx / 2);
+                    const unsigned int j = static_cast<unsigned int>(std::stoi(splitted[2]) + Environment::ny / 2);
+                    const unsigned int k = static_cast<unsigned int>(std::stoi(splitted[3]) + Environment::nz / 2);
+
+                    //! 重複排除
+                    if (!temp_object_map[i][j][k]) {
+                        temp_obj_node_array[num_cmat] = {{i, j, k}};
+                        ++num_cmat;
+                        temp_object_map[i][j][k] = true;
+                    }
+                }
+            }
+        } else {
+            std::string error_message = (format("File %s does not exist.") % obj_file_name).str();
+            throw std::invalid_argument(error_message);
         }
+
         return temp_obj_node_array;
     }
 }

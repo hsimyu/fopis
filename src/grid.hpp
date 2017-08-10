@@ -124,16 +124,20 @@ class Grid {
                 (k <= Environment::getAssignedZEnd());
         }
 
-        //! Glueノードであるかどうかを判定する
-        //! i, j, k は整数座標(全体の計算空間上の)
-        bool isGlueNode(const int i, const int j, const int k) const {
+        //! Glueセル込みで内部かどうかを判定する
+        bool isInnerNodeWithGlue(const int i, const int j, const int k) const {
             return 
-                (i == (Environment::getAssignedXBegin() - 1)) ||
-                (i == (Environment::getAssignedXEnd() + 1)) ||
-                (j == (Environment::getAssignedYBegin() - 1)) || 
-                (j == (Environment::getAssignedYEnd() + 1)) ||
-                (k == (Environment::getAssignedZBegin() - 1)) ||
-                (k == (Environment::getAssignedZEnd() + 1));
+                (i >= (Environment::getAssignedXBegin() - 1)) &&
+                (i <= (Environment::getAssignedXEnd() + 1)) &&
+                (j >= (Environment::getAssignedYBegin() - 1)) &&
+                (j <= (Environment::getAssignedYEnd() + 1)) &&
+                (k >= (Environment::getAssignedZBegin() - 1)) &&
+                (k <= (Environment::getAssignedZEnd() + 1));
+        }
+
+        //! Glueノードであるかどうかを判定する
+        bool isGlueNode(const int i, const int j, const int k) const {
+            return isInnerNodeWithGlue(i, j, k) && !isInnerNode(i, j, k);
         }
 
         template<typename T>
