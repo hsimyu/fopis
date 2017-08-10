@@ -425,9 +425,9 @@ namespace IO {
         double particleEnergy = g.getParticleEnergy();
         double eFieldEnergy = g.getEFieldEnergy();
         double bFieldEnergy = g.getBFieldEnergy();
-        double receivedParticleEnergy = MPIw::Environment::Comms["world"]->sum(particleEnergy, 0);
-        double receivedEFieldEnergy = MPIw::Environment::Comms["world"]->sum(eFieldEnergy, 0);
-        double receivedBFieldEnergy = MPIw::Environment::Comms["world"]->sum(bFieldEnergy, 0);
+        double receivedParticleEnergy = MPIw::Environment::Comms["world"].sum(particleEnergy, 0);
+        double receivedEFieldEnergy = MPIw::Environment::Comms["world"].sum(eFieldEnergy, 0);
+        double receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(bFieldEnergy, 0);
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";

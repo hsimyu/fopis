@@ -109,9 +109,9 @@ void Grid::initializeObject(void) {
 
             if (isInnerNode(i, j, k)) {
                 is_object_in_this_node = true;
-                inner_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
+                inner_node_array[cmat_itr] = getRelativePosition<int>(i, j, k);
             } else if (isGlueNode(i, j, k)) {
-                glue_node_array[cmat_itr] = getRelativePosition<unsigned int>(i, j, k);
+                glue_node_array[cmat_itr] = getRelativePosition<int>(i, j, k);
             }
         }
 

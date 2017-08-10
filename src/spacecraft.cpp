@@ -19,9 +19,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         object_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
 
         // 初期化
-        for(unsigned int i = 0; i < nx + 2; ++i) {
-            for (unsigned int j = 0; j < ny + 2; ++j) {
-                for (unsigned int k = 0; k < nz + 2; ++k) {
+        for(int i = 0; i < nx + 2; ++i) {
+            for (int j = 0; j < ny + 2; ++j) {
+                for (int k = 0; k < nz + 2; ++k) {
                     object_map[i][j][k] = false;
                 }
             }

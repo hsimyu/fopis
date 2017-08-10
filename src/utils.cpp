@@ -419,9 +419,9 @@ namespace Utils {
         if (boost::filesystem::exists(p)) {
             ObjectDefinedMap temp_object_map(boost::extents[ Environment::nx ][ Environment::ny ][ Environment::nz ]);
             //! 初期化
-            for(unsigned int i = 0; i < Environment::nx; ++i) {
-                for (unsigned int j = 0; j < Environment::ny; ++j) {
-                    for (unsigned int k = 0; k < Environment::nz; ++k) {
+            for(int i = 0; i < Environment::nx; ++i) {
+                for (int j = 0; j < Environment::ny; ++j) {
+                    for (int k = 0; k < Environment::nz; ++k) {
                         temp_object_map[i][j][k] = false;
                     }
                 }

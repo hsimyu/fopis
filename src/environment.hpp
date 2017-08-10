@@ -62,12 +62,12 @@ struct Environment {
         }
 
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
-        static unsigned int getAssignedXBegin(void) { return ::MPIw::Environment::xrank * cell_x; }
-        static unsigned int getAssignedXEnd(void) { return (::MPIw::Environment::xrank + 1) * cell_x - 1; }
-        static unsigned int getAssignedYBegin(void) { return ::MPIw::Environment::yrank * cell_y; }
-        static unsigned int getAssignedYEnd(void) { return (::MPIw::Environment::yrank + 1) * cell_y - 1; }
-        static unsigned int getAssignedZBegin(void) { return ::MPIw::Environment::zrank * cell_z; }
-        static unsigned int getAssignedZEnd(void) { return (::MPIw::Environment::zrank + 1) * cell_z - 1; }
+        static int getAssignedXBegin(void) { return ::MPIw::Environment::xrank * cell_x; }
+        static int getAssignedXEnd(void) { return (::MPIw::Environment::xrank + 1) * cell_x - 1; }
+        static int getAssignedYBegin(void) { return ::MPIw::Environment::yrank * cell_y; }
+        static int getAssignedYEnd(void) { return (::MPIw::Environment::yrank + 1) * cell_y - 1; }
+        static int getAssignedZBegin(void) { return ::MPIw::Environment::zrank * cell_z; }
+        static int getAssignedZEnd(void) { return (::MPIw::Environment::zrank + 1) * cell_z - 1; }
 
         //! 各方向の境界条件を取得する
         static std::string getBoundaryCondition(const AXIS, const AXIS_SIDE);
