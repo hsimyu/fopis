@@ -430,25 +430,101 @@ namespace Utils {
             std::ifstream file_input(obj_file_name, std::ios::in);
             std::string buffer;
 
-            //! v 始まりの文字列にマッチするパターン
-            std::regex re(R"(^v (.*)$)");
+            //! vとf 始まりの文字列にマッチするパターン
+            std::regex re_vertex(R"(^v (.*)$)");
+            std::regex re_face(R"(^f (.*)$)");
 
-            unsigned int num_cmat = 0;
+            //! vertexとfaceを一時格納しておくarray
+            using Vertex = std::array<int, 3>;
+            using Face = std::array<int, 4>;
+            std::vector<Vertex> vertices;
+            std::vector<Face> faces;
+
             while (!file_input.eof()) {
                 std::getline(file_input, buffer);
-                if (std::regex_match(buffer, re)) {
-                    const auto& splitted = split(buffer, ' ');
+                if (std::regex_match(buffer, re_vertex)) {
+                    const auto& verts = split(buffer, ' ');
 
-                    const unsigned int i = static_cast<unsigned int>(std::stoi(splitted[1]) + Environment::nx / 2);
-                    const unsigned int j = static_cast<unsigned int>(std::stoi(splitted[2]) + Environment::ny / 2);
-                    const unsigned int k = static_cast<unsigned int>(std::stoi(splitted[3]) + Environment::nz / 2);
+                    Vertex vertex;
 
-                    //! 重複排除
-                    if (!temp_object_map[i][j][k]) {
-                        temp_obj_node_array[num_cmat] = {{i, j, k}};
-                        ++num_cmat;
-                        temp_object_map[i][j][k] = true;
+                    vertex[0] = static_cast<int>(std::stoi(verts[1]) + Environment::nx / 2);
+                    vertex[1] = static_cast<int>(std::stoi(verts[2]) + Environment::ny / 2);
+                    vertex[2] = static_cast<int>(std::stoi(verts[3]) + Environment::nz / 2);
+
+                    vertices.emplace_back(vertex);
+                } else if (std::regex_match(buffer, re_face)) {
+                    const auto& fs = split(buffer, ' ');
+                    Face face_numbers;
+                    for(int i = 1; i < 5; ++i) {
+                        const auto& splitted_face = split(fs[i], '/');
+                        face_numbers[i - 1] = static_cast<int>(std::stoi(splitted_face[0]));
                     }
+                    faces.emplace_back(face_numbers);
+                }
+            }
+
+            unsigned int num_cmat = 0;
+            for(const auto& face : faces) {
+                const auto& vert1 = vertices[ face[0] - 1 ];
+                const auto& vert2 = vertices[ face[1] - 1 ];
+                const auto& vert3 = vertices[ face[2] - 1 ];
+                const auto& vert4 = vertices[ face[3] - 1 ];
+
+                //! @note: faceの分割の第3番号(1/1/3 2/1/3 3/1/3 4/1/3 の3)が法線ベクトルに対応するので
+                //! そっちで判定した方が良いか
+                if (vert1[0] == vert2[0] && vert1[0] == vert3[0] && vert1[0] == vert4[0]) {
+                    //! X面
+                    const int i = vert1[0];
+                    const int miny = std::min({vert1[1], vert2[1], vert3[1], vert4[1]});
+                    const int maxy = std::max({vert1[1], vert2[1], vert3[1], vert4[1]});
+                    const int minz = std::min({vert1[2], vert2[2], vert3[2], vert4[2]});
+                    const int maxz = std::max({vert1[2], vert2[2], vert3[2], vert4[2]});
+
+                    for(int j = miny; j < maxy + 1; ++j) {
+                        for(int k = minz; k < maxz + 1; ++k) {
+                            if (!temp_object_map[i][j][k]) {
+                                temp_obj_node_array[num_cmat] = {{i, j, k}};
+                                ++num_cmat;
+                                temp_object_map[i][j][k] = true;
+                            }
+                        }
+                    }
+                } else if (vert1[1] == vert2[1] && vert1[1] == vert3[1] && vert1[1] == vert4[1]) {
+                    //! Y面
+                    const int j = vert1[1];
+                    const int minx = std::min({vert1[0], vert2[0], vert3[0], vert4[0]});
+                    const int maxx = std::max({vert1[0], vert2[0], vert3[0], vert4[0]});
+                    const int minz = std::min({vert1[2], vert2[2], vert3[2], vert4[2]});
+                    const int maxz = std::max({vert1[2], vert2[2], vert3[2], vert4[2]});
+
+                    for(int i = minx; i < maxx + 1; ++i) {
+                        for(int k = minz; k < maxz + 1; ++k) {
+                            if (!temp_object_map[i][j][k]) {
+                                temp_obj_node_array[num_cmat] = {{i, j, k}};
+                                ++num_cmat;
+                                temp_object_map[i][j][k] = true;
+                            }
+                        }
+                    }
+                } else if (vert1[2] == vert2[2] && vert1[2] == vert3[2] && vert1[2] == vert4[2]) {
+                    //! Z面
+                    const int k = vert1[2];
+                    const int minx = std::min({vert1[0], vert2[0], vert3[0], vert4[0]});
+                    const int maxx = std::max({vert1[0], vert2[0], vert3[0], vert4[0]});
+                    const int miny = std::min({vert1[1], vert2[1], vert3[1], vert4[1]});
+                    const int maxy = std::max({vert1[1], vert2[1], vert3[1], vert4[1]});
+
+                    for(int i = minx; i < maxx + 1; ++i) {
+                        for(int j = miny; j < maxy + 1; ++j) {
+                            if (!temp_object_map[i][j][k]) {
+                                temp_obj_node_array[num_cmat] = {{i, j, k}};
+                                ++num_cmat;
+                                temp_object_map[i][j][k] = true;
+                            }
+                        }
+                    }
+                } else {
+                    throw std::logic_error("Face type cannot be determinted by vertices position.");
                 }
             }
         } else {
