@@ -45,7 +45,7 @@ class Grid {
         static unsigned int nextID;
 
         // データ出力用のnodes/edges/faces/cellsを取り出す
-        float* getTrueNodes(const tdArray&);
+        float* getTrueNodes(const tdArray&, const double unnorm = 1.0);
 
         //! データ出力用のnodesの数を返す
         int getXNodeSize(void) const;

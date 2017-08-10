@@ -584,7 +584,7 @@ float** Grid::getMeshNodes(int dim) {
 }
 
 //! for DATA IO
-float* Grid::getTrueNodes(const tdArray& x3D){
+float* Grid::getTrueNodes(const tdArray& x3D, const double unnorm){
     int xsize = this->getXNodeSize();
     int ysize = this->getYNodeSize();
     int zsize = this->getZNodeSize();
@@ -595,7 +595,7 @@ float* Grid::getTrueNodes(const tdArray& x3D){
     for(int k = 1; k < zsize + 1; ++k){
         for(int j = 1; j < ysize + 1; ++j){
             for(int i = 1; i < xsize + 1; ++i){
-                x1D[(i-1) + (j-1)*xsize + (k-1)*xsize*ysize] = static_cast<float>(x3D[i][j][k]);
+                x1D[(i-1) + (j-1)*xsize + (k-1)*xsize*ysize] = static_cast<float>(x3D[i][j][k] * unnorm);
             }
         }
     }
@@ -672,7 +672,7 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
     delete [] coordinates;
 
     if(dataTypeName == "potential") {
-        float* tdArray = this->getTrueNodes(field->getPhi());
+        float* tdArray = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "rho") {
