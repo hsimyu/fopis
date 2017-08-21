@@ -7,3 +7,6 @@
 [submodule "HighFive"]
 	path = HighFive
 	url = github.com:BlueBrain/HighFive
+[submodule "SimpleXdmf"]
+	path = SimpleXdmf
+	url = github.com:hsimyu/SimpleXdmf
