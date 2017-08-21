@@ -7,7 +7,6 @@
 #include "mpiw.hpp"
 #include "utils.hpp"
 #include "normalizer.hpp"
-#include <silo.h>
 #include <random>
 #include <algorithm>
 
@@ -549,102 +548,27 @@ int Grid::getZNodeSize(void) const {
     return (level == 0 && Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) ? nz + 1 : nz;
 }
 
-// mesh nodesの座標配列を生成
-float** Grid::getMeshNodes(int dim) {
-    // the array of coordinate arrays
-    // @note: メモリリーク防止のため必ずdeleteする
-    const float real_dx = Normalizer::unnormalizeLength(dx);
-    const float real_base_x = Normalizer::unnormalizeLength(base_x);
-    const float real_base_y = Normalizer::unnormalizeLength(base_y);
-    const float real_base_z = Normalizer::unnormalizeLength(base_z);
-
-    float** coordinates = new float*[dim];
-    // root にいて正方向の端でない場合は+1分出力する
-    int xsize = this->getXNodeSize();
-    coordinates[0] = new float[xsize];
-
-    for(int i = 0; i < xsize; ++i) {
-        coordinates[0][i] = real_base_x + real_dx * i;
-    }
-
-    int ysize = this->getYNodeSize();
-    coordinates[1] = new float[ysize];
-
-    for(int i = 0; i < ysize; ++i) {
-        coordinates[1][i] = real_base_y + real_dx * i;
-    }
-
-    int zsize = this->getZNodeSize();
-    coordinates[2] = new float[zsize];
-
-    for(int i = 0; i < zsize; ++i) {
-        coordinates[2][i] = real_base_z + real_dx * i;
-    }
-    return coordinates;
-}
-
 //! for DATA IO
-float* Grid::getTrueNodes(const tdArray& x3D, const double unnorm){
+boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double unnorm){
     int xsize = this->getXNodeSize();
     int ysize = this->getYNodeSize();
     int zsize = this->getZNodeSize();
-    float* x1D = new float[xsize*ysize*zsize];
 
-    //! C-based indicing
-    //! 上側境界にいない時 or 周期境界である時、上側のglue cellの値も出力する
+    boost::multi_array<float, 3> true_nodes(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
+
     for(int k = 1; k < zsize + 1; ++k){
         for(int j = 1; j < ysize + 1; ++j){
             for(int i = 1; i < xsize + 1; ++i){
-                x1D[(i-1) + (j-1)*xsize + (k-1)*xsize*ysize] = static_cast<float>(x3D[i][j][k] * unnorm);
+                true_nodes[i - 1][j - 1][k - 1] = static_cast<float>(x3D[i][j][k] * unnorm);
             }
         }
     }
 
-    return x1D;
-}
-
-// 渡されたポインタにExtentを入力する
-void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
-    if(level == 0) {
-        data[0][id] = from_ix;
-        data[1][id] = data[0][id] + (nx - 1);
-        data[2][id] = from_iy;
-        data[3][id] = data[0][id] + (ny - 1);
-        data[4][id] = from_iz;
-        data[5][id] = data[0][id] + (nz - 1);
-    } else {
-        data[0][id] = 2 * (from_ix - 1);
-        data[1][id] = data[0][id] + (nx - 1);
-        data[2][id] = 2 * (from_iy - 1);
-        data[3][id] = data[0][id] + (ny - 1);
-        data[4][id] = 2 * (from_iz - 1);
-        data[5][id] = data[0][id] + (nz - 1);
-    }
-
-    sdata[0][id] = base_x;
-    sdata[1][id] = base_x + (nx - 1) * dx;
-    sdata[2][id] = base_y;
-    sdata[3][id] = base_y + (ny - 1) * dx;
-    sdata[4][id] = base_z;
-    sdata[5][id] = base_z + (nz - 1) * dx;
-
-    rdata[0][id] = dx;
-
-    cout << "[ID " << id << "]" << endl;
-    cout << "LogicalExtent imin, imax = " << data[0][id] << " to " << data[1][id] << endl;
-    cout << "LogicalExtent jmin, jmax = " << data[2][id] << " to " << data[3][id] << endl;
-    cout << "LogicalExtent kmin, kmax = " << data[4][id] << " to " << data[5][id] << endl;
-
-    cout << "SpatialExtent xmin, xmax = " << sdata[0][id] << " to " << sdata[1][id] << endl;
-    cout << "SpatialExtent ymin, ymax = " << sdata[2][id] << " to " << sdata[3][id] << endl;
-    cout << "SpatialExtent zmin, zmax = " << sdata[4][id] << " to " << sdata[5][id] << endl;
-
-    for(int i = 0; i < getChildrenLength(); ++i){
-        children[i]->addExtent(data, sdata, rdata);
-    }
+    return true_nodes;
 }
 
 // -- DATA IO methods --
+/*
 void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coordnames[3], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
     const int dim = 3;
 
@@ -750,6 +674,28 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
         children[i]->putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
     }
 
+}
+*/
+
+void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) {
+    const std::string& level_str = "level" + std::to_string(level);
+    HighFive::Group local_group;
+
+    if (group.exist(level_str)) {
+        local_group = group.getGroup(level_str);
+    } else {
+        local_group = group.createGroup(level_str);
+    }
+
+    if (data_type_name == "potential") {
+        auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
+        auto dataset = local_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+        dataset.write(values);
+    }
+
+    for(int i = 0; i < children.size(); ++i) {
+        children[i]->putFieldData(group, data_type_name, i_timestamp);
+    }
 }
 
 Grid::~Grid(){

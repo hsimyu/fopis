@@ -2,12 +2,14 @@
 #define __TDPIC_GRID_H_INCLUDED__
 #include <vector>
 #include <map>
-#include <silo.h>
 #include "particle.hpp"
 #include "field.hpp"
 #include "environment.hpp"
 #include "utils.hpp"
 #include "spacecraft.hpp"
+
+#define H5_USE_BOOST
+#include <highfive/H5File.hpp>
 
 //! @class Grid
 class Grid {
@@ -45,7 +47,7 @@ class Grid {
         static unsigned int nextID;
 
         // データ出力用のnodes/edges/faces/cellsを取り出す
-        float* getTrueNodes(const tdArray&, const double unnorm = 1.0);
+        boost::multi_array<float, 3> getTrueNodes(const tdArray& x3D, const double unnorm = 1.0);
 
         //! データ出力用のnodesの数を返す
         int getXNodeSize(void) const;
@@ -251,11 +253,8 @@ class Grid {
         std::vector< std::vector<int> > getIDMapOnRoot(void);
         void addIDToVector(std::vector< std::vector<int> >&);
 
-        // Extentを指定されたポインタに格納する (Silo MRG Tree出力用)
-        void addExtent(int* logicalExtent[6], float* spatialExtent[6], float* rank[1]);
-
         // QuadMeshとVarをDBfileに突っ込む
-        void putQuadMesh(DBfile*, std::string, const char* coordnames[3], int, DBoptlist*, DBoptlist*);
+        void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp);
 
         // 出力用に密度を計算して返す
         float* getDensity(const int);

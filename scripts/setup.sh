@@ -29,18 +29,9 @@ make
 make install
 cd ..
 
-# install silo
-# wget https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/silo-4.10.2/silo-4.10.2.tar.gz
-# tar zxvf silo-4.10.2.tar.gz
-# cd silo-4.10.2
-# ./configure --prefix=$HOME/local --with-hdf5=$HOME/local/include,$HOME/local/lib --with-zlib=$HOME/local/include,$HOME/local/lib
-# make
-# make install
-# cd ..
-
 cd ..
 rm -rf ./libraries
 
-# mkdir build
-# cd build
-# cmake ..
+mkdir build
+cd build
+cmake ..

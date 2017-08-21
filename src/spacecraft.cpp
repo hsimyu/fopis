@@ -148,7 +148,8 @@ void Spacecraft::applyCharge(tdArray& rho) const {
 
 void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
 #ifdef CHARGE_CONSERVATION
-    cout << "charge before redist: " << getTotalCharge(rho) << endl;
+    auto q = getTotalCharge(rho);
+    cout << "charge before redist: " << q << endl;
 #endif
 
     double capacity_times_phi = 0.0;
@@ -179,7 +180,7 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
                 delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
             }
         }
-        MPIw::Environment::Comms[name].sum(delta_rho);
+        delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
 
         if (isMyCmat(i)) {
             const auto& target_pos = capacity_matrix_relation.at(i);
@@ -188,7 +189,8 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
     }
 
 #ifdef CHARGE_CONSERVATION
-    cout << "charge after redist: " << getTotalCharge(rho) << endl;
+    q = getTotalCharge(rho);
+    cout << "charge after redist: " << q << endl;
 #endif
 }
 
