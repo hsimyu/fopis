@@ -61,6 +61,10 @@ struct Environment {
             return MPIw::Environment::rankStr();
         }
 
+        static int getSpecifiedRankFromXYZRanks(const int xrank, const int yrank, const int zrank) {
+            return (xrank + proc_x * yrank + proc_x * proc_y * zrank);
+        }
+
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
         static int getAssignedXBegin(void) { return ::MPIw::Environment::xrank * cell_x; }
         static int getAssignedXEnd(void) { return (::MPIw::Environment::xrank + 1) * cell_x - 1; }

@@ -5,9 +5,15 @@
 #include "mpiw.hpp"
 #include "normalizer.hpp"
 #include <numeric>
+
 #include <silo.h>
 #include <mpi.h>
 #include <pmpio.h>
+
+#define H5_USE_BOOST
+#define USE_BOOST
+#include <highfive/H5File.hpp>
+#include <simple_xdmf.hpp>
 
 namespace IO {
     void writeGroupelMap(
@@ -326,7 +332,7 @@ namespace IO {
         DBFreeOptlist(optListVar);
     }
 
-    void writeDataInParallel(Grid& g, int timestep, std::string dataTypeName) {
+    void writeDataInParallelOld(Grid& g, int timestep, std::string dataTypeName) {
         //! @note: 事前に全てのプロセスの持つパッチ数などを云々しておく
         const float datatime = static_cast<float>(timestep * Environment::dt);
         const int maxIOUnit = 4;
@@ -420,6 +426,98 @@ namespace IO {
         PMPIO_Finish(bat);
     }
 
+    void writeDataInParallel(Grid& g, const int timestep, const std::string& data_type_name) {
+        const float datatime = static_cast<float>(timestep * Environment::dt);
+
+        if (Environment::isRootNode) generateXdmf(timestep, data_type_name);
+    }
+
+    void generateXdmf(const int timestep, const std::string& data_type_name) {
+        //! データ
+        // boost::multi_array<float, 3> ml_array(boost::extents[cx][ny + 2][nz + 2]);
+
+        // for (size_t i = 0; i < nx + 2; ++i) {
+        //     for (size_t j = 0; j < ny + 2; ++j) {
+        //         for (size_t k = 0; k < nz + 2; ++k) {
+        //             ml_array[i][j][k] = static_cast<float>(i + (nx + 2) * j + (nx + 2) * (ny + 2) * k);
+        //         }
+        //     }
+        // }
+
+        // //! HDF5 writing
+        // const std::string hdf_file_name = "test.h5";
+        // const std::string hdf_file_name2 = "test2.h5";
+        // const std::string data_domain_name = "grid1";
+        // const std::string data_domain_name2 = "grid2";
+
+        // HighFive::File file(hdf_file_name, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
+        // {
+        //     auto dataset = file.createDataSet<float>(data_domain_name, HighFive::DataSpace::From(ml_array));
+        //     dataset.write(ml_array);
+        // }
+        // {
+        //     auto dataset = file.createDataSet<float>(data_domain_name2, HighFive::DataSpace::From(ml_array));
+        //     dataset.write(ml_array);
+        // }
+
+        //! 1プロセスあたりのノード数
+        const auto cx = Environment::cell_x;
+        const auto cy = Environment::cell_y;
+        const auto cz = Environment::cell_z;
+
+        //! 最大グリッド幅
+        const auto dx = static_cast<float>(Environment::dx);
+        const auto dy = static_cast<float>(Environment::dx);
+        const auto dz = static_cast<float>(Environment::dx);
+
+        const std::string i_timestamp = (format("%08d") % timestep).str();
+        const std::string f_timestamp = (format("%012.5e") % (timestep * Environment::dt)).str();
+        //! XDMF writing
+        SimpleXdmf gen;
+
+        //! 実際のデータ用のDomain
+        gen.beginDomain(data_type_name);
+            gen.beginGrid("", "Collection");
+                gen.beginTime("");
+                gen.setValue(f_timestamp);
+                gen.endTime();
+
+                //! 全空間
+                gen.begin3DStructuredGrid("Entire Space", "3DCoRectMesh", Environment::nx, Environment::ny, Environment::nz);
+                    gen.add3DGeometryOrigin("", 0.0f, 0.0f, 0.0f, dx, dy, dz);
+                gen.end3DStructuredGrid();
+
+                //! 各グリッド
+                for(size_t xrank = 0; xrank < Environment::proc_x; ++xrank) {
+                    //! 一番上の時以外は上側のGlueノードを含める
+                    const auto xsize = (xrank == Environment::proc_x - 1) ? cx : cx + 1;
+                    for(size_t yrank = 0; yrank < Environment::proc_y; ++yrank) {
+                        const auto ysize = (yrank == Environment::proc_y - 1) ? cy : cy + 1;
+                        for(size_t zrank = 0; zrank < Environment::proc_z; ++zrank) {
+                            const auto zsize = (zrank == Environment::proc_z - 1) ? cz : cz + 1;
+                            const auto rank = Environment::getSpecifiedRankFromXYZRanks(xrank, yrank, zrank);
+                            const std::string rankString = "proc_" + (format("%08d") % rank).str();
+
+                            gen.begin3DStructuredGrid(rankString, "3DCoRectMesh", xsize, ysize, zsize);
+                                gen.add3DGeometryOrigin("", dx * cx * xrank, dy * cy * yrank, dz * cz * zrank, dx, dy, dz);
+                                gen.beginAttribute(data_type_name);
+                                gen.setCenter("Node");
+                                    gen.beginDataItem();
+                                    gen.setFormat("HDF");
+                                    gen.setDimensions(xsize, ysize, zsize);
+                                        gen.addItem(rankString + ".h5:/" + data_type_name);
+                                    gen.endDataItem();
+                                gen.endAttribute();
+                            gen.end3DStructuredGrid();
+                        }
+                    }
+                }
+            gen.endGrid();
+        gen.endDomain();
+        gen.generate("data/" + data_type_name + "_" + i_timestamp + ".xmf");
+
+    }
+
     void plotEnergy(Grid const& g, int timestep){
         const double datatime = timestep * Environment::dt;
         double particleEnergy = g.getParticleEnergy();
@@ -448,6 +546,10 @@ namespace IO {
         }
     }
 
+    // x, y, zは全体に対する座標を指定する
+    /*
+    void plotEfieldAt(Grid const& g, int x, int y, int z, const std::string filename_header){
+        const double datatime = timestep * Environment::dt;
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
@@ -464,6 +566,9 @@ namespace IO {
                 Utils::Normalizer::unnormalizeEnergy(receivedFieldEnergy) << endl;
         }
     }
+    */
+
+
     void plotParticleVelocityDistribution(ParticleArray const& particles, const std::string filename_header) {
         plotParticleDistribution(particles, "velocity", filename_header);
     }
