@@ -7,7 +7,6 @@
 #include "mpiw.hpp"
 #include "utils.hpp"
 #include "normalizer.hpp"
-#include <silo.h>
 #include <random>
 #include <algorithm>
 
@@ -40,8 +39,8 @@ void Grid::incrementSumOfChild() {
     }
 }
 
+//! 場の resize を行う
 void Grid::initializeField(void){
-    Field* field = new Field;
     tdArray::extent_gen tdExtents;
 
     const int cx = nx + 2;
@@ -74,12 +73,110 @@ void Grid::initializeField(void){
     field->getJx().resize(tdExtents[cx-1][cy][cz]);
     field->getJy().resize(tdExtents[cx][cy-1][cz]);
     field->getJz().resize(tdExtents[cx][cy][cz-1]);
+}
 
-    this->setField(field);
+void Grid::initializeObject(void) {
+    //! TODO: オブジェクト数を数える
+    if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
+
+    std::map<std::string, ObjectNodes> defined_objects;
+    std::map<std::string, unsigned int> num_cmat_map;
+
+    for (const auto& object_info : Environment::objects_info) {
+        std::string obj_name = object_info.name;
+        //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
+        defined_objects[obj_name] = Utils::getObjectNodesFromObjFile(object_info.file_name);
+        num_cmat_map[obj_name] = defined_objects[obj_name].size();
+    }
+
+    for(const auto& object_nodes : defined_objects) {
+        const auto obj_name = object_nodes.first;
+        const auto& node_array = object_nodes.second;
+
+        //! innerと判定されたやつだけ渡す
+        ObjectNodes inner_node_array;
+        ObjectNodes glue_node_array;
+        bool is_object_in_this_node = false;
+
+        for(const auto& node_pair : node_array) {
+            const auto cmat_itr = node_pair.first;
+            const auto& node_pos = node_pair.second;
+
+            const auto i = node_pos[0];
+            const auto j = node_pos[1];
+            const auto k = node_pos[2];
+
+            if (isInnerNode(i, j, k)) {
+                is_object_in_this_node = true;
+                inner_node_array[cmat_itr] = getRelativePosition<int>(i, j, k);
+            } else if (isGlueNode(i, j, k)) {
+                glue_node_array[cmat_itr] = getRelativePosition<int>(i, j, k);
+            }
+        }
+
+        //! Comm作成 (物体が入っていないならnullになる)
+        MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
+        // if (is_object_in_this_node) {
+        //     cout << Environment::rankStr() << "Object " << obj_name << " was defined in me." << endl;
+        // }
+
+        //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
+        Spacecraft spc(nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array);
+        if (Environment::isRootNode) cout << spc << endl;
+        objects.emplace_back( spc );
+    }
+}
+
+void Grid::initializeObjectsCmatrix(void) {
+    if (Environment::isRootNode) cout << "-- Initializing Objects Capacity Matrix --" << endl;
+    tdArray& rho = field->getRho();
+    tdArray& phi = field->getPhi();
+
+    for(auto& obj : objects) {
+        const auto num_cmat = obj.getCmatSize();
+
+        { //! Progress Manager のライフタイムを区切る
+            Utils::ProgressManager pm(num_cmat, "cmat_solve");
+
+            for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
+                if (Environment::isRootNode) pm.update(cmat_col_itr);
+
+                // rhoを初期化
+                Utils::initializeTdarray(rho);
+                Utils::initializeTdarray(phi);
+
+                //! 各頂点に単位電荷を付与
+                if (obj.isMyCmat(cmat_col_itr)) {
+                    const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
+                    rho[cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
+                }
+
+                solvePoisson();
+
+                for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
+                    double value = 0.0;
+                    if (obj.isMyCmat(cmat_row_itr)) {
+                        //! phiの値がB_{ij}の値になっている
+                        const auto& target_pos = obj.getCmatPos(cmat_row_itr);
+                        value = phi[target_pos.i][target_pos.j][target_pos.k];
+                    }
+
+                    if (obj.isDefined()) {
+                        //! bcastの代わりにsumしてしまう
+                        value = MPIw::Environment::Comms[obj.getName()].sum(value);
+                        obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
+                    }
+                }
+            }
+
+            //! 物体が有効でないなら解く必要なし
+            if (obj.isDefined()) obj.makeCmatrixInvert();
+        }
+    }
 }
 
 // root grid constructor
-Grid::Grid(void){
+Grid::Grid(void) : field(std::make_unique<Field>()) {
     //! - コンストラクタにEnvironmentクラスが渡された場合、
     //! レベル0のGridを作成します.
     level = 0;
@@ -97,12 +194,12 @@ Grid::Grid(void){
     //! @{
     //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
     //! その上にプロセス分割されたグリッドが乗っていると考える
-    from_ix = MPIw::Environment::xrank * Environment::cell_x;
-    from_iy = MPIw::Environment::yrank * Environment::cell_y;
-    from_iz = MPIw::Environment::zrank * Environment::cell_z;
-    to_ix = from_ix + nx;
-    to_iy = from_iy + ny;
-    to_iz = from_iz + nz;
+    from_ix = Environment::getAssignedXBegin();
+    from_iy = Environment::getAssignedYBegin();
+    from_iz = Environment::getAssignedZBegin();
+    to_ix = Environment::getAssignedXEnd();
+    to_iy = Environment::getAssignedYEnd();
+    to_iz = Environment::getAssignedZEnd();
     //! @note: base_x, base_y, base_zは正規化された長さ
     base_x = dx * static_cast<double>(from_ix);
     base_y = dx * static_cast<double>(from_iy);
@@ -111,6 +208,10 @@ Grid::Grid(void){
 
     // Field初期化
     this->initializeField();
+
+    // 物体初期化
+    this->initializeObject();
+    this->initializeObjectsCmatrix();
 
     //! - 粒子位置の上限を設定
     double max_x = static_cast<double>(Environment::cell_x);
@@ -136,7 +237,13 @@ Grid::Grid(void){
             Particle p(id);
             p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, max_z);
             p.generateNewVelocity();
-            particles[id].push_back(p);
+
+            //! 物体がある場合は生成時にチェックする
+            for(const auto& obj : objects) {
+                if (obj.isDefined()) obj.removeInnerParticle(p);
+            }
+
+            if (p.isValid) particles[id].emplace_back(p);
         }
     }
 }
@@ -146,7 +253,7 @@ Grid::Grid(void){
 //! そのGridを親とした子グリッドを生成します
 Grid::Grid(Grid* g,
         const int _from_ix, const int _from_iy, const int _from_iz,
-        const int _to_ix,   const int _to_iy,   const int _to_iz)
+        const int _to_ix,   const int _to_iy,   const int _to_iz) : field(std::make_unique<Field>())
 {
     const double refineRatio = 2.0;
 
@@ -214,59 +321,7 @@ void Grid::checkGridValidness() {
         isValid = false;
     }
 
-    if(!isValid) MPIw::Environment::exitWithFinalize(1);
-}
-
-//! 粒子の位置から電荷を空間電荷にする
-//! 基本的にはroot_gridに対してのみ呼ぶ
-void Grid::updateRho() {
-    tdArray& rho = field->getRho();
-
-#ifdef CHARGE_CONSERVATION
-    // 電荷保存則をcheckするため、古いrhoを保持する
-    tdArray old_rho = rho;
-#endif
-
-    // rhoを初期化
-    Utils::initializeTdarray(rho);
-
-    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        double q = Environment::ptype[pid].getCharge();
-
-        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
-            Particle& p = particles[pid][pnum];
-            if(p.isValid) {
-                Position pos(p);
-                int i = pos.i, j = pos.j, k = pos.k;
-
-#ifdef DEBUG
-                if( (i < 0) || (j < 0) || (k < 0) || (i >= rho.shape()[0] - 1) || (j >= rho.shape()[1] - 1) || (k >= rho.shape()[2] - 1)) {
-                    cout << Environment::rankStr() << pos << endl;
-                }
-#endif
-
-                rho[i  ][j  ][k] += pos.dx2 * pos.dy2 * pos.dz2 * q;
-                rho[i+1][j  ][k] += pos.dx1 * pos.dy2 * pos.dz2 * q;
-                rho[i  ][j+1][k] += pos.dx2 * pos.dy1 * pos.dz2 * q;
-                rho[i+1][j+1][k] += pos.dx1 * pos.dy1 * pos.dz2 * q;
-
-                rho[i  ][j  ][k+1] += pos.dx2 * pos.dy2 * pos.dz1 * q;
-                rho[i+1][j  ][k+1] += pos.dx1 * pos.dy2 * pos.dz1 * q;
-                rho[i  ][j+1][k+1] += pos.dx2 * pos.dy1 * pos.dz1 * q;
-                rho[i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
-            }
-        }
-    }
-
-    //! rho を隣に送る
-    MPIw::Environment::sendRecvField(rho);
-
-#ifdef CHARGE_CONSERVATION
-    if (Environment::solver_type == "EM") {
-        field->checkChargeConservation(old_rho, 1.0, dx);
-    }
-#endif
-
+    if(!isValid) MPIw::Environment::abort(1);
 }
 
 //! 粒子の位置から密度を計算する
@@ -318,7 +373,7 @@ void Grid::copyScalarToChildren(std::string varname){
 
     // @note: OpenMP
     for(int chidx = 0; chidx < children.size(); ++chidx) {
-        tdArray& childValue = children[chidx]->getField()->getScalar(varname);
+        tdArray& childValue = children[chidx]->getScalar(varname);
 
         int child_from_ix = children[chidx]->getFromIX();
         int child_from_iy = children[chidx]->getFromIY();
@@ -377,7 +432,7 @@ void Grid::copyScalarToParent(std::string varname){
     tdArray& tdValue = field->getScalar(varname);
 
     // @note: OpenMP
-    tdArray& parentValue = parent->getField()->getScalar(varname);
+    tdArray& parentValue = parent->getScalar(varname);
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
@@ -493,102 +548,27 @@ int Grid::getZNodeSize(void) const {
     return (level == 0 && Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) ? nz + 1 : nz;
 }
 
-// mesh nodesの座標配列を生成
-float** Grid::getMeshNodes(int dim) {
-    // the array of coordinate arrays
-    // @note: メモリリーク防止のため必ずdeleteする
-    const float real_dx = Normalizer::unnormalizeLength(dx);
-    const float real_base_x = Normalizer::unnormalizeLength(base_x);
-    const float real_base_y = Normalizer::unnormalizeLength(base_y);
-    const float real_base_z = Normalizer::unnormalizeLength(base_z);
-
-    float** coordinates = new float*[dim];
-    // root にいて正方向の端でない場合は+1分出力する
-    int xsize = this->getXNodeSize();
-    coordinates[0] = new float[xsize];
-
-    for(int i = 0; i < xsize; ++i) {
-        coordinates[0][i] = real_base_x + real_dx * i;
-    }
-
-    int ysize = this->getYNodeSize();
-    coordinates[1] = new float[ysize];
-
-    for(int i = 0; i < ysize; ++i) {
-        coordinates[1][i] = real_base_y + real_dx * i;
-    }
-
-    int zsize = this->getZNodeSize();
-    coordinates[2] = new float[zsize];
-
-    for(int i = 0; i < zsize; ++i) {
-        coordinates[2][i] = real_base_z + real_dx * i;
-    }
-    return coordinates;
-}
-
 //! for DATA IO
-float* Grid::getTrueNodes(const tdArray& x3D){
+boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double unnorm){
     int xsize = this->getXNodeSize();
     int ysize = this->getYNodeSize();
     int zsize = this->getZNodeSize();
-    float* x1D = new float[xsize*ysize*zsize];
 
-    //! C-based indicing
-    //! 上側境界にいない時 or 周期境界である時、上側のglue cellの値も出力する
+    boost::multi_array<float, 3> true_nodes(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
+
     for(int k = 1; k < zsize + 1; ++k){
         for(int j = 1; j < ysize + 1; ++j){
             for(int i = 1; i < xsize + 1; ++i){
-                x1D[(i-1) + (j-1)*xsize + (k-1)*xsize*ysize] = static_cast<float>(x3D[i][j][k]);
+                true_nodes[i - 1][j - 1][k - 1] = static_cast<float>(x3D[i][j][k] * unnorm);
             }
         }
     }
 
-    return x1D;
-}
-
-// 渡されたポインタにExtentを入力する
-void Grid::addExtent(int* data[6], float* sdata[6], float* rdata[1]){
-    if(level == 0) {
-        data[0][id] = from_ix;
-        data[1][id] = data[0][id] + (nx - 1);
-        data[2][id] = from_iy;
-        data[3][id] = data[0][id] + (ny - 1);
-        data[4][id] = from_iz;
-        data[5][id] = data[0][id] + (nz - 1);
-    } else {
-        data[0][id] = 2 * (from_ix - 1);
-        data[1][id] = data[0][id] + (nx - 1);
-        data[2][id] = 2 * (from_iy - 1);
-        data[3][id] = data[0][id] + (ny - 1);
-        data[4][id] = 2 * (from_iz - 1);
-        data[5][id] = data[0][id] + (nz - 1);
-    }
-
-    sdata[0][id] = base_x;
-    sdata[1][id] = base_x + (nx - 1) * dx;
-    sdata[2][id] = base_y;
-    sdata[3][id] = base_y + (ny - 1) * dx;
-    sdata[4][id] = base_z;
-    sdata[5][id] = base_z + (nz - 1) * dx;
-
-    rdata[0][id] = dx;
-
-    cout << "[ID " << id << "]" << endl;
-    cout << "LogicalExtent imin, imax = " << data[0][id] << " to " << data[1][id] << endl;
-    cout << "LogicalExtent jmin, jmax = " << data[2][id] << " to " << data[3][id] << endl;
-    cout << "LogicalExtent kmin, kmax = " << data[4][id] << " to " << data[5][id] << endl;
-
-    cout << "SpatialExtent xmin, xmax = " << sdata[0][id] << " to " << sdata[1][id] << endl;
-    cout << "SpatialExtent ymin, ymax = " << sdata[2][id] << " to " << sdata[3][id] << endl;
-    cout << "SpatialExtent zmin, zmax = " << sdata[4][id] << " to " << sdata[5][id] << endl;
-
-    for(int i = 0; i < getChildrenLength(); ++i){
-        children[i]->addExtent(data, sdata, rdata);
-    }
+    return true_nodes;
 }
 
 // -- DATA IO methods --
+/*
 void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coordnames[3], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
     const int dim = 3;
 
@@ -616,7 +596,7 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
     delete [] coordinates;
 
     if(dataTypeName == "potential") {
-        float* tdArray = this->getTrueNodes(field->getPhi());
+        float* tdArray = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
         DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
         delete [] tdArray;
     } else if(dataTypeName == "rho") {
@@ -695,6 +675,28 @@ void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coord
     }
 
 }
+*/
+
+void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) {
+    const std::string& level_str = "level" + std::to_string(level);
+    HighFive::Group local_group;
+
+    if (group.exist(level_str)) {
+        local_group = group.getGroup(level_str);
+    } else {
+        local_group = group.createGroup(level_str);
+    }
+
+    if (data_type_name == "potential") {
+        auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
+        auto dataset = local_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+        dataset.write(values);
+    }
+
+    for(int i = 0; i < children.size(); ++i) {
+        children[i]->putFieldData(group, data_type_name, i_timestamp);
+    }
+}
 
 Grid::~Grid(){
     //! delete all particles
@@ -703,8 +705,6 @@ Grid::~Grid(){
 
     // reserveしてあった分を削除する
     particles.shrink_to_fit();
-
-    delete field;
 
     //! delete all children
     std::vector<Grid*>::iterator it = children.begin();

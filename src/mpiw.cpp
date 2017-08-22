@@ -13,6 +13,7 @@ namespace MPIw {
         SENDRECV_PARTICLE,
         SENDRECV_PARTICLE_LENGTH,
         SENDRECV_FIELD,
+        PARTICIPATE_NEW_COMM,
     };
 
     // Environmentのstatic変数の実体
@@ -25,7 +26,7 @@ namespace MPIw {
     // 各方向への隣接プロセスランク
     int Environment::adj[6];
 
-    std::map<std::string, Communicator*> Environment::Comms;
+    std::map<std::string, Communicator> Environment::Comms;
     MPI_Datatype Environment::MPI_PARTICLE;
 
     Environment::Environment(int argc, char* argv[]) {
@@ -33,7 +34,7 @@ namespace MPIw {
         MPI_Init(&argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        Comms["world"] = new Communicator();
+        addNewComm("world", MPI_COMM_WORLD);
 #else
         rank = 0;
         numprocs = 1;
@@ -46,12 +47,28 @@ namespace MPIw {
 
     void Environment::finalize(void) {
 #ifndef BUILD_TEST
-        static bool finalized = false;
+    static bool finalized = false;
         if(!finalized) {
             MPI_Finalize();
             finalized = true;
         }
 #endif
+    }
+
+    void Environment::abort(const int code) {
+        MPI_Abort(MPI_COMM_WORLD, code);
+    }
+
+    void Environment::addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm) {
+        Comms.emplace(std::piecewise_construct, std::make_tuple(new_comm_name), std::make_tuple(new_comm));
+    }
+
+    void Environment::makeNewComm(const std::string& new_comm_name, const bool is_not_empty_comm) {
+        auto source_comm = Comms["world"].getComm();
+        MPI_Comm new_comm;
+        int color = (is_not_empty_comm ? 0 : MPI_UNDEFINED);
+        MPI_Comm_split(source_comm, color, rank, &new_comm);
+        if (is_not_empty_comm) addNewComm(new_comm_name, new_comm);
     }
 
     void Environment::sendRecvField(tdArray& x3D){
@@ -60,24 +77,24 @@ namespace MPIw {
         // 対応する方向の proc 数が 1 かつ周期境界でない場合には通信しなくてよい
         if( (::Environment::proc_x > 1) || ::Environment::isPeriodic(AXIS::x, AXIS_SIDE::low) ) {
             prev = 0; next = 1;
-            Comms["world"]->sendRecvFieldX(x3D, adj[prev], adj[next]);
+            Comms["world"].sendRecvFieldX(x3D, adj[prev], adj[next]);
         }
 
         if( (::Environment::proc_y > 1) || ::Environment::isPeriodic(AXIS::y, AXIS_SIDE::low) ) {
             prev = 2; next = 3;
-            Comms["world"]->sendRecvFieldY(x3D, adj[prev], adj[next]);
+            Comms["world"].sendRecvFieldY(x3D, adj[prev], adj[next]);
         }
 
         if( (::Environment::proc_z > 1) || ::Environment::isPeriodic(AXIS::z, AXIS_SIDE::low) ) {
             prev = 4; next = 5;
-            Comms["world"]->sendRecvFieldZ(x3D, adj[prev], adj[next]);
+            Comms["world"].sendRecvFieldZ(x3D, adj[prev], adj[next]);
         }
     }
 
     //! -- Particle Communication --
     void Environment::sendRecvParticles(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv, const int prev, const int next, std::string commName){
-        Comms[commName]->sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
-        Comms[commName]->sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
+        Comms[commName].sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
+        Comms[commName].sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
     }
 
     void Environment::sendRecvParticlesX(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
@@ -161,8 +178,8 @@ namespace MPIw {
         const unsigned int sendlen = sendArray.size();
         unsigned int recvlen;
 
-        if (src == dest) {
-            // send_recvの送信元と受取元が同じ == 自分との通信
+        if ( (src == Environment::rank) && (dest == Environment::rank) ) {
+            //! 自分との通信
             if (sendlen != 0) {
                 recvArray = sendArray; // 単にコピーする
             } else {
@@ -240,7 +257,7 @@ namespace MPIw {
             }
         }
 
-        if (prev == next) {
+        if ( (prev == Environment::rank) && (next == Environment::rank) ) {
             //! 自分自身への通信
             //! std::swapのが速いかも
             for(int j = 0; j < tdValue.shape()[1]; ++j) {
@@ -283,7 +300,7 @@ namespace MPIw {
             }
         }
 
-        if (prev == next) {
+        if ( (prev == Environment::rank) && (next == Environment::rank) ) {
             for(int i = 0; i < tdValue.shape()[0]; ++i) {
                 for(int k = 0; k < tdValue.shape()[2]; ++k) {
                     tdValue[i][0][k] = tdValue[i][tdValue.shape()[1] - 2][k];
@@ -322,7 +339,7 @@ namespace MPIw {
             }
         }
 
-        if (prev == next) {
+        if ( (prev == Environment::rank) && (next == Environment::rank) ) {
             for(int i = 0; i < tdValue.shape()[0]; ++i) {
                 for(int j = 0; j < tdValue.shape()[1]; ++j) {
                     tdValue[i][j][0] = tdValue[i][j][tdValue.shape()[2] - 2];

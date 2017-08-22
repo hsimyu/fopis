@@ -64,13 +64,13 @@ class Field {
         void setRho(tdArray& _rho){ rho = _rho; }
         tdArray& getRho(){ return rho; }
 
-        tdArray& getScalar(std::string varname){
+        tdArray& getScalar(const std::string varname) {
             if(varname == "potential" || varname == "phi") {
                 return phi;
             } else if(varname == "rho" || varname == "charge") {
                 return rho;
             } else {
-                throw std::invalid_argument("[ERROR] Invalid varname is passed to getScalarField():" + varname);
+                throw std::invalid_argument("[ERROR] Invalid varname is passed to getScalar():" + varname);
             }
         }
 

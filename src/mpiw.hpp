@@ -15,7 +15,7 @@ namespace MPIw {
             MPI_Comm comm;
 
         public:
-            // Communicator
+            // CommunicatorのデフォルトCommはMPI_COMM_WORLDとする
             Communicator(void) {
                 comm = MPI_COMM_WORLD;
             }
@@ -24,8 +24,7 @@ namespace MPIw {
                 comm = _comm;
             }
 
-            MPI_Comm getComm(void);
-            void setComm(MPI_Comm);
+            MPI_Comm getComm(void) const { return comm; }
 
             // -- communicate methods --
             void barrier(void) {
@@ -58,22 +57,18 @@ namespace MPIw {
 
     //! MPIランク保持用のクラス
     class Environment {
-        private:
-            static void finalize(void);
-
         public:
             Environment(int, char**);
 
-            //! 破棄時にFinalize()する
             ~Environment() {
                 finalize();
             }
 
+            //! 正常終了時
+            static void finalize(void);
+
             //! 例外時などの終了処理のために呼び出す
-            static void exitWithFinalize(int code) {
-                finalize();
-                exit(code);
-            }
+            static void abort(const int errorcode);
 
             //! MPIランクを接頭辞として出力する時のための関数
             static std::string rankStr(void) {
@@ -91,7 +86,9 @@ namespace MPIw {
             static MPI_Datatype MPI_PARTICLE;
 
             //! コミュニケータのリスト
-            static std::map<std::string, Communicator*> Comms;
+            static std::map<std::string, Communicator> Comms;
+            static void addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm);
+            static void makeNewComm(const std::string& new_comm_name, const bool is_not_empty_comm);
 
             //! MPI通信をラップするためのメンバ関数群
             static void sendRecvParticlesX(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);

@@ -18,7 +18,10 @@ class Position {
         }
 
     public:
+        //! glue cell ありの座標系に乗る整数値
         int i, j, k;
+
+        //! 実数座標
         double x, y, z;
         double dx1, dy1, dz1, dx2, dy2, dz2;
 
@@ -32,6 +35,13 @@ class Position {
             this->setIJK(_i, _j, _k);
         }
 
+        // 整数座標からのコンストラクタ
+        Position(const unsigned int _i, const unsigned int _j, const unsigned int _k){
+            this->setIJK(static_cast<int>(_i), static_cast<int>(_j), static_cast<int>(_k));
+        }
+
+        Position(void) {}
+
         //! Particle 用のコンストラクタはinlineで書けない
         Position(const Particle&);
         ~Position(){}
@@ -40,7 +50,7 @@ class Position {
         Position(const Position&) = default;
         Position& operator=(const Position&) = default;
         //! ムーブ演算
-        Position(Position&& p) = default;
+        Position(Position&&) = default;
         Position& operator=(Position&&) = default;
 
         void setXYZ(const double _x, const double _y, const double _z){

@@ -101,10 +101,6 @@ namespace Initializer {
         Environment::ptype[1].calcSize();
     }
 
-    double getSizeOfSuperParticle(int nr, double density, const double dx){
-        return pow(dx, 2.0) * density / nr;
-    }
-
     void setMPIInfoToEnv() {
         // for visiblity
         const int npux = Environment::proc_x;
@@ -115,7 +111,7 @@ namespace Initializer {
             if(MPIw::Environment::rank == 0) {
                 cout << format("[ERROR] Allocated Process Number [%d] is different from [%d] inputted from json.") % MPIw::Environment::numprocs % (npux * npuy * npuz) << endl;
             }
-            MPIw::Environment::exitWithFinalize(0);
+            MPIw::Environment::abort(1);
         }
 
         // Processの積み方は
@@ -158,16 +154,12 @@ namespace Initializer {
 
     void loadEnvironment(picojson::object& inputs){
         auto env_inputs = inputs["Environment"].get<picojson::object>();
-        auto io_inputs = inputs["IO"].get<picojson::object>();
 
         //! 読み込まなくてよい部分
         Environment::max_particle_num = MAX_PARTICLE_NUM;
         Environment::timestep = 1;
 
-        for (auto it = env_inputs.begin();
-             it != env_inputs.end();
-             ++it)
-        {
+        for (auto it = env_inputs.begin(); it != env_inputs.end(); ++it) {
             // string で switch したい...
             if(it->first == "nx"){
                 Environment::nx = static_cast<int>(it->second.get<double>());
@@ -206,6 +198,7 @@ namespace Initializer {
         Environment::cell_y = Environment::ny/Environment::proc_y;
         Environment::cell_z = Environment::nz/Environment::proc_z;
 
+        auto io_inputs = inputs["IO"].get<picojson::object>();
         for(auto it = io_inputs.begin(); it != io_inputs.end(); ++it){
             if(it->first == "plot_energy_dist_width"){
                 Environment::plot_energy_dist_width = static_cast<int>(it->second.get<double>());
@@ -228,6 +221,21 @@ namespace Initializer {
             } else {
                 std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
             }
+        }
+
+        //! 物体情報
+        auto object_inputs = inputs["Object"].get<picojson::object>();
+        for(auto it = object_inputs.begin(); it != object_inputs.end(); ++it){
+            const auto obj_name = it->first;
+            auto obj_info = it->second.get<picojson::object>();
+
+            Environment::ObjectInfo_t obj;
+            obj.name = obj_name;
+            obj.file_name = obj_info["file_name"].to_str();
+            obj.surface_type = obj_info["surface_type"].to_str();
+            obj.history_width = static_cast<unsigned int>(obj_info["history_width"].get<double>());
+            
+            Environment::objects_info.emplace_back(obj);
         }
     }
 

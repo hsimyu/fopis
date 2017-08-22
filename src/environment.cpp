@@ -28,6 +28,7 @@ std::string Environment::jobtype;
 std::string Environment::solver_type;
 std::string Environment::boundary;
 std::string Environment::dimension;
+std::vector<Environment::ObjectInfo_t> Environment::objects_info;
 ParticleType* Environment::ptype;
 
 /*
@@ -110,8 +111,15 @@ void Environment::printInfo(void){
     cout << "           efield: " << plot_efield_width << endl;
     cout << "           bfield: " << plot_bfield_width << endl;
     cout << "         particle: " << plot_particle_width << endl;
-    cout << "           energy: " << plot_energy_width << endl;
-    cout << endl;
+    cout << "           energy: " << plot_energy_width << endl << endl;
+
+    cout << "    [Objects]" << endl;
+    for(const auto& object_info : objects_info) {
+        cout << "        [" << object_info.name << "]" << endl;
+        cout << "                file_name: "<< object_info.file_name << endl;
+        cout << "             surface_type: "<< object_info.surface_type << endl;
+        cout << "            history_width: "<< object_info.history_width << endl << endl;
+    }
 }
 
 void Environment::checkCFLCondition(void) {
@@ -122,7 +130,7 @@ void Environment::checkCFLCondition(void) {
 
     if ( courant > 1.0 ) {
         cout << "    [ERROR] Courant number exceeds 1.0. " << endl;
-        MPIw::Environment::exitWithFinalize(0);
+        MPIw::Environment::abort(1);
     }
 }
 

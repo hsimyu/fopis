@@ -43,7 +43,7 @@ int main(int argc, char* argv[]){
             // 電磁計算の場合
             // timing: t + dt
 
-            if ( Environment::timestep % 5 == 0 ) {
+            if ( Environment::timestep % 1 == 0 ) {
                 root_grid->updateRho(); // 新しい位置に対応する電荷密度算出
                 root_grid->solvePoisson(); // Poisson を解く (FDTDの場合はたまにでいい?)
                 root_grid->updateEfield(); // 電場更新
@@ -88,6 +88,7 @@ int main(int argc, char* argv[]){
 
         // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
     }*/
+
     return 0;
 }
 #endif

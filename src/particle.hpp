@@ -2,6 +2,7 @@
 #define __TDPIC_PARTICLE_H_INCLUDED__
 #include <random>
 #include "global.hpp"
+#include "environment.hpp"
 
 class Position;
 class Velocity;
@@ -112,30 +113,13 @@ class Particle {
 
         ~Particle(){};
 
-        // Copy Constructer
-        Particle(Particle const& p){
-            x = p.x;
-            y = p.y;
-            z = p.z;
-            vx = p.vx;
-            vy = p.vy;
-            vz = p.vz;
-            typeId = p.typeId;
-            isValid = p.isValid;
-        }
+        //! コピー演算
+        Particle(const Particle&) = default;
+        Particle& operator=(const Particle&) = default;
 
-        Particle& operator=(Particle const& rhs){
-            x = rhs.x;
-            y = rhs.y;
-            z = rhs.z;
-            vx = rhs.vx;
-            vy = rhs.vy;
-            vz = rhs.vz;
-            typeId = rhs.typeId;
-            isValid = rhs.isValid;
-
-            return *this;
-        }
+        //! ムーブ演算
+        Particle(Particle&&) = default;
+        Particle& operator=(Particle&&) = default;
 
         void setPosition(const double _x, const double _y, const double _z){
             x = _x;
@@ -159,7 +143,11 @@ class Particle {
             z += vz;
         }
 
-        //! 右辺値を返す
+        //! isValidの操作をカプセル化
+        void makeValid(void) { isValid = 1; }
+        void makeInvalid(void) { isValid = 0; }
+
+        //! Position生成
         Position getPosition(void) const;
         Position getOldPosition(void) const;
         Position getNewPosition(void) const;
@@ -179,6 +167,9 @@ class Particle {
         double getMagnitudeOfVelocity(void) const {
             return sqrt(vx*vx + vy*vy + vz*vz);
         }
+
+        //! ParticleTypeのメンバ関数呼び出しを中継
+        double getCharge(void) const { return Environment::ptype[typeId].getCharge(); }
 
         //! 粒子生成時用の位置速度生成関数
         //! - 内部的にはParticleTypeの同名メンバ関数を呼び出すだけ

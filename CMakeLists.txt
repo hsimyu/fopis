@@ -21,6 +21,8 @@ configure_file(${CMAKE_SOURCE_DIR}/include/tdpic_configure.h.in ${CMAKE_SOURCE_D
 
 # add submodules
 include_directories(${CMAKE_SOURCE_DIR}/picojson)
+include_directories(${CMAKE_SOURCE_DIR}/SimpleXdmf/include)
+include_directories(${CMAKE_SOURCE_DIR}/HighFive/include)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # check host
@@ -70,7 +72,6 @@ message(STATUS "HOME              = ${HOME}")
 set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-
     #set(CRAYPE_LINK_TYPE "dynamic")
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
@@ -86,12 +87,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
     endif()
 
-    # options for silo
-    set(HOME_ROOT "${HOME}/local/")
-    set(HOME_LIBRARIES "${HOME_ROOT}/lib")
-    find_library(LIB_SILO silo HINTS ${HOME_LIBRARIES})
-
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_SILO})
     message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
@@ -116,12 +111,6 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         set(CMAKE_BUILD_TYPE Release)
     endif()
 
-    # options for silo
-    set(HOME_ROOT "${HOME}/local/")
-    set(HOME_LIBRARIES "${HOME_ROOT}/lib")
-    find_library(LIB_SILO silo HINTS ${HOME_LIBRARIES})
-
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_SILO})
     message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 else()
     # Flags for Darwin build
@@ -139,22 +128,6 @@ else()
         set(CMAKE_BUILD_TYPE Release)
     endif()
 
-    # options for mkl
-    # set(MKLROOT "/opt/intel/mkl")
-    # set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
-    # set(MKL_LIBRARIES "${MKLROOT}/lib")
-    # add_definitions(-DMKL_ILP64)
-    # link_directories(${MKL_LIBRARIES})
-    # include_directories(${MKL_INCLUDE_DIRS})
-    # find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_INTEL_LP64 mkl_intel_lp64 HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_INTEL_THREAD mkl_intel_thread HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
-    #
-    # set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
-
     # MPI LIBRARIES
     find_library(MPI_LIBS mpi HINTS /usr/local/lib)
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MPI_LIBS})
@@ -163,10 +136,8 @@ else()
     set(HOME_ROOT "${HOME}/local/")
     set(HOME_LIBRARIES "${HOME_ROOT}/lib")
     find_library(LIB_HDF5 hdf5 HINTS ${HOME_LIBRARIES})
-    find_library(LIB_SILO siloh5 HINTS ${HOME_LIBRARIES})
-    find_library(LIB_Z z HINTS ${HOME_LIBRARIES})
 
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_Z} ${LIB_HDF5} ${LIB_SILO})
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_Z} ${LIB_HDF5})
     message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 endif()
 

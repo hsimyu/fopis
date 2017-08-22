@@ -89,9 +89,9 @@ public:
         return normalized_mass * m_unit;
     }
 
-    //! V = m^2 kg / s^3 A = m^2 kg C / s^2 -> 1
+    //! V = m^2 kg / s^3 A = m^2 kg / C s^2 -> 1
     static double normalizePotential(double raw_phi) {
-        return raw_phi * pow(t_unit, 2) / (pow(x_unit, 2) * m_unit * e_unit);
+        return raw_phi * pow(t_unit, 2) * e_unit / (pow(x_unit, 2) * m_unit);
     }
 
     //! 1 -> m^2 kg / s^2 C = V
