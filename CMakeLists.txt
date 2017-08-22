@@ -28,6 +28,7 @@ message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(HOME "$ENV{USERPROFILE}")
     set(CMAKE_SUPPRESS_REGENERATION true)
+    set(BOOST_USE_STATIC_LIBS ON)
 
     find_package( Boost REQUIRED COMPONENTS filesystem system)
     include_directories( ${Boost_INCLUDE_DIRS} )
@@ -101,8 +102,8 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64")
 
     # MS MPI Dirs
-    set(MSMPI_INCDIR "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI/Include")
-    set(MSMPI_LIBDIR "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI/Lib/x64")
+    set(MSMPI_INCDIR "$ENV{MSMPI_INC}")
+    set(MSMPI_LIBDIR "$ENV{MSMPI_LIB64}")
     link_directories(${MSMPI_LIBDIR})
     include_directories(${MSMPI_INCDIR})
     find_library(LIB_MSMPI msmpi HINTS ${MSMPI_LIBDIR})
@@ -114,22 +115,6 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     else()
         set(CMAKE_BUILD_TYPE Release)
     endif()
-
-    # options for mkl
-    # set(MKLROOT "C:/Program\ Files\ (x86)/IntelSWTools/compilers_and_libraries/windows/mkl")
-    # set(MKL_INCLUDE_DIRS "${MKLROOT}/include")
-    # set(MKL_LIBRARIES "${MKLROOT}/lib/intel64")
-    # add_definitions(-DMKL_ILP64)
-    # link_directories(${MKL_LIBRARIES})
-    # include_directories(${MKL_INCLUDE_DIRS})
-    # find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_INTEL_LP64 mkl_intel_lp64 HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_INTEL_THREAD mkl_intel_thread HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_BLAS95 mkl_blas95_lp64 HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_SEQ mkl_sequential HINTS ${MKL_LIBRARIES})
-    # find_library(MKL_LAPACK mkl_lapack95_lp64 HINTS ${MKL_LIBRARIES})
-
-    # set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MKL_INTEL_LP64} ${MKL_BLAS95} ${MKL_LAPACK} ${MKL_SEQ} ${MKL_CORE})
 
     # options for silo
     set(HOME_ROOT "${HOME}/local/")
