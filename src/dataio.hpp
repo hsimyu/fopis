@@ -5,6 +5,10 @@
 class Grid;
 
 namespace IO {
+    // base logging function
+    void putHeader(const std::string& filename, const std::string& header);
+    void putLog(const std::string& filename, const std::string& log_entry);
+
     void plotEnergy(Grid const&, int);
     void plotEfieldAt(Grid const&, int, int, int, const std::string filename_header = "");
     void plotBfieldAt(Grid const&, int, int, int, const std::string filename_header = "");

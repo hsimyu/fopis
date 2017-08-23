@@ -65,6 +65,10 @@ struct Environment {
             return (xrank + proc_x * yrank + proc_x * proc_y * zrank);
         }
 
+        static double getDataTime() {
+            return static_cast<double>(timestep) * dt;
+        }
+
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
         static int getAssignedXBegin(void) { return ::MPIw::Environment::xrank * cell_x; }
         static int getAssignedXEnd(void) { return (::MPIw::Environment::xrank + 1) * cell_x - 1; }

@@ -4,7 +4,6 @@
 #include "grid.hpp"
 #include "mpiw.hpp"
 #include "normalizer.hpp"
-#include <numeric>
 
 #define H5_USE_BOOST
 #define USE_BOOST
@@ -12,49 +11,6 @@
 #include <simple_xdmf.hpp>
 
 namespace IO {
-    /*
-    void writeBlock(DBfile* file, Grid& g, int rankInGroup, std::string dataTypeName){
-        // dimension
-        const int dim = 3;
-        // names of the coordinates
-        const char* coordnames[3] = {"x", "y", "z"};
-
-        // make options list for mesh
-        DBoptlist* optListMesh = DBMakeOptlist(1);
-        // char* mrgTreeName = const_cast<char*>("mrgTree");
-        // DBAddOption(optListMesh, DBOPT_MRGTREE_NAME, mrgTreeName);
-
-        // make options list for var
-        DBoptlist* optListVar = DBMakeOptlist(2);
-
-        // set unit
-        char* unit;
-        if(dataTypeName == "potential") {
-            unit = const_cast<char*>("V");
-        } else if(dataTypeName == "rho") {
-            unit = const_cast<char*>("/m^3");
-        } else if (dataTypeName == "efield") {
-            unit = const_cast<char*>("V/m");
-        } else if (dataTypeName == "bfield") {
-            unit = const_cast<char*>("T");
-        } else if (dataTypeName == "density") {
-            unit = const_cast<char*>("/m^3");
-        } else {
-            throw std::invalid_argument("[ERROR] Invalid dataTypeName was passed.");
-        }
-        DBAddOption(optListVar, DBOPT_UNITS, unit);
-
-        int major_order = 0;
-        DBAddOption(optListVar, DBOPT_MAJORORDER, &major_order); // row-major (C-based) order
-
-        // g.putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
-
-        // Free optList
-        DBFreeOptlist(optListMesh);
-        DBFreeOptlist(optListVar);
-    }
-    */
-
     void writeDataInParallel(Grid& g, const int timestep, const std::string& data_type_name) {
         if (Environment::isRootNode) generateXdmf(timestep, data_type_name);
 
@@ -63,7 +19,7 @@ namespace IO {
         const std::string file_name = "data/" + rank_str + ".h5";
 
         using H5F = HighFive::File;
-        // initialize only once
+        // initialize file and group pointers only once
         static H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
         static HighFive::Group group = file.createGroup(data_type_name);
         g.putFieldData(group, data_type_name, i_timestamp);
@@ -128,8 +84,21 @@ namespace IO {
 
     }
 
+    void putHeader(const std::string& filename, const std::string& header) {
+        auto openmode = (Environment::timestep == 1) ? std::ios::out : std::ios::app;
+        std::ofstream ofs(filename, openmode);
+
+        ofs << "# " << format("%8s %16s %s") % "Timestep" % "Datatime" % header << endl; 
+    }
+
+    void putLog(const std::string& filename, const std::string& log_entry) {
+        const auto datatime = Environment::getDataTime();
+        std::ofstream ofs(filename, std::ios::app);
+        ofs << format("%10d %16.7e %s") % Environment::timestep % datatime % log_entry << endl;
+    }
+
     void plotEnergy(Grid const& g, int timestep){
-        const double datatime = timestep * Environment::dt;
+        const auto datatime = Environment::getDataTime();
         double particleEnergy = g.getParticleEnergy();
         double eFieldEnergy = g.getEFieldEnergy();
         double bFieldEnergy = g.getBFieldEnergy();
@@ -139,20 +108,18 @@ namespace IO {
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
-            auto openmode = (timestep == 1) ? std::ios::out : std::ios::app;
-            std::ofstream ofs(filename, openmode);
 
             if(timestep == 1) {
-                ofs << "# " << 
-                    format("%8s %15s %15s %15s %15s %15s") % "timestep" % "time" % "Energy [J]" % "Particle [J]" % "EField [J]" % "BField [J]" 
-                << endl;
+                const auto header = (format("%16s %16s %16s %16s") % "Energy [J]" % "Particle [J]" % "EField [J]" % "BField [J]").str();
+                putHeader(filename, header);
             }
 
-            ofs << format("%10d %15.7e %15.7e %15.7e %15.7e %15.7e") % timestep % datatime %
+            std::string entry = (format("%16.7e %16.7e %16.7e %16.7e") %
                 Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedEFieldEnergy + receivedBFieldEnergy) %
                 Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
                 Normalizer::unnormalizeEnergy(receivedEFieldEnergy) %
-                Normalizer::unnormalizeEnergy(receivedBFieldEnergy) << endl;
+                Normalizer::unnormalizeEnergy(receivedBFieldEnergy)).str();
+            putLog(filename, entry);
         }
     }
 
