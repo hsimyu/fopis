@@ -7,7 +7,6 @@
 #include "mpiw.hpp"
 #include "dataio.hpp"
 #include "normalizer.hpp"
-#include <silo.h>
 #include <random>
 #include <algorithm>
 
