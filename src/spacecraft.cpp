@@ -194,7 +194,22 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
 }
 
 std::string Spacecraft::getLogHeader() const {
-    std::string header = (format("%16s %16s %16s") % "Potential [V]" % "Charge [C]" % "Current [A]").str();
+    std::string format_string = "%16s %16s";
+
+    for(int i = 0; i < Environment::num_of_particle_types; ++i) {
+        format_string += " %16s";
+    }
+
+    auto format_base = format(std::move(format_string));
+
+    format_base = format_base % "Potential [V]";
+    format_base = format_base % "Charge [C]";
+
+    for(int i = 0; i < Environment::num_of_particle_types; ++i) {
+        format_base = format_base % (Environment::ptype[i].getName() + " [A]");
+    }
+
+    std::string header = format_base.str();
     return header;
 }
 
