@@ -114,6 +114,8 @@ class Grid {
         void   setDt(double _dt){ dt = _dt; }
         double getDt(void) const { return dt; }
 
+        auto& getObjects() const { return objects; };
+
         //! 基本的には root_grid 中に対象の点(Object定義点)が含まれているかを判定するために呼ぶ
         //! i, j, k は整数座標(全体の計算空間上の)
         bool isInnerNode(const int i, const int j, const int k) const {

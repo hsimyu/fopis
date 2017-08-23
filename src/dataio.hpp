@@ -5,7 +5,7 @@
 class Grid;
 
 namespace IO {
-    // base logging function
+    // 時系列データ出力用のベース関数
     void putHeader(const std::string& filename, const std::string& header);
     void putLog(const std::string& filename, const std::string& log_entry);
 
@@ -16,6 +16,7 @@ namespace IO {
     void plotParticleEnergyDistribution(ParticleArray const&, const std::string filename_header = "");
     void plotParticleDistribution(ParticleArray const&, const std::string, const std::string);
 
+    // 場のデータ等の出力用関数
     void writeDataInParallel(Grid&, const int, const std::string&);
     void generateXdmf(const int timestep, const std::string& data_type_name);
 

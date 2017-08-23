@@ -13,7 +13,7 @@ set(CXX_REQUIRED_LIBS "")
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-set(TDPIC_VERSION 0.1.2)
+set(TDPIC_VERSION 0.9.0)
 set(TDPIC_DATE ${CMAKE_DATE})
 set(TDPIC_REVISION ${CMAKE_REVISION})
 
@@ -183,10 +183,15 @@ endif()
 if(${COPY_SAMPLE_INPUT})
     add_custom_command(
         OUTPUT copy_json
-        COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/src/input.json.sample" "${CMAKE_BINARY_DIR}/input.json"
+        COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/input_samples/input.json" "${CMAKE_BINARY_DIR}/input.json"
     )
 
-    add_custom_target(copy_sample_input DEPENDS copy_json)
+    add_custom_command(
+        OUTPUT copy_objects_dir
+        COMMAND cp -r "${CMAKE_CURRENT_SOURCE_DIR}/input_samples/objects" "${CMAKE_BINARY_DIR}/"
+    )
+
+    add_custom_target(copy_sample_input DEPENDS copy_json copy_objects_dir)
     add_dependencies(tdpic copy_sample_input)
 endif()
 

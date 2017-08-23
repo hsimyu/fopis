@@ -97,14 +97,10 @@ namespace IO {
         ofs << format("%10d %16.7e %s") % Environment::timestep % datatime % log_entry << endl;
     }
 
-    void plotEnergy(Grid const& g, int timestep){
-        const auto datatime = Environment::getDataTime();
-        double particleEnergy = g.getParticleEnergy();
-        double eFieldEnergy = g.getEFieldEnergy();
-        double bFieldEnergy = g.getBFieldEnergy();
-        double receivedParticleEnergy = MPIw::Environment::Comms["world"].sum(particleEnergy, 0);
-        double receivedEFieldEnergy = MPIw::Environment::Comms["world"].sum(eFieldEnergy, 0);
-        double receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(bFieldEnergy, 0);
+    void plotEnergy(Grid const& g, int timestep) {
+        const auto receivedParticleEnergy = MPIw::Environment::Comms["world"].sum(g.getParticleEnergy(), 0);
+        const auto receivedEFieldEnergy = MPIw::Environment::Comms["world"].sum(g.getEFieldEnergy(), 0);
+        const auto receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(g.getBFieldEnergy(), 0);
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
@@ -119,7 +115,14 @@ namespace IO {
                 Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
                 Normalizer::unnormalizeEnergy(receivedEFieldEnergy) %
                 Normalizer::unnormalizeEnergy(receivedBFieldEnergy)).str();
+
             putLog(filename, entry);
+        }
+    }
+
+    void plotObjectData(Grid const& g) {
+        for(const auto& object : g.getObjects()) {
+            cout << object << endl;
         }
     }
 
