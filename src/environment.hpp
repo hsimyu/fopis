@@ -80,7 +80,7 @@ struct Environment {
         static bool isOnEdge(const AXIS, const AXIS_SIDE);
 
         //! 現在の領域の上限/下限が、計算空間全体の境界でないか、計算空間全体の境界だが周期境界かどうかをチェックする
-        static bool isPeriodic(const AXIS, const AXIS_SIDE);
+        static bool isNotBoundary(const AXIS, const AXIS_SIDE);
         static bool isBoundary(const AXIS, const AXIS_SIDE);
 
         static void printInfo(void);

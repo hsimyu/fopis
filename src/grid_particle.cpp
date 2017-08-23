@@ -210,7 +210,7 @@ void Grid::updateParticlePositionES(void) {
     }
 
     //! 対象の方向のプロセス数が 1 かつ 周期境界でない場合には通信しなくてよい
-    if( (Environment::proc_x > 1) || Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
+    if( (Environment::proc_x > 1) || Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
 
         for(int axis = 0; axis < 2; ++axis) {
@@ -230,7 +230,7 @@ void Grid::updateParticlePositionES(void) {
         }
     }
 
-    if( (Environment::proc_y > 1) || Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
+    if( (Environment::proc_y > 1) || Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
 
         for(int axis = 2; axis < 4; ++axis) {
@@ -248,7 +248,7 @@ void Grid::updateParticlePositionES(void) {
         }
     }
 
-    if( (Environment::proc_z > 1) || Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
+    if( (Environment::proc_z > 1) || Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
 
         for(int axis = 4; axis < 6; ++axis) {
@@ -323,7 +323,7 @@ void Grid::updateParticlePositionEM(void) {
     MPIw::Environment::sendRecvField(jy);
     MPIw::Environment::sendRecvField(jz);
 
-    if( (Environment::proc_x > 1) || Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
+    if( (Environment::proc_x > 1) || Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
 
         for(int axis = 0; axis < 2; ++axis) {
@@ -343,7 +343,7 @@ void Grid::updateParticlePositionEM(void) {
         }
     }
 
-    if( (Environment::proc_y > 1) || Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
+    if( (Environment::proc_y > 1) || Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesY(pbuff, pbuffRecv);
 
         for(int axis = 2; axis < 4; ++axis) {
@@ -361,7 +361,7 @@ void Grid::updateParticlePositionEM(void) {
         }
     }
 
-    if( (Environment::proc_z > 1) || Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
+    if( (Environment::proc_z > 1) || Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesZ(pbuff, pbuffRecv);
 
         for(int axis = 4; axis < 6; ++axis) {
@@ -494,14 +494,14 @@ void Grid::injectParticles(void) {
     double max_z = static_cast<double>(Environment::cell_z);
 
     //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
-    if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
-    if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
+    if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
+    if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
+    if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         std::vector<double> flux = Environment::ptype[pid].calcFlux(*this);
 
-        if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
+        if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
             residual[pid][index] += dt * flux[index] - inject_num;
@@ -520,7 +520,7 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) {
+        if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
             const int index = 1;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
             residual[pid][index] += dt * flux[index] - inject_num;
@@ -538,7 +538,7 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
+        if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
             const int index = 2;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
             residual[pid][index] += dt * flux[index] - inject_num;
@@ -555,7 +555,7 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) {
+        if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
             const int index = 3;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
             residual[pid][index] += dt * flux[index] - inject_num;
@@ -572,7 +572,7 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
+        if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
             const int index = 4;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
             residual[pid][index] += dt * flux[index] - inject_num;
@@ -589,7 +589,7 @@ void Grid::injectParticles(void) {
             }
         }
 
-        if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) {
+        if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
             const int index = 5;
             const int inject_num = floor(dt * flux[index] + residual[pid][index]);
             residual[pid][index] += dt * flux[index] - inject_num;

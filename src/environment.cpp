@@ -81,12 +81,12 @@ bool Environment::isOnEdge(const AXIS axis, const AXIS_SIDE low_or_up) {
 //! 計算空間全体の境界でない or 計算空間全体の境界であるが周期境界である
 //! かどうかをチェックする。
 //! どちらかが満たされていれば、その方向の端の要素は境界とみなす必要がない (Iteration時の判定に用いる)
-bool Environment::isPeriodic(const AXIS axis, const AXIS_SIDE low_or_up) {
+bool Environment::isNotBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
     return ( (!Environment::isOnEdge(axis, low_or_up)) || (Environment::getBoundaryCondition(axis, low_or_up) == "P" ) );
 }
 
 bool Environment::isBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
-    return !isPeriodic(axis, low_or_up);
+    return !isNotBoundary(axis, low_or_up);
 }
 
 

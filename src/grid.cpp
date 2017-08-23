@@ -219,9 +219,9 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
     double max_z = static_cast<double>(Environment::cell_z);
 
     //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
-    if(!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
-    if(!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
+    if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
+    if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
+    if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
     //! - particlesは空のstd::vector< std::vector<Particle> >として宣言されている
     //! - particle types 分だけresize
@@ -537,15 +537,15 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
 int Grid::getXNodeSize(void) const {
     //! 周期境界の場合は上側境界と下側境界の間の空間も有効な空間となるので、
     //! 上側のノードを1つ増やす
-    return (level == 0 && Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) ? nx + 1 : nx;
+    return (level == 0 && Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) ? nx + 1 : nx;
 }
 
 int Grid::getYNodeSize(void) const {
-    return (level == 0 && Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) ? ny + 1 : ny;
+    return (level == 0 && Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) ? ny + 1 : ny;
 }
 
 int Grid::getZNodeSize(void) const {
-    return (level == 0 && Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) ? nz + 1 : nz;
+    return (level == 0 && Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) ? nz + 1 : nz;
 }
 
 //! for DATA IO

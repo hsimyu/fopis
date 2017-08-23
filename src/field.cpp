@@ -26,12 +26,12 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
     this->setBoundaryConditionPhi();
 
     const bool is_periodic[6] = {
-        Environment::isPeriodic(AXIS::x, AXIS_SIDE::low),
-        Environment::isPeriodic(AXIS::x, AXIS_SIDE::up),
-        Environment::isPeriodic(AXIS::y, AXIS_SIDE::low),
-        Environment::isPeriodic(AXIS::y, AXIS_SIDE::up),
-        Environment::isPeriodic(AXIS::z, AXIS_SIDE::low),
-        Environment::isPeriodic(AXIS::z, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
     };
 
     for(int loop = 1; loop <= loopnum; ++loop) {
@@ -68,12 +68,12 @@ double Field::checkPhiResidual() {
     const double normalized_eps = Normalizer::eps0;
 
     const bool is_periodic[6] = {
-        Environment::isPeriodic(AXIS::x, AXIS_SIDE::low),
-        Environment::isPeriodic(AXIS::x, AXIS_SIDE::up),
-        Environment::isPeriodic(AXIS::y, AXIS_SIDE::low),
-        Environment::isPeriodic(AXIS::y, AXIS_SIDE::up),
-        Environment::isPeriodic(AXIS::z, AXIS_SIDE::low),
-        Environment::isPeriodic(AXIS::z, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
     };
 
     const int cx_with_glue = phi.shape()[0];
@@ -342,7 +342,7 @@ void Field::setDampingBoundaryOnEfield(void) {
     const int cy_with_glue = ey.shape()[1] + 1;
     const int cz_with_glue = ez.shape()[2] + 1;
 
-    if (!Environment::isPeriodic(AXIS::x, AXIS_SIDE::low)) {
+    if (!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
         for(int k = 0; k < cz_with_glue; ++k){
             for(int j = 0; j < cy_with_glue; ++j){
                 ex[0][j][k] = 0.0; // glue cell
@@ -351,7 +351,7 @@ void Field::setDampingBoundaryOnEfield(void) {
         }
     }
 
-    if (!Environment::isPeriodic(AXIS::x, AXIS_SIDE::up)) {
+    if (!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
         for(int k = 0; k < cz_with_glue; ++k){
             for(int j = 0; j < cy_with_glue; ++j){
                 //! ex は x方向に 1 小さいので、cx_with_glue - 2 が glue cell になる
@@ -361,7 +361,7 @@ void Field::setDampingBoundaryOnEfield(void) {
         }
     }
 
-    if (!Environment::isPeriodic(AXIS::y, AXIS_SIDE::low)) {
+    if (!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
         for(int i = 0; i < cx_with_glue; ++i){
             for(int k = 0; k < cz_with_glue; ++k){
                 ey[i][0][k] = 0.0; // glue cell
@@ -370,7 +370,7 @@ void Field::setDampingBoundaryOnEfield(void) {
         }
     }
 
-    if (!Environment::isPeriodic(AXIS::y, AXIS_SIDE::up)) {
+    if (!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
         for(int i = 0; i < cx_with_glue; ++i){
             for(int k = 0; k < cz_with_glue; ++k){
                 ey[i][cy_with_glue - 2][k] = 0.0; // glue cell
@@ -379,7 +379,7 @@ void Field::setDampingBoundaryOnEfield(void) {
         }
     }
 
-        if (!Environment::isPeriodic(AXIS::z, AXIS_SIDE::low)) {
+        if (!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
         for(int i = 0; i < cx_with_glue; ++i){
             for(int j = 0; j < cy_with_glue; ++j){
                 ez[i][j][0] = 0.0; // glue cell
@@ -388,7 +388,7 @@ void Field::setDampingBoundaryOnEfield(void) {
         }
     }
 
-    if (!Environment::isPeriodic(AXIS::z, AXIS_SIDE::up)) {
+    if (!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
         for(int i = 0; i < cx_with_glue; ++i){
             for(int j = 0; j < cy_with_glue; ++j){
                 ez[i][j][cz_with_glue - 2] = 0.0; // glue cell
