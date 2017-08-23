@@ -272,7 +272,7 @@ void Grid::updateParticlePositionES(void) {
             }
 #endif
             if(p.isValid) {
-                particles[ p.typeId ].push_back(p);
+                particles[ p.typeId ].push_back( std::move(p) );
             }
         }
     }
@@ -388,7 +388,7 @@ void Grid::updateParticlePositionEM(void) {
                 const int pid = p.typeId;
                 const double q_per_dt = Environment::ptype[pid].getCharge() / dt;
                 p.distributeCurrentAtNewPosition(q_per_dt, jx, jy, jz);
-                particles[ pid ].push_back(p);
+                particles[ pid ].push_back( std::move(p) );
             }
         }
     }
@@ -470,9 +470,6 @@ void Grid::injectParticles(void) {
     static std::vector< std::vector<double> > residual;
     static bool isFirstCall = true;
 
-    ParticleArray inject_parray;
-    inject_parray.resize(2);
-
     //! staticな残余変数の初期化
     if(isFirstCall) {
         residual.resize(Environment::num_of_particle_types);
@@ -514,8 +511,7 @@ void Grid::injectParticles(void) {
                 while(p.vx <= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, p.vx * dt, 0.0, max_y, 0.0, max_z);
-                particles[pid].push_back(p);
-                inject_parray[pid].push_back(p);
+                particles[pid].push_back( std::move(p) );
             }
         }
 
@@ -532,8 +528,7 @@ void Grid::injectParticles(void) {
 
                 //! 負方向速度をxの最大値から引いた点までがありうる範囲
                 p.generateNewPosition(max_x + p.vx * dt, max_x, 0.0, max_y, 0.0, max_z);
-                particles[pid].push_back(p);
-                inject_parray[pid].push_back(p);
+                particles[pid].push_back( std::move(p) );
             }
         }
 
@@ -549,8 +544,7 @@ void Grid::injectParticles(void) {
                 while(p.vy <= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, p.vy * dt, 0.0, max_z);
-                particles[pid].push_back(p);
-                inject_parray[pid].push_back(p);
+                particles[pid].push_back( std::move(p) );
             }
         }
 
@@ -566,8 +560,7 @@ void Grid::injectParticles(void) {
                 while(p.vy >= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, max_y + p.vy * dt, max_y, 0.0, max_z);
-                particles[pid].push_back(p);
-                inject_parray[pid].push_back(p);
+                particles[pid].push_back( std::move(p) );
             }
         }
 
@@ -583,8 +576,7 @@ void Grid::injectParticles(void) {
                 while(p.vz <= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, p.vz * dt);
-                particles[pid].push_back(p);
-                inject_parray[pid].push_back(p);
+                particles[pid].push_back( std::move(p) );
             }
         }
 
@@ -600,14 +592,10 @@ void Grid::injectParticles(void) {
                 while(p.vz >= 0.0) p.generateNewVelocity();
 
                 p.generateNewPosition(0.0, max_x, 0.0, max_y, max_z + p.vz * dt, max_z);
-                particles[pid].push_back(p);
-                inject_parray[pid].push_back(p);
+                particles[pid].push_back( std::move(p) );
             }
         }
     }
-
-    // IO::plotParticleEnergyDistribution(inject_parray, "inject_");
-    // IO::plotParticleVelocityDistribution(inject_parray, "inject_");
 }
 
 double Grid::getParticleEnergy(void) const {

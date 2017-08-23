@@ -235,7 +235,7 @@ namespace Initializer {
             obj.surface_type = obj_info["surface_type"].to_str();
             obj.history_width = static_cast<unsigned int>(obj_info["history_width"].get<double>());
             
-            Environment::objects_info.emplace_back(obj);
+            Environment::objects_info.push_back( std::move(obj) );
         }
     }
 

@@ -444,22 +444,23 @@ namespace Utils {
                 std::getline(file_input, buffer);
                 if (std::regex_match(buffer, re_vertex)) {
                     const auto& verts = split(buffer, ' ');
-
                     Vertex vertex;
 
                     vertex[0] = static_cast<int>(std::stoi(verts[1]) + Environment::nx / 2);
                     vertex[1] = static_cast<int>(std::stoi(verts[2]) + Environment::ny / 2);
                     vertex[2] = static_cast<int>(std::stoi(verts[3]) + Environment::nz / 2);
 
-                    vertices.emplace_back(vertex);
+                    vertices.push_back( std::move(vertex) );
                 } else if (std::regex_match(buffer, re_face)) {
                     const auto& fs = split(buffer, ' ');
                     Face face_numbers;
+
                     for(int i = 1; i < 5; ++i) {
                         const auto& splitted_face = split(fs[i], '/');
                         face_numbers[i - 1] = static_cast<int>(std::stoi(splitted_face[0]));
                     }
-                    faces.emplace_back(face_numbers);
+
+                    faces.push_back( std::move(face_numbers) );
                 }
             }
 

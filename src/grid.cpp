@@ -116,14 +116,10 @@ void Grid::initializeObject(void) {
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
-        // if (is_object_in_this_node) {
-        //     cout << Environment::rankStr() << "Object " << obj_name << " was defined in me." << endl;
-        // }
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
-        Spacecraft spc(nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array);
-        if (Environment::isRootNode) cout << spc << endl;
-        objects.emplace_back( spc );
+        //! emplace_back で Spacecraft object を直接構築
+        objects.emplace_back( nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array );
     }
 }
 
@@ -243,7 +239,7 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
                 if (obj.isDefined()) obj.removeInnerParticle(p);
             }
 
-            if (p.isValid) particles[id].emplace_back(p);
+            if (p.isValid) particles[id].push_back( std::move(p) );
         }
     }
 }
