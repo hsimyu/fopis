@@ -142,6 +142,12 @@ namespace MPIw {
         MPI_Type_free(&type);
     }
 
+    // Communicator クラス
+    Communicator::Communicator(MPI_Comm _comm) {
+        comm = _comm;
+        root = this->min(Environment::rank);
+    }
+
     void Communicator::send(Particle const& p, const int dest) {
         MPI_Send(&p, 1, Environment::MPI_PARTICLE, dest, TAG::SEND_PARTICLE, comm);
     }
@@ -242,6 +248,12 @@ namespace MPIw {
     double Communicator::min(double value) {
         double res = 0.0;
         MPI_Allreduce(&value, &res, 1, MPI_DOUBLE, MPI_MIN, comm);
+        return res;
+    }
+
+    int Communicator::min(int value) {
+        int res = 0;
+        MPI_Allreduce(&value, &res, 1, MPI_INT, MPI_MIN, comm);
         return res;
     }
 

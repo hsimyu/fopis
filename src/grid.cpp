@@ -116,6 +116,9 @@ void Grid::initializeObject(void) {
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
+        if (MPIw::Environment::isRootNode(obj_name)) {
+            cout << Environment::rankStr() << " is set to Root Node for " << obj_name << "." << endl;
+        }
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         //! emplace_back で Spacecraft object を直接構築

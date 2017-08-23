@@ -13,18 +13,19 @@ namespace MPIw {
         //! 内部的に持つcommunicatorを使って通信する
         private:
             MPI_Comm comm;
+            int root;
 
         public:
             // CommunicatorのデフォルトCommはMPI_COMM_WORLDとする
             Communicator(void) {
                 comm = MPI_COMM_WORLD;
+                root = 0;
             }
 
-            Communicator(MPI_Comm _comm) {
-                comm = _comm;
-            }
+            Communicator(MPI_Comm _comm);
 
             MPI_Comm getComm(void) const { return comm; }
+            int getRoot(void) const { return root; }
 
             // -- communicate methods --
             void barrier(void) {
@@ -40,6 +41,7 @@ namespace MPIw {
             int    sum(int);
             double max(double);
             double min(double);
+            int    min(int);
 
             // send
             void send(Particle const&, const int);
@@ -73,6 +75,18 @@ namespace MPIw {
             //! MPIランクを接頭辞として出力する時のための関数
             static std::string rankStr(void) {
                 return (format("[RANK P%04d] ") % rank).str();
+            }
+
+            static int getRootNode(const std::string& comm_name) {
+                if (Comms.count(comm_name) == 0) return -1;
+
+                return Comms[comm_name].getRoot();
+            }
+
+            static bool isRootNode(const std::string& comm_name) {
+                if (Comms.count(comm_name) == 0) return false;
+
+                return rank == Comms[comm_name].getRoot();
             }
 
             //! MPIのランクとプロセス数はstaticに持つ

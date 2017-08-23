@@ -122,9 +122,9 @@ namespace IO {
 
     void plotObjectsData(Grid const& g) {
         for(const auto& object : g.getObjects()) {
-            std::string filename = "data/" + object.getName() + ".txt";
+            std::string filename = "data/object_" + object.getName() + ".txt";
 
-            if (true) {
+            if ( MPIw::Environment::isRootNode(object.getName()) ) {
                 if(Environment::timestep == 1) {
                     const auto header = object.getLogHeader();
                     putHeader(filename, header);
