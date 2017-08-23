@@ -15,6 +15,7 @@ private:
     bool is_defined_in_this_process;
     double potential;
     double potential_fix;
+    double total_charge;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
     ObjectDefinedMap object_map;
@@ -47,6 +48,7 @@ public:
         construct(nx, ny, nz, nodes, glue_nodes);
     }
 
+    // アクセサ
     void setName(const std::string _name) { name = _name; }
     std::string getName() const { return name; }
 
@@ -56,28 +58,28 @@ public:
 
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
-    bool isMyCmat(const unsigned int cmat_number) const {
-        return (capacity_matrix_relation.count(cmat_number) > 0);
-    }
 
-    auto getCmatValue(const unsigned int col, const unsigned int row) {
-        return capacity_matrix(col, row);
-    }
-
+    auto getCmatValue(const unsigned int col, const unsigned int row) const { return capacity_matrix(col, row); }
     void setCmatValue(const unsigned int col, const unsigned int row, const double value) {
         capacity_matrix(col, row) = value;
     };
-
     void setTotalCmatValue(const double val) { total_cmat_value = val; }
-    void makeCmatrixInvert(void);
 
+    // 判定用関数
+    bool isMyCmat(const unsigned int cmat_number) const { return (capacity_matrix_relation.count(cmat_number) > 0); }
     bool isDefined(void) const { return is_defined_in_this_process; }
-
     bool isIncluded(const Particle&) const;
+
+    // その他ユーティリティ関数
+    void makeCmatrixInvert(void);
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
     void applyCharge(tdArray&) const;
     void redistributeCharge(tdArray&, const tdArray&);
+
+    // IO関数
+    std::string getLogHeader() const;
+    std::string getLogEntry() const;
     friend std::ostream& operator<<(std::ostream&, const Spacecraft&);
 };
 #endif

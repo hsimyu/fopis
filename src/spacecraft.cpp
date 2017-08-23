@@ -11,6 +11,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
     potential = 0.0;
+    total_charge = 0.0;
     potential_fix = 0.0;
 
     if (is_defined_in_this_process) {
@@ -75,17 +76,17 @@ Position Spacecraft::getCmatPos(const unsigned int cmat_itr) {
 }
 
 auto Spacecraft::getTotalCharge(const tdArray& rho) const {
-    double total_charge = 0.0;
+    double q = 0.0;
 
     for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
         if (isMyCmat(cmat_itr)) {
             const auto& pos = capacity_matrix_relation.at(cmat_itr);
-            total_charge += rho[pos.i][pos.j][pos.k];
+            q += rho[pos.i][pos.j][pos.k];
         }
     }
-    total_charge = MPIw::Environment::Comms[name].sum(total_charge);
+    q = MPIw::Environment::Comms[name].sum(q);
 
-    return total_charge;
+    return q;
 }
 
 void Spacecraft::makeCmatrixInvert(void) {
@@ -147,10 +148,8 @@ void Spacecraft::applyCharge(tdArray& rho) const {
 }
 
 void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
-#ifdef CHARGE_CONSERVATION
     auto q = getTotalCharge(rho);
     cout << "charge before redist: " << q << endl;
-#endif
 
     double capacity_times_phi = 0.0;
     //! relationの中には元々内部ノードのPositionしか保存されていないので、
@@ -188,10 +187,22 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
         }
     }
 
-#ifdef CHARGE_CONSERVATION
     q = getTotalCharge(rho);
     cout << "charge after redist: " << q << endl;
-#endif
+    // update total charge for output
+    total_charge = q;
+}
+
+std::string Spacecraft::getLogHeader() const {
+    std::string header = (format("%16s %16s %16s") % "Potential [V]" % "Charge [C]" % "Current [A]").str();
+    return header;
+}
+
+std::string Spacecraft::getLogEntry() const {
+    std::string entry = (format("%16.7e %16.7e") %
+        Normalizer::unnormalizePotential(potential) %
+        Normalizer::unnormalizeCharge(total_charge)).str();
+    return entry;
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {

@@ -16,6 +16,9 @@ namespace IO {
     void plotParticleEnergyDistribution(ParticleArray const&, const std::string filename_header = "");
     void plotParticleDistribution(ParticleArray const&, const std::string, const std::string);
 
+    //! オブジェクトデータ出力
+    void plotObjectsData(const Grid&);
+
     // 場のデータ等の出力用関数
     void writeDataInParallel(Grid&, const int, const std::string&);
     void generateXdmf(const int timestep, const std::string& data_type_name);

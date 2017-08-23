@@ -120,9 +120,19 @@ namespace IO {
         }
     }
 
-    void plotObjectData(Grid const& g) {
+    void plotObjectsData(Grid const& g) {
         for(const auto& object : g.getObjects()) {
-            cout << object << endl;
+            std::string filename = "data/" + object.getName() + ".txt";
+
+            if (true) {
+                if(Environment::timestep == 1) {
+                    const auto header = object.getLogHeader();
+                    putHeader(filename, header);
+                }
+
+                const std::string& entry = object.getLogEntry();
+                putLog(filename, entry);
+            }
         }
     }
 
