@@ -6,7 +6,7 @@ class ParticleType;
 
 struct Environment {
     private:
-        static bool isPlot(const std::string type) {
+        static bool isPlotTimestep(const std::string type) {
             if(type == "potential"     && plot_potential_width     != 0) return (timestep % plot_potential_width == 0);
             if(type == "rho"           && plot_rho_width           != 0) return (timestep % plot_rho_width == 0);
             if(type == "efield"        && plot_efield_width        != 0) return (timestep % plot_efield_width == 0);
@@ -88,14 +88,14 @@ struct Environment {
         static void checkCFLCondition(void);
 
         // plot timing
-        static bool plotPotential(void)    { return isPlot("potential"); }
-        static bool plotRho(void)          { return isPlot("rho"); }
-        static bool plotEfield(void)       { return isPlot("efield"); }
-        static bool plotBfield(void)       { return isPlot("bfield"); }
-        static bool plotDensity(void)      { return isPlot("density"); }
-        static bool plotParticle(void)     { return isPlot("particle"); }
-        static bool plotEnergy(void)       { return isPlot("energy"); }
-        static bool plotEnergyDist(void)   { return isPlot("energy_dist"); }
-        static bool plotVelocityDist(void) { return isPlot("velocity_dist"); }
+        static bool plotPotential(void)    { return isPlotTimestep("potential"); }
+        static bool plotRho(void)          { return isPlotTimestep("rho"); }
+        static bool plotEfield(void)       { return isPlotTimestep("efield"); }
+        static bool plotBfield(void)       { return isPlotTimestep("bfield"); }
+        static bool plotDensity(void)      { return isPlotTimestep("density"); }
+        static bool plotParticle(void)     { return isPlotTimestep("particle"); }
+        static bool plotEnergy(void)       { return isPlotTimestep("energy"); }
+        static bool plotEnergyDist(void)   { return isPlotTimestep("energy_dist"); }
+        static bool plotVelocityDist(void) { return isPlotTimestep("velocity_dist"); }
 };
 #endif
