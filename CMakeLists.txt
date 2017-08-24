@@ -23,7 +23,7 @@ if(LOCAL_LIBRARY_DIR)
     message(STATUS "LOCAL_LIBRARY_DIR = ${LOCAL_LIBRARY_DIR}")
     link_directories(${LOCAL_LIBRARY_DIR}/lib)
     include_directories(${LOCAL_LIBRARY_DIR}/include)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${LOCAL_LIBRARY_DIR}/cmake)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${LOCAL_LIBRARY_DIR}/cmake ${LOCAL_LIBRARY_DIR}/share/cmake)
     message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
 endif()
 
