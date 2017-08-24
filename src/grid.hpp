@@ -47,7 +47,8 @@ class Grid {
         static unsigned int nextID;
 
         // データ出力用のnodes/edges/faces/cellsを取り出す
-        boost::multi_array<float, 3> getTrueNodes(const tdArray& x3D, const double unnorm = 1.0);
+        boost::multi_array<float, 3> getTrueNodes(const tdArray& x3D, const double unnorm = 1.0) const;
+        boost::multi_array<float, 3> getDensity(const int) const;
 
         //! データ出力用のnodesの数を返す
         int getXNodeSize(void) const;
@@ -255,11 +256,8 @@ class Grid {
         std::vector< std::vector<int> > getIDMapOnRoot(void);
         void addIDToVector(std::vector< std::vector<int> >&);
 
-        // QuadMeshとVarをDBfileに突っ込む
+        // HDF5にデータを突っ込む
         void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp);
-
-        // 出力用に密度を計算して返す
-        float* getDensity(const int);
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);

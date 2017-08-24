@@ -323,39 +323,6 @@ void Grid::checkGridValidness() {
     if(!isValid) MPIw::Environment::abort(1);
 }
 
-//! 粒子の位置から密度を計算する
-float* Grid::getDensity(const int pid) {
-    // ZONECENTなので-1する
-    const int xsize = this->getXNodeSize() - 1;
-    const int ysize = this->getYNodeSize() - 1;
-    const int zsize = this->getZNodeSize() - 1;
-    float* zone_density = new float[xsize * ysize * zsize];
-    const int maxitr = xsize*ysize*zsize;
-
-    //! initialize
-    for(int i = 0; i < maxitr; ++i){
-        zone_density[i] = 0.0f;
-    }
-
-    const auto size = static_cast<float>(Normalizer::unnormalizeDensity(Environment::ptype[pid].getSize()));
-
-    for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
-        Particle& p = particles[pid][pnum];
-
-        if(p.isValid) {
-            Position pos(p);
-            int i = pos.i - 1; // 対応する zone 番号へ変換
-            int j = pos.j - 1;
-            int k = pos.k - 1;
-
-            int itr = i + xsize*j + xsize*ysize*k;
-            zone_density[itr] += size;
-        }
-    }
-
-    return zone_density;
-}
-
 //! @note: childrenのエネルギーも取る?
 double Grid::getEFieldEnergy(void) const {
     return field->getEfieldEnergy();
@@ -548,7 +515,31 @@ int Grid::getZNodeSize(void) const {
 }
 
 //! for DATA IO
-boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double unnorm){
+//! 粒子の位置から密度を計算する
+boost::multi_array<float, 3> Grid::getDensity(const int pid) const {
+    // ZONECENTなので-1する
+    const int xsize = this->getXNodeSize() - 1;
+    const int ysize = this->getYNodeSize() - 1;
+    const int zsize = this->getZNodeSize() - 1;
+
+    boost::multi_array<float, 3> zones(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
+    const auto size = static_cast<float>(Normalizer::unnormalizeDensity(Environment::ptype[pid].getSize()));
+
+    for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
+        const Particle& p = particles[pid][pnum];
+
+        if(p.isValid) {
+            Position pos(p);
+            zones[pos.i - 1][pos.j - 1][pos.k - 1] += size;
+        }
+    }
+
+    // RVO
+    return zones;
+}
+
+//! Glueノードを含まないデータを生成
+boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double unnorm) const {
     int xsize = this->getXNodeSize();
     int ysize = this->getYNodeSize();
     int zsize = this->getZNodeSize();
@@ -568,115 +559,6 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double
 }
 
 // -- DATA IO methods --
-/*
-void Grid::putQuadMesh(DBfile* file, std::string dataTypeName, const char* coordnames[3], int rankInGroup, DBoptlist* optListMesh, DBoptlist* optListVar){
-    const int dim = 3;
-
-    // dimensions
-    // glue cellは出力しない
-    int dimensions[3];
-    dimensions[0] = this->getXNodeSize();
-    dimensions[1] = this->getYNodeSize();
-    dimensions[2] = this->getZNodeSize();
-
-    // the array of coordinate arrays
-    float** coordinates = this->getMeshNodes(dim);
-
-    // quadmesh and quadvar name
-    std::string meshname = (format("/block%04d/mesh%04d%04d") % rankInGroup % MPIw::Environment::rank % id).str();
-    std::string varname = (format("/block%04d/%s%04d%04d") % rankInGroup % dataTypeName % MPIw::Environment::rank % id).str();
-
-    const char* m = meshname.c_str();
-    const char* v = varname.c_str();
-    DBPutQuadmesh(file, m, coordnames, coordinates, dimensions, dim, DB_FLOAT, DB_COLLINEAR, optListMesh);
-
-    delete [] coordinates[0];
-    delete [] coordinates[1];
-    delete [] coordinates[2];
-    delete [] coordinates;
-
-    if(dataTypeName == "potential") {
-        float* tdArray = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
-        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
-        delete [] tdArray;
-    } else if(dataTypeName == "rho") {
-        float* tdArray = this->getTrueNodes(field->getRho());
-        DBPutQuadvar1(file, v, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
-        delete [] tdArray;
-    } else if(dataTypeName == "efield") {
-        // const char* varnames[3] = {"ex", "ey", "ez"};
-        // float* vars[3];
-        // vars[0] = Utils::getTrueEdges(this->getField()->getEx(), 0);
-        // vars[1] = Utils::getTrueEdges(this->getField()->getEy(), 1);
-        // vars[2] = Utils::getTrueEdges(this->getField()->getEz(), 2);
-        // DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_EDGECENT, optListVar);
-        // delete [] vars[0];
-        // delete [] vars[1];
-        // delete [] vars[2];
-        const char* varnames[3] = {"ex", "ey", "ez"};
-        float* vars[3];
-        vars[0] = getTrueNodes(field->getExRef());
-        vars[1] = getTrueNodes(field->getEyRef());
-        vars[2] = getTrueNodes(field->getEzRef());
-        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
-        delete [] vars[0];
-        delete [] vars[1];
-        delete [] vars[2];
-    } else if(dataTypeName == "bfield") {
-        const char* varnames[3] = {"bx", "by", "bz"};
-        float* vars[3];
-        vars[0] = getTrueNodes(field->getBxRef());
-        vars[1] = getTrueNodes(field->getByRef());
-        vars[2] = getTrueNodes(field->getBzRef());
-        DBPutQuadvar(file, v, m, 3, varnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_NODECENT, optListVar);
-        delete [] vars[0];
-        delete [] vars[1];
-        delete [] vars[2];
-    } else if(dataTypeName == "density") {
-        // zone centに変更
-        dimensions[0] -= 1;
-        dimensions[1] -= 1;
-        dimensions[2] -= 1;
-        
-        const auto num_of_ptypes = Environment::num_of_particle_types;
-
-        if(num_of_ptypes == 1) {
-            float* tdArray = this->getDensity(0);
-            const char* vname = Environment::ptype[0].getName().c_str();
-            DBPutQuadvar1(file, vname, m, tdArray, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
-            delete [] tdArray;
-        } else {
-            float** vars = new float*[num_of_ptypes];
-            char** vnames = new char*[num_of_ptypes];
-            for(int pid = 0; pid < num_of_ptypes; ++pid){
-                std::string pname = Environment::ptype[pid].getName();
-                vnames[pid] = new char[pname.size() + 1];
-                std::strcpy(vnames[pid], pname.c_str());
-
-                // 密度配列の取得
-                vars[pid] = this->getDensity(pid);
-            }
-
-            DBPutQuadvar(file, v, m, num_of_ptypes, vnames, vars, dimensions, dim, NULL, 0, DB_FLOAT, DB_ZONECENT, optListVar);
-
-            for(int pid = 0; pid < num_of_ptypes; ++pid){
-                delete [] vars[pid];
-                delete [] vnames[pid];
-            }
-            delete [] vnames;
-            delete [] vars;
-        }
-    } else {
-        throw std::invalid_argument("[ERROR] Invalid argument was passed to putQuadMesh().");
-    }
-    
-    for(int i = 0; i < children.size(); ++i) {
-        children[i]->putQuadMesh(file, dataTypeName, coordnames, rankInGroup, optListMesh, optListVar);
-    }
-
-}
-*/
-
 void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) {
     const std::string& level_str = "level" + std::to_string(level);
     HighFive::Group local_group;
@@ -748,6 +630,20 @@ void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_nam
             }
         }
     } else if(data_type_name == "density") {
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            const std::string& pname = Environment::ptype[pid].getName();
+
+            HighFive::Group particle_group;
+
+            if (local_group.exist(pname)) {
+                particle_group = local_group.getGroup(pname);
+            } else {
+                particle_group = local_group.createGroup(pname);
+            }
+            auto values = this->getDensity(pid);
+            auto dataset = particle_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+            dataset.write(values);
+        }
     }
 
     for(int i = 0; i < children.size(); ++i) {
