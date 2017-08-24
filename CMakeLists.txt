@@ -6,7 +6,7 @@ option(COPY_SAMPLE_INPUT "Copy input.json to build dir."        ON)
 option(DEBUG             "Build in Debug Mode."                 ON)
 option(CHARGE_CONSERVATION "Check charge conservation on each step." ON)
 option(WITH_TEST         "Build Test code."                     ON)
-set(LOCAL_LIBRARY_DIR "NOTFOUND" CACHE PATH "Specified local library path to include.")
+set(LOCAL_LIBRARYDIR "NOTFOUND" CACHE PATH "Specified local library path to include and link.")
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -19,11 +19,11 @@ configure_file(${CMAKE_SOURCE_DIR}/include/tdpic_configure.h.in ${CMAKE_SOURCE_D
 
 set(CXX_REQUIRED_LIBS "")
 # add local library
-if(LOCAL_LIBRARY_DIR)
-    message(STATUS "LOCAL_LIBRARY_DIR = ${LOCAL_LIBRARY_DIR}")
-    link_directories(${LOCAL_LIBRARY_DIR}/lib)
-    include_directories(${LOCAL_LIBRARY_DIR}/include)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${LOCAL_LIBRARY_DIR}/cmake ${LOCAL_LIBRARY_DIR}/share/cmake)
+if(LOCAL_LIBRARYDIR)
+    message(STATUS "LOCAL_LIBRARYDIR = ${LOCAL_LIBRARYDIR}")
+    link_directories(${LOCAL_LIBRARYDIR}/lib)
+    include_directories(${LOCAL_LIBRARYDIR}/include)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${LOCAL_LIBRARYDIR}/cmake ${LOCAL_LIBRARYDIR}/share/cmake)
     message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
 endif()
 
@@ -47,7 +47,7 @@ message(STATUS "HOME PATH = ${HOME}")
 set(CMAKE_SUPPRESS_REGENERATION true)
 
 # Boost
-set(BOOST_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS filesystem system)
 link_directories( ${Boost_LIBRARY_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
@@ -59,7 +59,7 @@ message(STATUS "Boost LIBRARIES  : ${Boost_LIBRARIES}")
 # HDF5 and zlib
 set (LIB_TYPE STATIC)
 string(TOLOWER ${LIB_TYPE} SEARCH_TYPE)
-find_package (HDF5 NAMES hdf5 COMPONENTS C ${SEARCH_TYPE})
+find_package (HDF5 NAMES hdf5 REQUIRED COMPONENTS C ${SEARCH_TYPE} )
 link_directories(${HDF5_LIBRARY_DIRS}) # for zlib inclusion
 set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_C_${LIB_TYPE}_LIBRARY})
 
@@ -90,8 +90,8 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # MS MPI
     # set(CMAKE_C_COMPILER mpicc)
     # set(CMAKE_CXX_COMPILER mpicxx)
-    set(CMAKE_CXX_FLAGS_DEBUG "/GL- ${CXX_WARNING_FLAGS}")
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2")
+    set(CMAKE_CXX_FLAGS_DEBUG "/MDd /GL- ${CXX_WARNING_FLAGS}")
+    set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2")
 
     # MS MPI Dirs
     set(MSMPI_INCDIR "$ENV{MSMPI_INC}")
