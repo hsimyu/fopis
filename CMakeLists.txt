@@ -2,14 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 project(TDPIC)
 
 # options
-option(BUILD_FOR_HOST    "Build for the login node."            ON)
-option(COPY_DEBUG_MPIRUN_SCRIPT   "Copy gdb_mpirun.sh to build dir." ON)
 option(COPY_SAMPLE_INPUT "Copy input.json to build dir."        ON)
 option(DEBUG             "Build in Debug Mode."                 ON)
 option(CHARGE_CONSERVATION "Check charge conservation on each step." ON)
 option(WITH_TEST         "Build Test code."                     ON)
+set(LOCAL_LIBRARY_DIR "NOTFOUND" CACHE PATH "Specified local library path to include.")
 
-set(CXX_REQUIRED_LIBS "")
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -19,7 +17,17 @@ set(TDPIC_REVISION ${CMAKE_REVISION})
 
 configure_file(${CMAKE_SOURCE_DIR}/include/tdpic_configure.h.in ${CMAKE_SOURCE_DIR}/include/tdpic_configure.h @ONLY)
 
-# add submodules
+set(CXX_REQUIRED_LIBS "")
+# add local library
+if(LOCAL_LIBRARY_DIR)
+    message(STATUS "LOCAL_LIBRARY_DIR = ${LOCAL_LIBRARY_DIR}")
+    link_directories(${LOCAL_LIBRARY_DIR}/lib)
+    include_directories(${LOCAL_LIBRARY_DIR}/include)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${LOCAL_LIBRARY_DIR}/cmake)
+    message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
+endif()
+
+# add include and submodules
 include_directories(${CMAKE_SOURCE_DIR}/picojson)
 include_directories(${CMAKE_SOURCE_DIR}/SimpleXdmf/include)
 include_directories(${CMAKE_SOURCE_DIR}/HighFive/include)
@@ -29,72 +37,61 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(HOME "$ENV{USERPROFILE}")
-    set(CMAKE_SUPPRESS_REGENERATION true)
-    set(BOOST_USE_STATIC_LIBS ON)
-
-    find_package( Boost REQUIRED COMPONENTS filesystem system)
-    include_directories( ${Boost_INCLUDE_DIRS} )
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
-    message(STATUS "Boost: ${Boost_LIBRARIES}")
-
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(HOME "$ENV{HOME}")
-    find_package( Boost REQUIRED COMPONENTS filesystem system)
-    include_directories( ${Boost_INCLUDE_DIRS} )
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
-    message(STATUS "Boost: ${Boost_LIBRARIES}")
-
-    # Doxygen
-    FIND_PACKAGE(Doxygen)
-    IF(DOXYGEN_FOUND)
-        SET(DOXYGEN_CONF_FILE "doxygen.conf")
-        SET(DOXYGEN_CONF_PATH ${CMAKE_CURRENT_BINARY_DIR}/${DOXYGEN_CONF_FILE})
-        SET(DOXYGEN_SOURCE_DIR ${CMAKE_SOURCE_DIR})
-        SET(DOXYGEN_TARGET "doc" )
-
-        CONFIGURE_FILE(${DOXYGEN_CONF_FILE}.in ${DOXYGEN_CONF_PATH})
-
-        ADD_CUSTOM_TARGET(${DOXYGEN_TARGET}
-            ${DOXYGEN_EXECUTABLE} ${DOXYGEN_CONF_PATH} && open ${CMAKE_BINARY_DIR}/doc/html/index.html
-            DEPENDS  ${DOXYGEN_CONF_PATH})
-    ELSE(DOXYGEN_FOUND)
-        MESSAGE (WARNING "Doxygen binary couldn't be found")
-    ENDIF(DOXYGEN_FOUND)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(HOME "$ENV{HOME}")
-    find_package( Boost REQUIRED COMPONENTS filesystem system)
-    include_directories( ${Boost_INCLUDE_DIRS} )
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
-    message(STATUS "Boost: ${Boost_LIBRARIES}")
 endif()
-message(STATUS "HOME              = ${HOME}")
+message(STATUS "HOME PATH = ${HOME}")
 
-set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
+set(CMAKE_SUPPRESS_REGENERATION true)
+
+# Boost
+set(BOOST_USE_STATIC_LIBS ON)
+find_package(Boost REQUIRED COMPONENTS filesystem system)
+link_directories( ${Boost_LIBRARY_DIRS} )
+include_directories( ${Boost_INCLUDE_DIRS} )
+set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${Boost_LIBRARIES})
+message(STATUS "Boost LIBRARY DIR: ${Boost_LIBRARY_DIRS}")
+message(STATUS "Boost INCLUDE DIR: ${Boost_INCLUDE_DIRS}")
+message(STATUS "Boost LIBRARIES  : ${Boost_LIBRARIES}")
+
+# HDF5 and zlib
+set (LIB_TYPE STATIC)
+string(TOLOWER ${LIB_TYPE} SEARCH_TYPE)
+find_package (HDF5 NAMES hdf5 COMPONENTS C ${SEARCH_TYPE})
+link_directories(${HDF5_LIBRARY_DIRS}) # for zlib inclusion
+set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_C_${LIB_TYPE}_LIBRARY})
+
+# Doxygen (optional)
+find_package(Doxygen)
+IF(DOXYGEN_FOUND)
+    SET(DOXYGEN_CONF_FILE "doxygen.conf")
+    SET(DOXYGEN_CONF_PATH ${CMAKE_CURRENT_BINARY_DIR}/${DOXYGEN_CONF_FILE})
+    SET(DOXYGEN_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+    SET(DOXYGEN_TARGET "doc" )
+
+    CONFIGURE_FILE(${DOXYGEN_CONF_FILE}.in ${DOXYGEN_CONF_PATH})
+
+    ADD_CUSTOM_TARGET(${DOXYGEN_TARGET}
+        ${DOXYGEN_EXECUTABLE} ${DOXYGEN_CONF_PATH} && open ${CMAKE_BINARY_DIR}/doc/html/index.html
+        DEPENDS  ${DOXYGEN_CONF_PATH})
+ENDIF(DOXYGEN_FOUND)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
+
     #set(CRAYPE_LINK_TYPE "dynamic")
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
-
-    if(${DEBUG})
-        set(CMAKE_BUILD_TYPE Debug)
-        add_definitions(-DDEBUG)
-    else()
-        set(CMAKE_BUILD_TYPE Release)
-    endif()
-
-    if(BUILD_FOR_HOST)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
-    endif()
-
-    message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    set(CXX_WARNING_FLAGS "/W4")
 
     # MS MPI
     # set(CMAKE_C_COMPILER mpicc)
     # set(CMAKE_CXX_COMPILER mpicxx)
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64")
+    set(CMAKE_CXX_FLAGS_DEBUG "/GL- ${CXX_WARNING_FLAGS}")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2")
 
     # MS MPI Dirs
     set(MSMPI_INCDIR "$ENV{MSMPI_INC}")
@@ -103,17 +100,9 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     include_directories(${MSMPI_INCDIR})
     find_library(LIB_MSMPI msmpi HINTS ${MSMPI_LIBDIR})
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_MSMPI})
-
-    if(${DEBUG})
-        set(CMAKE_BUILD_TYPE Debug)
-        add_definitions(-DDEBUG)
-    else()
-        set(CMAKE_BUILD_TYPE Release)
-    endif()
-
-    message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 else()
     # Flags for Darwin build
+    set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
 
     # OpenMPI
     set(CMAKE_C_COMPILER /usr/local/bin/mpicc)
@@ -121,24 +110,17 @@ else()
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64")
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64")
 
-    if(${DEBUG})
-        set(CMAKE_BUILD_TYPE Debug)
-        add_definitions(-DDEBUG)
-    else()
-        set(CMAKE_BUILD_TYPE Release)
-    endif()
-
     # MPI LIBRARIES
     find_library(MPI_LIBS mpi HINTS /usr/local/lib)
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${MPI_LIBS})
+endif()
+message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
 
-    # options for silo
-    set(HOME_ROOT "${HOME}/local/")
-    set(HOME_LIBRARIES "${HOME_ROOT}/lib")
-    find_library(LIB_HDF5 hdf5 HINTS ${HOME_LIBRARIES})
-
-    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_Z} ${LIB_HDF5})
-    message(STATUS "CXX_REQUIRED_LIBS: ${CXX_REQUIRED_LIBS}")
+if(${DEBUG})
+    set(CMAKE_BUILD_TYPE Debug)
+    add_definitions(-DDEBUG)
+else()
+    set(CMAKE_BUILD_TYPE Release)
 endif()
 
 # enable computation validation
@@ -163,36 +145,36 @@ else()
 endif()
 # -----------------
 
-# add include
-INCLUDE_DIRECTORIES("${HOME}/local/include")
 file(GLOB SRCS src/*.cpp)
 
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${CXX_REQUIRED_LIBS})
 
-if(${COPY_DEBUG_MPIRUN_SCRIPT})
-    add_custom_command(
-        OUTPUT copy_debug_mpirun_command
-        COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/scripts/lldb_mpirun.sh" "${CMAKE_BINARY_DIR}/lldb_mpirun.sh"
-    )
-
-    add_custom_target(copy_debug_mpirun DEPENDS copy_debug_mpirun_command)
-    add_dependencies(tdpic copy_debug_mpirun)
-endif()
-
 if(${COPY_SAMPLE_INPUT})
-    add_custom_command(
-        OUTPUT copy_json
-        COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/input_samples/input.json" "${CMAKE_BINARY_DIR}/input.json"
-    )
+    if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+        # add_custom_command(
+        #     OUTPUT copy_json
+        #     COMMAND copy "\"${CMAKE_CURRENT_SOURCE_DIR}/input_samples/input.json\"" "\"${CMAKE_BINARY_DIR}/input.json\""
+        # )
+        # add_custom_command(
+        #     OUTPUT copy_objects_dir
+        #     COMMAND copy "${CMAKE_CURRENT_SOURCE_DIR}\\input_samples\\objects" "${CMAKE_BINARY_DIR}\\"
+        # )
+        # add_custom_target(copy_sample_input DEPENDS copy_json)
+        # add_dependencies(tdpic copy_sample_input)
+    else()
+        add_custom_command(
+            OUTPUT copy_json
+            COMMAND cp "${CMAKE_CURRENT_SOURCE_DIR}/input_samples/input.json" "${CMAKE_BINARY_DIR}/input.json"
+        )
 
-    add_custom_command(
-        OUTPUT copy_objects_dir
-        COMMAND cp -r "${CMAKE_CURRENT_SOURCE_DIR}/input_samples/objects" "${CMAKE_BINARY_DIR}/"
-    )
-
-    add_custom_target(copy_sample_input DEPENDS copy_json copy_objects_dir)
-    add_dependencies(tdpic copy_sample_input)
+        add_custom_command(
+            OUTPUT copy_objects_dir
+            COMMAND cp -r "${CMAKE_CURRENT_SOURCE_DIR}/input_samples/objects" "${CMAKE_BINARY_DIR}/"
+        )
+        add_custom_target(copy_sample_input DEPENDS copy_json copy_objects_dir)
+        add_dependencies(tdpic copy_sample_input)
+    endif()
 endif()
 
 # compiler info

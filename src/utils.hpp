@@ -3,6 +3,7 @@
 #include <picojson.h>
 #include "global.hpp"
 #include <boost/numeric/ublas/matrix.hpp>
+#include <chrono>
 
 namespace Utils {
     void printTotalMemory(void);
