@@ -15,8 +15,21 @@ protected:
     static double m_unit;
     static double e_unit;
 
-    //! 単位系が変更された際に物理定数を更新する
+    //! @note: よく使う単位は事前計算しておくと早い
+    static double V_unit;
+    static double A_unit;
+    static double x_pow_3;
+
+    //! 単位系が変更された際に内部の値を更新する
     static void updatePhysicalConstants(void) {
+        x_pow_3 = pow(x_unit, 3);
+
+        //! V = m^2 kg / C s^2
+        V_unit = pow(x_unit, 2) * m_unit / (e_unit * pow(t_unit, 2));
+
+        //! A = C / s
+        A_unit = e_unit / t_unit;
+
         eps0 = normalizeEpsilon(::eps0);
         mu0 = normalizeMu(::mu0);
         c = normalizeVelocity(::c);
@@ -91,22 +104,32 @@ public:
 
     //! V = m^2 kg / s^3 A = m^2 kg / C s^2 -> 1
     static double normalizePotential(double raw_phi) {
-        return raw_phi * pow(t_unit, 2) * e_unit / (pow(x_unit, 2) * m_unit);
+        return raw_phi / V_unit;
     }
 
     //! 1 -> m^2 kg / s^2 C = V
     static double unnormalizePotential(double normalized_phi) {
-        return normalized_phi * (pow(x_unit, 2) * m_unit) / (pow(t_unit, 2) * e_unit);
+        return normalized_phi * V_unit;
+    }
+
+    //! 1 -> C / m^3
+    static double unnormalizeRho(double normalized_rho) {
+        return normalized_rho * e_unit / x_pow_3;
     }
 
     //! V/m = m kg / s^3 A = m kg / s^2 C -> 1
     static double normalizeEfield(double raw_efield) {
-        return raw_efield * pow(t_unit, 2) * e_unit / (x_unit * m_unit);
+        return raw_efield * x_unit / V_unit;
     }
 
     //! 1 -> m kg / C s^2 = V / m
     static double unnormalizeEfield(double normalized_efield) {
-        return normalized_efield * (x_unit * m_unit) / (pow(t_unit, 2) * e_unit);
+        return normalized_efield * V_unit / x_unit;
+    }
+
+    //! 1 -> T = kg / C s
+    static double unnormalizeBfield(double normalized_bfield) {
+        return normalized_bfield * m_unit / (pow(t_unit, 2) * e_unit);
     }
 
     //! kg m^2 / s^2 -> 1
@@ -121,12 +144,12 @@ public:
 
     //! s^4 A^2 / kg m^3 = C^2 s^2 / kg m^3 -> 1
     static double normalizeEpsilon(double raw_epsilon) {
-        return raw_epsilon * (pow(x_unit, 3) * m_unit) / (pow(e_unit, 2) * pow(t_unit, 2));
+        return raw_epsilon * (x_pow_3 * m_unit) / (pow(e_unit, 2) * pow(t_unit, 2));
     }
 
     //! 1 -> C^2 s^2 / kg m^3
     static double unnormalizeEpsilon(double normalized_eps) {
-        return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (pow(x_unit, 3) * m_unit);
+        return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (x_pow_3 * m_unit);
     }
 
     //! m kg / s^2 A^2 = m kg / C^2 -> 1
@@ -140,11 +163,11 @@ public:
     }
 
     static double normalizeDensity(double raw_density) {
-        return raw_density * pow(x_unit, 3);
+        return raw_density * x_pow_3;
     }
 
     static double unnormalizeDensity(double normalized_density) {
-        return normalized_density / pow(x_unit, 3);
+        return normalized_density / x_pow_3;
     }
 
     static double normalizeFlux(double raw_flux) {
