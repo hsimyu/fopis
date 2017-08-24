@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 project(TDPIC)
 
 # options
-option(COPY_SAMPLE_INPUT "Copy input.json to build dir."        ON)
-option(DEBUG             "Build in Debug Mode."                 ON)
+option(COPY_SAMPLE_INPUT "Copy input.json to build dir." ON)
+option(DEBUG "Build in Debug Mode." ON)
 option(CHARGE_CONSERVATION "Check charge conservation on each step." ON)
-option(WITH_TEST         "Build Test code."                     ON)
+option(WITH_TEST "Build Test code." OFF)
 set(LOCAL_LIBRARYDIR "NOTFOUND" CACHE PATH "Specified local library path to include and link.")
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -43,8 +43,6 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(HOME "$ENV{HOME}")
 endif()
 message(STATUS "HOME PATH = ${HOME}")
-
-set(CMAKE_SUPPRESS_REGENERATION true)
 
 # Boost
 set(Boost_USE_STATIC_LIBS ON)
@@ -100,6 +98,17 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     include_directories(${MSMPI_INCDIR})
     find_library(LIB_MSMPI msmpi HINTS ${MSMPI_LIBDIR})
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${LIB_MSMPI})
+
+    FILE(WRITE "${CMAKE_CURRENT_BINARY_DIR}/mpirun_tdpic.vcxproj.user"
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        "<Project ToolsVersion=\"15.0\">\n"
+        "<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">\n"
+        "<LocalDebuggerCommand>$ENV{MSMPI_BIN}mpiexec.exe</LocalDebuggerCommand>\n"
+        "<LocalDebuggerCommandArguments>-np 4 $(ProjectName).$(OutputType)</LocalDebuggerCommandArguments>\n"
+        "<DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>\n"
+        "<LocalDebuggerWorkingDirectory>$(ProjectDir)$(Configuration)</LocalDebuggerWorkingDirectory>\n"
+        "</PropertyGroup>\n"
+        "</Project>\n")
 else()
     # Flags for Darwin build
     set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
@@ -149,6 +158,9 @@ file(GLOB SRCS src/*.cpp)
 
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${CXX_REQUIRED_LIBS})
+
+add_executable(mpirun_tdpic EXCLUDE_FROM_ALL ${SRCS})
+target_link_libraries(mpirun_tdpic ${CXX_REQUIRED_LIBS})
 
 if(${COPY_SAMPLE_INPUT})
     if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
