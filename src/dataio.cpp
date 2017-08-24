@@ -23,11 +23,10 @@ namespace IO {
         static H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
 
         HighFive::Group data_group;
-        
-        if (file.exist(data_type_name)) {
-            data_group = file.getGroup(data_type_name);
+        if (file.exist(i_timestamp)) {
+            data_group = file.getGroup(i_timestamp);
         } else {
-            data_group = file.createGroup(data_type_name);
+            data_group = file.createGroup(i_timestamp);
         }
 
         g.putFieldData(data_group, data_type_name, i_timestamp);

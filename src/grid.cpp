@@ -560,88 +560,69 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double
 
 // -- DATA IO methods --
 void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) {
-    const std::string& level_str = "level" + std::to_string(level);
-    HighFive::Group local_group;
+    auto getGroup = [](auto& g, const std::string& group_name) {
+        if (g.exist(group_name)) {
+            return g.getGroup(group_name);
+        } else {
+            return g.createGroup(group_name);
+        }
+    };
 
-    if (group.exist(level_str)) {
-        local_group = group.getGroup(level_str);
-    } else {
-        local_group = group.createGroup(level_str);
-    }
+    const std::string& level_str = "level" + std::to_string(level);
+    HighFive::Group local_group = getGroup(group, level_str);
 
     if (data_type_name == "potential") {
         auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
-        auto dataset = local_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+        auto dataset = local_group.createDataSet<float>(data_type_name, HighFive::DataSpace::From(values));
         dataset.write(values);
     } else if(data_type_name == "rho") {
         auto values = this->getTrueNodes(field->getRho(), Normalizer::unnormalizeRho(1.0));
-        auto dataset = local_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+        auto dataset = local_group.createDataSet<float>(data_type_name, HighFive::DataSpace::From(values));
         dataset.write(values);
     } else if(data_type_name == "efield") {
+        HighFive::Group data_type_group = getGroup(local_group, data_type_name);
+
         const std::array<std::string, 3> axis{"ex", "ey", "ez"};
-
         for(const auto& group_name : axis) {
-            HighFive::Group vector_group;
-
-            if (local_group.exist(group_name)) {
-                vector_group = local_group.getGroup(group_name);
-            } else {
-                vector_group = local_group.createGroup(group_name);
-            }
-
             if (group_name == "ex") {
                 auto values = this->getTrueNodes(field->getExRef(), Normalizer::unnormalizeEfield(1.0));
-                auto dataset = vector_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
                 dataset.write(values);
             } else if (group_name == "ey") {
                 auto values = this->getTrueNodes(field->getEyRef(), Normalizer::unnormalizeEfield(1.0));
-                auto dataset = vector_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
                 dataset.write(values);
             } else if (group_name == "ez") {
                 auto values = this->getTrueNodes(field->getEzRef(), Normalizer::unnormalizeEfield(1.0));
-                auto dataset = vector_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
                 dataset.write(values);
             }
         }
     } else if(data_type_name == "bfield") {
+        HighFive::Group data_type_group = getGroup(local_group, data_type_name);
         const std::array<std::string, 3> axis{"bx", "by", "bz"};
 
         for(const auto& group_name : axis) {
-            HighFive::Group vector_group;
-
-            if (local_group.exist(group_name)) {
-                vector_group = local_group.getGroup(group_name);
-            } else {
-                vector_group = local_group.createGroup(group_name);
-            }
-
             if (group_name == "bx") {
                 auto values = this->getTrueNodes(field->getBxRef(), Normalizer::unnormalizeBfield(1.0));
-                auto dataset = vector_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
                 dataset.write(values);
             } else if (group_name == "by") {
                 auto values = this->getTrueNodes(field->getByRef(), Normalizer::unnormalizeBfield(1.0));
-                auto dataset = vector_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
                 dataset.write(values);
             } else if (group_name == "bz") {
                 auto values = this->getTrueNodes(field->getBzRef(), Normalizer::unnormalizeBfield(1.0));
-                auto dataset = vector_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
                 dataset.write(values);
             }
         }
     } else if(data_type_name == "density") {
+        HighFive::Group data_type_group = getGroup(local_group, data_type_name);
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
             const std::string& pname = Environment::ptype[pid].getName();
-
-            HighFive::Group particle_group;
-
-            if (local_group.exist(pname)) {
-                particle_group = local_group.getGroup(pname);
-            } else {
-                particle_group = local_group.createGroup(pname);
-            }
             auto values = this->getDensity(pid);
-            auto dataset = particle_group.createDataSet<float>(i_timestamp, HighFive::DataSpace::From(values));
+            auto dataset = data_type_group.createDataSet<float>(pname, HighFive::DataSpace::From(values));
             dataset.write(values);
         }
     }
