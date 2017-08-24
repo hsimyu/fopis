@@ -19,10 +19,18 @@ namespace IO {
         const std::string file_name = "data/" + rank_str + ".h5";
 
         using H5F = HighFive::File;
-        // initialize file and group pointers only once
+        // initialize file pointer only once
         static H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
-        static HighFive::Group group = file.createGroup(data_type_name);
-        g.putFieldData(group, data_type_name, i_timestamp);
+
+        HighFive::Group data_group;
+        
+        if (file.exist(data_type_name)) {
+            data_group = file.getGroup(data_type_name);
+        } else {
+            data_group = file.createGroup(data_type_name);
+        }
+
+        g.putFieldData(data_group, data_type_name, i_timestamp);
     }
 
     void generateXdmf(const int timestep, const std::string& data_type_name) {

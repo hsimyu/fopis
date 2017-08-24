@@ -82,13 +82,12 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     #set(CRAYPE_LINK_TYPE "dynamic")
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcmodel=medium -fpic -dynamic -shared-intel -mkl")
+
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(CXX_WARNING_FLAGS "/W4")
 
     # MS MPI
-    # set(CMAKE_C_COMPILER mpicc)
-    # set(CMAKE_CXX_COMPILER mpicxx)
-    set(CMAKE_CXX_FLAGS_DEBUG "/MDd /GL- ${CXX_WARNING_FLAGS}")
+    set(CMAKE_CXX_FLAGS_DEBUG "/MDd /GL- /Zi ${CXX_WARNING_FLAGS}")
     set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2")
 
     # MS MPI Dirs
