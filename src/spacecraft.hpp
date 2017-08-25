@@ -8,6 +8,11 @@ using ObjectDefinedMap = boost::multi_array<bool, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
 using ObjectFaces = std::vector< std::array<int, 4> >;
 
+struct ObjectDataFromFile {
+    ObjectNodes nodes;
+    ObjectFaces faces;
+};
+
 class Particle;
 
 //! @class: Spacecraft
@@ -88,6 +93,6 @@ public:
 };
 
 namespace ObjectUtils {
-    ObjectNodes getObjectNodesFromObjFile(const std::string& obj_file_name);
+    ObjectDataFromFile getObjectNodesFromObjFile(const std::string& obj_file_name);
 }
 #endif

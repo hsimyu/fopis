@@ -234,10 +234,10 @@ std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
 
 // Utility Functions for Objects
 namespace ObjectUtils {
-    ObjectNodes getObjectNodesFromObjFile(const std::string& obj_file_name) {
+    ObjectDataFromFile getObjectNodesFromObjFile(const std::string& obj_file_name) {
         boost::filesystem::path p(obj_file_name);
-        ObjectNodes obj_node_array;
-        ObjectFaces obj_face_array;
+
+        ObjectDataFromFile obj_data;
 
         if (boost::filesystem::exists(p)) {
             ObjectDefinedMap object_node_map(boost::extents[ Environment::nx ][ Environment::ny ][ Environment::nz ]);
@@ -308,11 +308,11 @@ namespace ObjectUtils {
                     for(int j = miny; j < maxy + 1; ++j) {
                         for(int k = minz; k < maxz + 1; ++k) {
                             if (!object_node_map[i][j][k]) {
-                                obj_node_array[num_cmat] = {{i, j, k}};
+                                obj_data.nodes[num_cmat] = {{i, j, k}};
                                 ++num_cmat;
                                 object_node_map[i][j][k] = true;
                             }
-                            if (j != maxy && k != maxz) obj_face_array.push_back({{0, i, j, k}});
+                            if (j != maxy && k != maxz) obj_data.faces.push_back({{0, i, j, k}});
                         }
                     }
                 } else if (vert1[1] == vert2[1] && vert1[1] == vert3[1] && vert1[1] == vert4[1]) {
@@ -326,11 +326,11 @@ namespace ObjectUtils {
                     for(int i = minx; i < maxx + 1; ++i) {
                         for(int k = minz; k < maxz + 1; ++k) {
                             if (!object_node_map[i][j][k]) {
-                                obj_node_array[num_cmat] = {{i, j, k}};
+                                obj_data.nodes[num_cmat] = {{i, j, k}};
                                 ++num_cmat;
                                 object_node_map[i][j][k] = true;
                             }
-                            if (i != maxx && k != maxz) obj_face_array.push_back({{1, i, j, k}});
+                            if (i != maxx && k != maxz) obj_data.faces.push_back({{1, i, j, k}});
                         }
                     }
                 } else if (vert1[2] == vert2[2] && vert1[2] == vert3[2] && vert1[2] == vert4[2]) {
@@ -344,11 +344,11 @@ namespace ObjectUtils {
                     for(int i = minx; i < maxx + 1; ++i) {
                         for(int j = miny; j < maxy + 1; ++j) {
                             if (!object_node_map[i][j][k]) {
-                                obj_node_array[num_cmat] = {{i, j, k}};
+                                obj_data.nodes[num_cmat] = {{i, j, k}};
                                 ++num_cmat;
                                 object_node_map[i][j][k] = true;
                             }
-                            if (i != maxx && j != maxy) obj_face_array.push_back({{2, i, j, k}});
+                            if (i != maxx && j != maxy) obj_data.faces.push_back({{2, i, j, k}});
                         }
                     }
                 } else {
@@ -360,10 +360,10 @@ namespace ObjectUtils {
             throw std::invalid_argument(error_message);
         }
 
-        for(const auto& v : obj_face_array) {
+        for(const auto& v : obj_data.faces) {
             cout << v[0] << ", " << v[1] << ", " << v[2] << ", " << v[3] << endl;
         }
 
-        return obj_node_array;
+        return obj_data;
     }
 }
