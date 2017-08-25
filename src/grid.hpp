@@ -145,6 +145,48 @@ class Grid {
             return isInnerNodeWithGlue(i, j, k) && !isInnerNode(i, j, k);
         }
 
+        //! Inner フェイスであるかどうか判定する
+        bool isInnerFace(const int type, const int i, const int j, const int k) const {
+            switch(type) {
+                //! X
+                case 0:
+                    return isInnerNode(i, j, k) && isInnerNode(i, j + 1, k) && isInnerNode(i, j, k + 1) && isInnerNode(i, j + 1, k + 1);
+                //! Y
+                case 1:
+                    return isInnerNode(i, j, k) && isInnerNode(i + 1, j, k) && isInnerNode(i, j, k + 1) && isInnerNode(i + 1, j, k + 1);
+                //! Z
+                case 2:
+                    return isInnerNode(i, j, k) && isInnerNode(i, j + 1, k) && isInnerNode(i + 1, j, k) && isInnerNode(i + 1, j + 1, k);
+                default:
+                    return false;
+            }
+        }
+
+        bool isGlueFace(const int type, const int i, const int j, const int k) const {
+            switch(type) {
+                //! X
+                case 0:
+                    return (
+                        ( isInnerNode(i, j, k) && (isGlueNode(i, j + 1, k) || isGlueNode(i, j, k + 1)) ) || 
+                        ( isGlueNode(i, j, k) && (isInnerNode(i, j + 1, k) || isInnerNode(i, j, k + 1)) )
+                    );
+                //! Y
+                case 1:
+                    return (
+                        ( isInnerNode(i, j, k) && (isGlueNode(i + 1, j, k) || isGlueNode(i, j, k + 1)) ) ||
+                        ( isGlueNode(i, j, k) && (isInnerNode(i + 1, j, k) || isInnerNode(i, j, k + 1)) )
+                    );
+                //! Z
+                case 2:
+                    return (
+                        ( isInnerNode(i, j, k) && (isGlueNode(i, j + 1, k) || isGlueNode(i + 1, j, k)) ) ||
+                        ( isGlueNode(i, j, k) && (isInnerNode(i, j + 1, k) || isInnerNode(i + 1, j, k)) )
+                    );
+                default:
+                    return false;
+            }
+        }
+
         template<typename T>
         std::array<T, 3> getRelativePosition(const T i, const T j, const T k) {
             //! Glueセルありで返す

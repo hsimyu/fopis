@@ -115,6 +115,24 @@ void Grid::initializeObject(void) {
             }
         }
 
+        //! 面判定
+        ObjectFaces inner_face_array;
+        ObjectFaces glue_face_array;
+        for(const auto& face_values : face_array) {
+            const auto face_type = face_values[0];
+            const auto i = face_values[1];
+            const auto j = face_values[2];
+            const auto k = face_values[3];
+
+            if (isInnerFace(face_type, i, j, k)) {
+                const auto& rel = getRelativePosition<int>(i, j, k);
+                inner_face_array.push_back({face_type, rel[0], rel[1], rel[2]});
+            } else if (isGlueFace(face_type, i, j, k)) {
+                const auto& rel = getRelativePosition<int>(i, j, k);
+                glue_face_array.push_back({face_type, rel[0], rel[1], rel[2]});
+            }
+        }
+
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
         if (MPIw::Environment::isRootNode(obj_name)) {
@@ -123,7 +141,7 @@ void Grid::initializeObject(void) {
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back( nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array );
+        objects.emplace_back( nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array, inner_face_array, glue_face_array);
     }
 }
 

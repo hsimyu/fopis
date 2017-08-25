@@ -10,7 +10,7 @@
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectNodes& nodes, const ObjectNodes& glue_nodes) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectFaces& faces, const ObjectFaces& glue_faces) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -59,6 +59,34 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             const auto k = node_pos[2];
 
             object_node_map[i][j][k] = true;
+        }
+
+        for(const auto& v : faces) {
+            const auto face_type = v[0];
+            switch(face_type) {
+                case 0:
+                    object_xface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                case 1:
+                    object_yface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                case 2:
+                    object_zface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                default:
+                    break;
+            }
+        }
+
+        for(const auto& v : glue_faces) {
+            const auto face_type = v[0];
+            switch(face_type) {
+                case 0:
+                    object_xface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                case 1:
+                    object_yface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                case 2:
+                    object_zface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                default:
+                    break;
+            }
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更

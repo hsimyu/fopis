@@ -44,14 +44,15 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const ObjectNodes&, const ObjectNodes&);
+    void construct(const size_t, const size_t, const size_t, const ObjectNodes&, const ObjectNodes&, const ObjectFaces&, const ObjectFaces&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const tdArray&) const;
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const std::string _name,
-        const ObjectNodes& nodes, const ObjectNodes& glue_nodes) :
+        const ObjectNodes& nodes, const ObjectNodes& glue_nodes,
+        const ObjectFaces& faces, const ObjectFaces& glue_faces) :
         name(_name),
         num_cmat(_num_cmat),
         object_node_map(boost::extents[0][0][0]),
@@ -60,7 +61,7 @@ public:
         object_zface_map(boost::extents[0][0][0]),
         charge_map(boost::extents[0][0][0]),
         capacity_matrix(0, 0) {
-        construct(nx, ny, nz, nodes, glue_nodes);
+        construct(nx, ny, nz, nodes, glue_nodes, faces, glue_faces);
     }
 
     // アクセサ
