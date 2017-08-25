@@ -4,6 +4,10 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include "position.hpp"
 
+using ObjectDefinedMap = boost::multi_array<bool, 3>;
+using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
+using ObjectFaces = std::vector< std::array<int, 4> >;
+
 class Particle;
 
 //! @class: Spacecraft
@@ -82,4 +86,8 @@ public:
     std::string getLogEntry() const;
     friend std::ostream& operator<<(std::ostream&, const Spacecraft&);
 };
+
+namespace ObjectUtils {
+    ObjectNodes getObjectNodesFromObjFile(const std::string& obj_file_name);
+}
 #endif

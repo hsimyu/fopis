@@ -73,14 +73,36 @@ namespace IO {
 
                             gen.begin3DStructuredGrid(rankString, "3DCoRectMesh", xsize, ysize, zsize);
                                 gen.add3DGeometryOrigin("", dx * cx * xrank, dy * cy * yrank, dz * cz * zrank, dx, dy, dz);
-                                gen.beginAttribute(data_type_name);
-                                gen.setCenter("Node");
-                                    gen.beginDataItem();
-                                    gen.setFormat("HDF");
-                                    gen.setDimensions(xsize, ysize, zsize);
-                                        gen.addItem(rankString + ".h5:/" + data_type_name + "/level0/" + i_timestamp);
-                                    gen.endDataItem();
-                                gen.endAttribute();
+
+                                if (data_type_name == "potential" || data_type_name == "rho") {
+                                    gen.beginAttribute(data_type_name);
+                                    gen.setCenter("Node");
+                                        gen.beginDataItem();
+                                        gen.setFormat("HDF");
+                                        gen.setDimensions(xsize, ysize, zsize);
+                                            gen.addItem(rankString + ".h5:/" + i_timestamp + "/level0/" + data_type_name);
+                                        gen.endDataItem();
+                                    gen.endAttribute();
+                                } else if (data_type_name == "efield" || data_type_name == "bfield") {
+                                    gen.beginAttribute(data_type_name, "Vector");
+                                    gen.setCenter("Node");
+                                        gen.beginDataItem();
+                                        gen.setFormat("HDF");
+                                        gen.setDimensions(xsize, ysize, zsize);
+                                            gen.addItem(rankString + ".h5:/" + i_timestamp + "/level0/" + data_type_name);
+                                        gen.endDataItem();
+                                    gen.endAttribute();
+                                } else if (data_type_name == "density") {
+                                    gen.beginAttribute(data_type_name);
+                                    gen.setCenter("Cell");
+                                        gen.beginDataItem();
+                                        gen.setFormat("HDF");
+                                        gen.setDimensions(xsize - 1, ysize - 1, zsize - 1);
+                                            gen.addItem(rankString + ".h5:/" + i_timestamp + "/level0/" + data_type_name);
+                                        gen.endDataItem();
+                                    gen.endAttribute();
+                                }
+
                             gen.end3DStructuredGrid();
                         }
                     }

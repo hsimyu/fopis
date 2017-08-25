@@ -10,6 +10,7 @@ namespace Utils {
     std::string prettyMemoryString(double);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
+    std::vector<std::string> split(const std::string& target, char delim);
 
     // 軸方向を指定する文字列をindexに変換する
     int getAxisIndex(const AXIS);
@@ -22,7 +23,6 @@ namespace Utils {
     void clearBoundaryValues(tdArray&, const int, const int, const int);
     void initializeTdarray(tdArray&);
     void createDir(std::string);
-    ObjectNodes getObjectNodesFromObjFile(const std::string& obj_file_name);
 
     //! 逆行列を解く
     using dMatrix = boost::numeric::ublas::matrix<double>;

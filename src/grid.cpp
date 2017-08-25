@@ -85,7 +85,7 @@ void Grid::initializeObject(void) {
     for (const auto& object_info : Environment::objects_info) {
         std::string obj_name = object_info.name;
         //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
-        defined_objects[obj_name] = Utils::getObjectNodesFromObjFile(object_info.file_name);
+        defined_objects[obj_name] = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
         num_cmat_map[obj_name] = defined_objects[obj_name].size();
     }
 
