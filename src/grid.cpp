@@ -79,20 +79,20 @@ void Grid::initializeObject(void) {
     //! TODO: オブジェクト数を数える
     if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
 
-    std::map<std::string, ObjectNodes> defined_objects;
+    std::map<std::string, ObjectDataFromFile> defined_objects;
     std::map<std::string, unsigned int> num_cmat_map;
 
     for (const auto& object_info : Environment::objects_info) {
         std::string obj_name = object_info.name;
         //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
-        const auto& obj_data_from_file = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
-        defined_objects[obj_name] = obj_data_from_file.nodes;
-        num_cmat_map[obj_name] = defined_objects[obj_name].size();
+        defined_objects[obj_name] = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
+        num_cmat_map[obj_name] = defined_objects[obj_name].nodes.size();
     }
 
-    for(const auto& object_nodes : defined_objects) {
-        const auto obj_name = object_nodes.first;
-        const auto& node_array = object_nodes.second;
+    for(const auto& object_data : defined_objects) {
+        const auto obj_name = object_data.first;
+        const auto& node_array = object_data.second.nodes;
+        const auto& face_array = object_data.second.faces;
 
         //! innerと判定されたやつだけ渡す
         ObjectNodes inner_node_array;
@@ -118,7 +118,7 @@ void Grid::initializeObject(void) {
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
         if (MPIw::Environment::isRootNode(obj_name)) {
-            cout << Environment::rankStr() << " is set to Root Node for " << obj_name << "." << endl;
+            cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
         }
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい

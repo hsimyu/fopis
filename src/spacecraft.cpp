@@ -21,13 +21,20 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     if (is_defined_in_this_process) {
         // Node ベース, Glueセルも必要
         ObjectDefinedMap::extent_gen objectExtents;
-        object_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
+        object_node_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
+        object_xface_map.resize(objectExtents[nx + 1][ny + 2][nz + 2]);
+        object_yface_map.resize(objectExtents[nx + 2][ny + 1][nz + 2]);
+        object_zface_map.resize(objectExtents[nx + 2][ny + 2][nz + 1]);
 
-        // 初期化
+        // 物体定義マップを初期化
         for(int i = 0; i < nx + 2; ++i) {
             for (int j = 0; j < ny + 2; ++j) {
                 for (int k = 0; k < nz + 2; ++k) {
-                    object_map[i][j][k] = false;
+                    object_node_map[i][j][k] = false;
+
+                    if (i != nx + 1) object_xface_map[i][j][k] = false;
+                    if (j != ny + 1) object_yface_map[i][j][k] = false;
+                    if (k != nz + 1) object_zface_map[i][j][k] = false;
                 }
             }
         }
@@ -40,18 +47,18 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             const auto j = node_pos[1];
             const auto k = node_pos[2];
 
-            object_map[i][j][k] = true;
+            object_node_map[i][j][k] = true;
             capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
         }
 
-        //! Glueノードはobject_map側を更新するだけでよい
+        //! Glueノードはobject_node_map側を更新するだけでよい
         for(const auto& node_pair : glue_nodes) {
             const auto& node_pos = node_pair.second;
             const auto i = node_pos[0];
             const auto j = node_pos[1];
             const auto k = node_pos[2];
 
-            object_map[i][j][k] = true;
+            object_node_map[i][j][k] = true;
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
@@ -111,14 +118,14 @@ bool Spacecraft::isIncluded(const Particle& p) const {
 
     const auto pos = p.getPosition();
 
-    return  object_map[pos.i    ][pos.j    ][pos.k    ] &&
-            object_map[pos.i + 1][pos.j    ][pos.k    ] &&
-            object_map[pos.i    ][pos.j + 1][pos.k    ] &&
-            object_map[pos.i + 1][pos.j + 1][pos.k    ] &&
-            object_map[pos.i    ][pos.j    ][pos.k + 1] &&
-            object_map[pos.i + 1][pos.j    ][pos.k + 1] &&
-            object_map[pos.i    ][pos.j + 1][pos.k + 1] &&
-            object_map[pos.i + 1][pos.j + 1][pos.k + 1];
+    return  object_node_map[pos.i    ][pos.j    ][pos.k    ] &&
+            object_node_map[pos.i + 1][pos.j    ][pos.k    ] &&
+            object_node_map[pos.i    ][pos.j + 1][pos.k    ] &&
+            object_node_map[pos.i + 1][pos.j + 1][pos.k    ] &&
+            object_node_map[pos.i    ][pos.j    ][pos.k + 1] &&
+            object_node_map[pos.i + 1][pos.j    ][pos.k + 1] &&
+            object_node_map[pos.i    ][pos.j + 1][pos.k + 1] &&
+            object_node_map[pos.i + 1][pos.j + 1][pos.k + 1];
 }
 
 void Spacecraft::removeInnerParticle(Particle& p) const {
@@ -358,10 +365,6 @@ namespace ObjectUtils {
         } else {
             std::string error_message = (format("File %s does not exist.") % obj_file_name).str();
             throw std::invalid_argument(error_message);
-        }
-
-        for(const auto& v : obj_data.faces) {
-            cout << v[0] << ", " << v[1] << ", " << v[2] << ", " << v[3] << endl;
         }
 
         return obj_data;
