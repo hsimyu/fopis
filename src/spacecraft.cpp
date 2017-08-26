@@ -135,37 +135,16 @@ bool Spacecraft::isIncluded(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
     const auto pos = p.getPosition();
+    const auto i = pos.i;
+    const auto j = pos.j;
+    const auto k = pos.k;
 
-    const bool node_included =
-        object_node_map[pos.i    ][pos.j    ][pos.k    ] &&
-        object_node_map[pos.i + 1][pos.j    ][pos.k    ] &&
-        object_node_map[pos.i    ][pos.j + 1][pos.k    ] &&
-        object_node_map[pos.i + 1][pos.j + 1][pos.k    ] &&
-        object_node_map[pos.i    ][pos.j    ][pos.k + 1] &&
-        object_node_map[pos.i + 1][pos.j    ][pos.k + 1] &&
-        object_node_map[pos.i    ][pos.j + 1][pos.k + 1] &&
-        object_node_map[pos.i + 1][pos.j + 1][pos.k + 1];
-
-    const bool face_included =
-        object_xface_map[pos.i    ][pos.j][pos.k] &&
-        object_xface_map[pos.i + 1][pos.j][pos.k] &&
-        object_yface_map[pos.i][pos.j    ][pos.k] &&
-        object_yface_map[pos.i][pos.j + 1][pos.k] &&
-        object_zface_map[pos.i][pos.j][pos.k    ] &&
-        object_zface_map[pos.i][pos.j][pos.k + 1];
-
-    if (face_included != node_included) {
-        cout << Environment::rankStr() << "face: " << face_included << endl;
-        cout << Environment::rankStr() << "at " << endl << pos << endl;
-        cout << Environment::rankStr() << "x-orig: " << object_xface_map[pos.i    ][pos.j][pos.k] << endl;
-        cout << Environment::rankStr() << "x-+1  : " << object_xface_map[pos.i + 1][pos.j][pos.k] << endl;
-        cout << Environment::rankStr() << "y-orig: " << object_yface_map[pos.i][pos.j    ][pos.k] << endl;
-        cout << Environment::rankStr() << "y-+1  : " << object_yface_map[pos.i][pos.j + 1][pos.k] << endl;
-        cout << Environment::rankStr() << "z-orig: " << object_zface_map[pos.i][pos.j][pos.k    ] << endl;
-        cout << Environment::rankStr() << "z-+1  : " << object_zface_map[pos.i][pos.j][pos.k + 1] << endl;
-    }
-
-    return face_included;
+    return  object_xface_map[i    ][j][k] &&
+            object_xface_map[i + 1][j][k] &&
+            object_yface_map[i][j    ][k] &&
+            object_yface_map[i][j + 1][k] &&
+            object_zface_map[i][j][k    ] &&
+            object_zface_map[i][j][k + 1];
 }
 
 void Spacecraft::removeInnerParticle(Particle& p) const {
