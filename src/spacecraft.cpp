@@ -10,7 +10,7 @@
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectFaces& faces, const ObjectFaces& glue_faces) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectFaces& faces) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -22,9 +22,10 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         // Node ベース, Glueセルも必要
         ObjectDefinedMap::extent_gen objectExtents;
         object_node_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
-        object_xface_map.resize(objectExtents[nx + 1][ny + 2][nz + 2]);
-        object_yface_map.resize(objectExtents[nx + 2][ny + 1][nz + 2]);
-        object_zface_map.resize(objectExtents[nx + 2][ny + 2][nz + 1]);
+
+        object_xface_map.resize(objectExtents[nx + 2][ny + 1][nz + 1]);
+        object_yface_map.resize(objectExtents[nx + 1][ny + 2][nz + 1]);
+        object_zface_map.resize(objectExtents[nx + 1][ny + 1][nz + 2]);
 
         // 物体定義マップを初期化
         for(int i = 0; i < nx + 2; ++i) {
@@ -32,9 +33,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                 for (int k = 0; k < nz + 2; ++k) {
                     object_node_map[i][j][k] = false;
 
-                    if (i != nx + 1) object_xface_map[i][j][k] = false;
-                    if (j != ny + 1) object_yface_map[i][j][k] = false;
-                    if (k != nz + 1) object_zface_map[i][j][k] = false;
+                    if (j != ny + 1 && k != nz + 1) object_xface_map[i][j][k] = false;
+                    if (i != nx + 1 && k != nz + 1) object_yface_map[i][j][k] = false;
+                    if (i != nx + 1 && j != ny + 1) object_zface_map[i][j][k] = false;
                 }
             }
         }
@@ -66,24 +67,13 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             switch(face_type) {
                 case 0:
                     object_xface_map[ v[1] ][ v[2] ][ v[3] ] = true;
-                case 1:
-                    object_yface_map[ v[1] ][ v[2] ][ v[3] ] = true;
-                case 2:
-                    object_zface_map[ v[1] ][ v[2] ][ v[3] ] = true;
-                default:
                     break;
-            }
-        }
-
-        for(const auto& v : glue_faces) {
-            const auto face_type = v[0];
-            switch(face_type) {
-                case 0:
-                    object_xface_map[ v[1] ][ v[2] ][ v[3] ] = true;
                 case 1:
                     object_yface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                    break;
                 case 2:
                     object_zface_map[ v[1] ][ v[2] ][ v[3] ] = true;
+                    break;
                 default:
                     break;
             }
@@ -146,14 +136,36 @@ bool Spacecraft::isIncluded(const Particle& p) const {
 
     const auto pos = p.getPosition();
 
-    return  object_node_map[pos.i    ][pos.j    ][pos.k    ] &&
-            object_node_map[pos.i + 1][pos.j    ][pos.k    ] &&
-            object_node_map[pos.i    ][pos.j + 1][pos.k    ] &&
-            object_node_map[pos.i + 1][pos.j + 1][pos.k    ] &&
-            object_node_map[pos.i    ][pos.j    ][pos.k + 1] &&
-            object_node_map[pos.i + 1][pos.j    ][pos.k + 1] &&
-            object_node_map[pos.i    ][pos.j + 1][pos.k + 1] &&
-            object_node_map[pos.i + 1][pos.j + 1][pos.k + 1];
+    const bool node_included =
+        object_node_map[pos.i    ][pos.j    ][pos.k    ] &&
+        object_node_map[pos.i + 1][pos.j    ][pos.k    ] &&
+        object_node_map[pos.i    ][pos.j + 1][pos.k    ] &&
+        object_node_map[pos.i + 1][pos.j + 1][pos.k    ] &&
+        object_node_map[pos.i    ][pos.j    ][pos.k + 1] &&
+        object_node_map[pos.i + 1][pos.j    ][pos.k + 1] &&
+        object_node_map[pos.i    ][pos.j + 1][pos.k + 1] &&
+        object_node_map[pos.i + 1][pos.j + 1][pos.k + 1];
+
+    const bool face_included =
+        object_xface_map[pos.i    ][pos.j][pos.k] &&
+        object_xface_map[pos.i + 1][pos.j][pos.k] &&
+        object_yface_map[pos.i][pos.j    ][pos.k] &&
+        object_yface_map[pos.i][pos.j + 1][pos.k] &&
+        object_zface_map[pos.i][pos.j][pos.k    ] &&
+        object_zface_map[pos.i][pos.j][pos.k + 1];
+
+    if (face_included != node_included) {
+        cout << Environment::rankStr() << "face: " << face_included << endl;
+        cout << Environment::rankStr() << "at " << endl << pos << endl;
+        cout << Environment::rankStr() << "x-orig: " << object_xface_map[pos.i    ][pos.j][pos.k] << endl;
+        cout << Environment::rankStr() << "x-+1  : " << object_xface_map[pos.i + 1][pos.j][pos.k] << endl;
+        cout << Environment::rankStr() << "y-orig: " << object_yface_map[pos.i][pos.j    ][pos.k] << endl;
+        cout << Environment::rankStr() << "y-+1  : " << object_yface_map[pos.i][pos.j + 1][pos.k] << endl;
+        cout << Environment::rankStr() << "z-orig: " << object_zface_map[pos.i][pos.j][pos.k    ] << endl;
+        cout << Environment::rankStr() << "z-+1  : " << object_zface_map[pos.i][pos.j][pos.k + 1] << endl;
+    }
+
+    return face_included;
 }
 
 void Spacecraft::removeInnerParticle(Particle& p) const {

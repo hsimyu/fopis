@@ -146,42 +146,17 @@ class Grid {
         }
 
         //! Inner フェイスであるかどうか判定する
-        bool isInnerFace(const int type, const int i, const int j, const int k) const {
+        bool isInnerFaceWithGlue(const int type, const int i, const int j, const int k) const {
             switch(type) {
                 //! X
                 case 0:
-                    return isInnerNode(i, j, k) && isInnerNode(i, j + 1, k) && isInnerNode(i, j, k + 1) && isInnerNode(i, j + 1, k + 1);
+                    return isInnerNodeWithGlue(i, j, k) && isInnerNodeWithGlue(i, j + 1, k) && isInnerNodeWithGlue(i, j, k + 1) && isInnerNodeWithGlue(i, j + 1, k + 1);
                 //! Y
                 case 1:
-                    return isInnerNode(i, j, k) && isInnerNode(i + 1, j, k) && isInnerNode(i, j, k + 1) && isInnerNode(i + 1, j, k + 1);
+                    return isInnerNodeWithGlue(i, j, k) && isInnerNodeWithGlue(i + 1, j, k) && isInnerNodeWithGlue(i, j, k + 1) && isInnerNodeWithGlue(i + 1, j, k + 1);
                 //! Z
                 case 2:
-                    return isInnerNode(i, j, k) && isInnerNode(i, j + 1, k) && isInnerNode(i + 1, j, k) && isInnerNode(i + 1, j + 1, k);
-                default:
-                    return false;
-            }
-        }
-
-        bool isGlueFace(const int type, const int i, const int j, const int k) const {
-            switch(type) {
-                //! X
-                case 0:
-                    return (
-                        ( isInnerNode(i, j, k) && (isGlueNode(i, j + 1, k) || isGlueNode(i, j, k + 1)) ) || 
-                        ( isGlueNode(i, j, k) && (isInnerNode(i, j + 1, k) || isInnerNode(i, j, k + 1)) )
-                    );
-                //! Y
-                case 1:
-                    return (
-                        ( isInnerNode(i, j, k) && (isGlueNode(i + 1, j, k) || isGlueNode(i, j, k + 1)) ) ||
-                        ( isGlueNode(i, j, k) && (isInnerNode(i + 1, j, k) || isInnerNode(i, j, k + 1)) )
-                    );
-                //! Z
-                case 2:
-                    return (
-                        ( isInnerNode(i, j, k) && (isGlueNode(i, j + 1, k) || isGlueNode(i + 1, j, k)) ) ||
-                        ( isGlueNode(i, j, k) && (isInnerNode(i, j + 1, k) || isInnerNode(i + 1, j, k)) )
-                    );
+                    return isInnerNodeWithGlue(i, j, k) && isInnerNodeWithGlue(i, j + 1, k) && isInnerNodeWithGlue(i + 1, j, k) && isInnerNodeWithGlue(i + 1, j + 1, k);
                 default:
                     return false;
             }
