@@ -48,6 +48,7 @@ class Grid {
 
         // データ出力用のnodes/edges/faces/cellsを取り出す
         boost::multi_array<float, 3> getTrueNodes(const tdArray& x3D, const double unnorm = 1.0) const;
+        boost::multi_array<float, 3> getTrueNodes(const RhoArray& rho, const int pid, const double unnorm = 1.0) const;
         boost::multi_array<float, 3> getDensity(const int) const;
 
         //! データ出力用のnodesの数を返す

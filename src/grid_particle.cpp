@@ -399,18 +399,19 @@ void Grid::updateParticlePositionEM(void) {
 //! 粒子の位置から電荷を空間電荷にする
 //! 基本的にはroot_gridに対してのみ呼ぶ
 void Grid::updateRho() {
-    tdArray& rho = field->getRho();
+    RhoArray& rho = field->getRho();
 
 #ifdef CHARGE_CONSERVATION
     // 電荷保存則をcheckするため、古いrhoを保持する
-    tdArray old_rho = rho;
+    auto old_rho = rho;
 #endif
 
     // rhoを初期化
-    Utils::initializeTdarray(rho);
+    Utils::initializeRhoArray(rho);
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
         double q = Environment::ptype[pid].getCharge();
+        const auto rho_idx = pid + 1;
 
         for(auto& p : particles[pid]) {
             if(p.isValid) {
@@ -424,15 +425,22 @@ void Grid::updateRho() {
                     const auto pos = p.getPosition();
                     const int i = pos.i, j = pos.j, k = pos.k;
 
-                    rho[i  ][j  ][k] += pos.dx2 * pos.dy2 * pos.dz2 * q;
-                    rho[i+1][j  ][k] += pos.dx1 * pos.dy2 * pos.dz2 * q;
-                    rho[i  ][j+1][k] += pos.dx2 * pos.dy1 * pos.dz2 * q;
-                    rho[i+1][j+1][k] += pos.dx1 * pos.dy1 * pos.dz2 * q;
+                    rho[rho_idx][i  ][j  ][k] += pos.dx2 * pos.dy2 * pos.dz2 * q;
+                    rho[rho_idx][i+1][j  ][k] += pos.dx1 * pos.dy2 * pos.dz2 * q;
+                    rho[rho_idx][i  ][j+1][k] += pos.dx2 * pos.dy1 * pos.dz2 * q;
+                    rho[rho_idx][i+1][j+1][k] += pos.dx1 * pos.dy1 * pos.dz2 * q;
+                    rho[rho_idx][i  ][j  ][k+1] += pos.dx2 * pos.dy2 * pos.dz1 * q;
+                    rho[rho_idx][i+1][j  ][k+1] += pos.dx1 * pos.dy2 * pos.dz1 * q;
+                    rho[rho_idx][i  ][j+1][k+1] += pos.dx2 * pos.dy1 * pos.dz1 * q;
+                    rho[rho_idx][i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
+                }
+            }
+        }
 
-                    rho[i  ][j  ][k+1] += pos.dx2 * pos.dy2 * pos.dz1 * q;
-                    rho[i+1][j  ][k+1] += pos.dx1 * pos.dy2 * pos.dz1 * q;
-                    rho[i  ][j+1][k+1] += pos.dx2 * pos.dy1 * pos.dz1 * q;
-                    rho[i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
+        for(int i = 1; i < nx + 2; ++i) {
+            for(int j = 1; j < ny + 2; ++j) {
+                for(int k = 1; i < nz + 2; ++k) {
+                    rho[0][i][j][k] += rho[rho_idx][i][j][k];
                 }
             }
         }
@@ -444,7 +452,9 @@ void Grid::updateRho() {
     }
 
     //! rho を隣に送る
-    MPIw::Environment::sendRecvField(rho);
+    for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
+        MPIw::Environment::sendRecvField(rho[pid]);
+    }
 
     //! 物体が存在する場合、電荷再配分が必要になる
     if (objects.size() > 0) {
@@ -455,7 +465,9 @@ void Grid::updateRho() {
             if (obj.isDefined()) obj.redistributeCharge(rho, field->getPhi());
         }
 
-        MPIw::Environment::sendRecvField(rho);
+        for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
+            MPIw::Environment::sendRecvField(rho[pid]);
+        }
     }
 
 #ifdef CHARGE_CONSERVATION

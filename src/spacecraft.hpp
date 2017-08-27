@@ -3,6 +3,7 @@
 #include "global.hpp"
 #include <boost/numeric/ublas/matrix.hpp>
 #include "position.hpp"
+#include "field.hpp"
 
 using ObjectDefinedMap = boost::multi_array<bool, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
@@ -47,7 +48,7 @@ private:
     void construct(const size_t, const size_t, const size_t, const ObjectNodes&, const ObjectNodes&, const ObjectFaces&);
 
     //! 電荷の総量が変化していないかの check 用
-    auto getTotalCharge(const tdArray&) const;
+    auto getTotalCharge(const RhoArray&) const;
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const std::string _name,
@@ -90,8 +91,8 @@ public:
     void makeCmatrixInvert(void);
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
-    void applyCharge(tdArray&) const;
-    void redistributeCharge(tdArray&, const tdArray&);
+    void applyCharge(RhoArray&) const;
+    void redistributeCharge(RhoArray&, const tdArray&);
 
     // IO関数
     std::string getLogHeader() const;

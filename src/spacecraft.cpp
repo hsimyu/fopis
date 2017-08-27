@@ -104,13 +104,13 @@ Position Spacecraft::getCmatPos(const unsigned int cmat_itr) {
     }
 }
 
-auto Spacecraft::getTotalCharge(const tdArray& rho) const {
+auto Spacecraft::getTotalCharge(const RhoArray& rho) const {
     double q = 0.0;
 
     for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
         if (isMyCmat(cmat_itr)) {
             const auto& pos = capacity_matrix_relation.at(cmat_itr);
-            q += rho[pos.i][pos.j][pos.k];
+            q += rho[0][pos.i][pos.j][pos.k];
         }
     }
     q = MPIw::Environment::Comms[name].sum(q);
@@ -169,15 +169,15 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     }
 }
 
-void Spacecraft::applyCharge(tdArray& rho) const {
+void Spacecraft::applyCharge(RhoArray& rho) const {
     //! 電荷分布を場に印加する
     for(const auto& one_node : capacity_matrix_relation) {
         const auto& pos = one_node.second;
-        rho[pos.i][pos.j][pos.k] += charge_map[pos.i][pos.j][pos.k];
+        rho[0][pos.i][pos.j][pos.k] += charge_map[pos.i][pos.j][pos.k];
     }
 }
 
-void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
+void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     auto q = getTotalCharge(rho);
     cout << "charge before redist: " << q << endl;
 
@@ -213,7 +213,7 @@ void Spacecraft::redistributeCharge(tdArray& rho, const tdArray& phi) {
 
         if (isMyCmat(i)) {
             const auto& target_pos = capacity_matrix_relation.at(i);
-            rho[target_pos.i][target_pos.j][target_pos.k] += delta_rho;
+            rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
         }
     }
 

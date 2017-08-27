@@ -33,6 +33,19 @@ namespace Utils {
         }
     }
 
+    void initializeRhoArray(std::vector<tdArray>& x) {
+        
+        for(int id = 0; id < x.size(); ++id) {
+            for(int i = 0; i < x[0].shape()[0]; ++i) {
+                for(int j = 0; j < x[0].shape()[1]; ++j) {
+                    for(int k = 0; k < x[0].shape()[2]; ++k) {
+                        x[id][i][j][k] = 0.0;
+                    }
+                }
+            }
+        }
+    }
+
     void clearBoundaryValues(tdArray& x, const int nx, const int ny, const int nz) {
         for(int i = 0; i < nx; i += nx - 1) {
             for(int j = 0; j < ny; ++j){

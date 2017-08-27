@@ -67,6 +67,8 @@ int main(int argc, char* argv[]){
         if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
         if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->particles);
         if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->particles);
+
+        IO::plotObjectsData(*root_grid);
     }
 
     /*

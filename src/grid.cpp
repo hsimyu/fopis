@@ -48,7 +48,12 @@ void Grid::initializeField(void){
     const int cz = nz + 2;
 
     field->getPhi().resize(tdExtents[cx][cy][cz]);
-    field->getRho().resize(tdExtents[cx][cy][cz]);
+
+    auto& rho = field->getRho();
+    for(int i = 0; i < Environment::num_of_particle_types + 1; ++i) {
+        //! 総和のtdArray + 粒子種毎のtdArrayを直接配置で生成する
+        rho.emplace_back(boost::extent[cx][cy][cz], boost::fortran_storage_order());
+    }
 
     // @note: Dirichlet Boundary
     Utils::clearBoundaryValues(field->getPhi(), cx, cy, cz);
@@ -143,7 +148,7 @@ void Grid::initializeObject(void) {
 
 void Grid::initializeObjectsCmatrix(void) {
     if (Environment::isRootNode) cout << "-- Initializing Objects Capacity Matrix --" << endl;
-    tdArray& rho = field->getRho();
+    RhoArray& rho = field->getRho();
     tdArray& phi = field->getPhi();
 
     for(auto& obj : objects) {
@@ -156,13 +161,13 @@ void Grid::initializeObjectsCmatrix(void) {
                 if (Environment::isRootNode) pm.update(cmat_col_itr);
 
                 // rhoを初期化
-                Utils::initializeTdarray(rho);
+                Utils::initializeRhoArray(rho);
                 Utils::initialize3DArray(phi);
 
                 //! 各頂点に単位電荷を付与
                 if (obj.isMyCmat(cmat_col_itr)) {
                     const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                    rho[cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
+                    rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
                 }
 
                 solvePoisson();
@@ -573,6 +578,26 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double
     return true_nodes;
 }
 
+//! RhoArray用
+boost::multi_array<float, 3> Grid::getTrueNodes(const RhoArray& rho, const int pid, const double unnorm) const {
+    int xsize = this->getXNodeSize();
+    int ysize = this->getYNodeSize();
+    int zsize = this->getZNodeSize();
+
+    boost::multi_array<float, 3> true_nodes(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
+
+    for(int k = 1; k < zsize + 1; ++k){
+        for(int j = 1; j < ysize + 1; ++j){
+            for(int i = 1; i < xsize + 1; ++i){
+                true_nodes[i - 1][j - 1][k - 1] = static_cast<float>(rho[pid][i][j][k] * unnorm);
+            }
+        }
+    }
+
+    // RVO
+    return true_nodes;
+}
+
 // -- DATA IO methods --
 void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) {
     auto getGroup = [](auto& g, const std::string& group_name) {
@@ -591,7 +616,7 @@ void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_nam
         auto dataset = local_group.createDataSet<float>(data_type_name, HighFive::DataSpace::From(values));
         dataset.write(values);
     } else if(data_type_name == "rho") {
-        auto values = this->getTrueNodes(field->getRho(), Normalizer::unnormalizeRho(1.0));
+        auto values = this->getTrueNodes(field->getRho(), 0, Normalizer::unnormalizeRho(1.0));
         auto dataset = local_group.createDataSet<float>(data_type_name, HighFive::DataSpace::From(values));
         dataset.write(values);
     } else if(data_type_name == "efield") {

@@ -44,7 +44,7 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
                     if((j != 1 || is_periodic[2]) && (j != cy_with_glue - 2 || is_periodic[3])) {
                         for(int i = 1; i < cx_with_glue - 1; ++i){
                             if((i != 1 || is_periodic[0]) && (i != cx_with_glue - 2 || is_periodic[1])) {
-                                phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[i][j][k])/6.0;
+                                phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                             }
                         }
                     }
@@ -86,9 +86,9 @@ double Field::checkPhiResidual() {
                 if((j != 1 || is_periodic[2]) && (j != cy_with_glue - 2 || is_periodic[3])) {
                     for(int i = 1; i < cx_with_glue - 1; ++i){
                         if((i != 1 || is_periodic[0]) && (i != cx_with_glue - 2 || is_periodic[1])) {
-                            double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]) + rho[i][j][k]/normalized_eps;
+                            double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]) + rho[0][i][j][k]/normalized_eps;
                             residual = std::max(residual, fabs(tmp_res));
-                            rho_max = std::max(rho_max, fabs(rho[i][j][k]));
+                            rho_max = std::max(rho_max, fabs(rho[0][i][j][k]));
                         }
                     }
                 }
@@ -520,13 +520,13 @@ double Field::getBfieldEnergy(void) const {
     return 0.5 * energy / Normalizer::mu0;
 }
 
-void Field::checkChargeConservation(const tdArray& old_rho, const double dt, const double dx) const {
+void Field::checkChargeConservation(const RhoArray& old_rho, const double dt, const double dx) const {
     double residual1 = 0.0, residual2 = 0.0;
     double j1 = 0.0, j2 = 0.0, j3 = 0.0;
     double residual = 0.0;
-    const int cx_with_glue = rho.shape()[0];
-    const int cy_with_glue = rho.shape()[1];
-    const int cz_with_glue = rho.shape()[2];
+    const int cx_with_glue = rho[0].shape()[0];
+    const int cy_with_glue = rho[0].shape()[1];
+    const int cz_with_glue = rho[0].shape()[2];
 
     for(int i = 1; i < cx_with_glue - 1; ++i) {
         for(int j = 1; j < cy_with_glue - 1; ++j) {
@@ -534,8 +534,8 @@ void Field::checkChargeConservation(const tdArray& old_rho, const double dt, con
                 residual1 = 0.0, residual2 = 0.0;
                 j1 = 0.0, j2 = 0.0, j3 = 0.0;
 
-                residual1 = (rho[i][j][k])/dt;
-                residual2 = (old_rho[i][j][k])/dt;
+                residual1 = (rho[0][i][j][k])/dt;
+                residual2 = (old_rho[0][i][j][k])/dt;
                 j1 = (jx[i][j][k] - jx[i - 1][j][k])/dx;
                 j2 = (jy[i][j][k] - jy[i][j - 1][k])/dx;
                 j3 = (jz[i][j][k] - jz[i][j][k - 1])/dx;

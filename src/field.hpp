@@ -2,25 +2,26 @@
 #define __TDPIC_FIELD_H_INCLUDED__
 #include "global.hpp"
 
+using RhoArray = std::vector<tdArray>;
+
 class Field {
     private:
-        tdArray rho;
-        tdArray phi;
+        //! rho のみ粒子種で必要な行列数が変わる
+        RhoArray rho;
 
+        tdArray phi;
         tdArray ex;
         tdArray ey;
         tdArray ez;
         tdArray exref;
         tdArray eyref;
         tdArray ezref;
-
         tdArray bx;
         tdArray by;
         tdArray bz;
         tdArray bxref;
         tdArray byref;
         tdArray bzref;
-
         tdArray jx;
         tdArray jy;
         tdArray jz;
@@ -33,9 +34,10 @@ class Field {
         void solvePoissonPSOR(const int, const double);
         void solvePoissonJacobi(const int, const double);
         double checkPhiResidual(void);
+
     public:
         Field(void) :
-            rho(boost::extents[0][0][0], boost::fortran_storage_order()),
+            rho{},
             phi(boost::extents[0][0][0], boost::fortran_storage_order()),
             ex(boost::extents[0][0][0], boost::fortran_storage_order()),
             ey(boost::extents[0][0][0], boost::fortran_storage_order()),
@@ -61,14 +63,14 @@ class Field {
         tdArray& getPhi(){ return phi; }
 
         // charge density
-        void setRho(tdArray& _rho){ rho = _rho; }
-        tdArray& getRho(){ return rho; }
+        void setRho(RhoArray& _rho){ rho = _rho; }
+        RhoArray& getRho(){ return rho; }
 
-        tdArray& getScalar(const std::string varname) {
+        auto& getScalar(const std::string varname) {
             if(varname == "potential" || varname == "phi") {
                 return phi;
             } else if(varname == "rho" || varname == "charge") {
-                return rho;
+                return phi;
             } else {
                 throw std::invalid_argument("[ERROR] Invalid varname is passed to getScalar():" + varname);
             }
@@ -119,7 +121,7 @@ class Field {
         double getBfieldEnergy(void) const;
 
         //! check functions
-        void checkChargeConservation(const tdArray&, const double, const double) const;
+        void checkChargeConservation(const RhoArray&, const double, const double) const;
 };
 
 #endif
