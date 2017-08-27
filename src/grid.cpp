@@ -125,7 +125,7 @@ void Grid::initializeObject(void) {
 
             if (isInnerFaceWithGlue(face_type, i, j, k)) {
                 const auto& rel = getRelativePosition<int>(i, j, k);
-                inner_face_array.push_back({face_type, rel[0], rel[1], rel[2]});
+                inner_face_array.push_back({{face_type, rel[0], rel[1], rel[2]}});
             }
         }
 
@@ -597,7 +597,7 @@ void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_nam
     } else if(data_type_name == "efield") {
         HighFive::Group data_type_group = getGroup(local_group, data_type_name);
 
-        const std::array<std::string, 3> axis{"ex", "ey", "ez"};
+        const std::array<std::string, 3> axis{{"ex", "ey", "ez"}};
         for(const auto& group_name : axis) {
             if (group_name == "ex") {
                 auto values = this->getTrueNodes(field->getExRef(), Normalizer::unnormalizeEfield(1.0));
@@ -615,7 +615,7 @@ void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_nam
         }
     } else if(data_type_name == "bfield") {
         HighFive::Group data_type_group = getGroup(local_group, data_type_name);
-        const std::array<std::string, 3> axis{"bx", "by", "bz"};
+        const std::array<std::string, 3> axis{{"bx", "by", "bz"}};
 
         for(const auto& group_name : axis) {
             if (group_name == "bx") {
