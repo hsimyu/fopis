@@ -81,15 +81,22 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
         //! キャパシタンス行列のサイズを物体サイズに変更
         capacity_matrix.resize(num_cmat, num_cmat);
+        
+        tdArray::extent_gen tdExtents;
 
         //! Node ベース, glue cell ありの電荷密度マップ
-        tdArray::extent_gen tdExtents;
-        charge_map.resize(tdExtents[nx + 2][ny + 2][nz + 2]);
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            charge_map.emplace_back(tdExtents[nx + 2][ny + 2][nz + 2], boost::fortran_storage_order());
+        }
+
         //! 電荷配列初期化
-        for(size_t i = 0; i < nx + 2; ++i) {
-            for (size_t j = 0; j < ny + 2; ++j) {
-                for (size_t k = 0; k < nz + 2; ++k) {
-                    charge_map[i][j][k] = 0.0;
+        //! @note: 物体の電荷配列マップは総和用の要素(index = 0)を持たない
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            for(size_t i = 0; i < nx + 2; ++i) {
+                for (size_t j = 0; j < ny + 2; ++j) {
+                    for (size_t k = 0; k < nz + 2; ++k) {
+                        charge_map[pid][i][j][k] = 0.0;
+                    }
                 }
             }
         }
@@ -153,17 +160,18 @@ void Spacecraft::removeInnerParticle(Particle& p) const {
 
 void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     if (isIncluded(p)) { 
+        const auto rho_idx = p.getId() + 1;
         const auto q = p.getCharge();
         const auto pos = p.getPosition();
 
-        charge_map[pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
-        charge_map[pos.i + 1][pos.j    ][pos.k    ] += q * pos.dx1 * pos.dy2 * pos.dz2;
-        charge_map[pos.i    ][pos.j + 1][pos.k    ] += q * pos.dx2 * pos.dy1 * pos.dz2;
-        charge_map[pos.i + 1][pos.j + 1][pos.k    ] += q * pos.dx1 * pos.dy1 * pos.dz2;
-        charge_map[pos.i    ][pos.j    ][pos.k + 1] += q * pos.dx2 * pos.dy2 * pos.dz1;
-        charge_map[pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
-        charge_map[pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
-        charge_map[pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
+        charge_map[rho_idx][pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
+        charge_map[rho_idx][pos.i + 1][pos.j    ][pos.k    ] += q * pos.dx1 * pos.dy2 * pos.dz2;
+        charge_map[rho_idx][pos.i    ][pos.j + 1][pos.k    ] += q * pos.dx2 * pos.dy1 * pos.dz2;
+        charge_map[rho_idx][pos.i + 1][pos.j + 1][pos.k    ] += q * pos.dx1 * pos.dy1 * pos.dz2;
+        charge_map[rho_idx][pos.i    ][pos.j    ][pos.k + 1] += q * pos.dx2 * pos.dy2 * pos.dz1;
+        charge_map[rho_idx][pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
+        charge_map[rho_idx][pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
+        charge_map[rho_idx][pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
 
         p.makeInvalid();
     }
@@ -173,7 +181,10 @@ void Spacecraft::applyCharge(RhoArray& rho) const {
     //! 電荷分布を場に印加する
     for(const auto& one_node : capacity_matrix_relation) {
         const auto& pos = one_node.second;
-        rho[0][pos.i][pos.j][pos.k] += charge_map[pos.i][pos.j][pos.k];
+
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
+        }
     }
 }
 

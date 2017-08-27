@@ -32,7 +32,7 @@ private:
     ObjectDefinedMap object_xface_map;
     ObjectDefinedMap object_yface_map;
     ObjectDefinedMap object_zface_map;
-    tdArray charge_map;
+    RhoArray charge_map;
 
     //! キャパシタンス行列
     using Cmatrix = boost::numeric::ublas::matrix<double>;
@@ -60,7 +60,7 @@ public:
         object_xface_map(boost::extents[0][0][0]),
         object_yface_map(boost::extents[0][0][0]),
         object_zface_map(boost::extents[0][0][0]),
-        charge_map(boost::extents[0][0][0]),
+        charge_map{},
         capacity_matrix(0, 0) {
         construct(nx, ny, nz, nodes, glue_nodes, faces);
     }

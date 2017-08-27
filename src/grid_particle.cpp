@@ -436,19 +436,24 @@ void Grid::updateRho() {
                 }
             }
         }
+    }
 
-        for(int i = 1; i < nx + 2; ++i) {
-            for(int j = 1; j < ny + 2; ++j) {
-                for(int k = 1; i < nz + 2; ++k) {
-                    rho[0][i][j][k] += rho[rho_idx][i][j][k];
-                }
-            }
+
+    for(auto& obj : objects) {
+        if (obj.isDefined()) {
+            //! 物体に配分された電荷を現在の rho に印加する
+            obj.applyCharge(rho);
         }
     }
 
-    //! 物体に配分された電荷を現在の rho に印加する
-    for(auto& obj : objects) {
-        if (obj.isDefined()) obj.applyCharge(rho);
+    for(int pid = 1; pid < Environment::num_of_particle_types + 1; ++pid) {
+        for(int i = 1; i < nx + 2; ++i) {
+            for(int j = 1; j < ny + 2; ++j) {
+                for(int k = 1; k < nz + 2; ++k) {
+                    rho[0][i][j][k] += rho[pid][i][j][k];
+                }
+            }
+        }
     }
 
     //! rho を隣に送る
@@ -465,9 +470,7 @@ void Grid::updateRho() {
             if (obj.isDefined()) obj.redistributeCharge(rho, field->getPhi());
         }
 
-        for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
-            MPIw::Environment::sendRecvField(rho[pid]);
-        }
+        MPIw::Environment::sendRecvField(rho[0]);
     }
 
 #ifdef CHARGE_CONSERVATION

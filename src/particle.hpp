@@ -170,6 +170,7 @@ class Particle {
 
         //! ParticleTypeのメンバ関数呼び出しを中継
         double getCharge(void) const { return Environment::ptype[typeId].getCharge(); }
+        double getId(void) const { return Environment::ptype[typeId].getId(); }
 
         //! 粒子生成時用の位置速度生成関数
         //! - 内部的にはParticleTypeの同名メンバ関数を呼び出すだけ

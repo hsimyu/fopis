@@ -52,7 +52,7 @@ void Grid::initializeField(void){
     auto& rho = field->getRho();
     for(int i = 0; i < Environment::num_of_particle_types + 1; ++i) {
         //! 総和のtdArray + 粒子種毎のtdArrayを直接配置で生成する
-        rho.emplace_back(boost::extent[cx][cy][cz], boost::fortran_storage_order());
+        rho.emplace_back(tdExtents[cx][cy][cz], boost::fortran_storage_order());
     }
 
     // @note: Dirichlet Boundary
