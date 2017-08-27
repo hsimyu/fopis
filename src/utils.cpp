@@ -23,7 +23,7 @@ namespace Utils {
         lhs.assign_temporary(inv);
     }
 
-    void initializeTdarray(tdArray& x) {
+    void initialize3DArray(tdArray& x) {
         for(int i = 0; i < x.shape()[0]; ++i) {
             for(int j = 0; j < x.shape()[1]; ++j) {
                 for(int k = 0; k < x.shape()[2]; ++k) {

@@ -21,7 +21,9 @@ namespace Utils {
     float* getTrueFaces(const tdArray&, const int);
     void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
     void clearBoundaryValues(tdArray&, const int, const int, const int);
-    void initializeTdarray(tdArray&);
+
+    void initialize3DArray(tdArray&);
+    void initializeRhoArray(std::vector<tdArray>&);
     void createDir(std::string);
 
     //! 逆行列を解く

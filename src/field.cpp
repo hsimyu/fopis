@@ -455,9 +455,9 @@ void Field::updateBfield(const double dx, const int nx, const int ny, const int 
 }
 
 void Field::initializeCurrent(const double dt) {
-    Utils::initializeTdarray(jx);
-    Utils::initializeTdarray(jy);
-    Utils::initializeTdarray(jz);
+    Utils::initialize3DArray(jx);
+    Utils::initialize3DArray(jy);
+    Utils::initialize3DArray(jz);
 
     const int cx_with_glue = jx.shape()[0] + 1; // Edge 要素は各方向に1少ないので +1 する
     const int cy_with_glue = jy.shape()[1] + 1;

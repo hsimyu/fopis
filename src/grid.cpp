@@ -157,7 +157,7 @@ void Grid::initializeObjectsCmatrix(void) {
 
                 // rhoを初期化
                 Utils::initializeTdarray(rho);
-                Utils::initializeTdarray(phi);
+                Utils::initialize3DArray(phi);
 
                 //! 各頂点に単位電荷を付与
                 if (obj.isMyCmat(cmat_col_itr)) {
