@@ -30,13 +30,13 @@ double ParticleType::calcDebyeLength(void) const {
     return sqrt( temperature * eps0 / (pow(e, 2) * density));
 }
 
-int ParticleType::calcSize(void) {
+int ParticleType::updateSize(void) {
     size = static_cast<int>(pow(Environment::dx, 3) * density / static_cast<double>(particle_per_cell));
     return size;
 }
 
 // initializer for ambient plasma
-int ParticleType::calcTotalNumber(void){
+int ParticleType::updateTotalNumber(void){
     //! 担当するセルの数は上側境界にいるかどうかで変わる
     int cellX = (Environment::onHighXedge) ? Environment::cell_x - 1 : Environment::cell_x;
     int cellY = (Environment::onHighYedge) ? Environment::cell_y - 1 : Environment::cell_y;

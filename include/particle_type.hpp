@@ -8,7 +8,7 @@ class Velocity;
 class Grid;
 
 class ParticleType {
-    private:
+    protected:
         int id;
         std::string name;
 
@@ -20,7 +20,7 @@ class ParticleType {
         double temperature;
         int size;
 
-        // for computation
+        // 計算用
         int particle_per_cell;
         int totalNumber;
 
@@ -43,7 +43,7 @@ class ParticleType {
             temperature = ptype.getTemperature();
             size = ptype.getSize();
 
-            particle_per_cell = ptype.getPcell();
+            // particle_per_cell = ptype.getPcell();
             totalNumber = ptype.getTotalNumber();
         };
 
@@ -60,8 +60,8 @@ class ParticleType {
         void setName(std::string _name){ name = _name; }
         void setType(std::string _type){ type = _type; }
         void setSize(int _size){ size = _size; }
-        void setTotalNumber(int _num){ totalNumber = _num; }
         void setPcell(int _pcell){ particle_per_cell = _pcell; }
+        void setTotalNumber(int _num){ totalNumber = _num; }
 
         // getters
         int getId() const { return id; }
@@ -73,12 +73,12 @@ class ParticleType {
         double getTemperature() const { return temperature / e; }
         double getTrueTemperature() const { return temperature; }
 
-        int getPcell() const { return particle_per_cell; }
         int getSize() const { return size; }
+        int getPcell() const { return particle_per_cell; }
         int getTotalNumber() const { return totalNumber; }
 
-        int calcSize(void);
-        int calcTotalNumber(void);
+        int updateSize(void);
+        int updateTotalNumber(void);
         double calcDebyeLength(void) const;
         double calcThermalVelocity(void) const;
         double calcDeviation(void) const;
@@ -93,4 +93,23 @@ class ParticleType {
         friend std::istream& operator<<(std::istream&, const ParticleType&);
 };
 
+//! 各種派生クラス
+
+class AmbientParticle : public ParticleType {
+    protected:
+
+    public:
+        AmbientParticle() : ParticleType(){}
+
+
+};
+
+class BeamParticle : public ParticleType {
+    private:
+        double emiss_x = 10.0;
+        double aaaaaaa;
+
+    public:
+        BeamParticle() : ParticleType(){}
+};
 #endif

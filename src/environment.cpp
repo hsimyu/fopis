@@ -29,7 +29,7 @@ std::string Environment::solver_type;
 std::string Environment::boundary;
 std::string Environment::dimension;
 std::vector<ObjectInfo_t> Environment::objects_info;
-ParticleType* Environment::ptype;
+std::vector<ParticleType> Environment::ptype;
 
 /*
 * @params

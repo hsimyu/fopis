@@ -10,7 +10,6 @@
 
 namespace Initializer {
     void initTDPIC(Grid*& root_grid){
-#ifndef BUILD_TEST
         // load parameter from json
         std::string filename = "input.json";
         auto inputs = Utils::readJSONFile(filename);
@@ -21,10 +20,6 @@ namespace Initializer {
 
         // 粒子情報セット
         Initializer::loadParticleType(inputs);
-#else
-        Initializer::setTestEnvirontment();
-        Initializer::setMPIInfoToEnv();
-#endif
 
         //! initialize normalizer
         //! normalizerのセットはGridの生成より先
@@ -59,51 +54,6 @@ namespace Initializer {
         if( Environment::isRootNode ) {
             cout << "--  End Initializing  --" << endl;
         }
-    }
-
-    void setTestEnvirontment() {
-        // test input
-        Environment::jobtype = "new";
-        Environment::nx = 16;
-        Environment::ny = 16;
-        Environment::nz = 16;
-        Environment::proc_x = 1;
-        Environment::proc_y = 1;
-        Environment::proc_z = 1;
-        Environment::solver_type = "EM";
-        Environment::boundary = "DDDDDD";
-        Environment::dimension = "3D";
-        Environment::dx = 0.1;
-        Environment::dt = 1e-8;
-        Environment::cell_x = Environment::nx/Environment::proc_x;
-        Environment::cell_y = Environment::ny/Environment::proc_y;
-        Environment::cell_z = Environment::nz/Environment::proc_z;
-
-        Environment::max_particle_num = MAX_PARTICLE_NUM;
-        Environment::num_of_particle_types = 2;
-        Environment::ptype = new ParticleType[Environment::num_of_particle_types];
-
-        Environment::ptype[0].setId(0);
-        Environment::ptype[0].setName("Electron");
-        Environment::ptype[0].setType("ambient");
-        Environment::ptype[0].setMass(1.0);
-        Environment::ptype[0].setCharge(-1.0);
-        Environment::ptype[0].setTemperature(1.0);
-        Environment::ptype[0].setDensity(1.0e6);
-        Environment::ptype[0].setPcell(20);
-        Environment::ptype[0].calcTotalNumber();
-        Environment::ptype[0].calcSize();
-
-        Environment::ptype[1].setId(1);
-        Environment::ptype[1].setName("Proton");
-        Environment::ptype[1].setType("ambient");
-        Environment::ptype[1].setMass(1836.0 * 1.0);
-        Environment::ptype[1].setCharge(1.0);
-        Environment::ptype[1].setTemperature(1.0);
-        Environment::ptype[1].setDensity(1.0e6);
-        Environment::ptype[1].setPcell(20);
-        Environment::ptype[1].calcTotalNumber();
-        Environment::ptype[1].calcSize();
     }
 
     void setMPIInfoToEnv() {
@@ -247,32 +197,44 @@ namespace Initializer {
 
     void loadParticleType(picojson::object& inputs){
         auto plasma_inputs = inputs["Plasma"].get<picojson::object>();
-        int particle_types = 0;
-        for(auto i = plasma_inputs.begin(); i != plasma_inputs.end(); ++i){
-            ++particle_types;
-        }
-        Environment::num_of_particle_types = particle_types;
-        ParticleType* ptype = new ParticleType[particle_types];
-        int ii = 0;
+        std::vector<ParticleType> ptype;
+
+        int id = 0;
         for(auto it = plasma_inputs.begin(); it != plasma_inputs.end(); ++it){
             std::string name = it->first;
             auto plasma = it->second.get<picojson::object>();
-            ptype[ii].setId(ii);
-            ptype[ii].setName(name);
-            ptype[ii].setType( plasma["type"].to_str() );
-            ptype[ii].setMass( plasma["mass"].get<double>() );
-            ptype[ii].setCharge( plasma["charge"].get<double>() );
-            ptype[ii].setTemperature( plasma["temperature"].get<double>() );
-            ptype[ii].setDensity( plasma["density"].get<double>() );
-            ptype[ii].setPcell( static_cast<int>((plasma["particle_per_cell"].get<double>() )) );
-            ptype[ii].calcTotalNumber();
-            ptype[ii].calcSize();
+            const auto& type = plasma["type"].to_str();
 
-            ++ii;
+            if (type == "ambient") {
+                ParticleType pt;
+                pt.setId(id);
+                pt.setName(name);
+                pt.setType(type);
+                pt.setMass(plasma["mass"].get<double>());
+                pt.setCharge(plasma["charge"].get<double>());
+                pt.setTemperature(plasma["temperature"].get<double>());
+                pt.setDensity(plasma["density"].get<double>());
+                pt.setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
+                pt.updateTotalNumber();
+                pt.updateSize();
+                ptype.push_back( std::move(pt) );
+            } else if (type == "beam") {
+                BeamParticle beam;
+                beam.setId(id);
+                beam.setName(name);
+                beam.setType(type);
+                beam.setMass(plasma["mass"].get<double>());
+                beam.setCharge(plasma["charge"].get<double>());
+                beam.setTemperature(plasma["temperature"].get<double>());
+                beam.setDensity(plasma["density"].get<double>());
+                ptype.push_back( std::move(beam) );
+            }
+
+            ++id;
         }
 
-        //! @note: staticなポインタって持っても大丈夫？
-        Environment::ptype = ptype;
+        Environment::num_of_particle_types = id;
+        Environment::ptype = std::move(ptype);
     }
 
     Grid* initializeGrid(void){

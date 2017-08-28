@@ -45,7 +45,7 @@ struct Environment {
         static std::string boundary;
         static std::string dimension;
 
-        static ParticleType* ptype;
+        static std::vector<ParticleType> ptype;
 
         //! 物体情報
         static std::vector<ObjectInfo_t> objects_info;
