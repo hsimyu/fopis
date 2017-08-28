@@ -65,8 +65,8 @@ int main(int argc, char* argv[]){
         if(Environment::plotEfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "efield");
         if(Environment::plotDensity())      IO::writeDataInParallel(*root_grid, Environment::timestep, "density");
         if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
-        if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->particles);
-        if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->particles);
+        if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->getParticles());
+        if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->getParticles());
 
         IO::plotObjectsData(*root_grid);
     }

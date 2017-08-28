@@ -21,6 +21,9 @@ class Grid {
         // オブジェクト定義は Node ベース
         std::vector<Spacecraft> objects;
 
+        //! Particleを格納したstd::vectorを、粒子種ごとに保持したstd::vector
+        ParticleArray particles;
+
         //! 親のどの座標にくっついているか
         //! @{
         int from_ix;
@@ -117,6 +120,7 @@ class Grid {
         double getDt(void) const { return dt; }
 
         const std::vector<Spacecraft>& getObjects() const { return objects; };
+        ParticleArray& getParticles() {return particles;}
 
         //! 基本的には root_grid 中に対象の点(Object定義点)が含まれているかを判定するために呼ぶ
         //! i, j, k は整数座標(全体の計算空間上の)
@@ -215,9 +219,6 @@ class Grid {
 
         void incrementSumOfChild(void);
         void decrementSumOfChild(void);
-
-        //! Particleを格納したstd::vectorを、粒子種ごとに保持したstd::vector
-        ParticleArray particles;
 
         // update fields
         void updateRho(void);
