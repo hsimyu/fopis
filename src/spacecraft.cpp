@@ -83,10 +83,18 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         capacity_matrix.resize(num_cmat, num_cmat);
         
         tdArray::extent_gen tdExtents;
-
-        //! Node ベース, glue cell ありの電荷密度マップ
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            //! Node ベース, glue cell ありの電荷密度マップを生成
             charge_map.emplace_back(tdExtents[nx + 2][ny + 2][nz + 2], boost::fortran_storage_order());
+
+            //! 電流 in/out を記録する要素を初期化
+            current.push_back(0.0);
+
+            //! 放出粒子のID追加判定
+            auto itr = std::find(obj_info.emit_particle_names.begin(), obj_info.emit_particle_names.end(), Environment::ptype[pid]->getName());
+            if (itr != obj_info.emit_particle_names.end()) {
+                emit_particle_ids.push_back(pid);
+            }
         }
 
         //! 電荷配列初期化
@@ -99,11 +107,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                     }
                 }
             }
-        }
-
-        //! 電流 in/out を記録する
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            current.push_back(0.0);
         }
     }
 }
@@ -283,8 +286,13 @@ std::string Spacecraft::getLogEntry() const {
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
-    ost << "    name:" << spc.name << endl;
-    ost << "    cmat:" << spc.num_cmat << endl;
+    ost << "    name          : " << spc.name << endl;
+    ost << "    cmat          : " << spc.num_cmat << endl;
+    ost << "    emit particles: ";
+
+    for(const auto& id : spc.emit_particle_ids) {
+        ost << Environment::ptype[id]->getName() << ", " << endl;
+    }
 
     return ost;
 }

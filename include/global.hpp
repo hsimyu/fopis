@@ -36,6 +36,7 @@ struct ObjectInfo_t {
     std::string surface_type;
     unsigned int history_width;
     double potential_fix;
+    std::vector<std::string> emit_particle_names;
 };
 
 #endif

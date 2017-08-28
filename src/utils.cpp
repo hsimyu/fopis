@@ -404,6 +404,23 @@ namespace Utils {
         return o;
     }
 
+    //! convert picojson::array to std::vector
+    std::vector<double> convertPicoJSONArrayToVectorDouble(const picojson::array& pico_array) {
+        std::vector<double> vect;
+        for(const auto& v : pico_array) {
+            vect.push_back(v.get<double>());
+        }
+        return vect;
+    }
+
+    std::vector<std::string> convertPicoJSONArrayToVectorString(const picojson::array& pico_array) {
+        std::vector<std::string> vect;
+        for(const auto& v : pico_array) {
+            vect.push_back(v.to_str());
+        }
+        return vect;
+    }
+
     void createDir(std::string dirname) {
         boost::filesystem::path dir(dirname);
         if(!boost::filesystem::is_directory(dir)) {

@@ -10,6 +10,8 @@ namespace Utils {
     std::string prettyMemoryString(double);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
+    std::vector<double> convertPicoJSONArrayToVectorDouble(const picojson::array& pico_array);
+    std::vector<std::string> convertPicoJSONArrayToVectorString(const picojson::array& pico_array);
     std::vector<std::string> split(const std::string& target, char delim);
 
     // 軸方向を指定する文字列をindexに変換する

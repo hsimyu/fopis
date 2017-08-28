@@ -190,6 +190,7 @@ namespace Initializer {
             obj.surface_type = obj_info["surface_type"].to_str();
             obj.history_width = static_cast<unsigned int>(obj_info["history_width"].get<double>());
             obj.potential_fix = obj_info["potential_fix"].get<double>();
+            obj.emit_particle_names = Utils::convertPicoJSONArrayToVectorString(obj_info["emit_particles"].get<picojson::array>());
             
             Environment::objects_info.push_back( std::move(obj) );
         }
@@ -231,21 +232,12 @@ namespace Initializer {
                 beam->updateTotalNumber();
                 beam->updateSize();
 
-                //! convert picojson::array to std::vector
-                auto convert_picoarray_to_vector = [](picojson::array& pico_array) {
-                    std::vector<double> vect;
-                    for(const auto& v : pico_array) {
-                        vect.push_back(v.get<double>());
-                    }
-                    return vect;
-                };
-
                 beam->setAcceleratingPotential( Normalizer::normalizePotential(plasma["accel_potential"].get<double>()) );
                 beam->setBeamCurrent( Normalizer::normalizeCurrent(plasma["beam_current"].get<double>()) );
                 beam->setBeamDivergence( plasma["beam_divergence"].get<double>() );
                 beam->setEmissionType( plasma["emission_type"].to_str() );
-                beam->setEmissionPosition( convert_picoarray_to_vector( plasma["emission_position"].get<picojson::array>() ) );
-                beam->setEmissionVector( convert_picoarray_to_vector( plasma["emission_vector"].get<picojson::array>() ) );
+                beam->setEmissionPosition( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_position"].get<picojson::array>() ) );
+                beam->setEmissionVector( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_vector"].get<picojson::array>() ) );
                 Environment::ptype.push_back( beam );
             }
 

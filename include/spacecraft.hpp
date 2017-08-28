@@ -27,6 +27,7 @@ private:
     double potential_fix;
     double total_charge;
     std::vector<double> current;
+    std::vector<int> emit_particle_ids;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
     ObjectDefinedMap object_node_map;

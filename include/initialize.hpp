@@ -6,7 +6,6 @@ class Grid;
 
 namespace Initializer {
     void initTDPIC(Grid*&);
-    void setTestEnvirontment(void);
     void setMPIInfoToEnv(void);
     void loadEnvironment(picojson::object&);
     void loadParticleType(picojson::object&);
