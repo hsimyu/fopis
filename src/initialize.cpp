@@ -206,27 +206,27 @@ namespace Initializer {
             const auto& type = plasma["type"].to_str();
 
             if (type == "ambient") {
-                AmbientParticle pt;
-                pt.setId(id);
-                pt.setName(name);
-                pt.setType(type);
-                pt.setMass(plasma["mass"].get<double>());
-                pt.setCharge(plasma["charge"].get<double>());
-                pt.setTemperature(plasma["temperature"].get<double>());
-                pt.setDensity(plasma["density"].get<double>());
-                pt.setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
-                pt.updateTotalNumber();
-                pt.updateSize();
-                Environment::ptype.push_back( &pt );
+                AmbientParticle* ambient = new AmbientParticle;
+                ambient->setId(id);
+                ambient->setName(name);
+                ambient->setType(type);
+                ambient->setMass(plasma["mass"].get<double>());
+                ambient->setCharge(plasma["charge"].get<double>());
+                ambient->setTemperature(plasma["temperature"].get<double>());
+                ambient->setDensity(plasma["density"].get<double>());
+                ambient->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
+                ambient->updateTotalNumber();
+                ambient->updateSize();
+                Environment::ptype.push_back( std::move(ambient) );
             } else if (type == "beam") {
-                BeamParticle beam;
-                beam.setId(id);
-                beam.setName(name);
-                beam.setType(type);
-                beam.setMass(plasma["mass"].get<double>());
-                beam.setCharge(plasma["charge"].get<double>());
-                beam.setTemperature(plasma["temperature"].get<double>());
-                beam.setDensity(plasma["density"].get<double>());
+                BeamParticle* beam = new BeamParticle;
+                beam->setId(id);
+                beam->setName(name);
+                beam->setType(type);
+                beam->setMass(plasma["mass"].get<double>());
+                beam->setCharge(plasma["charge"].get<double>());
+                beam->setTemperature(plasma["temperature"].get<double>());
+                beam->setDensity(plasma["density"].get<double>());
 
                 //! convert picojson::array to std::vector
                 auto convert_picoarray_to_vector = [](picojson::array& pico_array) {
@@ -237,9 +237,9 @@ namespace Initializer {
                     return vect;
                 };
 
-                beam.setEmissionPosition( convert_picoarray_to_vector( plasma["emission_position"].get<picojson::array>() ) );
-                beam.setEmissionVector( convert_picoarray_to_vector( plasma["emission_vector"].get<picojson::array>() ) );
-                Environment::ptype.push_back( &beam );
+                beam->setEmissionPosition( convert_picoarray_to_vector( plasma["emission_position"].get<picojson::array>() ) );
+                beam->setEmissionVector( convert_picoarray_to_vector( plasma["emission_vector"].get<picojson::array>() ) );
+                Environment::ptype.push_back( beam );
             }
 
             ++id;
