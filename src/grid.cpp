@@ -128,15 +128,16 @@ void Grid::initializeObject(void) {
             }
         }
 
+        //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
+        //! emplace_back で Spacecraft object を直接構築
+        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, glue_node_array, inner_face_array);
+
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
         if (MPIw::Environment::isRootNode(obj_name)) {
             cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
+            cout << objects[ objects.size() - 1 ] << endl;
         }
-
-        //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
-        //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, glue_node_array, inner_face_array);
     }
 }
 
