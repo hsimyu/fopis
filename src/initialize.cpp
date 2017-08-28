@@ -197,7 +197,7 @@ namespace Initializer {
 
     void loadParticleType(picojson::object& inputs){
         auto plasma_inputs = inputs["Plasma"].get<picojson::object>();
-        std::vector<ParticleType> ptype;
+        std::vector<ParticleType*> ptype;
 
         int id = 0;
         for(auto it = plasma_inputs.begin(); it != plasma_inputs.end(); ++it){
@@ -206,7 +206,7 @@ namespace Initializer {
             const auto& type = plasma["type"].to_str();
 
             if (type == "ambient") {
-                ParticleType pt;
+                AmbientParticle pt;
                 pt.setId(id);
                 pt.setName(name);
                 pt.setType(type);
@@ -217,7 +217,7 @@ namespace Initializer {
                 pt.setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
                 pt.updateTotalNumber();
                 pt.updateSize();
-                ptype.push_back( std::move(pt) );
+                Environment::ptype.push_back( &pt );
             } else if (type == "beam") {
                 BeamParticle beam;
                 beam.setId(id);
@@ -227,14 +227,25 @@ namespace Initializer {
                 beam.setCharge(plasma["charge"].get<double>());
                 beam.setTemperature(plasma["temperature"].get<double>());
                 beam.setDensity(plasma["density"].get<double>());
-                ptype.push_back( std::move(beam) );
+
+                //! convert picojson::array to std::vector
+                auto convert_picoarray_to_vector = [](picojson::array& pico_array) {
+                    std::vector<double> vect;
+                    for(const auto& v : pico_array) {
+                        vect.push_back(v.get<double>());
+                    }
+                    return vect;
+                };
+
+                beam.setEmissionPosition( convert_picoarray_to_vector( plasma["emission_position"].get<picojson::array>() ) );
+                beam.setEmissionVector( convert_picoarray_to_vector( plasma["emission_vector"].get<picojson::array>() ) );
+                Environment::ptype.push_back( &beam );
             }
 
             ++id;
         }
 
         Environment::num_of_particle_types = id;
-        Environment::ptype = std::move(ptype);
     }
 
     Grid* initializeGrid(void){

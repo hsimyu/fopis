@@ -259,7 +259,7 @@ namespace IO {
         std::ofstream ofs(filename, std::ios::out);
 
         for(int pid = 0; pid < ptypes; ++pid) {
-            ofs << format("# %s") % Environment::ptype[pid].getName() << endl;
+            ofs << format("# %s") % Environment::ptype[pid]->getName() << endl;
             ofs << format("# %11s %11s") % header % "Ratio" << endl;
 
             int maxElement = *std::max_element(pdist[pid].begin(), pdist[pid].end());
@@ -311,7 +311,7 @@ namespace IO {
 
         for(int id = 0; id < Environment::num_of_particle_types; ++id){
 
-            ofs << "## " << Environment::ptype[id].getName() << endl;
+            ofs << "## " << Environment::ptype[id]->getName() << endl;
 
             for(int i = 0; i < parray[id].size(); ++i){
                 ofs << format("%9.4f %9.4f %9.4f") % parray[id][i].x % parray[id][i].y % parray[id][i].z;

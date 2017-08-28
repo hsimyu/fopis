@@ -24,7 +24,7 @@ void Grid::updateParticleVelocityES(void) {
     tdArray& ezref = field->getEzRef();
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        double qm = 0.5 * (Environment::ptype[pid].getCharge()) / (Environment::ptype[pid].getMass());
+        double qm = 0.5 * (Environment::ptype[pid]->getCharge()) / (Environment::ptype[pid]->getMass());
 
         for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
             Particle& p = particles[pid][pnum];
@@ -97,7 +97,7 @@ void Grid::updateParticleVelocityEM(void) {
     tdArray& bzref = field->getBzRef();
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        double qm = 0.5 * (Environment::ptype[pid].getCharge()) / (Environment::ptype[pid].getMass());
+        double qm = 0.5 * (Environment::ptype[pid]->getCharge()) / (Environment::ptype[pid]->getMass());
 
         for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
             Particle& p = particles[pid][pnum];
@@ -268,7 +268,7 @@ void Grid::updateParticlePositionES(void) {
         for(auto& p : pbuffRecv[i]){
 #ifdef DEBUG
             if( particles[ p.typeId ].capacity() == particles[ p.typeId ].size() ) {
-                cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::ptype[ p.typeId ].getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
+                cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::ptype[ p.typeId ]->getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
             }
 #endif
             if(p.isValid) {
@@ -297,7 +297,7 @@ void Grid::updateParticlePositionEM(void) {
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         //! note: 1/dxdydz 分を係数としてかけておく必要がある？
-        const double q_per_dt = Environment::ptype[pid].getCharge() / dt;
+        const double q_per_dt = Environment::ptype[pid]->getCharge() / dt;
 
         for(int i = 0; i < particles[pid].size(); ++i){
             Particle& p = particles[pid][i];
@@ -381,12 +381,12 @@ void Grid::updateParticlePositionEM(void) {
         for(auto& p : pbuffRecv[i]){
 #ifdef DEBUG
             if( particles[ p.typeId ].capacity() == particles[ p.typeId ].size() ) {
-                cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::ptype[ p.typeId ].getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
+                cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::ptype[ p.typeId ]->getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
             }
 #endif
             if(p.isValid) {
                 const int pid = p.typeId;
-                const double q_per_dt = Environment::ptype[pid].getCharge() / dt;
+                const double q_per_dt = Environment::ptype[pid]->getCharge() / dt;
                 p.distributeCurrentAtNewPosition(q_per_dt, jx, jy, jz);
                 particles[ pid ].push_back( std::move(p) );
             }
@@ -417,7 +417,7 @@ void Grid::updateRho() {
     }
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        double q = Environment::ptype[pid].getCharge();
+        double q = Environment::ptype[pid]->getCharge();
         const auto rho_idx = pid + 1;
 
         for(auto& p : particles[pid]) {
@@ -517,7 +517,7 @@ void Grid::injectParticles(void) {
     if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        std::vector<double> flux = Environment::ptype[pid].calcFlux(*this);
+        std::vector<double> flux = Environment::ptype[pid]->calcFlux(*this);
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;
@@ -630,7 +630,7 @@ double Grid::getParticleEnergy(void) const {
                 eachEnergy += particles[pid][i].getSquaredMagnitudeOfVelocity();
             }
         }
-        res += 0.5 * Environment::ptype[pid].getMass() * eachEnergy * Environment::ptype[pid].getSize();
+        res += 0.5 * Environment::ptype[pid]->getMass() * eachEnergy * Environment::ptype[pid]->getSize();
     }
 
     return res;

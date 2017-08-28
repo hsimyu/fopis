@@ -112,17 +112,17 @@ void Particle::distributeCurrentAtNewPosition(const double q_per_dt, tdArray& jx
 }
 
 double Particle::getEnergy(void) const {
-    return 0.5 * (vx*vx + vy*vy + vz*vz) * Environment::ptype[typeId].getMass();
+    return 0.5 * (vx*vx + vy*vy + vz*vz) * (Environment::ptype[typeId]->getMass());
 }
 
 void Particle::generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z)
 {
-    this->setPosition( Environment::ptype[typeId].generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z) );
+    this->setPosition( Environment::ptype[typeId]->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z) );
 }
 
 void Particle::generateNewVelocity(void)
 {
-    this->setVelocity( Environment::ptype[typeId].generateNewVelocity() );
+    this->setVelocity( Environment::ptype[typeId]->generateNewVelocity() );
 }
 
 // util

@@ -2,6 +2,7 @@
 #define __TDPIC_PARTICLE_TYPE_HPP_INCLUDED__
 
 #include <random>
+#include "position.hpp"
 
 class Position;
 class Velocity;
@@ -105,11 +106,31 @@ class AmbientParticle : public ParticleType {
 };
 
 class BeamParticle : public ParticleType {
-    private:
-        double emiss_x = 10.0;
-        double aaaaaaa;
+    protected:
+        Position emission_position;
+        std::vector<double> emission_vector;
 
     public:
         BeamParticle() : ParticleType(){}
+
+        void setEmissionPosition(const std::vector<double>& pos) {
+            if (pos.size() != 3) {
+                throw std::invalid_argument("The size of the argument for setEmissionPosition() must be 3.");
+            }
+
+            emission_position = Position(pos[0], pos[1], pos[2]);
+        }
+        Position getEmissionPosition() const {return emission_position;}
+
+        void setEmissionVector(const std::vector<double>& pos) {
+            if (pos.size() != 3) {
+                throw std::invalid_argument("The size of the argument for setEmissionVector() must be 3.");
+            }
+
+            emission_vector = pos;
+        }
+        std::vector<double> getEmissionVector() const {return emission_vector;}
+
+        friend std::ostream& operator<<(std::ostream&, const BeamParticle&);
 };
 #endif

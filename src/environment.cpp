@@ -29,7 +29,7 @@ std::string Environment::solver_type;
 std::string Environment::boundary;
 std::string Environment::dimension;
 std::vector<ObjectInfo_t> Environment::objects_info;
-std::vector<ParticleType> Environment::ptype;
+std::vector<ParticleType*> Environment::ptype;
 
 /*
 * @params
@@ -140,11 +140,11 @@ void Environment::checkPlasmaInfo(void) {
     double total_debye = 0.0;
 
     for (int pid = 0; pid < num_of_particle_types; pid++) {
-        ParticleType& pt = ptype[pid];
+        ParticleType* pt = ptype[pid];
         cout << pt;
 
         // プラズマ特徴量のチェック
-        double debye = pt.calcDebyeLength();
+        double debye = pt->calcDebyeLength();
         
         cout << "    [Debye Length]:" << endl;
         cout << "        Debye Length: " << debye << " m" << endl;
@@ -157,14 +157,14 @@ void Environment::checkPlasmaInfo(void) {
             << ((((nz * dx) / debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
 
         // 1/ld_total^2 = \sigma 1/ld_i^2
-        if (pt.getType() == "ambient") total_debye += 1.0/pow(debye, 2);
+        if (pt->getType() == "ambient") total_debye += 1.0/pow(debye, 2);
 
         cout << "    [Thermal Velocity]" << endl;
-        cout << "        Vth = " << pt.calcThermalVelocity() << " < 0.4?: "
-            << (pt.calcThermalVelocity() < 1.0 ? "OK" : "*NOT SATISFIED*") << endl << endl;
+        cout << "        Vth = " << pt->calcThermalVelocity() << " < 0.4?: "
+            << (pt->calcThermalVelocity() < 1.0 ? "OK" : "*NOT SATISFIED*") << endl << endl;
 
         cout << "    [Plasma Frequency]" << endl;
-        double omega_p = pt.calcPlasmaFrequency();
+        double omega_p = pt->calcPlasmaFrequency();
         cout << "        omega_p = " << omega_p << endl;
         cout << "        1 / omega_p = " << 1.0 / omega_p << endl;
         cout << "        1 / (omega_p * dt) = " << 1.0 / (omega_p * dt) << " > 5.0?: "

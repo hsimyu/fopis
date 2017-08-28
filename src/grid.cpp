@@ -245,8 +245,8 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
         particles[id].reserve(Environment::max_particle_num);
 
         //! 初期化時は背景粒子のみ生成
-        if (Environment::ptype[id].getType() == "ambient") {
-            int pnum = Environment::ptype[id].getTotalNumber();
+        if (Environment::ptype[id]->getType() == "ambient") {
+            int pnum = Environment::ptype[id]->getTotalNumber();
             for(int i = 0; i < pnum; ++i){
                 Particle p(id);
                 p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, max_z);
@@ -539,7 +539,7 @@ boost::multi_array<float, 3> Grid::getDensity(const int pid) const {
     const int zsize = this->getZNodeSize() - 1;
 
     boost::multi_array<float, 3> zones(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
-    const auto size = static_cast<float>(Normalizer::unnormalizeDensity(Environment::ptype[pid].getSize()));
+    const auto size = static_cast<float>(Normalizer::unnormalizeDensity(Environment::ptype[pid]->getSize()));
 
     for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
         const Particle& p = particles[pid][pnum];
@@ -656,7 +656,7 @@ void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_nam
     } else if(data_type_name == "density") {
         HighFive::Group data_type_group = getGroup(local_group, data_type_name);
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            const std::string& pname = Environment::ptype[pid].getName();
+            const std::string& pname = Environment::ptype[pid]->getName();
             auto values = this->getDensity(pid);
             auto dataset = data_type_group.createDataSet<float>(pname, HighFive::DataSpace::From(values));
             dataset.write(values);

@@ -258,7 +258,7 @@ std::string Spacecraft::getLogHeader() const {
     format_base = format_base % "Potential [V]";
     format_base = format_base % "Charge [C]";
     for(int i = 0; i < Environment::num_of_particle_types; ++i) {
-        format_base = format_base % (Environment::ptype[i].getName() + " [A]");
+        format_base = format_base % (Environment::ptype[i]->getName() + " [A]");
     }
 
     std::string header = format_base.str();
