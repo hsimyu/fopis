@@ -7,7 +7,9 @@
 class Position;
 class Velocity;
 class Grid;
+class Particle;
 
+//! 粒子系のベースクラス
 class ParticleType {
     protected:
         int id;
@@ -84,57 +86,59 @@ class ParticleType {
         double calcThermalVelocity(void) const;
         double calcDeviation(void) const;
         double calcPlasmaFrequency(void) const;
-        std::vector<double> calcFlux(Grid const&) const;
         std::string calcMemory(void) const;
-
-        Position generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
-        Velocity generateNewVelocity(void);
 
         virtual void printInfo() const;
 };
 
-//! 各種派生クラス
-
-class AmbientParticle : public ParticleType {
+//! 背景プラズマ
+class AmbientParticleType : public ParticleType {
     protected:
 
     public:
-        AmbientParticle() : ParticleType(){}
+        AmbientParticleType() : ParticleType(){}
+        std::vector<double> calcFlux(Grid const&) const;
 
-
+        //! factory関数
+        Particle generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
+        Particle generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z, const Velocity& vel);
+        Position generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
+        Velocity generateNewVelocity(void);
 };
 
-class BeamParticle : public ParticleType {
+//! 放出用プラズマ粒子クラス
+class EmissionParticleType : public ParticleType {
     protected:
+
+    public:
+        EmissionParticleType() : ParticleType(){}
+        virtual double getEmissionAmount() const = 0;
+};
+
+//! 放出されるビーム用クラス
+class BeamParticleType : public EmissionParticleType {
+    protected:
+        std::string emission_type;
         Position emission_position;
         std::vector<double> emission_vector;
         double accel_potential;
         double beam_current;
         double beam_divergence;
-        std::string emission_type;
 
     public:
-        BeamParticle() : ParticleType(){}
+        BeamParticleType() : EmissionParticleType(){}
 
-        void setAcceleratingPotential(const double value) {
-            accel_potential = value;
-        }
+        void setEmissionType(const std::string& type) { emission_type = type; }
+        std::string getEmissionType() const {return emission_type;}
+
+        void setAcceleratingPotential(const double value) { accel_potential = value; }
         double getAcceleratingPotential() const {return accel_potential;}
 
-        void setBeamCurrent(const double value) {
-            beam_current = value;
-        }
+        void setBeamCurrent(const double value) { beam_current = value; }
         double getBeamCurrent() const {return beam_current;}
 
-        void setBeamDivergence(const double value) {
-            beam_divergence = value;
-        }
+        void setBeamDivergence(const double value) { beam_divergence = value; }
         double getBeamDivergence() const {return beam_divergence;}
-
-        void setEmissionType(const std::string& type) {
-            emission_type = type;
-        }
-        std::string getEmissionType() const {return emission_type;}
 
         void setEmissionPosition(const std::vector<double>& pos) {
             if (pos.size() != 3) {
@@ -153,6 +157,10 @@ class BeamParticle : public ParticleType {
             emission_vector = pos;
         }
         std::vector<double> getEmissionVector() const {return emission_vector;}
+
+        virtual double getEmissionAmount() const override {return 10.0;}
+
+        Particle generateNewParticle();
         virtual void printInfo() const override;
 };
 #endif

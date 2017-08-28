@@ -57,30 +57,32 @@ double ParticleType::calcPlasmaFrequency(void) const {
     return sqrt(density * pow(e, 2) / (me * eps0));
 }
 
-Position ParticleType::generateNewPosition(
-        const double min_x, const double max_x,
-        const double min_y, const double max_y,
-        const double min_z, const double max_z) {
+std::string ParticleType::calcMemory() const {
+    static constexpr double memory_per_particle = 8.0*6 + 4.0*2;
 
-    std::uniform_real_distribution<> dist_x(min_x, max_x);
-    std::uniform_real_distribution<> dist_y(min_y, max_y);
-    std::uniform_real_distribution<> dist_z(min_z, max_z);
+    double pmem = (this->getTotalNumber() > Environment::max_particle_num) ?
+        this->getTotalNumber() * memory_per_particle : Environment::max_particle_num * memory_per_particle;
 
-    Position p(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
-    return p;
+    return Utils::prettyMemoryString(pmem);
 }
 
-Velocity ParticleType::generateNewVelocity(void) {
-    const double deviation = this->calcDeviation();
-    std::normal_distribution<> dist_vx(0.0, deviation);
-    std::normal_distribution<> dist_vy(0.0, deviation);
-    std::normal_distribution<> dist_vz(0.0, deviation);
-
-    Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
-    return v;
+// util
+void ParticleType::printInfo() const {
+    cout << "[ParticleType  : " << getName() << "]" << endl;
+    cout << "             id: " << getId() << endl;
+    cout << "           type: " << getType() << endl;
+    cout << "           mass: " << getMass() << endl;
+    cout << "         charge: " << getCharge() << "e" << endl;
+    cout << "        density: " << getDensity() << "/m^3" << endl;
+    cout << "    temperature: " << getTemperature() << "eV" << endl;
+    cout << "           size: " << getSize() << endl;
+    cout << "       per_cell: " << getPcell() << endl;
+    cout << "    totalNumber: " << getTotalNumber() << endl;
+    cout << "         memory: " << calcMemory() << endl;
 }
 
-std::vector<double> ParticleType::calcFlux(Grid const& g) const {
+//! 背景プラズマ用
+std::vector<double> AmbientParticleType::calcFlux(Grid const& g) const {
     //
     // const double ddv = 1e-3;
     // const double nvx = 12.0f/ddv;
@@ -123,31 +125,52 @@ std::vector<double> ParticleType::calcFlux(Grid const& g) const {
     return flux;
 }
 
-std::string ParticleType::calcMemory() const {
-    static constexpr double memory_per_particle = 8.0*6 + 4.0*2;
+//! 粒子生成Factory関数の実体
+Particle AmbientParticleType::generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z) {
+    Particle p(id);
+    Position pos = this->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z);
+    Velocity vel = this->generateNewVelocity();
 
-    double pmem = (this->getTotalNumber() > Environment::max_particle_num) ?
-        this->getTotalNumber() * memory_per_particle : Environment::max_particle_num * memory_per_particle;
-
-    return Utils::prettyMemoryString(pmem);
+    return p;
 }
 
-// util
-void ParticleType::printInfo() const {
-    cout << "[ParticleType  : " << getName() << "]" << endl;
-    cout << "             id: " << getId() << endl;
-    cout << "           type: " << getType() << endl;
-    cout << "           mass: " << getMass() << endl;
-    cout << "         charge: " << getCharge() << "e" << endl;
-    cout << "        density: " << getDensity() << "/m^3" << endl;
-    cout << "    temperature: " << getTemperature() << "eV" << endl;
-    cout << "           size: " << getSize() << endl;
-    cout << "       per_cell: " << getPcell() << endl;
-    cout << "    totalNumber: " << getTotalNumber() << endl;
-    cout << "         memory: " << calcMemory() << endl;
+Particle AmbientParticleType::generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z, const Velocity& vel) {
+    Particle p(id);
+    Position pos = this->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z);
+    p.setVelocity(vel);
+
+    return p;
 }
 
-void BeamParticle::printInfo() const {
+Position AmbientParticleType::generateNewPosition(
+        const double min_x, const double max_x,
+        const double min_y, const double max_y,
+        const double min_z, const double max_z) {
+
+    std::uniform_real_distribution<> dist_x(min_x, max_x);
+    std::uniform_real_distribution<> dist_y(min_y, max_y);
+    std::uniform_real_distribution<> dist_z(min_z, max_z);
+
+    Position p(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
+    return p;
+}
+
+Velocity AmbientParticleType::generateNewVelocity(void) {
+    const double deviation = this->calcDeviation();
+    std::normal_distribution<> dist_vx(0.0, deviation);
+    std::normal_distribution<> dist_vy(0.0, deviation);
+    std::normal_distribution<> dist_vz(0.0, deviation);
+
+    Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+    return v;
+}
+
+
+Particle BeamParticleType::generateNewParticle() {
+    return Particle{};
+}
+
+void BeamParticleType::printInfo() const {
     ParticleType::printInfo();
     cout << "  emission_type: " << emission_type << endl;
     cout << " beam_potential: " << Normalizer::unnormalizePotential(accel_potential) << "V" << endl;

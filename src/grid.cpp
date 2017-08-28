@@ -247,11 +247,11 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
 
         //! 初期化時は背景粒子のみ生成
         if (Environment::getParticleType(id)->getType() == "ambient") {
-            int pnum = Environment::getParticleType(id)->getTotalNumber();
+            auto ambient_particle_ptr = Environment::getAmbientParticleType(id);
+            int pnum = ambient_particle_ptr->getTotalNumber();
+
             for(int i = 0; i < pnum; ++i){
-                Particle p(id);
-                p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, max_z);
-                p.generateNewVelocity();
+                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, 0.0, max_z);
 
                 //! 物体がある場合は生成時にチェックする
                 for(const auto& obj : objects) {

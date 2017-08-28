@@ -115,16 +115,6 @@ double Particle::getEnergy(void) const {
     return 0.5 * (vx*vx + vy*vy + vz*vz) * (Environment::getParticleType(typeId)->getMass());
 }
 
-void Particle::generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z)
-{
-    this->setPosition( Environment::getParticleType(typeId)->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z) );
-}
-
-void Particle::generateNewVelocity(void)
-{
-    this->setVelocity( Environment::getParticleType(typeId)->generateNewVelocity() );
-}
-
 // util
 std::ostream& operator<<(std::ostream& ost, Particle const& p){
     ost << "[  Particle  ]" << endl;

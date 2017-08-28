@@ -87,11 +87,6 @@ class Particle {
         double getCharge(void) const { return Environment::getParticleType(typeId)->getCharge(); }
         double getId(void) const { return Environment::getParticleType(typeId)->getId(); }
 
-        //! 粒子生成時用の位置速度生成関数
-        //! - 内部的にはParticleTypeの同名メンバ関数を呼び出すだけ
-        void generateNewVelocity(void);
-        void generateNewPosition(const double, const double, const double, const double, const double, const double);
-
         friend std::ostream& operator<<(std::ostream&, Particle const&);
 };
 #endif

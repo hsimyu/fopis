@@ -517,7 +517,8 @@ void Grid::injectParticles(void) {
     if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
     for(int pid = 0; pid < Environment::getNumOfAmbientParticles(); ++pid) {
-        std::vector<double> flux = Environment::getAmbientParticleType(pid)->calcFlux(*this);
+        auto ambient_particle_ptr = Environment::getAmbientParticleType(pid);
+        std::vector<double> flux = ambient_particle_ptr->calcFlux(*this);
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;
@@ -525,14 +526,15 @@ void Grid::injectParticles(void) {
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Particle p(pid);
-                p.generateNewVelocity();
+                Velocity vel = ambient_particle_ptr->generateNewVelocity();
 
                 //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある
-                while(p.vx <= 0.0) p.generateNewVelocity();
+                //! 実際はフラックスを積分して割合を求める必要がある?
+                while (vel.vx <= 0.0) {
+                    vel = ambient_particle_ptr->generateNewVelocity();
+                }
 
-                p.generateNewPosition(0.0, p.vx * dt, 0.0, max_y, 0.0, max_z);
+                Particle p = ambient_particle_ptr->generateNewParticle(0.0, vel.vx * dt, 0.0, max_y, 0.0, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
@@ -543,13 +545,14 @@ void Grid::injectParticles(void) {
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Particle p(pid);
-                p.generateNewVelocity();
+                Velocity vel = ambient_particle_ptr->generateNewVelocity();
 
-                while(p.vx >= 0.0) p.generateNewVelocity();
+                while (vel.vx >= 0.0) {
+                    vel = ambient_particle_ptr->generateNewVelocity();
+                }
 
                 //! 負方向速度をxの最大値から引いた点までがありうる範囲
-                p.generateNewPosition(max_x + p.vx * dt, max_x, 0.0, max_y, 0.0, max_z);
+                Particle p = ambient_particle_ptr->generateNewParticle(max_x + vel.vx * dt, max_x, 0.0, max_y, 0.0, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
@@ -560,12 +563,13 @@ void Grid::injectParticles(void) {
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Particle p(pid);
-                p.generateNewVelocity();
+                Velocity vel = ambient_particle_ptr->generateNewVelocity();
 
-                while(p.vy <= 0.0) p.generateNewVelocity();
+                while (vel.vy <= 0.0) {
+                    vel = ambient_particle_ptr->generateNewVelocity();
+                }
 
-                p.generateNewPosition(0.0, max_x, 0.0, p.vy * dt, 0.0, max_z);
+                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, vel.vy * dt, 0.0, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
@@ -576,12 +580,13 @@ void Grid::injectParticles(void) {
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Particle p(pid);
-                p.generateNewVelocity();
+                Velocity vel = ambient_particle_ptr->generateNewVelocity();
 
-                while(p.vy >= 0.0) p.generateNewVelocity();
+                while (vel.vy >= 0.0) {
+                    vel = ambient_particle_ptr->generateNewVelocity();
+                }
 
-                p.generateNewPosition(0.0, max_x, max_y + p.vy * dt, max_y, 0.0, max_z);
+                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, max_y + vel.vy * dt, max_y, 0.0, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
@@ -592,12 +597,13 @@ void Grid::injectParticles(void) {
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Particle p(pid);
-                p.generateNewVelocity();
+                Velocity vel = ambient_particle_ptr->generateNewVelocity();
 
-                while(p.vz <= 0.0) p.generateNewVelocity();
+                while (vel.vz <= 0.0) {
+                    vel = ambient_particle_ptr->generateNewVelocity();
+                }
 
-                p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, p.vz * dt);
+                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, 0.0, vel.vz * dt, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
@@ -608,12 +614,13 @@ void Grid::injectParticles(void) {
             residual[pid][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Particle p(pid);
-                p.generateNewVelocity();
+                Velocity vel = ambient_particle_ptr->generateNewVelocity();
 
-                while(p.vz >= 0.0) p.generateNewVelocity();
+                while (vel.vz >= 0.0) {
+                    vel = ambient_particle_ptr->generateNewVelocity();
+                }
 
-                p.generateNewPosition(0.0, max_x, 0.0, max_y, max_z + p.vz * dt, max_z);
+                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, max_z + vel.vz * dt, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
