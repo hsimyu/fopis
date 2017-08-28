@@ -26,6 +26,7 @@ private:
     double potential;
     double potential_fix;
     double total_charge;
+    std::vector<double> current;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
     ObjectDefinedMap object_node_map;
@@ -56,6 +57,7 @@ public:
         const ObjectFaces& faces) :
         name(_name),
         num_cmat(_num_cmat),
+        current{},
         object_node_map(boost::extents[0][0][0]),
         object_xface_map(boost::extents[0][0][0]),
         object_yface_map(boost::extents[0][0][0]),
@@ -93,6 +95,7 @@ public:
     void distributeInnerParticleCharge(Particle&);
     void applyCharge(RhoArray&) const;
     void redistributeCharge(RhoArray&, const tdArray&);
+    void resetCurrent();
 
     // IO関数
     std::string getLogHeader() const;

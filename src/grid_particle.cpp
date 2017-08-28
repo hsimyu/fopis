@@ -406,8 +406,15 @@ void Grid::updateRho() {
     auto old_rho = rho;
 #endif
 
-    // rhoを初期化
+    //! rhoを初期化
     Utils::initializeRhoArray(rho);
+
+    //! 物体上の一時的な情報を初期化
+    for(auto& obj : objects) {
+        if(obj.isDefined()) {
+            obj.resetCurrent();
+        }
+    }
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
         double q = Environment::ptype[pid].getCharge();

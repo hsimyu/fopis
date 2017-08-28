@@ -100,6 +100,11 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                 }
             }
         }
+
+        //! 電流 in/out を記録する
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            current.push_back(0.0);
+        }
     }
 }
 
@@ -123,6 +128,12 @@ auto Spacecraft::getTotalCharge(const RhoArray& rho) const {
     q = MPIw::Environment::Comms[name].sum(q);
 
     return q;
+}
+
+void Spacecraft::resetCurrent() {
+    for(auto& v : current) {
+        v = 0.0;
+    }
 }
 
 void Spacecraft::makeCmatrixInvert(void) {
@@ -160,7 +171,8 @@ void Spacecraft::removeInnerParticle(Particle& p) const {
 
 void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     if (isIncluded(p)) { 
-        const auto rho_idx = p.getId() + 1;
+        const auto id = p.getId();
+        const auto rho_idx = id + 1;
         const auto q = p.getCharge();
         const auto pos = p.getPosition();
 
@@ -172,6 +184,8 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
         charge_map[rho_idx][pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
         charge_map[rho_idx][pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
         charge_map[rho_idx][pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
+
+        current[id] += q;
 
         p.makeInvalid();
     }
@@ -236,16 +250,13 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
 std::string Spacecraft::getLogHeader() const {
     std::string format_string = "%16s %16s";
-
     for(int i = 0; i < Environment::num_of_particle_types; ++i) {
         format_string += " %16s";
     }
 
     auto format_base = format(std::move(format_string));
-
     format_base = format_base % "Potential [V]";
     format_base = format_base % "Charge [C]";
-
     for(int i = 0; i < Environment::num_of_particle_types; ++i) {
         format_base = format_base % (Environment::ptype[i].getName() + " [A]");
     }
@@ -255,9 +266,19 @@ std::string Spacecraft::getLogHeader() const {
 }
 
 std::string Spacecraft::getLogEntry() const {
-    std::string entry = (format("%16.7e %16.7e") %
-        Normalizer::unnormalizePotential(potential) %
-        Normalizer::unnormalizeCharge(total_charge)).str();
+    std::string format_string = "%16.7e %16.7e";
+    for(int i = 0; i < Environment::num_of_particle_types; ++i) {
+        format_string += " %16.7e";
+    }
+
+    auto format_base = format(std::move(format_string));
+    format_base = format_base % Normalizer::unnormalizePotential(potential);
+    format_base = format_base % Normalizer::unnormalizeCharge(total_charge);
+    for(int i = 0; i < Environment::num_of_particle_types; ++i) {
+        format_base = format_base % Normalizer::unnormalizeCurrent(current[i]);
+    }
+
+    std::string entry = format_base.str();
     return entry;
 }
 
