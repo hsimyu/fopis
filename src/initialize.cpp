@@ -207,7 +207,7 @@ namespace Initializer {
             const auto& type = plasma["type"].to_str();
 
             if (type == "ambient") {
-                AmbientParticle* ambient = new AmbientParticle;
+                auto ambient = std::make_shared<AmbientParticle>();
                 ambient->setId(id);
                 ambient->setName(name);
                 ambient->setType(type);
@@ -220,7 +220,7 @@ namespace Initializer {
                 ambient->updateSize();
                 Environment::addParticleType(ambient);
             } else if (type == "beam") {
-                BeamParticle* beam = new BeamParticle;
+                auto beam = std::make_shared<BeamParticle>();
                 beam->setId(id);
                 beam->setName(name);
                 beam->setType(type);

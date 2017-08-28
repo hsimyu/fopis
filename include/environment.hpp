@@ -19,7 +19,7 @@ struct Environment {
             return false;
         }
 
-        static std::vector<ParticleType*> ptype;
+        static std::vector<std::shared_ptr<ParticleType>> ptype;
 
     public:
         static int max_particle_num;
@@ -63,7 +63,7 @@ struct Environment {
             return static_cast<double>(timestep) * dt;
         }
 
-        static void addParticleType(ParticleType* ptr) {
+        static void addParticleType(const std::shared_ptr<ParticleType>& ptr) {
             ptype.push_back(ptr);
         }
         static auto getParticleType(const int pid) {return ptype[pid];}
