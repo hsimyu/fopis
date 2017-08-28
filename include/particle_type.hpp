@@ -90,8 +90,7 @@ class ParticleType {
         Position generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
         Velocity generateNewVelocity(void);
 
-        friend std::ostream& operator<<(std::ostream&, const ParticleType&);
-        friend std::istream& operator<<(std::istream&, const ParticleType&);
+        virtual void printInfo() const;
 };
 
 //! 各種派生クラス
@@ -109,9 +108,33 @@ class BeamParticle : public ParticleType {
     protected:
         Position emission_position;
         std::vector<double> emission_vector;
+        double accel_potential;
+        double beam_current;
+        double beam_divergence;
+        std::string emission_type;
 
     public:
         BeamParticle() : ParticleType(){}
+
+        void setAcceleratingPotential(const double value) {
+            accel_potential = value;
+        }
+        double getAcceleratingPotential() const {return accel_potential;}
+
+        void setBeamCurrent(const double value) {
+            beam_current = value;
+        }
+        double getBeamCurrent() const {return beam_current;}
+
+        void setBeamDivergence(const double value) {
+            beam_divergence = value;
+        }
+        double getBeamDivergence() const {return beam_divergence;}
+
+        void setEmissionType(const std::string& type) {
+            emission_type = type;
+        }
+        std::string getEmissionType() const {return emission_type;}
 
         void setEmissionPosition(const std::vector<double>& pos) {
             if (pos.size() != 3) {
@@ -130,7 +153,6 @@ class BeamParticle : public ParticleType {
             emission_vector = pos;
         }
         std::vector<double> getEmissionVector() const {return emission_vector;}
-
-        friend std::ostream& operator<<(std::ostream&, const BeamParticle&);
+        virtual void printInfo() const override;
 };
 #endif

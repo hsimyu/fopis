@@ -141,7 +141,7 @@ void Environment::checkPlasmaInfo(void) {
 
     for (int pid = 0; pid < num_of_particle_types; pid++) {
         ParticleType* pt = ptype[pid];
-        cout << *pt;
+        pt->printInfo();
 
         // プラズマ特徴量のチェック
         double debye = pt->calcDebyeLength();

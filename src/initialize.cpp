@@ -18,15 +18,15 @@ namespace Initializer {
         // EnvironmentにMPIw::Environment情報をセット
         Initializer::setMPIInfoToEnv();
 
-        // 粒子情報セット
-        Initializer::loadParticleType(inputs);
-
         //! initialize normalizer
         //! normalizerのセットはGridの生成より先
         Normalizer::setLengthUnit(Environment::dx);
         Normalizer::setTimeUnit(Environment::dt);
         Normalizer::setMassUnit(me);
         Normalizer::setChargeUnit(e);
+
+        // 粒子情報セット
+        Initializer::loadParticleType(inputs);
 
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
@@ -227,6 +227,9 @@ namespace Initializer {
                 beam->setCharge(plasma["charge"].get<double>());
                 beam->setTemperature(plasma["temperature"].get<double>());
                 beam->setDensity(plasma["density"].get<double>());
+                beam->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
+                beam->updateTotalNumber();
+                beam->updateSize();
 
                 //! convert picojson::array to std::vector
                 auto convert_picoarray_to_vector = [](picojson::array& pico_array) {
@@ -237,6 +240,10 @@ namespace Initializer {
                     return vect;
                 };
 
+                beam->setAcceleratingPotential( Normalizer::normalizePotential(plasma["accel_potential"].get<double>()) );
+                beam->setBeamCurrent( Normalizer::normalizeCurrent(plasma["beam_current"].get<double>()) );
+                beam->setBeamDivergence( plasma["beam_divergence"].get<double>() );
+                beam->setEmissionType( plasma["emission_type"].to_str() );
                 beam->setEmissionPosition( convert_picoarray_to_vector( plasma["emission_position"].get<picojson::array>() ) );
                 beam->setEmissionVector( convert_picoarray_to_vector( plasma["emission_vector"].get<picojson::array>() ) );
                 Environment::ptype.push_back( beam );

@@ -112,6 +112,11 @@ public:
         return normalized_phi * V_unit;
     }
 
+    //! C / s -> 1
+    static double normalizeCurrent(double raw_current) {
+        return raw_current / A_unit;
+    }
+
     //! 1 -> C / s 
     static double unnormalizeCurrent(double normalized_current) {
         return normalized_current * A_unit;

@@ -133,17 +133,26 @@ std::string ParticleType::calcMemory() const {
 }
 
 // util
-std::ostream& operator<<(std::ostream& ost, const ParticleType& ptype){
-    ost << "[ParticleType  : " << ptype.getName() << "]" << endl;
-    ost << "             id: " << ptype.getId() << endl;
-    ost << "           type: " << ptype.getType() << endl;
-    ost << "           mass: " << ptype.getMass() << endl;
-    ost << "         charge: " << ptype.getCharge() << "e" << endl;
-    ost << "        density: " << ptype.getDensity() << "/m^3" << endl;
-    ost << "    temperature: " << ptype.getTemperature() << "eV" << endl;
-    ost << "           size: " << ptype.getSize() << endl;
-    ost << "       per_cell: " << ptype.getPcell() << endl;
-    ost << "    totalNumber: " << ptype.getTotalNumber() << endl;
-    ost << "         memory: " << ptype.calcMemory() << endl << endl;
-    return ost;
+void ParticleType::printInfo() const {
+    cout << "[ParticleType  : " << getName() << "]" << endl;
+    cout << "             id: " << getId() << endl;
+    cout << "           type: " << getType() << endl;
+    cout << "           mass: " << getMass() << endl;
+    cout << "         charge: " << getCharge() << "e" << endl;
+    cout << "        density: " << getDensity() << "/m^3" << endl;
+    cout << "    temperature: " << getTemperature() << "eV" << endl;
+    cout << "           size: " << getSize() << endl;
+    cout << "       per_cell: " << getPcell() << endl;
+    cout << "    totalNumber: " << getTotalNumber() << endl;
+    cout << "         memory: " << calcMemory() << endl;
+}
+
+void BeamParticle::printInfo() const {
+    ParticleType::printInfo();
+    cout << "  emission_type: " << emission_type << endl;
+    cout << " beam_potential: " << Normalizer::unnormalizePotential(accel_potential) << "V" << endl;
+    cout << "   beam_current: " << Normalizer::unnormalizeCurrent(beam_current) << "A" << endl;
+    cout << "beam_divergence: " << beam_divergence << "A" << endl;
+    cout << " emiss_position: " << emission_position.x << ", " << emission_position.y << ", " << emission_position.z << endl;
+    cout << "   emiss_vector: " << emission_vector[0] << ", " << emission_vector[1] << ", " << emission_vector[2] << endl;
 }
