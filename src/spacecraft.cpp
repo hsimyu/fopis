@@ -10,13 +10,13 @@
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectFaces& faces) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectFaces& faces) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
     potential = 0.0;
     total_charge = 0.0;
-    potential_fix = 0.0;
+    potential_fix = Normalizer::normalizePotential(obj_info.potential_fix);
 
     if (is_defined_in_this_process) {
         // Node ベース, Glueセルも必要

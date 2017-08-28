@@ -48,12 +48,6 @@ struct Environment {
         static ParticleType* ptype;
 
         //! 物体情報
-        struct ObjectInfo_t {
-            std::string name;
-            std::string file_name;
-            std::string surface_type;
-            unsigned int history_width;
-        };
         static std::vector<ObjectInfo_t> objects_info;
 
         //! 中身はMPI::Environment::getRankStr()と同様

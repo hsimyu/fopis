@@ -28,7 +28,7 @@ std::string Environment::jobtype;
 std::string Environment::solver_type;
 std::string Environment::boundary;
 std::string Environment::dimension;
-std::vector<Environment::ObjectInfo_t> Environment::objects_info;
+std::vector<ObjectInfo_t> Environment::objects_info;
 ParticleType* Environment::ptype;
 
 /*

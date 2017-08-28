@@ -84,20 +84,14 @@ void Grid::initializeObject(void) {
     //! TODO: オブジェクト数を数える
     if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
 
-    std::map<std::string, ObjectDataFromFile> defined_objects;
-    std::map<std::string, unsigned int> num_cmat_map;
-
     for (const auto& object_info : Environment::objects_info) {
         std::string obj_name = object_info.name;
         //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
-        defined_objects[obj_name] = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
-        num_cmat_map[obj_name] = defined_objects[obj_name].nodes.size();
-    }
+        ObjectDataFromFile object_data = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
 
-    for(const auto& object_data : defined_objects) {
-        const auto obj_name = object_data.first;
-        const auto& node_array = object_data.second.nodes;
-        const auto& face_array = object_data.second.faces;
+        unsigned int num_cmat = object_data.nodes.size();
+        const auto& node_array = object_data.nodes;
+        const auto& face_array = object_data.faces;
 
         //! innerと判定されたやつだけ渡す
         ObjectNodes inner_node_array;
@@ -142,7 +136,7 @@ void Grid::initializeObject(void) {
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(nx, ny, nz, num_cmat_map[obj_name], obj_name, inner_node_array, glue_node_array, inner_face_array);
+        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, glue_node_array, inner_face_array);
     }
 }
 

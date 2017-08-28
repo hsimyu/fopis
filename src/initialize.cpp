@@ -234,11 +234,12 @@ namespace Initializer {
             const auto obj_name = it->first;
             auto obj_info = it->second.get<picojson::object>();
 
-            Environment::ObjectInfo_t obj;
+            ObjectInfo_t obj;
             obj.name = obj_name;
             obj.file_name = obj_info["file_name"].to_str();
             obj.surface_type = obj_info["surface_type"].to_str();
             obj.history_width = static_cast<unsigned int>(obj_info["history_width"].get<double>());
+            obj.potential_fix = obj_info["potential_fix"].get<double>();
             
             Environment::objects_info.push_back( std::move(obj) );
         }

@@ -29,4 +29,13 @@ constexpr int MAX_PARTICLE_NUM = 100000;
 enum class AXIS {x, y, z};
 enum class AXIS_SIDE {low, up};
 
+//! 物体情報用の構造体
+struct ObjectInfo_t {
+    std::string name;
+    std::string file_name;
+    std::string surface_type;
+    unsigned int history_width;
+    double potential_fix;
+};
+
 #endif

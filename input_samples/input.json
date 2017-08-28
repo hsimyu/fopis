@@ -36,7 +36,8 @@
         "Sp0": {
             "file_name": "objects/cube.obj",
             "surface_type": "perfect",
-            "history_width": 1
+            "history_width": 1,
+            "potential_fix": 0.0
         }
     },
     "IO": {
