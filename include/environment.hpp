@@ -19,6 +19,8 @@ struct Environment {
             return false;
         }
 
+        static std::vector<ParticleType*> ptype;
+
     public:
         static int max_particle_num;
         static int num_of_particle_types;
@@ -45,8 +47,6 @@ struct Environment {
         static std::string boundary;
         static std::string dimension;
 
-        static std::vector<ParticleType*> ptype;
-
         //! 物体情報
         static std::vector<ObjectInfo_t> objects_info;
 
@@ -62,6 +62,11 @@ struct Environment {
         static double getDataTime() {
             return static_cast<double>(timestep) * dt;
         }
+
+        static void addParticleType(ParticleType* ptr) {
+            ptype.push_back(ptr);
+        }
+        static auto getParticleType(const int pid) {return ptype[pid];}
 
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
         static int getAssignedXBegin(void) { return ::MPIw::Environment::xrank * cell_x; }

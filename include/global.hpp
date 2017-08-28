@@ -17,6 +17,9 @@ using boost::format;
 
 using tdArray = boost::multi_array<double, 3>;
 
+class Particle;
+using ParticleArray = std::vector<std::vector<Particle>>;
+
 //! constants
 constexpr double e = 1.60217733e-19;
 constexpr double eps0 = 8.854187817e-12;

@@ -218,7 +218,7 @@ namespace Initializer {
                 ambient->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
                 ambient->updateTotalNumber();
                 ambient->updateSize();
-                Environment::ptype.push_back( std::move(ambient) );
+                Environment::addParticleType(ambient);
             } else if (type == "beam") {
                 BeamParticle* beam = new BeamParticle;
                 beam->setId(id);
@@ -238,7 +238,7 @@ namespace Initializer {
                 beam->setEmissionType( plasma["emission_type"].to_str() );
                 beam->setEmissionPosition( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_position"].get<picojson::array>() ) );
                 beam->setEmissionVector( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_vector"].get<picojson::array>() ) );
-                Environment::ptype.push_back( beam );
+                Environment::addParticleType(beam);
             }
 
             ++id;

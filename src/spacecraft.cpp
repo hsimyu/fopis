@@ -91,7 +91,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             current.push_back(0.0);
 
             //! 放出粒子のID追加判定
-            auto itr = std::find(obj_info.emit_particle_names.begin(), obj_info.emit_particle_names.end(), Environment::ptype[pid]->getName());
+            auto itr = std::find(obj_info.emit_particle_names.begin(), obj_info.emit_particle_names.end(), Environment::getParticleType(pid)->getName());
             if (itr != obj_info.emit_particle_names.end()) {
                 emit_particle_ids.push_back(pid);
             }
@@ -261,7 +261,7 @@ std::string Spacecraft::getLogHeader() const {
     format_base = format_base % "Potential [V]";
     format_base = format_base % "Charge [C]";
     for(int i = 0; i < Environment::num_of_particle_types; ++i) {
-        format_base = format_base % (Environment::ptype[i]->getName() + " [A]");
+        format_base = format_base % (Environment::getParticleType(i)->getName() + " [A]");
     }
 
     std::string header = format_base.str();
@@ -291,7 +291,7 @@ std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
     ost << "    emit particles: ";
 
     for(const auto& id : spc.emit_particle_ids) {
-        ost << Environment::ptype[id]->getName() << ", " << endl;
+        ost << Environment::getParticleType(id)->getName() << ", " << endl;
     }
 
     return ost;
