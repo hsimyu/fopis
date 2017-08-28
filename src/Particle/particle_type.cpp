@@ -1,5 +1,6 @@
 #include "global.hpp"
 #include "environment.hpp"
+#include "particle_type.hpp"
 #include "position.hpp"
 #include "particle.hpp"
 #include "grid.hpp"

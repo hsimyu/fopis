@@ -241,22 +241,24 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
     particles.resize(Environment::num_of_particle_types);
 
     for(int id = 0; id < Environment::num_of_particle_types; ++id){
-        int pnum = Environment::ptype[id].getTotalNumber();
-
         //! 各粒子分のメモリをreserveしておく
         particles[id].reserve(Environment::max_particle_num);
 
-        for(int i = 0; i < pnum; ++i){
-            Particle p(id);
-            p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, max_z);
-            p.generateNewVelocity();
+        //! 初期化時は背景粒子のみ生成
+        if (Environment::ptype[id].getType() == "ambient") {
+            int pnum = Environment::ptype[id].getTotalNumber();
+            for(int i = 0; i < pnum; ++i){
+                Particle p(id);
+                p.generateNewPosition(0.0, max_x, 0.0, max_y, 0.0, max_z);
+                p.generateNewVelocity();
 
-            //! 物体がある場合は生成時にチェックする
-            for(const auto& obj : objects) {
-                if (obj.isDefined()) obj.removeInnerParticle(p);
+                //! 物体がある場合は生成時にチェックする
+                for(const auto& obj : objects) {
+                    if (obj.isDefined()) obj.removeInnerParticle(p);
+                }
+
+                if (p.isValid) particles[id].push_back( std::move(p) );
             }
-
-            if (p.isValid) particles[id].push_back( std::move(p) );
         }
     }
 }

@@ -152,8 +152,10 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support.")
 endif()
 # -----------------
-
-file(GLOB SRCS src/*.cpp)
+file(GLOB_RECURSE SRCS 
+    ${PROJECT_SOURCE_DIR}/src/*.cpp
+)
+message(STATUS "Current source files: ${SRCS}")
 
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${CXX_REQUIRED_LIBS})
