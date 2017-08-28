@@ -51,6 +51,7 @@ int main(int argc, char* argv[]){
                 root_grid->updateEfieldFDTD(); // FDTDで電場更新
             }
             root_grid->updateBfield(); // 磁場更新
+            if(Environment::plotBfield()) IO::writeDataInParallel(*root_grid, Environment::timestep, "bfield");
         } else {
             // 静電計算の場合
             // timing: t + dt
@@ -62,7 +63,6 @@ int main(int argc, char* argv[]){
         if(Environment::plotPotential())    IO::writeDataInParallel(*root_grid, Environment::timestep, "potential");
         if(Environment::plotRho())          IO::writeDataInParallel(*root_grid, Environment::timestep, "rho");
         if(Environment::plotEfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "efield");
-        if(Environment::plotBfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "bfield");
         if(Environment::plotDensity())      IO::writeDataInParallel(*root_grid, Environment::timestep, "density");
         if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
         if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->particles);

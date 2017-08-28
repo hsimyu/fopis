@@ -40,7 +40,12 @@ namespace Initializer {
 
             Environment::printInfo();
             Environment::checkPlasmaInfo();
-            Environment::checkCFLCondition();
+
+            //! EMの場合はFDTD用の安定性条件をチェック
+            if( Environment::solver_type == "EM" ) {
+                Environment::checkCFLCondition();
+            }
+
             //! データ書き込み用ディレクトリを作成
             Utils::createDir("data");
         }
