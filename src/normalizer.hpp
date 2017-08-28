@@ -112,6 +112,11 @@ public:
         return normalized_phi * V_unit;
     }
 
+    //! 1 -> C / s 
+    static double unnormalizeCurrent(double normalized_current) {
+        return normalized_current * A_unit;
+    }
+
     //! 1 -> C / m^3
     static double unnormalizeRho(double normalized_rho) {
         return normalized_rho * e_unit / x_pow_3;
