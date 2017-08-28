@@ -207,7 +207,7 @@ namespace Initializer {
             const auto& type = plasma["type"].to_str();
 
             if (type == "ambient") {
-                auto ambient = std::make_shared<AmbientParticle>();
+                auto ambient = std::make_shared<AmbientParticleType>();
                 ambient->setId(id);
                 ambient->setName(name);
                 ambient->setType(type);
@@ -218,9 +218,9 @@ namespace Initializer {
                 ambient->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
                 ambient->updateTotalNumber();
                 ambient->updateSize();
-                Environment::addParticleType(ambient);
+                Environment::addAmbientParticleType(ambient);
             } else if (type == "beam") {
-                auto beam = std::make_shared<BeamParticle>();
+                auto beam = std::make_shared<BeamParticleType>();
                 beam->setId(id);
                 beam->setName(name);
                 beam->setType(type);
@@ -238,13 +238,11 @@ namespace Initializer {
                 beam->setEmissionType( plasma["emission_type"].to_str() );
                 beam->setEmissionPosition( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_position"].get<picojson::array>() ) );
                 beam->setEmissionVector( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_vector"].get<picojson::array>() ) );
-                Environment::addParticleType(beam);
+                Environment::addBeamParticleType(beam);
             }
 
             ++id;
         }
-
-        Environment::num_of_particle_types = id;
     }
 
     Grid* initializeGrid(void){

@@ -494,7 +494,7 @@ void Grid::injectParticles(void) {
 
     //! staticな残余変数の初期化
     if(isFirstCall) {
-        residual.resize(Environment::num_of_particle_types);
+        residual.resize(Environment::getNumOfAmbientParticles());
 
         for(int i = 0; i < residual.size(); ++i) {
             residual[i].resize(6);
@@ -516,8 +516,8 @@ void Grid::injectParticles(void) {
     if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
     if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
-    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        std::vector<double> flux = Environment::getParticleType(pid)->calcFlux(*this);
+    for(int pid = 0; pid < Environment::getNumOfAmbientParticles(); ++pid) {
+        std::vector<double> flux = Environment::getAmbientParticleType(pid)->calcFlux(*this);
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;

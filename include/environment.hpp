@@ -1,8 +1,7 @@
 #ifndef __TDPIC_ENVIRONMENT_H_INCLUDED__
 #define __TDPIC_ENVIRONMENT_H_INCLUDED__
 #include "mpiw.hpp"
-
-class ParticleType;
+#include "particle_type.hpp"
 
 struct Environment {
     private:
@@ -19,7 +18,9 @@ struct Environment {
             return false;
         }
 
-        static std::vector<std::shared_ptr<ParticleType>> ptype;
+        //! 内部的には各粒子の種類毎にリストを持つ
+        static std::vector<std::shared_ptr<AmbientParticleType>> ambient_particles;
+        static std::vector<std::shared_ptr<BeamParticleType>> beam_particles;
 
     public:
         static int max_particle_num;
@@ -59,14 +60,44 @@ struct Environment {
             return (xrank + proc_x * yrank + proc_x * proc_y * zrank);
         }
 
-        static double getDataTime() {
-            return static_cast<double>(timestep) * dt;
+        static double getDataTime() { return static_cast<double>(timestep) * dt; }
+
+        static void addAmbientParticleType(const std::shared_ptr<AmbientParticleType>& ptr) {
+            ambient_particles.push_back(ptr);
+            ++num_of_particle_types;
+        }
+        static int getNumOfAmbientParticles() {return ambient_particles.size();}
+
+        static void addBeamParticleType(const std::shared_ptr<BeamParticleType>& ptr) {
+            beam_particles.push_back(ptr);
+            ++num_of_particle_types;
+        }
+        static int getNumOfBeamParticles() {return beam_particles.size();}
+
+        static std::shared_ptr<ParticleType> getParticleType(const int pid) {
+            if (pid < ambient_particles.size()) {
+                return std::static_pointer_cast<ParticleType>(ambient_particles[pid]);
+            } else {
+                return std::static_pointer_cast<ParticleType>(beam_particles[pid - ambient_particles.size()]);
+            }
         }
 
-        static void addParticleType(const std::shared_ptr<ParticleType>& ptr) {
-            ptype.push_back(ptr);
+        static std::shared_ptr<AmbientParticleType> getAmbientParticleType(const int pid) {
+            if (pid < ambient_particles.size()) {
+                return ambient_particles[pid];
+            } else {
+                throw std::invalid_argument("[ERROR] The particle id passed to getAmbientParticleType() exceeds the ambient particle count.");
+            }
         }
-        static auto getParticleType(const int pid) {return ptype[pid];}
+
+        static std::shared_ptr<BeamParticleType> getBeamParticleType(const int pid) {
+            const auto ambient_size = ambient_particles.size();
+            if (pid >= ambient_size && pid - ambient_size < beam_particles.size()) {
+                return beam_particles[pid - ambient_size];
+            } else {
+                throw std::invalid_argument("[ERROR] The particle id passed to getBeamParticleType() exceeds the beam particle count.");
+            }
+        }
 
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
         static int getAssignedXBegin(void) { return ::MPIw::Environment::xrank * cell_x; }

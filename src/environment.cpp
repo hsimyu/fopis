@@ -29,7 +29,8 @@ std::string Environment::solver_type;
 std::string Environment::boundary;
 std::string Environment::dimension;
 std::vector<ObjectInfo_t> Environment::objects_info;
-std::vector<std::shared_ptr<ParticleType>> Environment::ptype;
+std::vector<std::shared_ptr<AmbientParticleType>> Environment::ambient_particles;
+std::vector<std::shared_ptr<BeamParticleType>> Environment::beam_particles;
 
 /*
 * @params
@@ -140,7 +141,7 @@ void Environment::checkPlasmaInfo(void) {
     double total_debye = 0.0;
 
     for (int pid = 0; pid < num_of_particle_types; pid++) {
-        auto pt = ptype[pid];
+        auto pt = getParticleType(pid);
         pt->printInfo();
 
         // プラズマ特徴量のチェック
