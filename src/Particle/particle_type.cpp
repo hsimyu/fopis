@@ -128,15 +128,15 @@ std::vector<double> AmbientParticleType::calcFlux(Grid const& g) const {
 //! 粒子生成Factory関数の実体
 Particle AmbientParticleType::generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z) {
     Particle p(id);
-    Position pos = this->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z);
-    Velocity vel = this->generateNewVelocity();
+    p.setPosition(this->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z));
+    p.setVelocity(this->generateNewVelocity());
 
     return p;
 }
 
 Particle AmbientParticleType::generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z, const Velocity& vel) {
     Particle p(id);
-    Position pos = this->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z);
+    p.setPosition(this->generateNewPosition(min_x, max_x, min_y, max_y, min_z, max_z));
     p.setVelocity(vel);
 
     return p;
