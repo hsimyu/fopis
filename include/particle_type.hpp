@@ -165,7 +165,7 @@ class BeamParticleType : public EmissionParticleType {
         void setEmissionVector(const std::vector<double>& pos);
         std::vector<double> getEmissionVector() const {return emission_vector;}
 
-        virtual double getEmissionAmount() const override {return 10.0;}
+        virtual double getEmissionAmount() const override;
 
         virtual Particle generateNewParticle() override;
         Position generateNewPosition(const Velocity& vel);

@@ -230,6 +230,10 @@ void BeamParticleType::setEmissionVector(const std::vector<double>& val) {
     updateEmissionVelocity();
 }
 
+double BeamParticleType::getEmissionAmount() const {
+    return beam_current / (charge * size);
+}
+
 void BeamParticleType::printInfo() const {
     ParticleType::printInfo();
     cout << "  emission_type: " << emission_type << endl;
