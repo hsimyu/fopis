@@ -152,14 +152,14 @@ void Grid::initializeObjectsCmatrix(void) {
         { //! Progress Manager のライフタイムを区切る
             Utils::ProgressManager pm(num_cmat, "cmat_solve");
 
+            // rhoを初期化
+            Utils::initializeRhoArray(rho);
+            Utils::initialize3DArray(phi);
+
             for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
                 if (Environment::isRootNode) pm.update(cmat_col_itr);
 
-                // rhoを初期化
-                Utils::initializeRhoArray(rho);
-                Utils::initialize3DArray(phi);
-
-                //! 各頂点に単位電荷を付与
+                //! 該当する頂点に単位電荷を付与
                 if (obj.isMyCmat(cmat_col_itr)) {
                     const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
                     rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
@@ -180,6 +180,12 @@ void Grid::initializeObjectsCmatrix(void) {
                         value = MPIw::Environment::Comms[obj.getName()].sum(value);
                         obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
                     }
+                }
+
+                //! 付与した単位電荷を消去する
+                if (obj.isMyCmat(cmat_col_itr)) {
+                    const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
+                    rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 0.0;
                 }
             }
 
