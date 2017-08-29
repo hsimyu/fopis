@@ -33,6 +33,7 @@ int main(int argc, char* argv[]){
         if( Environment::isRootNode ) {
             cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }
+        root_grid->resetObjects();
 
         // timing: t + 0.5 dt
         root_grid->updateParticleVelocity(); // 速度更新

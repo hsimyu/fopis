@@ -356,6 +356,15 @@ double Grid::getBFieldEnergy(void) const {
     return field->getBfieldEnergy();
 }
 
+void Grid::resetObjects() {
+    //! 物体上の一時的な情報を初期化
+    for(auto& obj : objects) {
+        if(obj.isDefined()) {
+            obj.resetCurrent();
+        }
+    }
+}
+
 // 子グリッドへ場の値をコピーする
 // この実装はノード to ノードの場合
 void Grid::copyScalarToChildren(std::string varname){

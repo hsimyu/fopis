@@ -174,13 +174,14 @@ class Grid {
         tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
 
         void  setParent(Grid* g){ parent = g; }
-        Grid* getParent(void){ return parent; }
+        Grid* getParent(){ return parent; }
 
         // Field 初期化
-        void initializeField(void);
+        void initializeField();
 
         //! 物体定義初期化
-        void initializeObject(void);
+        void initializeObject();
+        void resetObjects();
 
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
@@ -190,14 +191,14 @@ class Grid {
         void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(Grid*);
         void removeChild(const int);
-        void checkGridValidness(void);
+        void checkGridValidness();
 
-        std::vector<Grid*>& getChildren(void) {
+        std::vector<Grid*>& getChildren() {
             // 参照にしないと新しいポインタが生まれてしまう？
             return children;
         }
 
-        int getChildrenLength(void) const {
+        int getChildrenLength() const {
             return children.size();
         }
 
