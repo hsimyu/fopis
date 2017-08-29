@@ -112,6 +112,7 @@ class EmissionParticleType : public ParticleType {
 
     public:
         EmissionParticleType() : ParticleType(){}
+        virtual Particle generateNewParticle() = 0;
         virtual double getEmissionAmount() const = 0;
 };
 
@@ -160,7 +161,7 @@ class BeamParticleType : public EmissionParticleType {
 
         virtual double getEmissionAmount() const override {return 10.0;}
 
-        Particle generateNewParticle();
+        virtual Particle generateNewParticle() override;
         virtual void printInfo() const override;
 };
 #endif

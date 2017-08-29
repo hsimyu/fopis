@@ -627,6 +627,14 @@ void Grid::injectParticles(void) {
     }
 }
 
+void Grid::emitParticlesFromObjects(void) {
+    for(auto& obj : objects) {
+        if (obj.isDefined() && obj.hasEmitParticles()) {
+            obj.emitParticles(particles);
+        }
+    }
+}
+
 double Grid::getParticleEnergy(void) const {
     double res = 0.0;
 

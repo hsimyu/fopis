@@ -170,6 +170,7 @@ bool Spacecraft::isIncluded(const Particle& p) const {
             object_node_map[i + 1][j + 1][k + 1];
 }
 
+/*
 bool Spacecraft::isIncludedByFace(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
@@ -185,6 +186,7 @@ bool Spacecraft::isIncludedByFace(const Particle& p) const {
             object_zface_map[i][j][k    ] &&
             object_zface_map[i][j][k + 1];
 }
+*/
 
 void Spacecraft::removeInnerParticle(Particle& p) const {
     if (isIncluded(p)) { p.makeInvalid(); }
@@ -268,6 +270,24 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     total_charge = q;
 }
 
+//! 粒子放出関連
+void Spacecraft::emitParticles(ParticleArray& parray) {
+    cout << Environment::rankStr() << "called emitParticles." << endl;
+
+    for(const auto& id : emit_particle_ids) {
+        const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
+        const auto max_amount = emit_ptype_ptr->getEmissionAmount();
+
+        for(int i = 0; i < max_amount; ++i) {
+            Particle p = emit_ptype_ptr->generateNewParticle();
+
+            cout << p << endl;
+            // parray.push_back()
+        }
+    }
+}
+
+//! I/O関連
 std::string Spacecraft::getLogHeader() const {
     std::string format_string = "%16s %16s";
     for(int i = 0; i < Environment::num_of_particle_types; ++i) {

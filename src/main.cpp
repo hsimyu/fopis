@@ -30,7 +30,6 @@ int main(int argc, char* argv[]){
     root_grid->updateBfield();
 
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
-        // timing: t
         if( Environment::isRootNode ) {
             cout << "--  Iteration " << Environment::timestep << "  --" << endl;
         }
@@ -38,6 +37,7 @@ int main(int argc, char* argv[]){
         // timing: t + 0.5 dt
         root_grid->updateParticleVelocity(); // 速度更新
         root_grid->updateParticlePosition(); // jx, jy, jz もここで update される
+        root_grid->emitParticlesFromObjects();
 
         if ( Environment::solver_type == "EM" ) {
             // 電磁計算の場合

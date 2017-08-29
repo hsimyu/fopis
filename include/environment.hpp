@@ -82,6 +82,15 @@ struct Environment {
             }
         }
 
+        static std::shared_ptr<EmissionParticleType> getEmissionParticleType(const int pid) {
+            const auto ambient_size = ambient_particles.size();
+            if (pid >= ambient_size && pid - ambient_size < beam_particles.size()) {
+                return std::static_pointer_cast<EmissionParticleType>(beam_particles[pid - ambient_size]);
+            } else {
+                throw std::invalid_argument("[ERROR] The particle id passed to getEmissionParticleType() exceeds the beam particle count.");
+            }
+        }
+
         static std::shared_ptr<AmbientParticleType> getAmbientParticleType(const int pid) {
             if (pid < ambient_particles.size()) {
                 return ambient_particles[pid];

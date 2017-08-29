@@ -51,6 +51,7 @@ private:
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
+
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
@@ -88,6 +89,10 @@ public:
     bool isMyCmat(const unsigned int cmat_number) const { return (capacity_matrix_relation.count(cmat_number) > 0); }
     bool isDefined(void) const { return is_defined_in_this_process; }
     bool isIncluded(const Particle&) const;
+
+    //! 粒子放出用
+    void emitParticles(ParticleArray& parray);
+    bool hasEmitParticles() const {return (emit_particle_ids.size() > 0);}
 
     // その他ユーティリティ関数
     void makeCmatrixInvert(void);
