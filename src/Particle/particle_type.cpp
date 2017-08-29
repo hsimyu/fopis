@@ -169,7 +169,17 @@ Particle BeamParticleType::generateNewParticle() {
     Particle p(id);
     Velocity vel = this->generateNewVelocity();
     p.setVelocity(vel);
+    p.setPosition(this->generateNewPosition(vel));
 
+    return p;
+}
+
+Position BeamParticleType::generateNewPosition(const Velocity& vel) {
+    std::uniform_real_distribution<> dist_x(emission_position.x, emission_position.x + vel.vx);
+    std::uniform_real_distribution<> dist_y(emission_position.y, emission_position.y + vel.vy);
+    std::uniform_real_distribution<> dist_z(emission_position.z, emission_position.z + vel.vz);
+
+    Position p(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
     return p;
 }
 

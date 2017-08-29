@@ -168,6 +168,7 @@ class BeamParticleType : public EmissionParticleType {
         virtual double getEmissionAmount() const override {return 10.0;}
 
         virtual Particle generateNewParticle() override;
+        Position generateNewPosition(const Velocity& vel);
         Velocity generateNewVelocity();
         virtual void printInfo() const override;
 };
