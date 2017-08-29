@@ -69,6 +69,7 @@ int main(int argc, char* argv[]){
         if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->getParticles());
 
         IO::plotObjectsData(*root_grid);
+        IO::plotValidParticleNumber(*root_grid);
     }
 
     /*

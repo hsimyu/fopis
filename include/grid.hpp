@@ -121,6 +121,7 @@ class Grid {
 
         const std::vector<Spacecraft>& getObjects() const { return objects; };
         ParticleArray& getParticles() {return particles;}
+        size_t getValidParticleNumber() const;
 
         //! 基本的には root_grid 中に対象の点(Object定義点)が含まれているかを判定するために呼ぶ
         //! i, j, k は整数座標(全体の計算空間上の)

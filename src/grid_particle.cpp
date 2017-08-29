@@ -642,3 +642,15 @@ double Grid::getParticleEnergy(void) const {
 
     return res;
 }
+
+size_t Grid::getValidParticleNumber() const {
+    size_t count = 0;
+
+    for(const auto& parray : particles) {
+        for(const auto& p : parray) {
+            if (p.isValid) ++count;
+        }
+    }
+
+    return count;
+}
