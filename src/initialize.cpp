@@ -185,12 +185,20 @@ namespace Initializer {
 
             ObjectInfo_t obj;
             obj.name = obj_name;
-            obj.file_name = obj_info["file_name"].to_str();
-            obj.surface_type = obj_info["surface_type"].to_str();
-            obj.history_width = static_cast<unsigned int>(obj_info["history_width"].get<double>());
-            obj.potential_fix = obj_info["potential_fix"].get<double>();
-            obj.emit_particle_names = Utils::convertPicoJSONArrayToVectorString(obj_info["emit_particles"].get<picojson::array>());
-            
+            for(auto it = obj_info.begin(); it != obj_info.end(); ++it) {
+
+                if(it->first == "file_name") {
+                    obj.file_name = it->second.to_str();
+                } else if (it->first == "surface_type") {
+                    obj.surface_type = it->second.to_str();
+                } else if (it->first == "history_width") {
+                    obj.history_width = static_cast<unsigned int>(it->second.get<double>());
+                } else if (it->first == "potential_fix") {
+                    obj.potential_fix = it->second.get<double>();
+                } else if (it->first == "emit_particles") {
+                    obj.emit_particle_names = Utils::convertPicoJSONArrayToVectorString(it->second.get<picojson::array>());
+                }
+            }
             Environment::objects_info.push_back( std::move(obj) );
         }
     }
