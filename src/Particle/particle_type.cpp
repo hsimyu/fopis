@@ -231,7 +231,7 @@ void BeamParticleType::setEmissionVector(const std::vector<double>& val) {
 }
 
 double BeamParticleType::getEmissionAmount() const {
-    return beam_current / (charge * size);
+    return beam_current / (fabs(charge) * size);
 }
 
 void BeamParticleType::printInfo() const {
@@ -239,6 +239,7 @@ void BeamParticleType::printInfo() const {
     cout << "  emission_type: " << emission_type << endl;
     cout << " beam_potential: " << Normalizer::unnormalizePotential(accel_potential) << "V" << endl;
     cout << "   beam_current: " << Normalizer::unnormalizeCurrent(beam_current) << "A" << endl;
+    cout << "   emiss_amount: " << getEmissionAmount() << " particles / step" << endl;
     cout << "beam_divergence: " << beam_divergence << "A" << endl;
     cout << " emiss_position: " << emission_position.x << ", " << emission_position.y << ", " << emission_position.z << endl;
     cout << "   emiss_vector: " << emission_vector[0] << ", " << emission_vector[1] << ", " << emission_vector[2] << endl;

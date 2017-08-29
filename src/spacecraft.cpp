@@ -175,7 +175,6 @@ bool Spacecraft::isContaining(const Position& pos) const {
                 object_node_map[i    ][j + 1][k + 1] &&
                 object_node_map[i + 1][j + 1][k + 1];
     } else {
-        cout << Environment::rankStr() << "This is not a valid position!: " << endl << pos << endl;
         return false;
     }
 }
