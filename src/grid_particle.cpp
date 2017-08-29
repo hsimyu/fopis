@@ -516,14 +516,16 @@ void Grid::injectParticles(void) {
     if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
     if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
-    for(auto& ambient_particle_ptr : Environment::getAmbientParticleTypes()) {
+    for(int itr = 0; itr < Environment::getNumOfAmbientParticles(); ++itr) {
+        auto& ambient_particle_ptr = Environment::getAmbientParticleTypes()[itr];
+
         std::vector<double> flux = ambient_particle_ptr->calcFlux(*this);
         const auto pid = ambient_particle_ptr->getId();
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;
-            const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            residual[pid][index] += dt * flux[index] - inject_num;
+            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewVelocity();
@@ -541,8 +543,8 @@ void Grid::injectParticles(void) {
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
             const int index = 1;
-            const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            residual[pid][index] += dt * flux[index] - inject_num;
+            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewVelocity();
@@ -559,8 +561,8 @@ void Grid::injectParticles(void) {
 
         if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
             const int index = 2;
-            const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            residual[pid][index] += dt * flux[index] - inject_num;
+            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewVelocity();
@@ -576,8 +578,8 @@ void Grid::injectParticles(void) {
 
         if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
             const int index = 3;
-            const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            residual[pid][index] += dt * flux[index] - inject_num;
+            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewVelocity();
@@ -593,8 +595,8 @@ void Grid::injectParticles(void) {
 
         if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
             const int index = 4;
-            const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            residual[pid][index] += dt * flux[index] - inject_num;
+            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewVelocity();
@@ -610,8 +612,8 @@ void Grid::injectParticles(void) {
 
         if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
             const int index = 5;
-            const int inject_num = floor(dt * flux[index] + residual[pid][index]);
-            residual[pid][index] += dt * flux[index] - inject_num;
+            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewVelocity();
