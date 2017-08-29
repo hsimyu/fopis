@@ -165,9 +165,44 @@ Velocity AmbientParticleType::generateNewVelocity(void) {
     return v;
 }
 
-
 Particle BeamParticleType::generateNewParticle() {
-    return Particle{};
+    Particle p(id);
+    Velocity vel = this->generateNewVelocity();
+    p.setVelocity(vel);
+
+    return p;
+}
+
+Velocity BeamParticleType::generateNewVelocity() {
+    const double deviation = this->calcDeviation();
+    std::normal_distribution<> dist_vx(0.0, deviation);
+    std::normal_distribution<> dist_vy(0.0, deviation);
+    std::normal_distribution<> dist_vz(0.0, deviation);
+
+    Velocity v(dist_vx(mt_vx) + emission_velocity.vx, dist_vy(mt_vy) + emission_velocity.vy, dist_vz(mt_vz) + emission_velocity.vz);
+    return v;
+}
+
+void BeamParticleType::updateEmissionVelocity() {
+    double acceleration = getAcceleration();
+
+    emission_velocity.vx = acceleration * emission_vector[0];
+    emission_velocity.vy = acceleration * emission_vector[1];
+    emission_velocity.vz = acceleration * emission_vector[2];
+}
+
+void BeamParticleType::setEmissionVector(const std::vector<double>& val) {
+    if (val.size() != 3) {
+        throw std::invalid_argument("The size of the argument for setEmissionVector() must be 3.");
+    }
+
+    //! 正規化
+    double emission_normal = sqrt(pow(val[0], 2) + pow(val[1], 2) + pow(val[2], 2));
+    for(int i = 0; i < 3; ++i) {
+        emission_vector[i] = val[i] / emission_normal;
+    }
+
+    updateEmissionVelocity();
 }
 
 void BeamParticleType::printInfo() const {
@@ -178,4 +213,8 @@ void BeamParticleType::printInfo() const {
     cout << "beam_divergence: " << beam_divergence << "A" << endl;
     cout << " emiss_position: " << emission_position.x << ", " << emission_position.y << ", " << emission_position.z << endl;
     cout << "   emiss_vector: " << emission_vector[0] << ", " << emission_vector[1] << ", " << emission_vector[2] << endl;
+
+    if (getAcceleration() > 1.0) {
+        cout << "[WARNING] Acceleration for this particle type exceeds 1.0: " << getAcceleration() << "." << endl;
+    }
 }

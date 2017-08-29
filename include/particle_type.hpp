@@ -126,14 +126,26 @@ class BeamParticleType : public EmissionParticleType {
         double beam_current;
         double beam_divergence;
 
-    public:
-        BeamParticleType() : EmissionParticleType(){}
+        Velocity emission_velocity;
+        void updateEmissionVelocity();
 
-        void setEmissionType(const std::string& type) { emission_type = type; }
+    public:
+        BeamParticleType() : EmissionParticleType(), emission_vector{0.0, 0.0, 0.0}, emission_velocity{0.0, 0.0, 0.0} {}
+
+        void setEmissionType(const std::string& type) {
+            emission_type = type;
+            updateEmissionVelocity();
+        }
+
         std::string getEmissionType() const {return emission_type;}
 
-        void setAcceleratingPotential(const double value) { accel_potential = value; }
+        void setAcceleratingPotential(const double value) {
+            accel_potential = value;
+            updateEmissionVelocity();
+        }
+
         double getAcceleratingPotential() const {return accel_potential;}
+        double getAcceleration() const{return sqrt(2.0 * accel_potential / mass); }
 
         void setBeamCurrent(const double value) { beam_current = value; }
         double getBeamCurrent() const {return beam_current;}
@@ -150,18 +162,13 @@ class BeamParticleType : public EmissionParticleType {
         }
         Position getEmissionPosition() const {return emission_position;}
 
-        void setEmissionVector(const std::vector<double>& pos) {
-            if (pos.size() != 3) {
-                throw std::invalid_argument("The size of the argument for setEmissionVector() must be 3.");
-            }
-
-            emission_vector = pos;
-        }
+        void setEmissionVector(const std::vector<double>& pos);
         std::vector<double> getEmissionVector() const {return emission_vector;}
 
         virtual double getEmissionAmount() const override {return 10.0;}
 
         virtual Particle generateNewParticle() override;
+        Velocity generateNewVelocity();
         virtual void printInfo() const override;
 };
 #endif

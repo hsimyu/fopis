@@ -112,8 +112,15 @@ class Velocity {
 
         //! Particle用のコンストラクタはinlineで書けない
         Velocity(const Particle&);
-
         ~Velocity(){}
+
+        //! コピー演算
+        Velocity(const Velocity&) = default;
+        Velocity& operator=(const Velocity&) = default;
+
+        //! ムーブ演算
+        Velocity(Velocity&&) = default;
+        Velocity& operator=(Velocity&&) = default;
 
         double getMagnitude(void) {
             return vx*vx + vy*vy + vz*vz;
