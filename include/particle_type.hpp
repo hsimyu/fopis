@@ -71,6 +71,7 @@ class ParticleType {
         std::string getType() const { return type; }
         std::string getName() const { return name; }
         double getCharge() const { return charge; }
+        double getChargeOfSuperParticle() const { return charge * size; }
         double getMass() const { return mass; }
         double getDensity() const { return density; }
         double getTemperature() const { return temperature / e; }

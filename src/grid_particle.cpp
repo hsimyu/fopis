@@ -386,7 +386,7 @@ void Grid::updateParticlePositionEM(void) {
 #endif
             if(p.isValid) {
                 const int pid = p.typeId;
-                const double q_per_dt = Environment::getParticleType(pid)->getCharge() / dt;
+                const double q_per_dt = Environment::getParticleType(pid)->getChargeOfSuperParticle() / dt;
                 p.distributeCurrentAtNewPosition(q_per_dt, jx, jy, jz);
                 particles[ pid ].push_back( std::move(p) );
             }
@@ -417,7 +417,7 @@ void Grid::updateRho() {
     }
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        double q = Environment::getParticleType(pid)->getCharge();
+        double q = Environment::getParticleType(pid)->getChargeOfSuperParticle();
         const auto rho_idx = pid + 1;
 
         for(auto& p : particles[pid]) {

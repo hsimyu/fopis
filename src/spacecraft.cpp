@@ -205,7 +205,7 @@ void Spacecraft::removeInnerParticle(Particle& p) const {
 void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     if (isContaining(p)) { 
         const auto id = p.typeId;
-        const auto q = p.getCharge();
+        const auto q = p.getChargeOfSuperParticle();
         const auto pos = p.getPosition();
 
         charge_map[id][pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
@@ -225,7 +225,7 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
 
 void Spacecraft::subtractChargeOfParticle(const Particle& p) {
     const auto id = p.typeId;
-    const auto q = p.getCharge();
+    const auto q = p.getChargeOfSuperParticle();
     const auto pos = p.getOldPosition();
 
     charge_map[id][pos.i    ][pos.j    ][pos.k    ] -= q * pos.dx2 * pos.dy2 * pos.dz2;
