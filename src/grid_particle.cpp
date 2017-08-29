@@ -271,7 +271,7 @@ void Grid::updateParticlePositionES(void) {
                 cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::getParticleType(p.typeId)->getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
             }
 #endif
-            if(p.isValid) {
+            if( p.isValid ) {
                 particles[ p.typeId ].push_back( std::move(p) );
             }
         }
@@ -516,9 +516,9 @@ void Grid::injectParticles(void) {
     if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
     if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
-    for(int pid = 0; pid < Environment::getNumOfAmbientParticles(); ++pid) {
-        auto ambient_particle_ptr = Environment::getAmbientParticleType(pid);
+    for(auto& ambient_particle_ptr : Environment::getAmbientParticleTypes()) {
         std::vector<double> flux = ambient_particle_ptr->calcFlux(*this);
+        const auto pid = ambient_particle_ptr->getId();
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;

@@ -5,24 +5,6 @@
 #include <array>
 
 struct Environment {
-    private:
-        static bool isPlotTimestep(const std::string type) {
-            if(type == "potential"     && plot_potential_width     != 0) return (timestep % plot_potential_width == 0);
-            if(type == "rho"           && plot_rho_width           != 0) return (timestep % plot_rho_width == 0);
-            if(type == "efield"        && plot_efield_width        != 0) return (timestep % plot_efield_width == 0);
-            if(type == "bfield"        && plot_bfield_width        != 0) return (timestep % plot_bfield_width == 0);
-            if(type == "density"       && plot_density_width       != 0) return (timestep % plot_density_width == 0);
-            if(type == "particle"      && plot_particle_width      != 0) return (timestep % plot_particle_width == 0);
-            if(type == "energy"        && plot_energy_width        != 0) return (timestep % plot_energy_width == 0);
-            if(type == "energy_dist"   && plot_energy_dist_width   != 0) return (timestep % plot_energy_dist_width == 0);
-            if(type == "velocity_dist" && plot_velocity_dist_width != 0) return (timestep % plot_velocity_dist_width == 0);
-            return false;
-        }
-
-        //! 内部的には各粒子の種類毎にリストを持つ
-        static std::vector<std::shared_ptr<AmbientParticleType>> ambient_particles;
-        static std::vector<std::shared_ptr<BeamParticleType>> beam_particles;
-
     public:
         static int max_particle_num;
         static int num_of_particle_types;
@@ -75,36 +57,23 @@ struct Environment {
         }
         static int getNumOfBeamParticles() {return beam_particles.size();}
 
-        static std::shared_ptr<ParticleType> getParticleType(const int pid) {
-            for(auto& ptype : ambient_particles) {
-                if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
-            }
-            for(auto& ptype : beam_particles) {
-                if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
-            }
-            throw std::invalid_argument("[ERROR] The particle id passed to getParticleType() didn't match any existing particle type.");
-        }
+        using ParticleTypePtr = std::shared_ptr<ParticleType>;
+        using EmissionParticleTypePtr = std::shared_ptr<EmissionParticleType>;
+        using AmbientParticlePtr = std::shared_ptr<AmbientParticleType>;
+        using BeamParticlePtr = std::shared_ptr<BeamParticleType>;
 
-        static std::shared_ptr<EmissionParticleType> getEmissionParticleType(const int pid) {
-            for(auto& ptype : beam_particles) {
-                if (ptype->getId() == pid) return std::static_pointer_cast<EmissionParticleType>(ptype);
-            }
-            throw std::invalid_argument("[ERROR] The particle id passed to getEmissionParticleType() didn't match any existing particle type.");
-        }
+        using AmbientParticleList = std::vector<AmbientParticlePtr>;
+        using BeamParticleList = std::vector<BeamParticlePtr>;
 
-        static std::shared_ptr<AmbientParticleType> getAmbientParticleType(const int pid) {
-            for(auto& ptype : ambient_particles) {
-                if (ptype->getId() == pid) return ptype;
-            }
-            throw std::invalid_argument("[ERROR] The particle id passed to getAmbientParticleType() didn't match any existing particle type.");
-        }
+        //! イテレータ経由で使う
+        static AmbientParticleList getAmbientParticleTypes() { return ambient_particles; }
+        static BeamParticleList getBeamParticleTypes() { return beam_particles; }
 
-        static std::shared_ptr<BeamParticleType> getBeamParticleType(const int pid) {
-            for(auto& ptype : beam_particles) {
-                if (ptype->getId() == pid) return ptype;
-            }
-            throw std::invalid_argument("[ERROR] The particle id passed to getBeamParticleType() didn't match any existing particle type.");
-        }
+        //! インデックスを探して使う
+        static ParticleTypePtr getParticleType(const int pid);
+        static EmissionParticleTypePtr getEmissionParticleType(const int pid);
+        static AmbientParticlePtr getAmbientParticleType(const int pid);
+        static BeamParticlePtr getBeamParticleType(const int pid);
 
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
         static int getAssignedXBegin(void) { return ::MPIw::Environment::xrank * cell_x; }
@@ -156,5 +125,23 @@ struct Environment {
         static bool plotEnergy(void)       { return isPlotTimestep("energy"); }
         static bool plotEnergyDist(void)   { return isPlotTimestep("energy_dist"); }
         static bool plotVelocityDist(void) { return isPlotTimestep("velocity_dist"); }
+
+    private:
+        static bool isPlotTimestep(const std::string type) {
+            if(type == "potential"     && plot_potential_width     != 0) return (timestep % plot_potential_width == 0);
+            if(type == "rho"           && plot_rho_width           != 0) return (timestep % plot_rho_width == 0);
+            if(type == "efield"        && plot_efield_width        != 0) return (timestep % plot_efield_width == 0);
+            if(type == "bfield"        && plot_bfield_width        != 0) return (timestep % plot_bfield_width == 0);
+            if(type == "density"       && plot_density_width       != 0) return (timestep % plot_density_width == 0);
+            if(type == "particle"      && plot_particle_width      != 0) return (timestep % plot_particle_width == 0);
+            if(type == "energy"        && plot_energy_width        != 0) return (timestep % plot_energy_width == 0);
+            if(type == "energy_dist"   && plot_energy_dist_width   != 0) return (timestep % plot_energy_dist_width == 0);
+            if(type == "velocity_dist" && plot_velocity_dist_width != 0) return (timestep % plot_velocity_dist_width == 0);
+            return false;
+        }
+
+        //! 内部的には各粒子の種類毎にリストを持つ
+        static AmbientParticleList ambient_particles;
+        static BeamParticleList beam_particles;
 };
 #endif

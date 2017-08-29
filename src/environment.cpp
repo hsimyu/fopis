@@ -29,8 +29,8 @@ std::string Environment::solver_type;
 std::string Environment::boundary;
 std::string Environment::dimension;
 std::vector<ObjectInfo_t> Environment::objects_info;
-std::vector<std::shared_ptr<AmbientParticleType>> Environment::ambient_particles;
-std::vector<std::shared_ptr<BeamParticleType>> Environment::beam_particles;
+Environment::AmbientParticleList Environment::ambient_particles;
+Environment::BeamParticleList Environment::beam_particles;
 
 /*
 * @params
@@ -187,4 +187,36 @@ void Environment::checkPlasmaInfo(void) {
             << ((((ny * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
     cout << "    (nz * dx) / Total Debye = " << (nz * dx) / total_debye << " > 1.0?: "
             << ((((nz * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
+}
+
+//! インデックスを探して使う
+Environment::ParticleTypePtr Environment::getParticleType(const int pid) {
+    for(auto& ptype : ambient_particles) {
+        if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
+    }
+    for(auto& ptype : beam_particles) {
+        if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
+    }
+    throw std::invalid_argument("[ERROR] The particle id passed to getParticleType() didn't match any existing particle type.");
+}
+
+Environment::EmissionParticleTypePtr Environment::getEmissionParticleType(const int pid) {
+    for(auto& ptype : beam_particles) {
+        if (ptype->getId() == pid) return std::static_pointer_cast<EmissionParticleType>(ptype);
+    }
+    throw std::invalid_argument("[ERROR] The particle id passed to getEmissionParticleType() didn't match any existing particle type.");
+}
+
+Environment::AmbientParticlePtr Environment::getAmbientParticleType(const int pid) {
+    for(auto& ptype : ambient_particles) {
+        if (ptype->getId() == pid) return ptype;
+    }
+    throw std::invalid_argument("[ERROR] The particle id passed to getAmbientParticleType() didn't match any existing particle type.");
+}
+
+Environment::BeamParticlePtr Environment::getBeamParticleType(const int pid) {
+    for(auto& ptype : beam_particles) {
+        if (ptype->getId() == pid) return ptype;
+    }
+    throw std::invalid_argument("[ERROR] The particle id passed to getBeamParticleType() didn't match any existing particle type.");
 }
