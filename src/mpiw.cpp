@@ -30,29 +30,20 @@ namespace MPIw {
     MPI_Datatype Environment::MPI_PARTICLE;
 
     Environment::Environment(int argc, char* argv[]) {
-#ifndef BUILD_TEST
         MPI_Init(&argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         addNewComm("world", MPI_COMM_WORLD);
-#else
-        rank = 0;
-        numprocs = 1;
-        xrank = 0;
-        yrank = 0;
-        zrank = 0;
-#endif
         MPI_PARTICLE = registerParticleType();
     }
 
     void Environment::finalize(void) {
-#ifndef BUILD_TEST
-    static bool finalized = false;
+        static bool finalized = false;
+
         if(!finalized) {
             MPI_Finalize();
             finalized = true;
         }
-#endif
     }
 
     void Environment::abort(const int code) {
@@ -215,6 +206,19 @@ namespace MPIw {
         }
     }
 
+//! size_t通信用の型判定
+#if SIZE_MAX == UCHAR_MAX
+    #define MY_MPI_SIZE_T MPI_UNSIGNED_CHAR
+ #elif SIZE_MAX == USHRT_MAX
+    #define MY_MPI_SIZE_T MPI_UNSIGNED_SHORT
+ #elif SIZE_MAX == UINT_MAX
+    #define MY_MPI_SIZE_T MPI_UNSIGNED
+ #elif SIZE_MAX == ULONG_MAX
+    #define MY_MPI_SIZE_T MPI_UNSIGNED_LONG
+ #elif SIZE_MAX == ULLONG_MAX
+    #define MY_MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+ #endif
+
     double Communicator::sum(double value, const int target_rank) {
         double res = 0.0;
         MPI_Reduce(&value, &res, 1, MPI_DOUBLE, MPI_SUM, target_rank, comm);
@@ -227,6 +231,12 @@ namespace MPIw {
         return res;
     }
 
+    size_t Communicator::sum(size_t value, const int target_rank) {
+        size_t res = 0;
+        MPI_Reduce(&value, &res, 1, MY_MPI_SIZE_T, MPI_SUM, target_rank, comm);
+        return res;
+    }
+
     double Communicator::sum(double value) {
         double res = 0.0;
         MPI_Allreduce(&value, &res, 1, MPI_DOUBLE, MPI_SUM, comm);
@@ -236,6 +246,12 @@ namespace MPIw {
     int Communicator::sum(int value) {
         int res = 0;
         MPI_Allreduce(&value, &res, 1, MPI_INT, MPI_SUM, comm);
+        return res;
+    }
+
+    size_t Communicator::sum(size_t value) {
+        size_t res = 0;
+        MPI_Allreduce(&value, &res, 1, MY_MPI_SIZE_T, MPI_SUM, comm);
         return res;
     }
 

@@ -35,10 +35,12 @@ namespace MPIw {
             // summation only on target
             double sum(double, const int);
             int sum(int, const int);
+            size_t sum(size_t, const int);
 
             // all reducer
             double sum(double);
             int    sum(int);
+            size_t sum(size_t);
             double max(double);
             double min(double);
             int    min(int);
