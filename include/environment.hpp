@@ -76,37 +76,34 @@ struct Environment {
         static int getNumOfBeamParticles() {return beam_particles.size();}
 
         static std::shared_ptr<ParticleType> getParticleType(const int pid) {
-            if (pid < ambient_particles.size()) {
-                return std::static_pointer_cast<ParticleType>(ambient_particles[pid]);
-            } else {
-                return std::static_pointer_cast<ParticleType>(beam_particles[pid - ambient_particles.size()]);
+            for(auto& ptype : ambient_particles) {
+                if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
             }
+            for(auto& ptype : beam_particles) {
+                if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
+            }
+            throw std::invalid_argument("[ERROR] The particle id passed to getParticleType() didn't match any existing particle type.");
         }
 
         static std::shared_ptr<EmissionParticleType> getEmissionParticleType(const int pid) {
-            const auto ambient_size = ambient_particles.size();
-            if (pid >= ambient_size && pid - ambient_size < beam_particles.size()) {
-                return std::static_pointer_cast<EmissionParticleType>(beam_particles[pid - ambient_size]);
-            } else {
-                throw std::invalid_argument("[ERROR] The particle id passed to getEmissionParticleType() exceeds the beam particle count.");
+            for(auto& ptype : beam_particles) {
+                if (ptype->getId() == pid) return std::static_pointer_cast<EmissionParticleType>(ptype);
             }
+            throw std::invalid_argument("[ERROR] The particle id passed to getEmissionParticleType() didn't match any existing particle type.");
         }
 
         static std::shared_ptr<AmbientParticleType> getAmbientParticleType(const int pid) {
-            if (pid < ambient_particles.size()) {
-                return ambient_particles[pid];
-            } else {
-                throw std::invalid_argument("[ERROR] The particle id passed to getAmbientParticleType() exceeds the ambient particle count.");
+            for(auto& ptype : ambient_particles) {
+                if (ptype->getId() == pid) return ptype;
             }
+            throw std::invalid_argument("[ERROR] The particle id passed to getAmbientParticleType() didn't match any existing particle type.");
         }
 
         static std::shared_ptr<BeamParticleType> getBeamParticleType(const int pid) {
-            const auto ambient_size = ambient_particles.size();
-            if (pid >= ambient_size && pid - ambient_size < beam_particles.size()) {
-                return beam_particles[pid - ambient_size];
-            } else {
-                throw std::invalid_argument("[ERROR] The particle id passed to getBeamParticleType() exceeds the beam particle count.");
+            for(auto& ptype : beam_particles) {
+                if (ptype->getId() == pid) return ptype;
             }
+            throw std::invalid_argument("[ERROR] The particle id passed to getBeamParticleType() didn't match any existing particle type.");
         }
 
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
