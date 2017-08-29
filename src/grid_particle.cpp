@@ -509,8 +509,9 @@ void Grid::injectParticles(void) {
     if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
     if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
+	auto ambient_ptype_ptr_list = Environment::getAmbientParticleTypes();
     for(int itr = 0; itr < Environment::getNumOfAmbientParticles(); ++itr) {
-        auto& ambient_particle_ptr = Environment::getAmbientParticleTypes()[itr];
+        auto ambient_particle_ptr = ambient_ptype_ptr_list[itr];
 
         std::vector<double> flux = ambient_particle_ptr->calcFlux(*this);
         const auto pid = ambient_particle_ptr->getId();
