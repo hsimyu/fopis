@@ -155,7 +155,7 @@ void Spacecraft::makeCmatrixInvert(void) {
 bool Spacecraft::isContaining(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
-    this->isContaining(p.getPosition());
+    return this->isContaining(p.getPosition());
 }
 
 bool Spacecraft::isContaining(const Position& pos) const {
@@ -253,7 +253,10 @@ void Spacecraft::applyCharge(RhoArray& rho) const {
 
 void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     auto q = getTotalCharge(rho);
-    cout << "charge before redist: " << q << endl;
+
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << format("%s: %16.7e") % "charge before redist" % q << endl;
+    }
 
     double capacity_times_phi = 0.0;
     //! relationの中には元々内部ノードのPositionしか保存されていないので、
@@ -272,7 +275,10 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     } else {
         potential = capacity_times_phi / total_cmat_value;
     }
-    cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;
+
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;
+    }
 
     for(unsigned int i = 0; i < num_cmat; ++i) {
         double delta_rho = 0.0;
@@ -292,9 +298,12 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     }
 
     q = getTotalCharge(rho);
-    cout << "charge after redist: " << q << endl;
     // update total charge for output
     total_charge = q;
+
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << format("%s: %16.7e") % "charge after redist " % q << endl;
+    }
 }
 
 //! 粒子放出関連

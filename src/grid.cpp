@@ -149,49 +149,50 @@ void Grid::initializeObjectsCmatrix(void) {
     for(auto& obj : objects) {
         const auto num_cmat = obj.getCmatSize();
 
-        { //! Progress Manager のライフタイムを区切る
-            Utils::ProgressManager pm(num_cmat, "cmat_solve");
+        std::unique_ptr<Utils::ProgressManager> pm;
+        if (MPIw::Environment::isRootNode(obj.getName())) {
+            pm = std::make_unique<Utils::ProgressManager>(num_cmat, "cmat_solve");
+        }
 
-            // rhoを初期化
-            Utils::initializeRhoArray(rho);
-            Utils::initialize3DArray(phi);
+        // rhoを初期化
+        Utils::initializeRhoArray(rho);
+        Utils::initialize3DArray(phi);
 
-            for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
-                if (Environment::isRootNode) pm.update(cmat_col_itr);
+        for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
+            if (MPIw::Environment::isRootNode(obj.getName())) pm->update(cmat_col_itr);
 
-                //! 該当する頂点に単位電荷を付与
-                if (obj.isMyCmat(cmat_col_itr)) {
-                    const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                    rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
+            //! 該当する頂点に単位電荷を付与
+            if (obj.isMyCmat(cmat_col_itr)) {
+                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
+                rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
+            }
+
+            solvePoisson();
+
+            for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
+                double value = 0.0;
+                if (obj.isMyCmat(cmat_row_itr)) {
+                    //! phiの値がB_{ij}の値になっている
+                    const auto& target_pos = obj.getCmatPos(cmat_row_itr);
+                    value = phi[target_pos.i][target_pos.j][target_pos.k];
                 }
 
-                solvePoisson();
-
-                for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
-                    double value = 0.0;
-                    if (obj.isMyCmat(cmat_row_itr)) {
-                        //! phiの値がB_{ij}の値になっている
-                        const auto& target_pos = obj.getCmatPos(cmat_row_itr);
-                        value = phi[target_pos.i][target_pos.j][target_pos.k];
-                    }
-
-                    if (obj.isDefined()) {
-                        //! bcastの代わりにsumしてしまう
-                        value = MPIw::Environment::Comms[obj.getName()].sum(value);
-                        obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
-                    }
-                }
-
-                //! 付与した単位電荷を消去する
-                if (obj.isMyCmat(cmat_col_itr)) {
-                    const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                    rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 0.0;
+                if (obj.isDefined()) {
+                    //! bcastの代わりにsumしてしまう
+                    value = MPIw::Environment::Comms[obj.getName()].sum(value);
+                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
                 }
             }
 
-            //! 物体が有効でないなら解く必要なし
-            if (obj.isDefined()) obj.makeCmatrixInvert();
+            //! 付与した単位電荷を消去する
+            if (obj.isMyCmat(cmat_col_itr)) {
+                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
+                rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 0.0;
+            }
         }
+
+        //! 物体が有効でないなら解く必要なし
+        if (obj.isDefined()) obj.makeCmatrixInvert();
     }
 }
 
