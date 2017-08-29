@@ -88,11 +88,13 @@ public:
     // 判定用関数
     bool isMyCmat(const unsigned int cmat_number) const { return (capacity_matrix_relation.count(cmat_number) > 0); }
     bool isDefined(void) const { return is_defined_in_this_process; }
-    bool isIncluded(const Particle&) const;
+    bool isContaining(const Particle&) const;
+    bool isContaining(const Position&) const;
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);
     bool hasEmitParticles() const {return (emit_particle_ids.size() > 0);}
+    bool isValidEmission(Particle& p) const;
 
     // その他ユーティリティ関数
     void makeCmatrixInvert(void);

@@ -152,7 +152,7 @@ void Spacecraft::makeCmatrixInvert(void) {
     }
 }
 
-bool Spacecraft::isIncluded(const Particle& p) const {
+bool Spacecraft::isContaining(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
     const auto pos = p.getPosition();
@@ -170,8 +170,25 @@ bool Spacecraft::isIncluded(const Particle& p) const {
             object_node_map[i + 1][j + 1][k + 1];
 }
 
+bool Spacecraft::isContaining(const Position& pos) const {
+    if (!is_defined_in_this_process) return false;
+
+    const auto i = pos.i;
+    const auto j = pos.j;
+    const auto k = pos.k;
+
+    return  object_node_map[i    ][j    ][k    ] &&
+            object_node_map[i + 1][j    ][k    ] &&
+            object_node_map[i    ][j + 1][k    ] &&
+            object_node_map[i + 1][j + 1][k    ] &&
+            object_node_map[i    ][j    ][k + 1] &&
+            object_node_map[i + 1][j    ][k + 1] &&
+            object_node_map[i    ][j + 1][k + 1] &&
+            object_node_map[i + 1][j + 1][k + 1];
+}
+
 /*
-bool Spacecraft::isIncludedByFace(const Particle& p) const {
+bool Spacecraft::isContainingByFace(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
     const auto pos = p.getPosition();
@@ -189,11 +206,11 @@ bool Spacecraft::isIncludedByFace(const Particle& p) const {
 */
 
 void Spacecraft::removeInnerParticle(Particle& p) const {
-    if (isIncluded(p)) { p.makeInvalid(); }
+    if (isContaining(p)) { p.makeInvalid(); }
 }
 
 void Spacecraft::distributeInnerParticleCharge(Particle& p) {
-    if (isIncluded(p)) { 
+    if (isContaining(p)) { 
         const auto id = p.typeId;
         const auto q = p.getCharge();
         const auto pos = p.getPosition();
@@ -281,10 +298,16 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
         for(int i = 0; i < max_amount; ++i) {
             Particle p = emit_ptype_ptr->generateNewParticle();
 
-            cout << p << endl;
-            // parray.push_back()
+            if (this->isValidEmission(p)) {
+                cout << Environment::rankStr() << endl << p << endl;
+                parray[id].push_back( std::move(p) );
+            }
         }
     }
+}
+
+bool Spacecraft::isValidEmission(Particle& p) const {
+    return ( (!isContaining(p)) && isContaining(p.getOldPosition()) );
 }
 
 //! I/O関連
