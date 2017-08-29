@@ -189,6 +189,10 @@ void Environment::checkPlasmaInfo(void) {
             << ((((nz * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
 }
 
+bool Environment::isValidPosition(const Position& pos) {
+    return ((pos.i >= 0) && (pos.i < cell_x + 2) && (pos.j >= 0) && (pos.j < cell_y + 2) && (pos.k >= 0) && (pos.k < cell_z + 2));
+}
+
 //! インデックスを探して使う
 Environment::ParticleTypePtr Environment::getParticleType(const int pid) {
     for(auto& ptype : ambient_particles) {
