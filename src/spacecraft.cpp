@@ -155,36 +155,29 @@ void Spacecraft::makeCmatrixInvert(void) {
 bool Spacecraft::isContaining(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
-    const auto pos = p.getPosition();
-    const auto i = pos.i;
-    const auto j = pos.j;
-    const auto k = pos.k;
-
-    return  object_node_map[i    ][j    ][k    ] &&
-            object_node_map[i + 1][j    ][k    ] &&
-            object_node_map[i    ][j + 1][k    ] &&
-            object_node_map[i + 1][j + 1][k    ] &&
-            object_node_map[i    ][j    ][k + 1] &&
-            object_node_map[i + 1][j    ][k + 1] &&
-            object_node_map[i    ][j + 1][k + 1] &&
-            object_node_map[i + 1][j + 1][k + 1];
+    this->isContaining(p.getPosition());
 }
 
 bool Spacecraft::isContaining(const Position& pos) const {
     if (!is_defined_in_this_process) return false;
 
-    const auto i = pos.i;
-    const auto j = pos.j;
-    const auto k = pos.k;
+    if (Environment::isValidPosition(pos)) {
+        const auto i = pos.i;
+        const auto j = pos.j;
+        const auto k = pos.k;
 
-    return  object_node_map[i    ][j    ][k    ] &&
-            object_node_map[i + 1][j    ][k    ] &&
-            object_node_map[i    ][j + 1][k    ] &&
-            object_node_map[i + 1][j + 1][k    ] &&
-            object_node_map[i    ][j    ][k + 1] &&
-            object_node_map[i + 1][j    ][k + 1] &&
-            object_node_map[i    ][j + 1][k + 1] &&
-            object_node_map[i + 1][j + 1][k + 1];
+        return  object_node_map[i    ][j    ][k    ] &&
+                object_node_map[i + 1][j    ][k    ] &&
+                object_node_map[i    ][j + 1][k    ] &&
+                object_node_map[i + 1][j + 1][k    ] &&
+                object_node_map[i    ][j    ][k + 1] &&
+                object_node_map[i + 1][j    ][k + 1] &&
+                object_node_map[i    ][j + 1][k + 1] &&
+                object_node_map[i + 1][j + 1][k + 1];
+    } else {
+        cout << Environment::rankStr() << "This is not a valid position!: " << endl << pos << endl;
+        return false;
+    }
 }
 
 /*
@@ -228,6 +221,23 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
 
         p.makeInvalid();
     }
+}
+
+void Spacecraft::subtractChargeOfParticle(const Particle& p) {
+    const auto id = p.typeId;
+    const auto q = p.getCharge();
+    const auto pos = p.getOldPosition();
+
+    charge_map[id][pos.i    ][pos.j    ][pos.k    ] -= q * pos.dx2 * pos.dy2 * pos.dz2;
+    charge_map[id][pos.i + 1][pos.j    ][pos.k    ] -= q * pos.dx1 * pos.dy2 * pos.dz2;
+    charge_map[id][pos.i    ][pos.j + 1][pos.k    ] -= q * pos.dx2 * pos.dy1 * pos.dz2;
+    charge_map[id][pos.i + 1][pos.j + 1][pos.k    ] -= q * pos.dx1 * pos.dy1 * pos.dz2;
+    charge_map[id][pos.i    ][pos.j    ][pos.k + 1] -= q * pos.dx2 * pos.dy2 * pos.dz1;
+    charge_map[id][pos.i + 1][pos.j    ][pos.k + 1] -= q * pos.dx1 * pos.dy2 * pos.dz1;
+    charge_map[id][pos.i    ][pos.j + 1][pos.k + 1] -= q * pos.dx2 * pos.dy1 * pos.dz1;
+    charge_map[id][pos.i + 1][pos.j + 1][pos.k + 1] -= q * pos.dx1 * pos.dy1 * pos.dz1;
+
+    current[id] -= q;
 }
 
 void Spacecraft::applyCharge(RhoArray& rho) const {
@@ -289,8 +299,6 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
 //! 粒子放出関連
 void Spacecraft::emitParticles(ParticleArray& parray) {
-    cout << Environment::rankStr() << "called emitParticles." << endl;
-
     for(const auto& id : emit_particle_ids) {
         const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
         const auto max_amount = emit_ptype_ptr->getEmissionAmount();
@@ -299,7 +307,7 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
             Particle p = emit_ptype_ptr->generateNewParticle();
 
             if (this->isValidEmission(p)) {
-                cout << Environment::rankStr() << endl << p << endl;
+                this->subtractChargeOfParticle(p);
                 parray[id].push_back( std::move(p) );
             }
         }
@@ -307,6 +315,7 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
 }
 
 bool Spacecraft::isValidEmission(Particle& p) const {
+    //! 放出前は内部、放出後は外部に入れば valid と見なす
     return ( (!isContaining(p)) && isContaining(p.getOldPosition()) );
 }
 

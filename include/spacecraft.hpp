@@ -95,6 +95,7 @@ public:
     void emitParticles(ParticleArray& parray);
     bool hasEmitParticles() const {return (emit_particle_ids.size() > 0);}
     bool isValidEmission(Particle& p) const;
+    void subtractChargeOfParticle(const Particle& p);
 
     // その他ユーティリティ関数
     void makeCmatrixInvert(void);
