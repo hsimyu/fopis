@@ -160,6 +160,24 @@ bool Spacecraft::isIncluded(const Particle& p) const {
     const auto j = pos.j;
     const auto k = pos.k;
 
+    return  object_node_map[i    ][j    ][k    ] &&
+            object_node_map[i + 1][j    ][k    ] &&
+            object_node_map[i    ][j + 1][k    ] &&
+            object_node_map[i + 1][j + 1][k    ] &&
+            object_node_map[i    ][j    ][k + 1] &&
+            object_node_map[i + 1][j    ][k + 1] &&
+            object_node_map[i    ][j + 1][k + 1] &&
+            object_node_map[i + 1][j + 1][k + 1];
+}
+
+bool Spacecraft::isIncludedByFace(const Particle& p) const {
+    if (!is_defined_in_this_process) return false;
+
+    const auto pos = p.getPosition();
+    const auto i = pos.i;
+    const auto j = pos.j;
+    const auto k = pos.k;
+
     return  object_xface_map[i    ][j][k] &&
             object_xface_map[i + 1][j][k] &&
             object_yface_map[i][j    ][k] &&
