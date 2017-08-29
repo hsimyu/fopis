@@ -30,8 +30,9 @@ namespace Initializer {
 
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
-            cout << "    Built on: " << TDPIC_DATE << endl;
-            cout << "Git Revision: " << TDPIC_REVISION << endl << endl;
+            cout << "   Built date: " << TDPIC_DATE << endl;
+            cout << " Git Revision: " << TDPIC_REVISION << endl << endl;
+            cout << "MPI processes: " << format("%d") % MPIw::Environment::numprocs << endl;
 
             Environment::printInfo();
             Environment::checkPlasmaInfo();
@@ -103,8 +104,6 @@ namespace Initializer {
 
         // 0のノードをルートとして扱う
         Environment::isRootNode = (MPIw::Environment::rank == 0);
-
-        if(Environment::isRootNode) cout << format("    [MPIINFO] allocated processes: %d") % MPIw::Environment::numprocs << endl;
     }
 
     void loadEnvironment(picojson::object& inputs){
