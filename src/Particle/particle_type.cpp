@@ -184,7 +184,7 @@ Position BeamParticleType::generateNewPosition(const Velocity& vel) {
     // const double random_xwidth = dist_x(mt_x);
     // const double random_ywidth = dist_y(mt_x); // (0, 0, 1)を法線とする平面上の円の中の1点
 
-    Position p(emission_position.x + random_timewidth * vel.vx, emission_position.y + random_timewidth * vel.vy, emission_position.z + random_timewidth * vel.vz));
+    Position p(relative_emission_position.x + random_timewidth * vel.vx, relative_emission_position.y + random_timewidth * vel.vy, relative_emission_position.z + random_timewidth * vel.vz);
     return p;
 }
 
@@ -204,6 +204,16 @@ void BeamParticleType::updateEmissionVelocity() {
     emission_velocity.vx = acceleration * emission_vector[0];
     emission_velocity.vy = acceleration * emission_vector[1];
     emission_velocity.vz = acceleration * emission_vector[2];
+}
+
+void BeamParticleType::setEmissionPosition(const std::vector<double>& pos) {
+    if (pos.size() != 3) {
+        throw std::invalid_argument("The size of the argument for setEmissionPosition() must be 3.");
+    }
+
+    const auto& rel_pos = Environment::getRelativePositionOnRootWithoutGlue(pos[0], pos[1], pos[2]);
+    emission_position = Position(pos[0], pos[1], pos[2]);
+    relative_emission_position = Position(rel_pos[0], rel_pos[1], rel_pos[2]);
 }
 
 void BeamParticleType::setEmissionVector(const std::vector<double>& val) {

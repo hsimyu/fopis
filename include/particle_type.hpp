@@ -121,6 +121,7 @@ class BeamParticleType : public EmissionParticleType {
     protected:
         std::string emission_type;
         Position emission_position;
+        Position relative_emission_position;
         std::vector<double> emission_vector;
         double accel_potential;
         double beam_current;
@@ -157,13 +158,7 @@ class BeamParticleType : public EmissionParticleType {
         void setEmissionRadius(const double value) { emission_radius = value; }
         double setEmissionRadius() const {return emission_radius;}
 
-        void setEmissionPosition(const std::vector<double>& pos) {
-            if (pos.size() != 3) {
-                throw std::invalid_argument("The size of the argument for setEmissionPosition() must be 3.");
-            }
-
-            emission_position = Position(pos[0], pos[1], pos[2]);
-        }
+        void setEmissionPosition(const std::vector<double>& pos);
         Position getEmissionPosition() const {return emission_position;}
 
         void setEmissionVector(const std::vector<double>& pos);
