@@ -150,18 +150,45 @@ namespace IO {
     }
 
     void plotValidParticleNumber(Grid const& g) {
-        const auto total_pnum = MPIw::Environment::Comms["world"].sum(g.getValidParticleNumber(), 0);
+        std::vector<size_t> total_pnums;
+
+        size_t total_pnum = 0;
+        for(int id = 0; id < Environment::num_of_particle_types; ++id) {
+            total_pnums.push_back(
+                MPIw::Environment::Comms["world"].sum(g.getValidParticleNumber(id))
+            );
+            total_pnum += total_pnums[id];
+        }
 
         if (Environment::isRootNode) {
             std::string filename = "data/total_particle_number.txt";
 
             if(Environment::timestep == 1) {
-                const auto header = (format("%16s") % "Total").str();
+                std::string format_string = "%16s";
+                for(int id = 0; id < Environment::num_of_particle_types; ++id) {
+                    format_string += " %16s";
+                }
+                auto format_base = format(format_string);
+                format_base = format_base % "Total";
+                for(int id = 0; id < Environment::num_of_particle_types; ++id) {
+                    format_base = format_base % (Environment::getParticleType(id)->getName());
+                }
+                const auto header = format_base.str();
                 putHeader(filename, header);
             }
 
-            std::string entry = (format("%16d") % total_pnum).str();
+            std::string format_string = "%16d";
+            for(int id = 0; id < Environment::num_of_particle_types; ++id) {
+                format_string += " %16d";
+            }
 
+            auto format_base = format(format_string);
+            format_base = format_base % total_pnum;
+            for(int id = 0; id < Environment::num_of_particle_types; ++id) {
+                format_base = format_base % total_pnums[id];
+            }
+
+            std::string entry = format_base.str();
             putLog(filename, entry);
         }
     }
