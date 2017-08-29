@@ -175,11 +175,16 @@ Particle BeamParticleType::generateNewParticle() {
 }
 
 Position BeamParticleType::generateNewPosition(const Velocity& vel) {
-    std::uniform_real_distribution<> dist_x(emission_position.x, emission_position.x + vel.vx);
-    std::uniform_real_distribution<> dist_y(emission_position.y, emission_position.y + vel.vy);
-    std::uniform_real_distribution<> dist_z(emission_position.z, emission_position.z + vel.vz);
+    std::uniform_real_distribution<> dist_t(0.0, 1.0);
+    const double random_timewidth = dist_t(mt_x);
 
-    Position p(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
+    //! 放出方向周りに幅を持たせるには回転行列の実装が必要か？
+    // std::uniform_real_distribution<> dist_x(0.0, emission_radius);
+    // std::uniform_real_distribution<> dist_y(0.0, emission_radius);
+    // const double random_xwidth = dist_x(mt_x);
+    // const double random_ywidth = dist_y(mt_x); // (0, 0, 1)を法線とする平面上の円の中の1点
+
+    Position p(emission_position.x + random_timewidth * vel.vx, emission_position.y + random_timewidth * vel.vy, emission_position.z + random_timewidth * vel.vz));
     return p;
 }
 

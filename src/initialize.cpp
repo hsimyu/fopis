@@ -235,6 +235,7 @@ namespace Initializer {
                 beam->setAcceleratingPotential( Normalizer::normalizePotential(plasma["accel_potential"].get<double>()) );
                 beam->setBeamCurrent( Normalizer::normalizeCurrent(plasma["beam_current"].get<double>()) );
                 beam->setBeamDivergence( plasma["beam_divergence"].get<double>() );
+                beam->setEmissionRadius( plasma["emission_radius"].get<double>() );
                 beam->setEmissionType( plasma["emission_type"].to_str() );
                 beam->setEmissionPosition( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_position"].get<picojson::array>() ) );
                 beam->setEmissionVector( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_vector"].get<picojson::array>() ) );

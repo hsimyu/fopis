@@ -125,12 +125,13 @@ class BeamParticleType : public EmissionParticleType {
         double accel_potential;
         double beam_current;
         double beam_divergence;
+        double emission_radius;
 
         Velocity emission_velocity;
         void updateEmissionVelocity();
 
     public:
-        BeamParticleType() : EmissionParticleType(), emission_vector{0.0, 0.0, 0.0}, emission_velocity{0.0, 0.0, 0.0} {}
+        BeamParticleType() : EmissionParticleType(), emission_vector{0.0, 0.0, 0.0}, emission_radius(0.0), emission_velocity{0.0, 0.0, 0.0} {}
 
         void setEmissionType(const std::string& type) {
             emission_type = type;
@@ -152,6 +153,9 @@ class BeamParticleType : public EmissionParticleType {
 
         void setBeamDivergence(const double value) { beam_divergence = value; }
         double getBeamDivergence() const {return beam_divergence;}
+
+        void setEmissionRadius(const double value) { emission_radius = value; }
+        double setEmissionRadius() const {return emission_radius;}
 
         void setEmissionPosition(const std::vector<double>& pos) {
             if (pos.size() != 3) {
