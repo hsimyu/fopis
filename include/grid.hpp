@@ -170,16 +170,6 @@ class Grid {
             }
         }
 
-        template<typename T>
-        std::array<T, 3> getRelativePosition(const T i, const T j, const T k) {
-            //! Glueセルありで返す
-            return std::array<T, 3>{{
-                i - Environment::getAssignedXBegin() + 1,
-                j - Environment::getAssignedYBegin() + 1,
-                k - Environment::getAssignedZBegin() + 1
-            }};
-        }
-
         // Field内の値へのアクセスを wrap する
         tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
 

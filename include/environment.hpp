@@ -2,6 +2,7 @@
 #define __TDPIC_ENVIRONMENT_H_INCLUDED__
 #include "mpiw.hpp"
 #include "particle_type.hpp"
+#include <array>
 
 struct Environment {
     private:
@@ -115,6 +116,24 @@ struct Environment {
         static int getAssignedYEnd(void) { return (::MPIw::Environment::yrank + 1) * cell_y - 1; }
         static int getAssignedZBegin(void) { return ::MPIw::Environment::zrank * cell_z; }
         static int getAssignedZEnd(void) { return (::MPIw::Environment::zrank + 1) * cell_z - 1; }
+
+        static std::array<int, 3> getRelativePositionOnRootWithGlue(const int i, const int j, const int k) {
+            //! Glueセルありで返す
+            return std::array<int, 3>{{
+                i - Environment::getAssignedXBegin() + 1,
+                j - Environment::getAssignedYBegin() + 1,
+                k - Environment::getAssignedZBegin() + 1
+            }};
+        }
+
+        static std::array<double, 3> getRelativePositionOnRootWithoutGlue(const double x, const double y, const double z) {
+            //! Glueセルなしで返す
+            return std::array<double, 3>{{
+                x - Environment::getAssignedXBegin(),
+                y - Environment::getAssignedYBegin(),
+                z - Environment::getAssignedZBegin()
+            }};
+        }
 
         //! 各方向の境界条件を取得する
         static std::string getBoundaryCondition(const AXIS, const AXIS_SIDE);

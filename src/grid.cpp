@@ -108,9 +108,9 @@ void Grid::initializeObject(void) {
 
             if (isInnerNode(i, j, k)) {
                 is_object_in_this_node = true;
-                inner_node_array[cmat_itr] = getRelativePosition<int>(i, j, k);
+                inner_node_array[cmat_itr] = Environment::getRelativePositionOnRootWithGlue(i, j, k);
             } else if (isGlueNode(i, j, k)) {
-                glue_node_array[cmat_itr] = getRelativePosition<int>(i, j, k);
+                glue_node_array[cmat_itr] = Environment::getRelativePositionOnRootWithGlue(i, j, k);
             }
         }
 
@@ -123,7 +123,7 @@ void Grid::initializeObject(void) {
             const auto k = face_values[3];
 
             if (isInnerFaceWithGlue(face_type, i, j, k)) {
-                const auto& rel = getRelativePosition<int>(i, j, k);
+                const auto& rel = Environment::getRelativePositionOnRootWithGlue(i, j, k);
                 inner_face_array.push_back({{face_type, rel[0], rel[1], rel[2]}});
             }
         }
