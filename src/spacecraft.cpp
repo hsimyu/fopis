@@ -175,18 +175,17 @@ void Spacecraft::removeInnerParticle(Particle& p) const {
 void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     if (isIncluded(p)) { 
         const auto id = p.getId();
-        const auto rho_idx = id + 1;
         const auto q = p.getCharge();
         const auto pos = p.getPosition();
 
-        charge_map[rho_idx][pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
-        charge_map[rho_idx][pos.i + 1][pos.j    ][pos.k    ] += q * pos.dx1 * pos.dy2 * pos.dz2;
-        charge_map[rho_idx][pos.i    ][pos.j + 1][pos.k    ] += q * pos.dx2 * pos.dy1 * pos.dz2;
-        charge_map[rho_idx][pos.i + 1][pos.j + 1][pos.k    ] += q * pos.dx1 * pos.dy1 * pos.dz2;
-        charge_map[rho_idx][pos.i    ][pos.j    ][pos.k + 1] += q * pos.dx2 * pos.dy2 * pos.dz1;
-        charge_map[rho_idx][pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
-        charge_map[rho_idx][pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
-        charge_map[rho_idx][pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
+        charge_map[id][pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
+        charge_map[id][pos.i + 1][pos.j    ][pos.k    ] += q * pos.dx1 * pos.dy2 * pos.dz2;
+        charge_map[id][pos.i    ][pos.j + 1][pos.k    ] += q * pos.dx2 * pos.dy1 * pos.dz2;
+        charge_map[id][pos.i + 1][pos.j + 1][pos.k    ] += q * pos.dx1 * pos.dy1 * pos.dz2;
+        charge_map[id][pos.i    ][pos.j    ][pos.k + 1] += q * pos.dx2 * pos.dy2 * pos.dz1;
+        charge_map[id][pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
+        charge_map[id][pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
+        charge_map[id][pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
 
         current[id] += q;
 
