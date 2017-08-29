@@ -194,7 +194,7 @@ void Spacecraft::removeInnerParticle(Particle& p) const {
 
 void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     if (isIncluded(p)) { 
-        const auto id = p.getId();
+        const auto id = p.typeId;
         const auto q = p.getCharge();
         const auto pos = p.getPosition();
 

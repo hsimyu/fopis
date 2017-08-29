@@ -85,7 +85,6 @@ class Particle {
 
         //! ParticleTypeのメンバ関数呼び出しを中継
         double getCharge(void) const { return Environment::getParticleType(typeId)->getCharge(); }
-        double getId(void) const { return Environment::getParticleType(typeId)->getId(); }
 
         friend std::ostream& operator<<(std::ostream&, Particle const&);
 };
