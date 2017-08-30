@@ -7,6 +7,7 @@
 #include "mpiw.hpp"
 #include "utils.hpp"
 #include "normalizer.hpp"
+#include "dataio.hpp"
 #include <random>
 #include <algorithm>
 
@@ -193,6 +194,18 @@ void Grid::initializeObjectsCmatrix(void) {
 
         //! 物体が有効でないなら解く必要なし
         if (obj.isDefined()) obj.makeCmatrixInvert();
+
+        if (MPIw::Environment::isRootNode(obj.getName())) {
+            IO::writeCmatrixData(obj);
+        }
+    }
+
+}
+
+void Grid::loadCmatrixData() {
+    bool isValidData = false;
+    if ( !isValidData ) {
+        this->initializeObjectsCmatrix();
     }
 }
 
@@ -232,7 +245,12 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
 
     // 物体初期化
     this->initializeObject();
-    this->initializeObjectsCmatrix();
+
+    if (Environment::useExistingCapacityMatrix) {
+        this->loadCmatrixData();
+    } else {
+        this->initializeObjectsCmatrix();
+    }
 
     //! - 粒子位置の上限を設定
     double max_x = static_cast<double>(Environment::cell_x);

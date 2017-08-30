@@ -32,6 +32,25 @@ namespace IO {
         g.putFieldData(data_group, data_type_name, i_timestamp);
     }
 
+    void writeCmatrixData(const Spacecraft& obj) {
+        using H5F = HighFive::File;
+
+        const std::string file_name = "data/objects/" + obj.getName() + ".h5";
+        H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
+
+        const size_t num_of_cmatrix = static_cast<size_t>(obj.getCmatSize());
+        boost::multi_array<double, 2> capacity_matrix_data(boost::extents[num_of_cmatrix][num_of_cmatrix]);
+
+        for(size_t i = 0; i < num_of_cmatrix; ++i) {
+            for(size_t j = 0; j < num_of_cmatrix; ++j) {
+                capacity_matrix_data[i][j] = obj.getCmatValue(i, j);
+            }
+        }
+
+        auto data_set = file.createDataSet<double>("capacity_matrix", HighFive::DataSpace::From(capacity_matrix_data));
+        data_set.write(capacity_matrix_data);
+    }
+
     void generateXdmf(const int timestep, const std::string& data_type_name) {
         //! 1プロセスあたりのノード数
         const auto cx = Environment::cell_x;

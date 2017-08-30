@@ -3,6 +3,7 @@
 #include "global.hpp"
 #include "particle.hpp"
 class Grid;
+class Spacecraft;
 
 namespace IO {
     // 時系列データ出力用のベース関数
@@ -23,6 +24,7 @@ namespace IO {
 
     // 場のデータ等の出力用関数
     void writeDataInParallel(Grid&, const int, const std::string&);
+    void writeCmatrixData(const Spacecraft& obj);
     void generateXdmf(const int timestep, const std::string& data_type_name);
 
     void print3DArray(const tdArray&);
