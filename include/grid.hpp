@@ -236,7 +236,6 @@ class Grid {
 
         //! 物体のキャパシタンス行列初期化または読み込み
         void initializeObjectsCmatrix(void);
-        void loadCmatrixData();
 
         // update particles
         void updateParticleVelocity(void);

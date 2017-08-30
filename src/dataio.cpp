@@ -38,17 +38,55 @@ namespace IO {
         const std::string file_name = "data/objects/" + obj.getName() + ".h5";
         H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
 
-        const size_t num_of_cmatrix = static_cast<size_t>(obj.getCmatSize());
+        const auto num_of_cmatrix = obj.getCmatSize();
         boost::multi_array<double, 2> capacity_matrix_data(boost::extents[num_of_cmatrix][num_of_cmatrix]);
 
-        for(size_t i = 0; i < num_of_cmatrix; ++i) {
-            for(size_t j = 0; j < num_of_cmatrix; ++j) {
+        for(unsigned int i = 0; i < num_of_cmatrix; ++i) {
+            for(unsigned int j = 0; j < num_of_cmatrix; ++j) {
                 capacity_matrix_data[i][j] = obj.getCmatValue(i, j);
             }
         }
 
         auto data_set = file.createDataSet<double>("capacity_matrix", HighFive::DataSpace::From(capacity_matrix_data));
         data_set.write(capacity_matrix_data);
+    }
+
+    bool loadCmatrixData(Spacecraft& obj) {
+		using H5F = HighFive::File;
+        const std::string file_name = "data/objects/" + obj.getName() + ".h5";
+
+        if (MPIw::Environment::isRootNode(obj.getName())) {
+            cout << "-- Cmatrix Loading from existing file: " << file_name << " --" << endl;
+        }
+
+        bool is_valid = false;
+        if (Utils::isExistingFile(file_name)) {
+            H5F file(file_name, H5F::ReadWrite);
+            const std::string data_set_name = "capacity_matrix";
+
+            if (file.exist(data_set_name)) {
+                const auto num_of_cmatrix = obj.getCmatSize();
+                auto data_set = file.getDataSet(data_set_name);
+                boost::multi_array<double, 2> read_data;
+                data_set.read(read_data);
+
+                is_valid = (read_data.shape()[0] == num_of_cmatrix && read_data.shape()[1] == num_of_cmatrix);
+
+                if (is_valid) {
+                    if (MPIw::Environment::isRootNode(obj.getName())) {
+                        cout << "-- [INFO] This is valid data. --" << endl;
+                    }
+                    for(unsigned int i = 0; i < num_of_cmatrix; ++i) {
+                        for(unsigned int j = 0; j < num_of_cmatrix; ++j) {
+                            obj.setCmatValue(i, j, read_data[i][j]);
+                        }
+                    }
+                    obj.updateTotalCmatValue();
+                }
+            }
+        }
+
+        return is_valid;
     }
 
     void generateXdmf(const int timestep, const std::string& data_type_name) {

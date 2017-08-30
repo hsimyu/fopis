@@ -83,7 +83,7 @@ public:
     void setCmatValue(const unsigned int col, const unsigned int row, const double value) {
         capacity_matrix(col, row) = value;
     };
-    void setTotalCmatValue(const double val) { total_cmat_value = val; }
+    void updateTotalCmatValue();
 
     // 判定用関数
     bool isMyCmat(const unsigned int cmat_number) const { return (capacity_matrix_relation.count(cmat_number) > 0); }

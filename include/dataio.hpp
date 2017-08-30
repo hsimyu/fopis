@@ -19,12 +19,13 @@ namespace IO {
     void plotParticleEnergyDistribution(ParticleArray const&, const std::string filename_header = "");
     void plotParticleDistribution(ParticleArray const&, const std::string, const std::string);
 
-    //! オブジェクトデータ出力
+    //! オブジェクトデータ入出力
     void plotObjectsData(const Grid&);
+    void writeCmatrixData(const Spacecraft& obj);
+    bool loadCmatrixData(Spacecraft& obj);
 
     // 場のデータ等の出力用関数
     void writeDataInParallel(Grid&, const int, const std::string&);
-    void writeCmatrixData(const Spacecraft& obj);
     void generateXdmf(const int timestep, const std::string& data_type_name);
 
     void print3DArray(const tdArray&);

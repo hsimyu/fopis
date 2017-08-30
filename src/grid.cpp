@@ -148,16 +148,23 @@ void Grid::initializeObjectsCmatrix(void) {
     tdArray& phi = field->getPhi();
 
     for(auto& obj : objects) {
+        // rhoを初期化
+        Utils::initializeRhoArray(rho);
+        Utils::initialize3DArray(phi);
+
+        //! データを読み込み
+        if (Environment::useExistingCapacityMatrix) {
+            const auto is_valid_load = IO::loadCmatrixData(obj);
+            if (is_valid_load) continue;
+        }
+
+        //! データを使わずに初期化
         const auto num_cmat = obj.getCmatSize();
 
         std::unique_ptr<Utils::ProgressManager> pm;
         if (MPIw::Environment::isRootNode(obj.getName())) {
             pm = std::make_unique<Utils::ProgressManager>(num_cmat, "cmat_solve");
         }
-
-        // rhoを初期化
-        Utils::initializeRhoArray(rho);
-        Utils::initialize3DArray(phi);
 
         for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
             if (MPIw::Environment::isRootNode(obj.getName())) pm->update(cmat_col_itr);
@@ -202,13 +209,6 @@ void Grid::initializeObjectsCmatrix(void) {
 
 }
 
-void Grid::loadCmatrixData() {
-    bool isValidData = false;
-    if ( !isValidData ) {
-        this->initializeObjectsCmatrix();
-    }
-}
-
 // root grid constructor
 Grid::Grid(void) : field(std::make_unique<Field>()) {
     //! - コンストラクタにEnvironmentクラスが渡された場合、
@@ -245,12 +245,7 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
 
     // 物体初期化
     this->initializeObject();
-
-    if (Environment::useExistingCapacityMatrix) {
-        this->loadCmatrixData();
-    } else {
-        this->initializeObjectsCmatrix();
-    }
+    this->initializeObjectsCmatrix();
 
     //! - 粒子位置の上限を設定
     double max_x = static_cast<double>(Environment::cell_x);

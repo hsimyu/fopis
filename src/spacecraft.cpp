@@ -139,10 +139,7 @@ void Spacecraft::resetCurrent() {
     }
 }
 
-void Spacecraft::makeCmatrixInvert(void) {
-    //! B行列 -> C行列に変換
-    Utils::makeInvert(capacity_matrix);
-
+void Spacecraft::updateTotalCmatValue() {
     total_cmat_value = 0.0;
     //! C_ij の sum を計算して保存しておく
     for(size_t col = 0; col < num_cmat; ++col) {
@@ -150,6 +147,12 @@ void Spacecraft::makeCmatrixInvert(void) {
             total_cmat_value += capacity_matrix(col, row);
         }
     }
+}
+
+void Spacecraft::makeCmatrixInvert(void) {
+    //! B行列 -> C行列に変換
+    Utils::makeInvert(capacity_matrix);
+    this->updateTotalCmatValue();
 }
 
 bool Spacecraft::isContaining(const Particle& p) const {
