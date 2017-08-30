@@ -31,6 +31,9 @@ struct Environment {
         static std::string boundary;
         static std::string dimension;
 
+        //! options
+        static bool useExistingCapacityMatrix;
+
         //! 物体情報
         static std::vector<ObjectInfo_t> objects_info;
 

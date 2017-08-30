@@ -10,6 +10,7 @@ int Environment::max_particle_num;
 int Environment::num_of_particle_types;
 int Environment::timestep;
 int Environment::max_timestep;
+bool Environment::useExistingCapacityMatrix = false;
 double Environment::dx;
 double Environment::dt;
 int Environment::nx, Environment::ny, Environment::nz;

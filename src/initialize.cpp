@@ -107,42 +107,54 @@ namespace Initializer {
     }
 
     void loadEnvironment(picojson::object& inputs){
-        auto env_inputs = inputs["Environment"].get<picojson::object>();
-
         //! 読み込まなくてよい部分
         Environment::max_particle_num = MAX_PARTICLE_NUM;
         Environment::timestep = 1;
 
-        for (auto it = env_inputs.begin(); it != env_inputs.end(); ++it) {
-            // string で switch したい...
-            if(it->first == "nx"){
-                Environment::nx = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "ny"){
-                Environment::ny = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "nz"){
-                Environment::nz = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "proc_x"){
-                Environment::proc_x = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "proc_y"){
-                Environment::proc_y = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "proc_z"){
-                Environment::proc_z = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "dt"){
-                Environment::dt = it->second.get<double>();
-            } else if(it->first == "dx"){
-                Environment::dx = it->second.get<double>();
-            } else if(it->first == "max_timestep"){
-                Environment::max_timestep = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "job_type"){
-                Environment::jobtype = it->second.to_str();
-            } else if(it->first == "solver_type"){
-                Environment::solver_type = it->second.to_str();
-            } else if(it->first == "boundary"){
-                Environment::boundary = it->second.to_str();
-            } else if(it->first == "dimension"){
-                Environment::dimension = it->second.to_str();
-            } else {
-                std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
+        //! Environment変数読み込み
+        {
+            auto env_inputs = inputs["Environment"].get<picojson::object>();
+            for (auto it = env_inputs.begin(); it != env_inputs.end(); ++it) {
+                // string で switch したい...
+                if(it->first == "nx"){
+                    Environment::nx = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "ny"){
+                    Environment::ny = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "nz"){
+                    Environment::nz = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "proc_x"){
+                    Environment::proc_x = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "proc_y"){
+                    Environment::proc_y = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "proc_z"){
+                    Environment::proc_z = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "dt"){
+                    Environment::dt = it->second.get<double>();
+                } else if(it->first == "dx"){
+                    Environment::dx = it->second.get<double>();
+                } else if(it->first == "max_timestep"){
+                    Environment::max_timestep = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "job_type"){
+                    Environment::jobtype = it->second.to_str();
+                } else if(it->first == "solver_type"){
+                    Environment::solver_type = it->second.to_str();
+                } else if(it->first == "boundary"){
+                    Environment::boundary = it->second.to_str();
+                } else if(it->first == "dimension"){
+                    Environment::dimension = it->second.to_str();
+                } else {
+                    std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
+                }
+            }
+        }
+
+        //! オプション
+        {
+            auto options_inputs = inputs["Options"].get<picojson::object>();
+            for(auto it = options_inputs.begin(); it != options_inputs.end(); ++it){
+                if (it->first == "use_existing_capacity_matrix") {
+                    Environment::useExistingCapacityMatrix = it->second.get<bool>();
+                }
             }
         }
 
@@ -152,54 +164,59 @@ namespace Initializer {
         Environment::cell_y = Environment::ny/Environment::proc_y;
         Environment::cell_z = Environment::nz/Environment::proc_z;
 
-        auto io_inputs = inputs["IO"].get<picojson::object>();
-        for(auto it = io_inputs.begin(); it != io_inputs.end(); ++it){
-            if(it->first == "plot_energy_dist_width"){
-                Environment::plot_energy_dist_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_velocity_dist_width"){
-                Environment::plot_velocity_dist_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_potential_width"){
-                Environment::plot_potential_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_rho_width"){
-                Environment::plot_rho_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_efield_width"){
-                Environment::plot_efield_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_bfield_width"){
-                Environment::plot_bfield_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_density_width"){
-                Environment::plot_density_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_particle_width"){
-                Environment::plot_particle_width = static_cast<int>(it->second.get<double>());
-            } else if(it->first == "plot_energy_width"){
-                Environment::plot_energy_width = static_cast<int>(it->second.get<double>());
-            } else {
-                std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
+        //! IO関連
+        {
+            auto io_inputs = inputs["IO"].get<picojson::object>();
+            for(auto it = io_inputs.begin(); it != io_inputs.end(); ++it){
+                if(it->first == "plot_energy_dist_width"){
+                    Environment::plot_energy_dist_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_velocity_dist_width"){
+                    Environment::plot_velocity_dist_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_potential_width"){
+                    Environment::plot_potential_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_rho_width"){
+                    Environment::plot_rho_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_efield_width"){
+                    Environment::plot_efield_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_bfield_width"){
+                    Environment::plot_bfield_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_density_width"){
+                    Environment::plot_density_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_particle_width"){
+                    Environment::plot_particle_width = static_cast<int>(it->second.get<double>());
+                } else if(it->first == "plot_energy_width"){
+                    Environment::plot_energy_width = static_cast<int>(it->second.get<double>());
+                } else {
+                    std::cout <<"Unsupportted Key [" << it->first << "] is in json." << std::endl;
+                }
             }
         }
 
         //! 物体情報
-        auto object_inputs = inputs["Object"].get<picojson::object>();
-        for(auto it = object_inputs.begin(); it != object_inputs.end(); ++it){
-            const auto obj_name = it->first;
-            auto obj_info = it->second.get<picojson::object>();
+        {
+            auto object_inputs = inputs["Object"].get<picojson::object>();
+            for(auto it = object_inputs.begin(); it != object_inputs.end(); ++it){
+                const auto obj_name = it->first;
+                auto obj_info = it->second.get<picojson::object>();
 
-            ObjectInfo_t obj;
-            obj.name = obj_name;
-            for(auto it = obj_info.begin(); it != obj_info.end(); ++it) {
+                ObjectInfo_t obj;
+                obj.name = obj_name;
+                for(auto it = obj_info.begin(); it != obj_info.end(); ++it) {
 
-                if(it->first == "file_name") {
-                    obj.file_name = it->second.to_str();
-                } else if (it->first == "surface_type") {
-                    obj.surface_type = it->second.to_str();
-                } else if (it->first == "history_width") {
-                    obj.history_width = static_cast<unsigned int>(it->second.get<double>());
-                } else if (it->first == "potential_fix") {
-                    obj.potential_fix = it->second.get<double>();
-                } else if (it->first == "emit_particles") {
-                    obj.emit_particle_names = Utils::convertPicoJSONArrayToVectorString(it->second.get<picojson::array>());
+                    if(it->first == "file_name") {
+                        obj.file_name = it->second.to_str();
+                    } else if (it->first == "surface_type") {
+                        obj.surface_type = it->second.to_str();
+                    } else if (it->first == "history_width") {
+                        obj.history_width = static_cast<unsigned int>(it->second.get<double>());
+                    } else if (it->first == "potential_fix") {
+                        obj.potential_fix = it->second.get<double>();
+                    } else if (it->first == "emit_particles") {
+                        obj.emit_particle_names = Utils::convertPicoJSONArrayToVectorString(it->second.get<picojson::array>());
+                    }
                 }
+                Environment::objects_info.push_back( std::move(obj) );
             }
-            Environment::objects_info.push_back( std::move(obj) );
         }
     }
 

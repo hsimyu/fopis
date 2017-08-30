@@ -66,5 +66,8 @@
         "plot_density_width": 1,
         "plot_particle_width": 0,
         "plot_energy_width": 1
+    },
+    "Options": {
+        "use_existing_capacity_matrix": true
     }
 }
