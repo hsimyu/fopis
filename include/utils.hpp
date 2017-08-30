@@ -8,8 +8,14 @@
 namespace Utils {
     void printTotalMemory(void);
     std::string prettyMemoryString(double);
+
+    //! ファイル操作関連
+    bool isExistingFile(const std::string& file_name);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
+    void createDir(std::string);
+
+    //! 保存用のデータ変換系
     std::vector<double> convertPicoJSONArrayToVectorDouble(const picojson::array& pico_array);
     std::vector<std::string> convertPicoJSONArrayToVectorString(const picojson::array& pico_array);
     std::vector<std::string> split(const std::string& target, char delim);
@@ -26,7 +32,6 @@ namespace Utils {
 
     void initialize3DArray(tdArray&);
     void initializeRhoArray(std::vector<tdArray>&);
-    void createDir(std::string);
 
     //! 逆行列を解く
     using dMatrix = boost::numeric::ublas::matrix<double>;

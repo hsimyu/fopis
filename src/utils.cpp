@@ -372,10 +372,13 @@ namespace Utils {
         return (format("%-6.2f") % mem).str() + suffix;
     }
 
-    std::string readFile(const std::string& file_name){
+    bool isExistingFile(const std::string& file_name) {
         boost::filesystem::path p(file_name);
+        return boost::filesystem::exists(p);
+    }
 
-        if(boost::filesystem::exists(p)) {
+    std::string readFile(const std::string& file_name){
+        if(isExistingFile(file_name)) {
             std::ifstream ifs;
             std::string res;
             std::string ifs_buffer;

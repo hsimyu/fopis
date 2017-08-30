@@ -44,6 +44,9 @@ namespace Initializer {
 
             //! データ書き込み用ディレクトリを作成
             Utils::createDir("data");
+            Utils::createDir("data/resume");
+            Utils::createDir("data/objects");
+            Utils::createDir("data/raw_hdf5_data");
         }
 
         if(Environment::jobtype == "new") {
