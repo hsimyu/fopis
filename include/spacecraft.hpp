@@ -31,6 +31,7 @@ private:
 
     //! オブジェクト定義マップとキャパシティ定義マップ
     ObjectDefinedMap object_node_map;
+    ObjectDefinedMap object_cell_map;
     ObjectDefinedMap object_xface_map;
     ObjectDefinedMap object_yface_map;
     ObjectDefinedMap object_zface_map;
@@ -60,6 +61,7 @@ public:
         num_cmat(_num_cmat),
         current{},
         object_node_map(boost::extents[0][0][0]),
+        object_cell_map(boost::extents[0][0][0]),
         object_xface_map(boost::extents[0][0][0]),
         object_yface_map(boost::extents[0][0][0]),
         object_zface_map(boost::extents[0][0][0]),
@@ -90,6 +92,7 @@ public:
     bool isDefined(void) const { return is_defined_in_this_process; }
     bool isContaining(const Particle&) const;
     bool isContaining(const Position&) const;
+    bool isContainingByCell(const Position& pos) const;
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);

@@ -22,6 +22,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         // Node ベース, Glueセルも必要
         ObjectDefinedMap::extent_gen objectExtents;
         object_node_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
+        object_cell_map.resize(objectExtents[nx + 1][ny + 1][nz + 1]);
 
         object_xface_map.resize(objectExtents[nx + 2][ny + 1][nz + 1]);
         object_yface_map.resize(objectExtents[nx + 1][ny + 2][nz + 1]);
@@ -36,6 +37,8 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                     if (j != ny + 1 && k != nz + 1) object_xface_map[i][j][k] = false;
                     if (i != nx + 1 && k != nz + 1) object_yface_map[i][j][k] = false;
                     if (i != nx + 1 && j != ny + 1) object_zface_map[i][j][k] = false;
+
+                    if (i != nx + 1 && j != ny + 1 && k != nz + 1) object_cell_map[i][j][k] = false;
                 }
             }
         }
@@ -76,6 +79,51 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                     break;
                 default:
                     break;
+            }
+        }
+
+        //! セルマップ定義のためにFaceを使ってカウントする
+        boost::multi_array<int, 3> object_cell_count_map(boost::extents[nx + 1][ny + 1][nz + 1]);
+        for (int j = 0; j < ny + 1; ++j) {
+            for (int k = 0; k < nz + 1; ++k) {
+                bool isInnerXFace = false;
+                for(int i = 0; i < nx + 1; ++i) {
+                    if (object_xface_map[i][j][k]) isInnerXFace = !isInnerXFace;
+
+                    if (isInnerXFace) object_cell_count_map[i][j][k] += 1;
+                }
+            }
+        }
+        for(int i = 0; i < nx + 1; ++i) {
+            for (int k = 0; k < nz + 1; ++k) {
+                bool isInnerYFace = false;
+                for (int j = 0; j < ny + 1; ++j) {
+                    if (object_yface_map[i][j][k]) isInnerYFace = !isInnerYFace;
+
+                    if (isInnerYFace) object_cell_count_map[i][j][k] += 1;
+                }
+            }
+        }
+        for(int i = 0; i < nx + 1; ++i) {
+            for (int j = 0; j < ny + 1; ++j) {
+                bool isInnerZFace = false;
+                for (int k = 0; k < nz + 1; ++k) {
+                    if (object_zface_map[i][j][k]) isInnerZFace = !isInnerZFace;
+
+                    if (isInnerZFace) object_cell_count_map[i][j][k] += 1;
+                }
+            }
+        }
+
+        for(int i = 0; i < nx + 1; ++i) {
+            for (int j = 0; j < ny + 1; ++j) {
+                for (int k = 0; k < nz + 1; ++k) {
+                    //! countが3なら内部と定義
+                    if (object_cell_count_map[i][j][k] == 3) {
+                        cout << format("cell[%d][%d][%d] is defined.") % i % j % k << endl;
+                        object_cell_map[i][j][k] = true;
+                    }
+                }
             }
         }
 
@@ -158,6 +206,10 @@ void Spacecraft::makeCmatrixInvert(void) {
 bool Spacecraft::isContaining(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
+    // if (this->isContaining(p.getPosition()) != this->isContainingByCell(p.getPosition())) {
+    //     cout << "Assertion failed: " << endl << p.getPosition() << endl << "by node: " << this->isContaining(p.getPosition()) << endl << "by cell: " << this->isContainingByCell(p.getPosition()) << endl;
+    // };
+
     return this->isContaining(p.getPosition());
 }
 
@@ -182,23 +234,15 @@ bool Spacecraft::isContaining(const Position& pos) const {
     }
 }
 
-/*
-bool Spacecraft::isContainingByFace(const Particle& p) const {
+bool Spacecraft::isContainingByCell(const Position& pos) const {
     if (!is_defined_in_this_process) return false;
 
-    const auto pos = p.getPosition();
-    const auto i = pos.i;
-    const auto j = pos.j;
-    const auto k = pos.k;
-
-    return  object_xface_map[i    ][j][k] &&
-            object_xface_map[i + 1][j][k] &&
-            object_yface_map[i][j    ][k] &&
-            object_yface_map[i][j + 1][k] &&
-            object_zface_map[i][j][k    ] &&
-            object_zface_map[i][j][k + 1];
+    if (Environment::isValidPosition(pos)) {
+        return object_cell_map[pos.i][pos.j][pos.k];
+    } else {
+        return false;
+    }
 }
-*/
 
 void Spacecraft::removeInnerParticle(Particle& p) const {
     if (isContaining(p)) { p.makeInvalid(); }
