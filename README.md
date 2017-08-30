@@ -48,6 +48,27 @@ $ ./scripts/setup.sh
 
 ## 実行方法
 
+## 物体定義について
+ボクセルベースのobjファイルをサポート.
+MagicaVoxelというフリーソフトで作るのが今のところ一番楽.
+- MagicaVoxel @ ephtracy: https://ephtracy.github.io/
+
+config/config.txtのobjファイル出力に関する部分を下記のように設定する.
+- pivot = '0.5 0.5 0.0' -> '0.5 0.5 0.5'
+- axis = 'XZ-Y' -> 'XYZ'
+- optimize = '1' -> '0'
+
+```
+file_obj
+(
+    scale = '1 1 1'
+    pivot = '0.5 0.5 0.5'
+    tc_offset = '0.5 0.5'
+    cw = '0'
+    axis = 'XYZ'
+    optimize = '0'
+)
+```
 ## ドキュメント
 要 Doxygen
 
