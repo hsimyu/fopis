@@ -92,7 +92,6 @@ void Grid::initializeObject(void) {
 
         unsigned int num_cmat = object_data.nodes.size();
         const auto& node_array = object_data.nodes;
-        const auto& face_array = object_data.faces;
 
         //! innerと判定されたやつだけ渡す
         ObjectNodes inner_node_array;
@@ -115,23 +114,17 @@ void Grid::initializeObject(void) {
             }
         }
 
-        //! 面判定
-        ObjectFaces inner_face_array;
-        for(const auto& face_values : face_array) {
-            const auto face_type = face_values[0];
-            const auto i = face_values[1];
-            const auto j = face_values[2];
-            const auto k = face_values[3];
-
-            if (isInnerFaceWithGlue(face_type, i, j, k)) {
-                const auto& rel = Environment::getRelativePositionOnRootWithGlue(i, j, k);
-                inner_face_array.push_back({{face_type, rel[0], rel[1], rel[2]}});
+        const auto& cell_array = object_data.cells;
+        ObjectCells inner_cell_array;
+        for(const auto& cell_pos : cell_array) {
+            if (isInnerCellWithGlue(cell_pos[0], cell_pos[1], cell_pos[2])) {
+                inner_cell_array.push_back( Environment::getRelativePositionOnRootWithGlue(cell_pos[0], cell_pos[1], cell_pos[2]) );
             }
         }
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, glue_node_array, inner_face_array);
+        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, glue_node_array, inner_cell_array);
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);

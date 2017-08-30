@@ -7,11 +7,11 @@
 
 using ObjectDefinedMap = boost::multi_array<bool, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
-using ObjectFaces = std::vector< std::array<int, 4> >;
+using ObjectCells = std::vector<std::array<int, 3>>;
 
 struct ObjectDataFromFile {
     ObjectNodes nodes;
-    ObjectFaces faces;
+    ObjectCells cells;
 };
 
 class Particle;
@@ -32,9 +32,6 @@ private:
     //! オブジェクト定義マップとキャパシティ定義マップ
     ObjectDefinedMap object_node_map;
     ObjectDefinedMap object_cell_map;
-    ObjectDefinedMap object_xface_map;
-    ObjectDefinedMap object_yface_map;
-    ObjectDefinedMap object_zface_map;
     RhoArray charge_map;
 
     //! キャパシタンス行列
@@ -48,7 +45,7 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectNodes&, const ObjectFaces&);
+    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectNodes&, const ObjectCells&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
@@ -56,18 +53,15 @@ private:
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
-        const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectFaces& faces) :
+        const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells) :
         name(obj_info.name),
         num_cmat(_num_cmat),
         current{},
         object_node_map(boost::extents[0][0][0]),
         object_cell_map(boost::extents[0][0][0]),
-        object_xface_map(boost::extents[0][0][0]),
-        object_yface_map(boost::extents[0][0][0]),
-        object_zface_map(boost::extents[0][0][0]),
         charge_map{},
         capacity_matrix(0, 0) {
-        construct(nx, ny, nz, obj_info, nodes, glue_nodes, faces);
+        construct(nx, ny, nz, obj_info, nodes, glue_nodes, cells);
     }
 
     // アクセサ

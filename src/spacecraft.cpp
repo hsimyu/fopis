@@ -5,12 +5,11 @@
 #include <fstream>
 #include <stdexcept>
 #include <regex>
-#include <boost/filesystem.hpp>
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
 
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectFaces& faces) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -24,19 +23,11 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         object_node_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
         object_cell_map.resize(objectExtents[nx + 1][ny + 1][nz + 1]);
 
-        object_xface_map.resize(objectExtents[nx + 2][ny + 1][nz + 1]);
-        object_yface_map.resize(objectExtents[nx + 1][ny + 2][nz + 1]);
-        object_zface_map.resize(objectExtents[nx + 1][ny + 1][nz + 2]);
-
         // 物体定義マップを初期化
         for(int i = 0; i < nx + 2; ++i) {
             for (int j = 0; j < ny + 2; ++j) {
                 for (int k = 0; k < nz + 2; ++k) {
                     object_node_map[i][j][k] = false;
-
-                    if (j != ny + 1 && k != nz + 1) object_xface_map[i][j][k] = false;
-                    if (i != nx + 1 && k != nz + 1) object_yface_map[i][j][k] = false;
-                    if (i != nx + 1 && j != ny + 1) object_zface_map[i][j][k] = false;
 
                     if (i != nx + 1 && j != ny + 1 && k != nz + 1) object_cell_map[i][j][k] = false;
                 }
@@ -65,66 +56,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             object_node_map[i][j][k] = true;
         }
 
-        for(const auto& v : faces) {
-            const auto face_type = v[0];
-            switch(face_type) {
-                case 0:
-                    object_xface_map[ v[1] ][ v[2] ][ v[3] ] = true;
-                    break;
-                case 1:
-                    object_yface_map[ v[1] ][ v[2] ][ v[3] ] = true;
-                    break;
-                case 2:
-                    object_zface_map[ v[1] ][ v[2] ][ v[3] ] = true;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        //! セルマップ定義のためにFaceを使ってカウントする
-        boost::multi_array<int, 3> object_cell_count_map(boost::extents[nx + 1][ny + 1][nz + 1]);
-        for (int j = 0; j < ny + 1; ++j) {
-            for (int k = 0; k < nz + 1; ++k) {
-                bool isInnerXFace = false;
-                for(int i = 0; i < nx + 1; ++i) {
-                    if (object_xface_map[i][j][k]) isInnerXFace = !isInnerXFace;
-
-                    if (isInnerXFace) object_cell_count_map[i][j][k] += 1;
-                }
-            }
-        }
-        for(int i = 0; i < nx + 1; ++i) {
-            for (int k = 0; k < nz + 1; ++k) {
-                bool isInnerYFace = false;
-                for (int j = 0; j < ny + 1; ++j) {
-                    if (object_yface_map[i][j][k]) isInnerYFace = !isInnerYFace;
-
-                    if (isInnerYFace) object_cell_count_map[i][j][k] += 1;
-                }
-            }
-        }
-        for(int i = 0; i < nx + 1; ++i) {
-            for (int j = 0; j < ny + 1; ++j) {
-                bool isInnerZFace = false;
-                for (int k = 0; k < nz + 1; ++k) {
-                    if (object_zface_map[i][j][k]) isInnerZFace = !isInnerZFace;
-
-                    if (isInnerZFace) object_cell_count_map[i][j][k] += 1;
-                }
-            }
-        }
-
-        for(int i = 0; i < nx + 1; ++i) {
-            for (int j = 0; j < ny + 1; ++j) {
-                for (int k = 0; k < nz + 1; ++k) {
-                    //! countが3なら内部と定義
-                    if (object_cell_count_map[i][j][k] == 3) {
-                        cout << format("cell[%d][%d][%d] is defined.") % i % j % k << endl;
-                        object_cell_map[i][j][k] = true;
-                    }
-                }
-            }
+        for(const auto& cell_pos : cells) {
+            cout << Environment::rankStr() << format("local cell[%d][%d][%d] is defined.") % cell_pos[0] % cell_pos[1] % cell_pos[2] << endl;
+            object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = true;
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
@@ -425,18 +359,26 @@ std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
 // Utility Functions for Objects
 namespace ObjectUtils {
     ObjectDataFromFile getObjectNodesFromObjFile(const std::string& obj_file_name) {
-        boost::filesystem::path p(obj_file_name);
-
         ObjectDataFromFile obj_data;
 
-        if (boost::filesystem::exists(p)) {
-            ObjectDefinedMap object_node_map(boost::extents[ Environment::nx ][ Environment::ny ][ Environment::nz ]);
+        if (Utils::isExistingFile(obj_file_name)) {
+            const auto nx = Environment::nx;
+            const auto ny = Environment::ny;
+            const auto nz = Environment::nz;
+            ObjectDefinedMap object_node_map(boost::extents[nx][ny][nz]);
+            ObjectDefinedMap object_xface_map(boost::extents[nx][ny - 1][nz - 1]);
+            ObjectDefinedMap object_yface_map(boost::extents[nx - 1][ny][nz - 1]);
+            ObjectDefinedMap object_zface_map(boost::extents[nx - 1][ny - 1][nz]);
 
             //! 初期化
-            for(int i = 0; i < Environment::nx; ++i) {
-                for (int j = 0; j < Environment::ny; ++j) {
-                    for (int k = 0; k < Environment::nz; ++k) {
+            for(int i = 0; i < nx; ++i) {
+                for (int j = 0; j < ny; ++j) {
+                    for (int k = 0; k < nz; ++k) {
                         object_node_map[i][j][k] = false;
+
+                        if (j != ny - 1 && k != nz - 1) object_xface_map[i][j][k] = false;
+                        if (i != nx - 1 && k != nz - 1) object_yface_map[i][j][k] = false;
+                        if (i != nx - 1 && j != ny - 1) object_zface_map[i][j][k] = false;
                     }
                 }
             }
@@ -502,7 +444,9 @@ namespace ObjectUtils {
                                 ++num_cmat;
                                 object_node_map[i][j][k] = true;
                             }
-                            if (j != maxy && k != maxz) obj_data.faces.push_back({{0, i, j, k}});
+                            if (j != maxy && k != maxz) {
+                                object_xface_map[i][j][k] = true;
+                            }
                         }
                     }
                 } else if (vert1[1] == vert2[1] && vert1[1] == vert3[1] && vert1[1] == vert4[1]) {
@@ -520,7 +464,9 @@ namespace ObjectUtils {
                                 ++num_cmat;
                                 object_node_map[i][j][k] = true;
                             }
-                            if (i != maxx && k != maxz) obj_data.faces.push_back({{1, i, j, k}});
+                            if (i != maxx && k != maxz) {
+                                object_yface_map[i][j][k] = true;
+                            }
                         }
                     }
                 } else if (vert1[2] == vert2[2] && vert1[2] == vert3[2] && vert1[2] == vert4[2]) {
@@ -538,11 +484,58 @@ namespace ObjectUtils {
                                 ++num_cmat;
                                 object_node_map[i][j][k] = true;
                             }
-                            if (i != maxx && j != maxy) obj_data.faces.push_back({{2, i, j, k}});
+                            if (i != maxx && j != maxy) {
+                                object_zface_map[i][j][k] = true;
+                            }
                         }
                     }
                 } else {
                     throw std::logic_error("Face type cannot be determinted by vertices position.");
+                }
+            }
+
+            //! セルマップ定義のためにFaceを使ってカウントする
+            boost::multi_array<int, 3> object_cell_count_map(boost::extents[nx - 1][ny - 1][nz - 1]);
+            for (int j = 0; j < ny - 1; ++j) {
+                for (int k = 0; k < nz - 1; ++k) {
+                    bool isInnerXFace = false;
+                    for(int i = 0; i < nx - 1; ++i) {
+                        if (object_xface_map[i][j][k]) isInnerXFace = !isInnerXFace;
+
+                        if (isInnerXFace) object_cell_count_map[i][j][k] += 1;
+                    }
+                }
+            }
+            for(int i = 0; i < nx - 1; ++i) {
+                for (int k = 0; k < nz - 1; ++k) {
+                    bool isInnerYFace = false;
+                    for (int j = 0; j < ny - 1; ++j) {
+                        if (object_yface_map[i][j][k]) isInnerYFace = !isInnerYFace;
+
+                        if (isInnerYFace) object_cell_count_map[i][j][k] += 1;
+                    }
+                }
+            }
+            for(int i = 0; i < nx - 1; ++i) {
+                for (int j = 0; j < ny - 1; ++j) {
+                    bool isInnerZFace = false;
+                    for (int k = 0; k < nz - 1; ++k) {
+                        if (object_zface_map[i][j][k]) isInnerZFace = !isInnerZFace;
+
+                        if (isInnerZFace) object_cell_count_map[i][j][k] += 1;
+                    }
+                }
+            }
+
+            for(int i = 0; i < nx - 1; ++i) {
+                for (int j = 0; j < ny - 1; ++j) {
+                    for (int k = 0; k < nz - 1; ++k) {
+                        //! countが3なら内部と定義
+                        if (object_cell_count_map[i][j][k] == 3) {
+                            cout << Environment::rankStr() << format("Global cell[%d][%d][%d] is defined.") % i % j % k << endl;
+                            obj_data.cells.push_back({i, j, k});
+                        }
+                    }
                 }
             }
         } else {

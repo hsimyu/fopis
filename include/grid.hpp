@@ -137,7 +137,7 @@ class Grid {
                 (k <= Environment::getAssignedZEnd());
         }
 
-        //! Glueセル込みで内部かどうかを判定する
+        //! Glueノード込みで内部かどうかを判定する
         bool isInnerNodeWithGlue(const int i, const int j, const int k) const {
             return 
                 (i >= (Environment::getAssignedXBegin() - 1)) &&
@@ -153,21 +153,18 @@ class Grid {
             return isInnerNodeWithGlue(i, j, k) && !isInnerNode(i, j, k);
         }
 
-        //! Inner フェイスであるかどうか判定する
-        bool isInnerFaceWithGlue(const int type, const int i, const int j, const int k) const {
-            switch(type) {
-                //! X
-                case 0:
-                    return isInnerNodeWithGlue(i, j, k) && isInnerNodeWithGlue(i, j + 1, k) && isInnerNodeWithGlue(i, j, k + 1) && isInnerNodeWithGlue(i, j + 1, k + 1);
-                //! Y
-                case 1:
-                    return isInnerNodeWithGlue(i, j, k) && isInnerNodeWithGlue(i + 1, j, k) && isInnerNodeWithGlue(i, j, k + 1) && isInnerNodeWithGlue(i + 1, j, k + 1);
-                //! Z
-                case 2:
-                    return isInnerNodeWithGlue(i, j, k) && isInnerNodeWithGlue(i, j + 1, k) && isInnerNodeWithGlue(i + 1, j, k) && isInnerNodeWithGlue(i + 1, j + 1, k);
-                default:
-                    return false;
-            }
+        //! Glueセル込みで内部かどうかを判定する
+        //! セル周りのノードが全て内部(Glue含)ならInnerと判断できる
+        bool isInnerCellWithGlue(const int i, const int j, const int k) const {
+            return
+                isInnerNodeWithGlue(i,   j,   k) &&
+                isInnerNodeWithGlue(i+1, j,   k) &&
+                isInnerNodeWithGlue(i,   j+1, k) &&
+                isInnerNodeWithGlue(i+1, j+1, k) &&
+                isInnerNodeWithGlue(i,   j,   k+1) &&
+                isInnerNodeWithGlue(i+1, j,   k+1) &&
+                isInnerNodeWithGlue(i,   j+1, k+1) &&
+                isInnerNodeWithGlue(i+1, j+1, k+1);
         }
 
         // Field内の値へのアクセスを wrap する
