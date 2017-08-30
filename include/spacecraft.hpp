@@ -86,7 +86,6 @@ public:
     bool isDefined(void) const { return is_defined_in_this_process; }
     bool isContaining(const Particle&) const;
     bool isContaining(const Position&) const;
-    bool isContainingByCell(const Position& pos) const;
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);

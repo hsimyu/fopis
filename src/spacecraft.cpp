@@ -57,7 +57,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         }
 
         for(const auto& cell_pos : cells) {
-            cout << Environment::rankStr() << format("local cell[%d][%d][%d] is defined.") % cell_pos[0] % cell_pos[1] % cell_pos[2] << endl;
             object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = true;
         }
 
@@ -140,35 +139,10 @@ void Spacecraft::makeCmatrixInvert(void) {
 bool Spacecraft::isContaining(const Particle& p) const {
     if (!is_defined_in_this_process) return false;
 
-    // if (this->isContaining(p.getPosition()) != this->isContainingByCell(p.getPosition())) {
-    //     cout << "Assertion failed: " << endl << p.getPosition() << endl << "by node: " << this->isContaining(p.getPosition()) << endl << "by cell: " << this->isContainingByCell(p.getPosition()) << endl;
-    // };
-
     return this->isContaining(p.getPosition());
 }
 
 bool Spacecraft::isContaining(const Position& pos) const {
-    if (!is_defined_in_this_process) return false;
-
-    if (Environment::isValidPosition(pos)) {
-        const auto i = pos.i;
-        const auto j = pos.j;
-        const auto k = pos.k;
-
-        return  object_node_map[i    ][j    ][k    ] &&
-                object_node_map[i + 1][j    ][k    ] &&
-                object_node_map[i    ][j + 1][k    ] &&
-                object_node_map[i + 1][j + 1][k    ] &&
-                object_node_map[i    ][j    ][k + 1] &&
-                object_node_map[i + 1][j    ][k + 1] &&
-                object_node_map[i    ][j + 1][k + 1] &&
-                object_node_map[i + 1][j + 1][k + 1];
-    } else {
-        return false;
-    }
-}
-
-bool Spacecraft::isContainingByCell(const Position& pos) const {
     if (!is_defined_in_this_process) return false;
 
     if (Environment::isValidPosition(pos)) {
@@ -532,7 +506,6 @@ namespace ObjectUtils {
                     for (int k = 0; k < nz - 1; ++k) {
                         //! countが3なら内部と定義
                         if (object_cell_count_map[i][j][k] == 3) {
-                            cout << Environment::rankStr() << format("Global cell[%d][%d][%d] is defined.") % i % j % k << endl;
                             obj_data.cells.push_back({i, j, k});
                         }
                     }
