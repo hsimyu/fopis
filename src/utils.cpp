@@ -377,6 +377,18 @@ namespace Utils {
         return boost::filesystem::exists(p);
     }
 
+    bool isExistingDirectory(const std::string& dir_name) {
+        boost::filesystem::path p(dir_name);
+        return boost::filesystem::is_directory(p);
+    }
+
+    void createDir(std::string dir_name) {
+        if(!isExistingDirectory(dir_name)) {
+            boost::filesystem::path dir(dir_name);
+            boost::filesystem::create_directory(dir);
+        }
+    }
+
     std::string readFile(const std::string& file_name){
         if(isExistingFile(file_name)) {
             std::ifstream ifs;
@@ -422,13 +434,6 @@ namespace Utils {
             vect.push_back(v.to_str());
         }
         return vect;
-    }
-
-    void createDir(std::string dirname) {
-        boost::filesystem::path dir(dirname);
-        if(!boost::filesystem::is_directory(dir)) {
-            boost::filesystem::create_directory(dir);
-        }
     }
 
     std::vector<std::string> split(const std::string& target, char delim) {

@@ -11,6 +11,7 @@ namespace Utils {
 
     //! ファイル操作関連
     bool isExistingFile(const std::string& file_name);
+    bool isExistingDirectory(const std::string& dir_name);
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
     void createDir(std::string);
