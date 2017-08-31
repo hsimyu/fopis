@@ -35,7 +35,7 @@ private:
     std::map<int, std::string> material_names;
     std::map<int, double> material_capacitances;
 
-    //! オブジェクト定義マップとキャパシティ定義マップ
+    //! オブジェクト定義マップと電荷定義マップ
     ObjectDefinedMapBool object_node_map;
     ObjectDefinedMapInt object_cell_map;
     RhoArray charge_map;
@@ -46,6 +46,8 @@ private:
 
     //! キャパシタンス行列の番号と対応する物体の位置を格納する
     std::map<size_t, Position> capacity_matrix_relation;
+    //! キャパシタンス行列の番号と対応する静電容量の値を格納する
+    std::map<size_t, double> capacitance_map;
 
     //! 再計算しないために初期化後に保持する
     double total_cmat_value;
@@ -70,7 +72,9 @@ public:
         object_node_map(boost::extents[0][0][0]),
         object_cell_map(boost::extents[0][0][0]),
         charge_map{},
-        capacity_matrix(0, 0) {
+        capacity_matrix(0, 0),
+        capacity_matrix_relation{},
+        capacitance_map{} {
         construct(nx, ny, nz, obj_info, nodes, glue_nodes, cells);
     }
 

@@ -58,22 +58,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             object_node_map[i][j][k] = true;
         }
 
-        for(const auto& cell_pos : cells) {
-            object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = cell_pos[3];
-            if (material_capacitances.count( cell_pos[3] ) == 0) {
-                //! マッピングに使う物理定数の値を property_list から取り出しておく
-                if (material_property_list.count( material_names[ cell_pos[3] ] ) > 0 ) {
-                    material_capacitances[ cell_pos[3] ] = material_property_list.at( material_names[ cell_pos[3] ] ).at("Capacitance");
-                } else {
-                    //! material名の指定がおかしかった場合は落とす
-                    std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ cell_pos[3] ] % cell_pos[3]).str();
-
-                    std::cerr << "[ERROR] " << error_message << endl;
-                    throw std::invalid_argument(error_message);
-                }
-            }
-        }
-
         //! キャパシタンス行列のサイズを物体サイズに変更
         capacity_matrix.resize(num_cmat, num_cmat);
         
@@ -102,6 +86,47 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                     }
                 }
             }
+        }
+
+        //! セルベースの物体定義 (物体内部判定用)
+        for(const auto& cell_pos : cells) {
+            object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = cell_pos[3];
+            if (material_capacitances.count( cell_pos[3] ) == 0) {
+                //! マッピングに使う物理定数の値を property_list から取り出しておく
+                if (material_property_list.count( material_names[ cell_pos[3] ] ) > 0 ) {
+                    material_capacitances[ cell_pos[3] ] = material_property_list.at( material_names[ cell_pos[3] ] ).at("Capacitance");
+                } else {
+                    //! material名の指定がおかしかった場合は落とす
+                    std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ cell_pos[3] ] % cell_pos[3]).str();
+
+                    std::cerr << "[ERROR] " << error_message << endl;
+                    throw std::invalid_argument(error_message);
+                }
+            }
+        }
+
+        //! 誘電体計算用の静電容量値をノードごとに計算
+        for (const auto& one_node : capacity_matrix_relation) {
+            const auto& cmat_number = one_node.first;
+            const auto& pos = one_node.second;
+
+            //! とりあえずノード周りの(最大)8セルの平均値?
+            double capacitance = 0.0;
+            double valid_cell_count = 0;
+
+            for(int di = -1; di < 1; ++di) {
+                for(int dj = -1; dj < 1; ++dj) {
+                    for(int dk = -1; dk < 1; ++dk) {
+                        if (object_cell_map[pos.i + di][pos.j + dj][pos.k + dk] > 0) {
+                            capacitance += material_capacitances[ object_cell_map[pos.i + di][pos.j + dj][pos.k + dk] ];
+                            ++valid_cell_count;
+                        }
+                    }
+                }
+            }
+
+            capacitance_map[ cmat_number ] = capacitance / valid_cell_count;
+            cout << format("cmat[%d]'s capacitance is %s. [%s, %d]") % cmat_number % capacitance_map[ cmat_number ] % capacitance % valid_cell_count << endl;
         }
     }
 }
@@ -229,11 +254,32 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     double capacity_times_phi = 0.0;
     //! relationの中には元々内部ノードのPositionしか保存されていないので、
     //! 毎回判定しなくてよい
-    for(const auto& one_node : capacity_matrix_relation) {
-        const auto j = one_node.first;
-        const auto& pos = one_node.second;
-        for(size_t i = 0; i < num_cmat; ++i) {
-            capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
+
+    if (this->isDielectricSurface()) {
+        //! 誘電体の場合
+        for(const auto& one_node : capacity_matrix_relation) {
+            const auto j = one_node.first;
+            const auto& pos = one_node.second;
+            const auto capacitance = capacitance_map[j];
+
+            if (capacitance > 0.0) {
+                for(size_t i = 0; i < num_cmat; ++i) {
+                    capacity_times_phi += capacity_matrix(i, j) * (phi[pos.i][pos.j][pos.k] - charge_map[1][pos.i][pos.j][pos.k] / capacitance);
+                }
+            } else {
+                for(size_t i = 0; i < num_cmat; ++i) {
+                    capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
+                }
+            }
+        }
+    } else {
+        //! 完全導体の場合
+        for(const auto& one_node : capacity_matrix_relation) {
+            const auto j = one_node.first;
+            const auto& pos = one_node.second;
+            for(size_t i = 0; i < num_cmat; ++i) {
+                capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
+            }
         }
     }
     capacity_times_phi = MPIw::Environment::Comms[name].sum(capacity_times_phi);
@@ -248,20 +294,47 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
         cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;
     }
 
-    for(unsigned int i = 0; i < num_cmat; ++i) {
-        double delta_rho = 0.0;
+    if (this->isDielectricSurface()) {
+        //! 誘電体の場合
+        for(unsigned int i = 0; i < num_cmat; ++i) {
+            double delta_rho = 0.0;
 
-        for(unsigned int j = 0; j < num_cmat; ++j) {
-            if (isMyCmat(j)) {
-                const auto& pos = capacity_matrix_relation.at(j);
-                delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
+            for(unsigned int j = 0; j < num_cmat; ++j) {
+                if (isMyCmat(j)) {
+                    const auto capacitance = capacitance_map[j];
+                    const auto& pos = capacity_matrix_relation.at(j);
+
+                    if (capacitance > 0.0) {
+                        delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + charge_map[1][pos.i][pos.j][pos.k] / capacitance_map[j]);
+                    } else {
+                        delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
+                    }
+                }
+            }
+            delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
+
+            if (isMyCmat(i)) {
+                const auto& target_pos = capacity_matrix_relation.at(i);
+                rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
             }
         }
-        delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
+    } else {
+        //! 完全導体の場合
+        for(unsigned int i = 0; i < num_cmat; ++i) {
+            double delta_rho = 0.0;
 
-        if (isMyCmat(i)) {
-            const auto& target_pos = capacity_matrix_relation.at(i);
-            rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
+            for(unsigned int j = 0; j < num_cmat; ++j) {
+                if (isMyCmat(j)) {
+                    const auto& pos = capacity_matrix_relation.at(j);
+                    delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
+                }
+            }
+            delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
+
+            if (isMyCmat(i)) {
+                const auto& target_pos = capacity_matrix_relation.at(i);
+                rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
+            }
         }
     }
 
