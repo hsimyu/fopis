@@ -56,9 +56,6 @@ void Grid::initializeField(void){
         rho.emplace_back(tdExtents[cx][cy][cz], boost::fortran_storage_order());
     }
 
-    // @note: Dirichlet Boundary
-    Utils::clearBoundaryValues(field->getPhi(), cx, cy, cz);
-
     field->getEx().resize(tdExtents[cx-1][cy][cz]);
     field->getEy().resize(tdExtents[cx][cy-1][cz]);
     field->getEz().resize(tdExtents[cx][cy][cz-1]);

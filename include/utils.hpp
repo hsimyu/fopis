@@ -25,12 +25,6 @@ namespace Utils {
     int getAxisIndex(const AXIS);
     int getLowOrUpIndex(const AXIS_SIDE);
 
-    float* getTrueEdges2(tdArray const&, tdArray const&, tdArray const&);
-    float* getTrueEdges(tdArray const&, const int);
-    float* getTrueFaces(const tdArray&, const int);
-    void convert1Dto3Darray(double*, const int, const int, const int, tdArray&);
-    void clearBoundaryValues(tdArray&, const int, const int, const int);
-
     void initialize3DArray(tdArray&);
     void initializeRhoArray(std::vector<tdArray>&);
 
