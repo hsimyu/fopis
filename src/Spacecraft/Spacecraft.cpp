@@ -8,7 +8,7 @@
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectCells& cells) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -17,20 +17,14 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     potential_fix = Normalizer::normalizePotential(obj_info.potential_fix);
 
     if (is_defined_in_this_process) {
-        // Node ベース, Glueセルも必要
-        ObjectDefinedMapBool::extent_gen objectBoolExtents;
-        object_node_map.resize(objectBoolExtents[nx + 2][ny + 2][nz + 2]);
-
         //! セルマップは int で texture_index を持つ
         ObjectDefinedMapInt::extent_gen objectIntExtents;
         object_cell_map.resize(objectIntExtents[nx + 1][ny + 1][nz + 1]);
 
-        // 物体定義マップを初期化
+        // セル定義マップを初期化
         for(int i = 0; i < nx + 2; ++i) {
             for (int j = 0; j < ny + 2; ++j) {
                 for (int k = 0; k < nz + 2; ++k) {
-                    object_node_map[i][j][k] = false;
-
                     if (i != nx + 1 && j != ny + 1 && k != nz + 1) object_cell_map[i][j][k] = 0;
                 }
             }
@@ -44,18 +38,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             const auto j = node_pos[1];
             const auto k = node_pos[2];
 
-            object_node_map[i][j][k] = true;
             capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
-        }
-
-        //! Glueノードはobject_node_map側を更新するだけでよい
-        for(const auto& node_pair : glue_nodes) {
-            const auto& node_pos = node_pair.second;
-            const auto i = node_pos[0];
-            const auto j = node_pos[1];
-            const auto k = node_pos[2];
-
-            object_node_map[i][j][k] = true;
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
@@ -126,7 +109,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             }
 
             capacitance_map[ cmat_number ] = capacitance / valid_cell_count;
-            cout << format("cmat[%d]'s capacitance is %s. [%s, %d]") % cmat_number % capacitance_map[ cmat_number ] % capacitance % valid_cell_count << endl;
+            // cout << format("cmat[%d]'s capacitance is %s. [%s, %d]") % cmat_number % capacitance_map[ cmat_number ] % capacitance % valid_cell_count << endl;
         }
     }
 }

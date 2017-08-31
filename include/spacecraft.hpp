@@ -36,7 +36,6 @@ private:
     std::map<int, double> material_capacitances;
 
     //! オブジェクト定義マップと電荷定義マップ
-    ObjectDefinedMapBool object_node_map;
     ObjectDefinedMapInt object_cell_map;
     RhoArray charge_map;
 
@@ -53,7 +52,7 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectNodes&, const ObjectCells&);
+    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectCells&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
@@ -61,7 +60,7 @@ private:
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
-        const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells) :
+        const ObjectNodes& nodes, const ObjectCells& cells) :
         name(obj_info.name),
         surface_type(obj_info.surface_type),
         num_cmat(_num_cmat),
@@ -69,13 +68,12 @@ public:
         emit_particle_ids{},
         material_names{obj_info.materials},
         material_capacitances{},
-        object_node_map(boost::extents[0][0][0]),
         object_cell_map(boost::extents[0][0][0]),
         charge_map{},
         capacity_matrix(0, 0),
         capacity_matrix_relation{},
         capacitance_map{} {
-        construct(nx, ny, nz, obj_info, nodes, glue_nodes, cells);
+        construct(nx, ny, nz, obj_info, nodes, cells);
     }
 
     // アクセサ
