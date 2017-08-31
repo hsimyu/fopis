@@ -11,7 +11,7 @@
 #include <simple_xdmf.hpp>
 
 namespace IO {
-    void writeDataInParallel(Grid& g, const int timestep, const std::string& data_type_name) {
+    void writeDataInParallel(std::shared_ptr<Grid> g, const int timestep, const std::string& data_type_name) {
         if (Environment::isRootNode) generateXdmf(timestep, data_type_name);
 
         const std::string i_timestamp = (format("%08d") % timestep).str();
@@ -29,7 +29,7 @@ namespace IO {
             data_group = file.createGroup(i_timestamp);
         }
 
-        g.putFieldData(data_group, data_type_name, i_timestamp);
+        g->putFieldData(data_group, data_type_name, i_timestamp);
     }
 
     void writeCmatrixData(const Spacecraft& obj) {
@@ -183,10 +183,10 @@ namespace IO {
         ofs << format("%10d %16.7e %s") % Environment::timestep % datatime % log_entry << endl;
     }
 
-    void plotEnergy(Grid const& g, int timestep) {
-        const auto receivedParticleEnergy = MPIw::Environment::Comms["world"].sum(g.getParticleEnergy(), 0);
-        const auto receivedEFieldEnergy = MPIw::Environment::Comms["world"].sum(g.getEFieldEnergy(), 0);
-        const auto receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(g.getBFieldEnergy(), 0);
+    void plotEnergy(std::shared_ptr<Grid> g, int timestep) {
+        const auto receivedParticleEnergy = MPIw::Environment::Comms["world"].sum(g->getParticleEnergy(), 0);
+        const auto receivedEFieldEnergy = MPIw::Environment::Comms["world"].sum(g->getEFieldEnergy(), 0);
+        const auto receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(g->getBFieldEnergy(), 0);
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
@@ -206,13 +206,13 @@ namespace IO {
         }
     }
 
-    void plotValidParticleNumber(Grid const& g) {
+    void plotValidParticleNumber(std::shared_ptr<Grid> g) {
         std::vector<size_t> total_pnums;
 
         size_t total_pnum = 0;
         for(int id = 0; id < Environment::num_of_particle_types; ++id) {
             total_pnums.push_back(
-                MPIw::Environment::Comms["world"].sum(g.getValidParticleNumber(id))
+                MPIw::Environment::Comms["world"].sum(g->getValidParticleNumber(id))
             );
             total_pnum += total_pnums[id];
         }
@@ -250,8 +250,8 @@ namespace IO {
         }
     }
 
-    void plotObjectsData(Grid const& g) {
-        for(const auto& object : g.getObjects()) {
+    void plotObjectsData(std::shared_ptr<Grid> g) {
+        for(const auto& object : g->getObjects()) {
             std::string filename = "data/object_" + object.getName() + ".txt";
 
             if ( MPIw::Environment::isRootNode(object.getName()) ) {
