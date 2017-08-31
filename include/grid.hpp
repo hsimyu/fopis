@@ -3,17 +3,17 @@
 #include <vector>
 #include <map>
 #include "particle.hpp"
-#include "field.hpp"
 #include "environment.hpp"
-#include "utils.hpp"
 #include "spacecraft.hpp"
 
 #define H5_USE_BOOST
 #include <highfive/H5File.hpp>
 
+class ChildGrid;
+
 //! @class Grid
 class Grid {
-    private:
+    protected:
         //! グリッド関係ツリー
         std::shared_ptr<Grid> parent;
         std::vector<std::unique_ptr<ChildGrid>> children;
@@ -68,7 +68,7 @@ class Grid {
         void updateParticlePositionEM(void);
 
     public:
-        Grid() : field(std::make_unique<Field>());
+        Grid();
         ~Grid();
 
         unsigned int getNextID(void) {
@@ -139,13 +139,13 @@ class Grid {
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
-        void addChild(std::unique_ptr<Grid>&&);
+        void addChild(std::unique_ptr<ChildGrid>&&);
         void removeChild(const int);
 
-        std::vector<std::shared_ptr<ChildGrid>> getChildren() {
+        /*std::vector<std::shared_ptr<ChildGrid>> getChildren() {
             // 参照にしないと新しいポインタが生まれてしまう？
             return children;
-        }
+        }*/
 
         int getChildrenLength() const {
             return children.size();
@@ -209,14 +209,13 @@ class Grid {
         virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) = 0;
         virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) = 0;
         virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) = 0;
-}
+};
 
 class RootGrid : public Grid {
     public:
-        RootGrid() : Grid();
+        RootGrid();
 
-        //! 粒子注入はRootGridのみ
-        void injectParticles(void);
+        void injectParticlesFromBoundary(void);
 
         //! 物体定義初期化
         void initializeObject();
@@ -233,7 +232,6 @@ class RootGrid : public Grid {
         virtual void updateEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
-        virtual void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const override;
 
         virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) override {
             if(p.x < 0.0) {
@@ -335,15 +333,26 @@ class RootGrid : public Grid {
         virtual int getXNodeSize(void) const override;
         virtual int getYNodeSize(void) const override;
         virtual int getZNodeSize(void) const override;
-}
+};
 
 class ChildGrid : public Grid {
     public:
-        ChildGrid(std::shared_ptr<Grid>, const int, const int, const int, const int, const int, const int) : Grid();
+        ChildGrid(Grid*, const int, const int, const int, const int, const int, const int);
 
-        void checkGridValidness();
+        virtual void initializeField() override;
+        virtual void updateRho(void) override;
+        virtual void solvePoisson(void) override;
+        virtual void updateEfield(void) override;
+        virtual void updateEfieldFDTD(void) override;
+        virtual void updateBfield(void) override;
 
     private:
-
-}
+        void checkGridValidness();
+        virtual int getXNodeSize(void) const override;
+        virtual int getYNodeSize(void) const override;
+        virtual int getZNodeSize(void) const override;
+        virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) override;
+        virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) override;
+        virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) override;
+};
 #endif

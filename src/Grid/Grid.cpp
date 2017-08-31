@@ -14,6 +14,14 @@
 // Unique ID の実体
 unsigned int Grid::nextID = 0;
 
+// Grid 基底クラス用のコンストラクタ
+Grid::Grid(void) : field(std::make_unique<Field>()) {
+    sumTotalNumOfChildGrids = 0;
+
+    //! UniqueなIDをセット
+    id = this->getNextID();
+}
+
 void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix, const int _to_iy, const int _to_iz) {
     this->addChild(
         std::make_unique<ChildGrid>(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz)
@@ -39,14 +47,6 @@ void Grid::incrementSumOfChild() {
     if(level > 0) {
         parent->incrementSumOfChild();
     }
-}
-
-// Grid 基底クラス用のコンストラクタ
-Grid::Grid(void)  {
-    sumTotalNumOfChildGrids = 0;
-
-    //! UniqueなIDをセット
-    id = this->getNextID();
 }
 
 
@@ -374,7 +374,7 @@ Grid::~Grid(){
     particles.shrink_to_fit();
 
     //! delete all children
-    std::vector<Grid*>::iterator it = children.begin();
+    auto it = children.begin();
     while(it != children.end()) {
         it = children.erase(it);
     }
@@ -383,7 +383,7 @@ Grid::~Grid(){
 }
 
 // --- stdout friend function ----
-void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
+void printGridInfo(std::ostream& ost, std::shared_ptr<Grid> g, int childnum) {
     std::string tab = "";
     for(int i = 0; i < g->getLevel(); ++i) tab += "    ";
 
@@ -400,15 +400,15 @@ void printGridInfo(std::ostream& ost, Grid* g, int childnum) {
     ost << tab << "sumNumOfChild: " << g->getSumOfChild() << endl;
     ost << tab << "numOfChild: " << g->getChildrenLength() << endl;
 
-    if(g->getChildrenLength() > 0) {
+    /*if(g->getChildrenLength() > 0) {
         std::vector<Grid*>& children = g->getChildren();
         for(unsigned int i = 0; i < children.size(); ++i) {
             printGridInfo(ost, children[i], i);
         }
-    }
+    }*/
 }
 
-std::ostream& operator<<(std::ostream& ost, Grid* g){
+std::ostream& operator<<(std::ostream& ost, std::shared_ptr<Grid> g){
     ost << "[Grid Info]" << std::endl;
     printGridInfo(ost, g, 0);
     return ost;
