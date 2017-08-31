@@ -162,6 +162,11 @@ public:
         return normalized_eps * (pow(e_unit, 2) * pow(t_unit, 2)) / (x_pow_3 * m_unit);
     }
 
+    //! F = C / V -> 1
+    static double normalizeCapacitance(double raw_capacitance) {
+        return raw_capacitance * V_unit / e_unit;
+    }
+
     //! m kg / s^2 A^2 = m kg / C^2 -> 1
     static double normalizeMu(double raw_mu) {
         return raw_mu * pow(e_unit, 2) / (m_unit * x_unit);

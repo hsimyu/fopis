@@ -3,14 +3,22 @@
 const std::map<std::string, PropertyPair> Spacecraft::material_property_list = {
     { "PerfectConductor", 
         PropertyPair({
-            {"Capacitance", 0.0},
-            {"Resistance", 0.0},
+            {"RelativePermittivity", 1e11},
         })
     },
-    { "material_name_1", 
+    { "Aluminum10", 
         PropertyPair({
-            {"Capacitance", 20.0},
-            {"Resistance", 10.0},
+            {"RelativePermittivity", 10.0},
+        })
+    },
+    { "Aluminum7.5", 
+        PropertyPair({
+            {"RelativePermittivity", 7.5},
+        })
+    },
+    { "Aluminum5", 
+        PropertyPair({
+            {"RelativePermittivity", 5.0},
         })
     },
 };

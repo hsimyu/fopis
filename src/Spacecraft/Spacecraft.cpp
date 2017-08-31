@@ -77,7 +77,10 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             if (material_capacitances.count( cell_pos[3] ) == 0) {
                 //! マッピングに使う物理定数の値を property_list から取り出しておく
                 if (material_property_list.count( material_names[ cell_pos[3] ] ) > 0 ) {
-                    material_capacitances[ cell_pos[3] ] = material_property_list.at( material_names[ cell_pos[3] ] ).at("Capacitance");
+                    //! 各ノードの capacitance = 真空の誘電率 * 比誘電率でいい?
+                    material_capacitances[ cell_pos[3] ] = Normalizer::normalizeCapacitance(
+                        eps0 * material_property_list.at( material_names[ cell_pos[3] ] ).at("RelativePermittivity")
+                    );
                 } else {
                     //! material名の指定がおかしかった場合は落とす
                     std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ cell_pos[3] ] % cell_pos[3]).str();
