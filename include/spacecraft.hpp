@@ -5,9 +5,10 @@
 #include "position.hpp"
 #include "field.hpp"
 
-using ObjectDefinedMap = boost::multi_array<bool, 3>;
+using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
+using ObjectDefinedMapInt = boost::multi_array<int, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
-using ObjectCells = std::vector<std::array<int, 3>>;
+using ObjectCells = std::vector<std::array<int, 4>>;
 
 struct ObjectDataFromFile {
     ObjectNodes nodes;
@@ -30,8 +31,8 @@ private:
     std::vector<int> emit_particle_ids;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
-    ObjectDefinedMap object_node_map;
-    ObjectDefinedMap object_cell_map;
+    ObjectDefinedMapBool object_node_map;
+    ObjectDefinedMapInt object_cell_map;
     RhoArray charge_map;
 
     //! キャパシタンス行列
@@ -109,5 +110,11 @@ public:
 
 namespace ObjectUtils {
     ObjectDataFromFile getObjectNodesFromObjFile(const std::string& obj_file_name);
+
+    template<typename T>
+    int getTextureIndex(const T&& counts);
+
+    template<typename T>
+    T determineOneValueFromFourElems(T v1, T v2, T v3, T v4);
 }
 #endif

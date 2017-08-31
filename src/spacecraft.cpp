@@ -19,9 +19,12 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
     if (is_defined_in_this_process) {
         // Node ベース, Glueセルも必要
-        ObjectDefinedMap::extent_gen objectExtents;
-        object_node_map.resize(objectExtents[nx + 2][ny + 2][nz + 2]);
-        object_cell_map.resize(objectExtents[nx + 1][ny + 1][nz + 1]);
+        ObjectDefinedMapBool::extent_gen objectBoolExtents;
+        object_node_map.resize(objectBoolExtents[nx + 2][ny + 2][nz + 2]);
+
+        //! セルマップは int で texture_index を持つ
+        ObjectDefinedMapInt::extent_gen objectIntExtents;
+        object_cell_map.resize(objectIntExtents[nx + 1][ny + 1][nz + 1]);
 
         // 物体定義マップを初期化
         for(int i = 0; i < nx + 2; ++i) {
@@ -29,7 +32,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                 for (int k = 0; k < nz + 2; ++k) {
                     object_node_map[i][j][k] = false;
 
-                    if (i != nx + 1 && j != ny + 1 && k != nz + 1) object_cell_map[i][j][k] = false;
+                    if (i != nx + 1 && j != ny + 1 && k != nz + 1) object_cell_map[i][j][k] = 0;
                 }
             }
         }
@@ -57,7 +60,8 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         }
 
         for(const auto& cell_pos : cells) {
-            object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = true;
+            object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = cell_pos[3];
+            cout << Environment::rankStr() << format("cell[%d][%d][%d] is texture: %d") % cell_pos[0] % cell_pos[1] % cell_pos[2] % cell_pos[3] << endl;
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
@@ -146,7 +150,7 @@ bool Spacecraft::isContaining(const Position& pos) const {
     if (!is_defined_in_this_process) return false;
 
     if (Environment::isValidPosition(pos)) {
-        return object_cell_map[pos.i][pos.j][pos.k];
+        return (object_cell_map[pos.i][pos.j][pos.k] > 0);
     } else {
         return false;
     }
@@ -339,20 +343,18 @@ namespace ObjectUtils {
             const auto nx = Environment::nx;
             const auto ny = Environment::ny;
             const auto nz = Environment::nz;
-            ObjectDefinedMap object_node_map(boost::extents[nx][ny][nz]);
-            ObjectDefinedMap object_xface_map(boost::extents[nx][ny - 1][nz - 1]);
-            ObjectDefinedMap object_yface_map(boost::extents[nx - 1][ny][nz - 1]);
-            ObjectDefinedMap object_zface_map(boost::extents[nx - 1][ny - 1][nz]);
+            ObjectDefinedMapBool object_node_map(boost::extents[nx][ny][nz]);
+
+            using ObjectFaceMap = boost::multi_array<int, 4>;
+            ObjectFaceMap object_xface_map(boost::extents[nx][ny - 1][nz - 1][2]);
+            ObjectFaceMap object_yface_map(boost::extents[nx - 1][ny][nz - 1][2]);
+            ObjectFaceMap object_zface_map(boost::extents[nx - 1][ny - 1][nz][2]);
 
             //! 初期化
             for(int i = 0; i < nx; ++i) {
                 for (int j = 0; j < ny; ++j) {
                     for (int k = 0; k < nz; ++k) {
                         object_node_map[i][j][k] = false;
-
-                        if (j != ny - 1 && k != nz - 1) object_xface_map[i][j][k] = false;
-                        if (i != nx - 1 && k != nz - 1) object_yface_map[i][j][k] = false;
-                        if (i != nx - 1 && j != ny - 1) object_zface_map[i][j][k] = false;
                     }
                 }
             }
@@ -366,7 +368,7 @@ namespace ObjectUtils {
 
             //! vertexとfaceを一時格納しておくarray
             using Vertex = std::array<int, 3>;
-            using Face = std::array<int, 4>;
+            using Face = std::array<int, 5>;
             std::vector<Vertex> vertices;
             std::vector<Face> faces;
 
@@ -388,6 +390,12 @@ namespace ObjectUtils {
                     for(int i = 1; i < 5; ++i) {
                         const auto& splitted_face = Utils::split(fs[i], '/');
                         face_numbers[i - 1] = static_cast<int>(std::stoi(splitted_face[0]));
+                    }
+
+                    //! 5番目の要素は texture_index
+                    {
+                        const auto& splitted_face = Utils::split(fs[1], '/');
+                        face_numbers[4] = static_cast<int>(std::stoi(splitted_face[1]));
                     }
 
                     faces.push_back( std::move(face_numbers) );
@@ -419,7 +427,8 @@ namespace ObjectUtils {
                                 object_node_map[i][j][k] = true;
                             }
                             if (j != maxy && k != maxz) {
-                                object_xface_map[i][j][k] = true;
+                                object_xface_map[i][j][k][0] = 1;
+                                object_xface_map[i][j][k][1] = face[4];
                             }
                         }
                     }
@@ -439,7 +448,8 @@ namespace ObjectUtils {
                                 object_node_map[i][j][k] = true;
                             }
                             if (i != maxx && k != maxz) {
-                                object_yface_map[i][j][k] = true;
+                                object_yface_map[i][j][k][0] = 1;
+                                object_yface_map[i][j][k][1] = face[4];
                             }
                         }
                     }
@@ -459,7 +469,8 @@ namespace ObjectUtils {
                                 object_node_map[i][j][k] = true;
                             }
                             if (i != maxx && j != maxy) {
-                                object_zface_map[i][j][k] = true;
+                                object_zface_map[i][j][k][0] = 1;
+                                object_zface_map[i][j][k][1] = face[4];
                             }
                         }
                     }
@@ -469,34 +480,88 @@ namespace ObjectUtils {
             }
 
             //! セルマップ定義のためにFaceを使ってカウントする
-            boost::multi_array<int, 3> object_cell_count_map(boost::extents[nx - 1][ny - 1][nz - 1]);
+            using CellCountMap = boost::multi_array<int, 4>;
+            using CellCountMapSlice = CellCountMap::array_view<1>::type;
+            using CellCountMapRange = CellCountMap::index_range;
+            CellCountMap object_cell_count_map(boost::extents[nx - 1][ny - 1][nz - 1][7]);
             for (int j = 0; j < ny - 1; ++j) {
                 for (int k = 0; k < nz - 1; ++k) {
-                    bool isInnerXFace = false;
-                    for(int i = 0; i < nx - 1; ++i) {
-                        if (object_xface_map[i][j][k]) isInnerXFace = !isInnerXFace;
+                    for(int lower_index = 0; lower_index < nx - 1; ++lower_index) {
+                        //! 下端を見つける
+                        if (object_xface_map[lower_index][j][k][0] == 1) {
+                            //! 下端が見つかった場合は上端を探す
+                            for(int upper_index = lower_index + 1; upper_index < nx - 1; ++upper_index) {
+                                if (object_xface_map[upper_index][j][k][0] == 1) {
+                                    //! 上端が見つかったら間を塗る
+                                    for(int i = lower_index; i < upper_index; ++i) {
+                                        object_cell_count_map[i][j][k][0] += 1;
 
-                        if (isInnerXFace) object_cell_count_map[i][j][k] += 1;
+                                        //! 下端の面の色
+                                        object_cell_count_map[i][j][k][1] = object_xface_map[lower_index][j][k][1];
+                                        //! 上端の面の色
+                                        object_cell_count_map[i][j][k][2] = object_xface_map[upper_index][j][k][1];
+                                    }
+
+                                    //! 下端のindexを進めてループを抜ける
+                                    lower_index = upper_index;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
             for(int i = 0; i < nx - 1; ++i) {
                 for (int k = 0; k < nz - 1; ++k) {
-                    bool isInnerYFace = false;
-                    for (int j = 0; j < ny - 1; ++j) {
-                        if (object_yface_map[i][j][k]) isInnerYFace = !isInnerYFace;
+                    for(int lower_index = 0; lower_index < ny - 1; ++lower_index) {
+                        //! 下端を見つける
+                        if (object_yface_map[i][lower_index][k][0] == 1) {
+                            //! 下端が見つかった場合は上端を探す
+                            for(int upper_index = lower_index + 1; upper_index < ny - 1; ++upper_index) {
+                                if (object_yface_map[i][upper_index][k][0] == 1) {
+                                    //! 上端が見つかったら間を塗る
+                                    for(int j = lower_index; j < upper_index; ++j) {
+                                        object_cell_count_map[i][j][k][0] += 1;
 
-                        if (isInnerYFace) object_cell_count_map[i][j][k] += 1;
+                                        //! 下端の面の色
+                                        object_cell_count_map[i][j][k][3] = object_yface_map[i][lower_index][k][1];
+                                        //! 上端の面の色
+                                        object_cell_count_map[i][j][k][4] = object_yface_map[i][upper_index][k][1];
+                                    }
+
+                                    //! 下端のindexを進めてループを抜ける
+                                    lower_index = upper_index;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
             for(int i = 0; i < nx - 1; ++i) {
                 for (int j = 0; j < ny - 1; ++j) {
-                    bool isInnerZFace = false;
-                    for (int k = 0; k < nz - 1; ++k) {
-                        if (object_zface_map[i][j][k]) isInnerZFace = !isInnerZFace;
+                    for(int lower_index = 0; lower_index < nz - 1; ++lower_index) {
+                        //! 下端を見つける
+                        if (object_zface_map[i][j][lower_index][0] == 1) {
+                            //! 下端が見つかった場合は上端を探す
+                            for(int upper_index = lower_index + 1; upper_index < nz - 1; ++upper_index) {
+                                if (object_zface_map[i][j][upper_index][0] == 1) {
+                                    //! 上端が見つかったら間を塗る
+                                    for(int k = lower_index; k < upper_index; ++k) {
+                                        object_cell_count_map[i][j][k][0] += 1;
 
-                        if (isInnerZFace) object_cell_count_map[i][j][k] += 1;
+                                        //! 下端の面の色
+                                        object_cell_count_map[i][j][k][5] = object_zface_map[i][j][lower_index][1];
+                                        //! 上端の面の色
+                                        object_cell_count_map[i][j][k][6] = object_zface_map[i][j][upper_index][1];
+                                    }
+
+                                    //! 下端のindexを進めてループを抜ける
+                                    lower_index = upper_index;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -505,8 +570,9 @@ namespace ObjectUtils {
                 for (int j = 0; j < ny - 1; ++j) {
                     for (int k = 0; k < nz - 1; ++k) {
                         //! countが3なら内部と定義
-                        if (object_cell_count_map[i][j][k] == 3) {
-                            obj_data.cells.push_back({i, j, k});
+                        if (object_cell_count_map[i][j][k][0] == 3) {
+                            int texture_index = getTextureIndex<CellCountMapSlice>( object_cell_count_map[ boost::indices[i][j][k][ CellCountMapRange(1, 7) ] ] );
+                            obj_data.cells.push_back({i, j, k, texture_index});
                         }
                     }
                 }
@@ -517,5 +583,56 @@ namespace ObjectUtils {
         }
 
         return obj_data;
+    }
+
+    template<typename T>
+    int getTextureIndex(const T&& counts) {
+        //! 6次元配列であることを期待する
+        assert(6, counts.size());
+
+        if ((counts[0] == counts[1]) && (counts[2] == counts[3]) && (counts[4] == counts[5])) {
+            //! すべての face pair の面テクスチャが一致している場合、
+            //! 数の少ない要素を優先する
+            std::map<int, int> index_counts;
+
+            for (int idx = 0; idx < 6; ++idx) {
+                index_counts[counts[idx]] += 1;
+            }
+
+            int minimum_index = -1;
+            int minimum_count = 100000;
+            for (auto& pair : index_counts) {
+                if (pair.second < minimum_count) minimum_index = pair.first;
+            }
+
+            return minimum_index;
+        } else {
+            // 4つのペアから1つの値を決定するラムダ
+
+            //! 不一致のペアがあるなら、それ以外を優先
+            if (counts[0] != counts[1]) {
+                return determineOneValueFromFourElems(counts[2], counts[3], counts[4], counts[5]);
+            } else if (counts[2] != counts[3]) {
+                return determineOneValueFromFourElems(counts[0], counts[1], counts[4], counts[5]);
+            } else {
+                return determineOneValueFromFourElems(counts[0], counts[1], counts[2], counts[3]);
+            }
+        }
+
+        throw std::logic_error("something wrong on getTextureIndex()...");
+    }
+
+    template<typename T>
+    T determineOneValueFromFourElems(T v1, T v2, T v3, T v4) {
+        if (v1 == v2 && v2 == v3 && v3 == v4 ) {
+            //! 全部一致(基本的にこのケースが多いはず)
+            return v1;
+        } else if (v1 == v2 && v3 == v4) {
+            return v1; // どっちも別の値でペアになっている時は早いやつを優先
+        } else if (v3 != v4) {
+            return v1; // この場合、v1 == v2 または v1 != v2 だが、どちらの場合も v1 を返すので判定不要
+        } else {
+            return v3;
+        }
     }
 }
