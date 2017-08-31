@@ -9,6 +9,7 @@ using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
 using ObjectDefinedMapInt = boost::multi_array<int, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
 using ObjectCells = std::vector<std::array<int, 4>>;
+using PropertyPair = std::map<std::string, double>;
 
 struct ObjectDataFromFile {
     ObjectNodes nodes;
@@ -20,6 +21,7 @@ class Particle;
 //! @class: Spacecraft
 class Spacecraft {
 private:
+    static const std::map<std::string, PropertyPair> material_property_list;
     static unsigned int num_of_spacecraft;
     std::string name;
     std::string surface_type;
@@ -123,4 +125,5 @@ namespace ObjectUtils {
     template<typename T>
     T determineOneValueFromFourElems(T v1, T v2, T v3, T v4);
 }
+
 #endif

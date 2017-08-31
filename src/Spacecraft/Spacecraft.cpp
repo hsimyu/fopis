@@ -8,7 +8,6 @@
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
-
 void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
@@ -62,6 +61,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         for(const auto& cell_pos : cells) {
             object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = cell_pos[3];
             cout << Environment::rankStr() << format("cell[%d][%d][%d] is texture: %d") % cell_pos[0] % cell_pos[1] % cell_pos[2] % cell_pos[3] << endl;
+            auto mat = material_property_list.at(materials[cell_pos[3]]);
+            cout << Environment::rankStr() << format("    Capacitance: %s") % mat.at("Capacitance") << endl;
+            cout << Environment::rankStr() << format("    Resistance : %s") % mat.at("Resistance") << endl;
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
