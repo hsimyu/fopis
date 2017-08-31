@@ -32,7 +32,8 @@ private:
     double total_charge;
     std::vector<double> current;
     std::vector<int> emit_particle_ids;
-    std::map<int, std::string> materials;
+    std::map<int, std::string> material_names;
+    std::map<int, double> material_capacitances;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
     ObjectDefinedMapBool object_node_map;
@@ -64,7 +65,8 @@ public:
         num_cmat(_num_cmat),
         current{},
         emit_particle_ids{},
-        materials{obj_info.materials},
+        material_names{obj_info.materials},
+        material_capacitances{},
         object_node_map(boost::extents[0][0][0]),
         object_cell_map(boost::extents[0][0][0]),
         charge_map{},

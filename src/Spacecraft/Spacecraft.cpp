@@ -60,10 +60,18 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
         for(const auto& cell_pos : cells) {
             object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = cell_pos[3];
-            cout << Environment::rankStr() << format("cell[%d][%d][%d] is texture: %d") % cell_pos[0] % cell_pos[1] % cell_pos[2] % cell_pos[3] << endl;
-            auto mat = material_property_list.at(materials[cell_pos[3]]);
-            cout << Environment::rankStr() << format("    Capacitance: %s") % mat.at("Capacitance") << endl;
-            cout << Environment::rankStr() << format("    Resistance : %s") % mat.at("Resistance") << endl;
+            if (material_capacitances.count( cell_pos[3] ) == 0) {
+                //! マッピングに使う物理定数の値を property_list から取り出しておく
+                if (material_property_list.count( material_names[ cell_pos[3] ] ) > 0 ) {
+                    material_capacitances[ cell_pos[3] ] = material_property_list.at( material_names[ cell_pos[3] ] ).at("Capacitance");
+                } else {
+                    //! material名の指定がおかしかった場合は落とす
+                    std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ cell_pos[3] ] % cell_pos[3]).str();
+
+                    std::cerr << "[ERROR] " << error_message << endl;
+                    throw std::invalid_argument(error_message);
+                }
+            }
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
@@ -329,8 +337,8 @@ std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
     ost << "      surface_type: " << spc.surface_type << endl;
 
     if (spc.isDielectricSurface()) {
-        for(const auto& mt : spc.materials) {
-            ost << "            index " << mt.first << ": " << mt.second << endl;
+        for(const auto& mt : spc.material_names) {
+            ost << "               index " << mt.first << ": " << mt.second << endl;
         }
     }
 
