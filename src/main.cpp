@@ -16,8 +16,7 @@ int main(int argc, char* argv[]){
     //! MPI Environmentを初期化
     MPIw::Environment mpiEnv(argc, argv);
 
-    Grid* root_grid;
-    Initializer::initTDPIC(root_grid);
+    std::shared_ptr<RootGrid> root_grid = Initializer::initTDPIC();
 
     if( Environment::isRootNode ) {
         cout << "--  Begin Main Loop  --" << endl;
@@ -52,7 +51,7 @@ int main(int argc, char* argv[]){
                 root_grid->updateEfieldFDTD(); // FDTDで電場更新
             }
             root_grid->updateBfield(); // 磁場更新
-            if(Environment::plotBfield()) IO::writeDataInParallel(*root_grid, Environment::timestep, "bfield");
+            if(Environment::plotBfield()) IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
         } else {
             // 静電計算の場合
             // timing: t + dt
@@ -61,16 +60,16 @@ int main(int argc, char* argv[]){
             root_grid->updateEfield(); // 電場更新
         }
 
-        if(Environment::plotPotential())    IO::writeDataInParallel(*root_grid, Environment::timestep, "potential");
-        if(Environment::plotRho())          IO::writeDataInParallel(*root_grid, Environment::timestep, "rho");
-        if(Environment::plotEfield())       IO::writeDataInParallel(*root_grid, Environment::timestep, "efield");
-        if(Environment::plotDensity())      IO::writeDataInParallel(*root_grid, Environment::timestep, "density");
-        if(Environment::plotEnergy())       IO::plotEnergy(*root_grid, Environment::timestep);
+        if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
+        if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
+        if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
+        if(Environment::plotDensity())      IO::writeDataInParallel(root_grid, Environment::timestep, "density");
+        if(Environment::plotEnergy())       IO::plotEnergy(root_grid, Environment::timestep);
         if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->getParticles());
         if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->getParticles());
 
-        IO::plotObjectsData(*root_grid);
-        IO::plotValidParticleNumber(*root_grid);
+        IO::plotObjectsData(root_grid);
+        IO::plotValidParticleNumber(root_grid);
     }
 
     /*

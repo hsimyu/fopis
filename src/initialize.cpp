@@ -9,7 +9,7 @@
 #include <tdpic_configure.h>
 
 namespace Initializer {
-    void initTDPIC(Grid*& root_grid){
+    std::shared_ptr<RootGrid> initTDPIC() {
         // load parameter from json
         std::string filename = "input.json";
         auto inputs = Utils::readJSONFile(filename);
@@ -49,15 +49,19 @@ namespace Initializer {
             Utils::createDir("data/raw_hdf5_data");
         }
 
-        if(Environment::jobtype == "new") {
-            root_grid = Initializer::initializeGrid();
+        std::shared_ptr<RootGrid> root_grid;
+
+        if (Environment::jobtype == "new") {
+            root_grid = std::make_shared<RootGrid>();
         } else {
-            // load from files
+            root_grid = std::make_shared<RootGrid>();
         }
 
         if( Environment::isRootNode ) {
             cout << "--  End Initializing  --" << endl;
         }
+
+        return root_grid;
     }
 
     void setMPIInfoToEnv() {
@@ -277,10 +281,6 @@ namespace Initializer {
 
             ++id;
         }
-    }
-
-    Grid* initializeGrid(void){
-        return new Grid();
     }
 }
 

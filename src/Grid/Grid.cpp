@@ -15,13 +15,14 @@
 unsigned int Grid::nextID = 0;
 
 void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix, const int _to_iy, const int _to_iz) {
-    Grid* child = new Grid(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz);
-    this->addChild(child);
+    this->addChild(
+        std::make_unique<ChildGrid>(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz)
+    );
     incrementSumOfChild();
 }
 
-void Grid::addChild(Grid* child) {
-    children.push_back(child);
+void Grid::addChild(std::unique_ptr<ChildGrid>&& child) {
+    children.push_back( std::move(child) );
 }
 
 void Grid::decrementSumOfChild() {
@@ -40,313 +41,14 @@ void Grid::incrementSumOfChild() {
     }
 }
 
-//! 場の resize を行う
-void Grid::initializeField(void){
-    tdArray::extent_gen tdExtents;
-
-    const int cx = nx + 2;
-    const int cy = ny + 2;
-    const int cz = nz + 2;
-
-    field->getPhi().resize(tdExtents[cx][cy][cz]);
-
-    auto& rho = field->getRho();
-    for(int i = 0; i < Environment::num_of_particle_types + 1; ++i) {
-        //! 総和のtdArray + 粒子種毎のtdArrayを直接配置で生成する
-        rho.emplace_back(tdExtents[cx][cy][cz], boost::fortran_storage_order());
-    }
-
-    field->getEx().resize(tdExtents[cx-1][cy][cz]);
-    field->getEy().resize(tdExtents[cx][cy-1][cz]);
-    field->getEz().resize(tdExtents[cx][cy][cz-1]);
-
-    field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
-    field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
-    field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
-
-    // reference fields have the same size as nodal size
-    field->getExRef().resize(tdExtents[cx][cy][cz]);
-    field->getEyRef().resize(tdExtents[cx][cy][cz]);
-    field->getEzRef().resize(tdExtents[cx][cy][cz]);
-    field->getBxRef().resize(tdExtents[cx][cy][cz]);
-    field->getByRef().resize(tdExtents[cx][cy][cz]);
-    field->getBzRef().resize(tdExtents[cx][cy][cz]);
-
-    //! 電流密度は Edge 要素なので Efield と同じ要素数を持つ
-    field->getJx().resize(tdExtents[cx-1][cy][cz]);
-    field->getJy().resize(tdExtents[cx][cy-1][cz]);
-    field->getJz().resize(tdExtents[cx][cy][cz-1]);
-}
-
-void Grid::initializeObject(void) {
-    //! TODO: オブジェクト数を数える
-    if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
-
-    for (const auto& object_info : Environment::objects_info) {
-        std::string obj_name = object_info.name;
-        //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
-        ObjectDataFromFile object_data = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
-
-        unsigned int num_cmat = object_data.nodes.size();
-        const auto& node_array = object_data.nodes;
-
-        //! innerと判定されたやつだけ渡す
-        ObjectNodes inner_node_array;
-        bool is_object_in_this_node = false;
-
-        for(const auto& node_pair : node_array) {
-            const auto cmat_itr = node_pair.first;
-            const auto& node_pos = node_pair.second;
-
-            const auto i = node_pos[0];
-            const auto j = node_pos[1];
-            const auto k = node_pos[2];
-
-            if (isInnerNode(i, j, k)) {
-                is_object_in_this_node = true;
-                inner_node_array[cmat_itr] = Environment::getRelativePositionOnRootWithGlue(i, j, k);
-            }
-        }
-
-        const auto& cell_array = object_data.cells;
-        ObjectCells inner_cell_array;
-        for(const auto& cell_pos : cell_array) {
-            if (isInnerCellWithGlue(cell_pos[0], cell_pos[1], cell_pos[2])) {
-                auto rel_pos = Environment::getRelativePositionOnRootWithGlue(cell_pos[0], cell_pos[1], cell_pos[2]);
-                inner_cell_array.push_back( {rel_pos[0], rel_pos[1], rel_pos[2], cell_pos[3]} );
-            }
-        }
-
-        //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
-        //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, inner_cell_array);
-
-        //! Comm作成 (物体が入っていないならnullになる)
-        MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
-        if (MPIw::Environment::isRootNode(obj_name)) {
-            cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
-            cout << objects[ objects.size() - 1 ] << endl;
-        }
-    }
-}
-
-void Grid::initializeObjectsCmatrix(void) {
-    if (Environment::isRootNode) cout << "-- Initializing Objects Capacity Matrix --" << endl;
-    RhoArray& rho = field->getRho();
-    tdArray& phi = field->getPhi();
-
-    for(auto& obj : objects) {
-        // rhoを初期化
-        Utils::initializeRhoArray(rho);
-        Utils::initialize3DArray(phi);
-
-        //! データを読み込み
-        if (Environment::useExistingCapacityMatrix) {
-            const auto is_valid_load = IO::loadCmatrixData(obj);
-            if (is_valid_load) continue;
-        }
-
-        //! データを使わずに初期化
-        const auto num_cmat = obj.getCmatSize();
-
-        std::unique_ptr<Utils::ProgressManager> pm;
-        if (MPIw::Environment::isRootNode(obj.getName())) {
-            pm = std::make_unique<Utils::ProgressManager>(num_cmat, "cmat_solve");
-        }
-
-        for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
-            if (MPIw::Environment::isRootNode(obj.getName())) pm->update(cmat_col_itr);
-
-            //! 該当する頂点に単位電荷を付与
-            if (obj.isMyCmat(cmat_col_itr)) {
-                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
-            }
-
-            solvePoisson();
-
-            for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
-                double value = 0.0;
-                if (obj.isMyCmat(cmat_row_itr)) {
-                    //! phiの値がB_{ij}の値になっている
-                    const auto& target_pos = obj.getCmatPos(cmat_row_itr);
-                    value = phi[target_pos.i][target_pos.j][target_pos.k];
-                }
-
-                if (obj.isDefined()) {
-                    //! bcastの代わりにsumしてしまう
-                    value = MPIw::Environment::Comms[obj.getName()].sum(value);
-                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
-                }
-            }
-
-            //! 付与した単位電荷を消去する
-            if (obj.isMyCmat(cmat_col_itr)) {
-                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 0.0;
-            }
-        }
-
-        //! 物体が有効でないなら解く必要なし
-        if (obj.isDefined()) obj.makeCmatrixInvert();
-
-        if (MPIw::Environment::isRootNode(obj.getName())) {
-            IO::writeCmatrixData(obj);
-        }
-    }
-
-}
-
-// root grid constructor
-Grid::Grid(void) : field(std::make_unique<Field>()) {
-    //! - コンストラクタにEnvironmentクラスが渡された場合、
-    //! レベル0のGridを作成します.
-    level = 0;
+// Grid 基底クラス用のコンストラクタ
+Grid::Grid(void)  {
     sumTotalNumOfChildGrids = 0;
 
     //! UniqueなIDをセット
     id = this->getNextID();
-
-    nx = Environment::cell_x;
-    ny = Environment::cell_y;
-    nz = Environment::cell_z;
-    dx = Normalizer::normalizeLength(Environment::dx);
-    dt = Normalizer::normalizeTime(Environment::dt);
-
-    //! @{
-    //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
-    //! その上にプロセス分割されたグリッドが乗っていると考える
-    from_ix = Environment::getAssignedXBegin();
-    from_iy = Environment::getAssignedYBegin();
-    from_iz = Environment::getAssignedZBegin();
-    to_ix = Environment::getAssignedXEnd();
-    to_iy = Environment::getAssignedYEnd();
-    to_iz = Environment::getAssignedZEnd();
-    //! @note: base_x, base_y, base_zは正規化された長さ
-    base_x = dx * static_cast<double>(from_ix);
-    base_y = dx * static_cast<double>(from_iy);
-    base_z = dx * static_cast<double>(from_iz);
-    //! @}
-
-    // Field初期化
-    this->initializeField();
-
-    // 物体初期化
-    this->initializeObject();
-    this->initializeObjectsCmatrix();
-
-    //! - 粒子位置の上限を設定
-    double max_x = static_cast<double>(Environment::cell_x);
-    double max_y = static_cast<double>(Environment::cell_y);
-    double max_z = static_cast<double>(Environment::cell_z);
-
-    //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
-
-    //! - particlesは空のstd::vector< std::vector<Particle> >として宣言されている
-    //! - particle types 分だけresize
-    particles.resize(Environment::num_of_particle_types);
-
-    for(int id = 0; id < Environment::num_of_particle_types; ++id){
-        //! 各粒子分のメモリをreserveしておく
-        particles[id].reserve(Environment::max_particle_num);
-
-        //! 初期化時は背景粒子のみ生成
-        if (Environment::getParticleType(id)->getType() == "ambient") {
-            auto ambient_particle_ptr = Environment::getAmbientParticleType(id);
-            int pnum = ambient_particle_ptr->getTotalNumber();
-
-            for(int i = 0; i < pnum; ++i){
-                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, 0.0, max_z);
-
-                //! 物体がある場合は生成時にチェックする
-                for(const auto& obj : objects) {
-                    if (obj.isDefined()) obj.removeInnerParticle(p);
-                }
-
-                if (p.isValid) particles[id].push_back( std::move(p) );
-            }
-        }
-    }
 }
 
-//! child grid constructor
-//! GridコンストラクタにGridが渡された場合、
-//! そのGridを親とした子グリッドを生成します
-Grid::Grid(Grid* g,
-        const int _from_ix, const int _from_iy, const int _from_iz,
-        const int _to_ix,   const int _to_iy,   const int _to_iz) : field(std::make_unique<Field>())
-{
-    const double refineRatio = 2.0;
-
-    //! UniqueなIDをセット
-    id = this->getNextID();
-
-    parent = g;
-    level = g->getLevel() + 1;
-    sumTotalNumOfChildGrids = 0;
-
-    //! @{
-    //! 子グリッドの場合, from_ix, to_ix変数は純粋に親グリッドの何番目に乗っているかを表す
-    //! Glue cell 分も考慮した方に乗る
-    from_ix = _from_ix;
-    from_iy = _from_iy;
-    from_iz = _from_iz;
-    to_ix = _to_ix;
-    to_iy = _to_iy;
-    to_iz = _to_iz;
-    base_x = g->getBaseX() + g->getDx() * (from_ix - 1);
-    base_y = g->getBaseY() + g->getDx() * (from_iy - 1);
-    base_z = g->getBaseZ() + g->getDx() * (from_iz - 1);
-    //! @}
-
-    // patchの大きさを計算
-    nx = (_to_ix - _from_ix) * 2 + 1;
-    ny = (_to_iy - _from_iy) * 2 + 1;
-    nz = (_to_iz - _from_iz) * 2 + 1;
-
-    // refineRatioは2で固定
-    dx = g->getDx() / refineRatio;
-    dt = g->getDt() / refineRatio;
-
-    checkGridValidness();
-
-    // Field初期化
-    this->initializeField();
-}
-
-void Grid::checkGridValidness() {
-    const double refineRatio = 2.0;
-
-    bool isValid = true;
-
-    if(from_ix == 0 || from_iy == 0 || from_iz == 0) {
-        std::cerr << "[ERROR] Base index of child patch cannot be defined as 0 (0 is glue cell)." << endl;
-        isValid = false;
-    }
-
-    // x extent
-    if( to_ix > (parent->getNX() + 1)){
-        std::cerr << "[ERROR] A child patch's x-extent exceeds the parent's extent. : " << to_ix << " > " << (parent->getNX() + 1)<< endl;
-        isValid = false;
-    }
-
-    // y extent
-    if( to_iy > (parent->getNY() + 1)){
-        std::cerr << "[ERROR] A child patch's y-extent exceeds the parent's extent. : " << to_iy << " > " << (parent->getNY() + 1)<< endl;
-        isValid = false;
-    }
-
-    // z extent
-    if( to_iz > (parent->getNZ() + 1)){
-        std::cerr << "[ERROR] A child patch's z-extent exceeds the parent's extent. : " << to_iz << " > " << (parent->getNZ() + 1)<< endl;
-        isValid = false;
-    }
-
-    if(!isValid) MPIw::Environment::abort(1);
-}
 
 //! @note: childrenのエネルギーも取る?
 double Grid::getEFieldEnergy(void) const {
@@ -355,15 +57,6 @@ double Grid::getEFieldEnergy(void) const {
 
 double Grid::getBFieldEnergy(void) const {
     return field->getBfieldEnergy();
-}
-
-void Grid::resetObjects() {
-    //! 物体上の一時的な情報を初期化
-    for(auto& obj : objects) {
-        if(obj.isDefined()) {
-            obj.resetCurrent();
-        }
-    }
 }
 
 // 子グリッドへ場の値をコピーする
@@ -532,20 +225,6 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
     for(int i = 0; i < getChildrenLength(); ++i){
         children[i]->addIDToVector(idMap);
     }
-}
-
-int Grid::getXNodeSize(void) const {
-    //! 周期境界の場合は上側境界と下側境界の間の空間も有効な空間となるので、
-    //! 上側のノードを1つ増やす
-    return (level == 0 && Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) ? nx + 1 : nx;
-}
-
-int Grid::getYNodeSize(void) const {
-    return (level == 0 && Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) ? ny + 1 : ny;
-}
-
-int Grid::getZNodeSize(void) const {
-    return (level == 0 && Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) ? nz + 1 : nz;
 }
 
 //! for DATA IO

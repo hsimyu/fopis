@@ -15,8 +15,8 @@
 class Grid {
     private:
         //! グリッド関係ツリー
-        Grid* parent;
-        std::vector<Grid*> children;
+        std::shared_ptr<Grid> parent;
+        std::vector<std::unique_ptr<ChildGrid>> children;
 
         // オブジェクト定義は Node ベース
         std::vector<Spacecraft> objects;
@@ -55,9 +55,9 @@ class Grid {
         boost::multi_array<float, 3> getDensity(const int) const;
 
         //! データ出力用のnodesの数を返す
-        int getXNodeSize(void) const;
-        int getYNodeSize(void) const;
-        int getZNodeSize(void) const;
+        virtual int getXNodeSize(void) const = 0;
+        virtual int getYNodeSize(void) const = 0;
+        virtual int getZNodeSize(void) const = 0;
 
         // 粒子更新用のメソッド
         //! ES: 静電
@@ -68,9 +68,7 @@ class Grid {
         void updateParticlePositionEM(void);
 
     public:
-        Grid(void);
-        Grid(Grid*, const int, const int, const int, const int, const int, const int);
-
+        Grid() : field(std::make_unique<Field>());
         ~Grid();
 
         unsigned int getNextID(void) {
@@ -119,12 +117,179 @@ class Grid {
         void   setDt(double _dt){ dt = _dt; }
         double getDt(void) const { return dt; }
 
-        //! 粒子関連
+        //! 物体関連
         const std::vector<Spacecraft>& getObjects() const { return objects; };
+
+        //! 粒子関連
         ParticleArray& getParticles() {return particles;}
         size_t getValidParticleNumber(const int) const;
+
+        // Field内の値へのアクセスを wrap する
+        tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
+
+        void  setParent(std::shared_ptr<Grid> g){ parent = g; }
+        std::shared_ptr<Grid> getParent(){ return parent; }
+
+        // Field 初期化
+        virtual void initializeField() = 0;
+
+        // 親子でのScalarやりとり用
+        void copyScalarToChildren(std::string);
+        void copyScalarToParent(std::string);
+
+        // 子供管理メソッド
+        void makeChild(const int, const int, const int, const int, const int, const int);
+        void addChild(std::unique_ptr<Grid>&&);
+        void removeChild(const int);
+
+        std::vector<std::shared_ptr<ChildGrid>> getChildren() {
+            // 参照にしないと新しいポインタが生まれてしまう？
+            return children;
+        }
+
+        int getChildrenLength() const {
+            return children.size();
+        }
+
+        // child gridの総数を保存するためのメソッド
+        int getSumOfChild(void) const {
+            return sumTotalNumOfChildGrids;
+        }
+
+        void setSumOfChild(const int s) {
+            sumTotalNumOfChildGrids = s;
+        }
+
+        void incrementSumOfChild(void);
+        void decrementSumOfChild(void);
+
+        // update fields は各Gridクラスで実装する
+        virtual void updateRho(void) = 0;
+        virtual void solvePoisson(void) = 0;
+        virtual void updateEfield(void) = 0;
+        virtual void updateEfieldFDTD(void) = 0;
+        virtual void updateBfield(void) = 0;
+
+        // update particles
+        void updateParticleVelocity(void);
+        void updateParticlePosition(void);
+
+        //! エネルギーを計算する
+        double getParticleEnergy(void) const;
+        double getEFieldEnergy(void) const;
+        double getBFieldEnergy(void) const;
+
+        // create mesh nodes array
+        float** getMeshNodes(int);
+        int* getChildOfPatches(void);
+        int* getNumOfPatches(void);
+        int* getChildIdMap(void);
+        int getMaxLevel(void);
+
+        int getMaxChildLevel() {
+            return this->getMaxLevel() - level;
+        }
+
+        // {id: [子のIDを格納したvector]}のmapを作成する
+        std::map<int, std::vector<int> > getChildMapOnRoot(void);
+        void addChildrenIDToMap(std::map<int, std::vector<int> >&);
+        std::vector<int> getChildrenIDs(void);
+
+        // [level: [IDを格納したvector]]のvectorを作成する
+        std::vector< std::vector<int> > getIDMapOnRoot(void);
+        void addIDToVector(std::vector< std::vector<int> >&);
+
+        // HDF5にデータを突っ込む
+        void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp);
+
+        // std out
+        friend std::ostream& operator<<(std::ostream&, Grid*);
+
+        //! 粒子境界チェック
+        virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) = 0;
+        virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) = 0;
+        virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) = 0;
+}
+
+class RootGrid : public Grid {
+    public:
+        RootGrid() : Grid();
+
+        //! 粒子注入はRootGridのみ
+        void injectParticles(void);
+
+        //! 物体定義初期化
+        void initializeObject();
+        void resetObjects();
+
+        //! 物体のキャパシタンス行列初期化または読み込み
+        void initializeObjectsCmatrix(void);
         void emitParticlesFromObjects(void);
 
+        //! 場の初期化 / 更新
+        virtual void initializeField() override;
+        virtual void updateRho(void) override;
+        virtual void solvePoisson(void) override;
+        virtual void updateEfield(void) override;
+        virtual void updateEfieldFDTD(void) override;
+        virtual void updateBfield(void) override;
+        virtual void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const override;
+
+        virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) override {
+            if(p.x < 0.0) {
+                if (Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
+                    // 計算空間の端でない場合は粒子を隣へ送る
+                    // 計算空間の端にいるが、周期境界の場合も粒子を送る必要がある -> isNotBoundary()でまとめて判定できる
+                    pbuff[0].push_back(p);
+                }
+                p.makeInvalid();
+            } else if (p.x > (slx - dx)) {
+                if (Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
+                    //! 計算空間の端でない場合、slx - dx から slx までの空間は下側の空間が担当するため、 slx を超えた場合のみ粒子を送信する
+                    //! また、計算空間の端にいるが、周期境界の場合も同様の処理でよいため、isNotBoundary()でまとめて判定できる
+                    if (p.x > slx) {
+                        pbuff[1].push_back(p);
+                        p.makeInvalid();
+                    }
+                } else {
+                    p.makeInvalid();
+                }
+            }
+        }
+
+        virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) override {
+            if(p.y < 0.0) {
+                if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) pbuff[2].push_back(p);
+                p.makeInvalid();
+            } else if (p.y > (sly - dx)) {
+                if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
+                    if (p.y > sly) {
+                        pbuff[3].push_back(p);
+                        p.makeInvalid();
+                    }
+                } else {
+                    p.makeInvalid();
+                }
+            }
+        }
+
+        virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) override {
+            if(p.z < 0.0) {
+                if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) pbuff[4].push_back(p);
+                p.makeInvalid();
+            } else if (p.z > (slz - dx)) {
+                if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
+                    if (p.z > slz) {
+                        pbuff[5].push_back(p);
+                        p.makeInvalid();
+                    }
+                } else {
+                    p.makeInvalid();
+                }
+            }
+        }
+
+    private:
         //! 基本的には root_grid 中に対象の点(Object定義点)が含まれているかを判定するために呼ぶ
         //! i, j, k は整数座標(全体の計算空間上の)
         bool isInnerNode(const int i, const int j, const int k) const {
@@ -167,164 +332,18 @@ class Grid {
                 isInnerNodeWithGlue(i+1, j+1, k+1);
         }
 
-        // Field内の値へのアクセスを wrap する
-        tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
+        virtual int getXNodeSize(void) const override;
+        virtual int getYNodeSize(void) const override;
+        virtual int getZNodeSize(void) const override;
+}
 
-        void  setParent(Grid* g){ parent = g; }
-        Grid* getParent(){ return parent; }
+class ChildGrid : public Grid {
+    public:
+        ChildGrid(std::shared_ptr<Grid>, const int, const int, const int, const int, const int, const int) : Grid();
 
-        // Field 初期化
-        void initializeField();
-
-        //! 物体定義初期化
-        void initializeObject();
-        void resetObjects();
-
-        // 親子でのScalarやりとり用
-        void copyScalarToChildren(std::string);
-        void copyScalarToParent(std::string);
-
-        // 子供管理メソッド
-        void makeChild(const int, const int, const int, const int, const int, const int);
-        void addChild(Grid*);
-        void removeChild(const int);
         void checkGridValidness();
 
-        std::vector<Grid*>& getChildren() {
-            // 参照にしないと新しいポインタが生まれてしまう？
-            return children;
-        }
+    private:
 
-        int getChildrenLength() const {
-            return children.size();
-        }
-
-        // child gridの総数を保存するためのメソッド
-        int getSumOfChild(void) const {
-            return sumTotalNumOfChildGrids;
-        }
-
-        void setSumOfChild(const int s) {
-            sumTotalNumOfChildGrids = s;
-        }
-
-        void incrementSumOfChild(void);
-        void decrementSumOfChild(void);
-
-        // update fields
-        void updateRho(void);
-
-        void solvePoisson(void) {
-            const int DEFAULT_ITERATION_LOOP = 500;
-            field->solvePoisson(DEFAULT_ITERATION_LOOP, dx);
-        }
-
-        void updateEfield(void) {
-            field->updateEfield(dx);
-        }
-
-        void updateEfieldFDTD(void) {
-            field->updateEfieldFDTD(dx, dt);
-        }
-
-        void updateBfield(void) {
-            field->updateBfield(dx, nx, ny, nz, dt);
-        }
-
-        //! 物体のキャパシタンス行列初期化または読み込み
-        void initializeObjectsCmatrix(void);
-
-        // update particles
-        void updateParticleVelocity(void);
-        void updateParticlePosition(void);
-
-        //! 粒子注入
-        void injectParticles(void);
-
-        //! エネルギーを計算する
-        double getParticleEnergy(void) const;
-        double getEFieldEnergy(void) const;
-        double getBFieldEnergy(void) const;
-
-        // create mesh nodes array
-        float** getMeshNodes(int);
-        int* getChildOfPatches(void);
-        int* getNumOfPatches(void);
-        int* getChildIdMap(void);
-        int getMaxLevel(void);
-
-        int getMaxChildLevel() {
-            return this->getMaxLevel() - level;
-        }
-
-        // {id: [子のIDを格納したvector]}のmapを作成する
-        std::map<int, std::vector<int> > getChildMapOnRoot(void);
-        void addChildrenIDToMap(std::map<int, std::vector<int> >&);
-        std::vector<int> getChildrenIDs(void);
-
-        // [level: [IDを格納したvector]]のvectorを作成する
-        std::vector< std::vector<int> > getIDMapOnRoot(void);
-        void addIDToVector(std::vector< std::vector<int> >&);
-
-        // HDF5にデータを突っ込む
-        void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp);
-
-        // std out
-        friend std::ostream& operator<<(std::ostream&, Grid*);
-
-        //! inline functions
-        void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) {
-            if(p.x < 0.0) {
-                if (Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
-                    // 計算空間の端でない場合は粒子を隣へ送る
-                    // 計算空間の端にいるが、周期境界の場合も粒子を送る必要がある -> isNotBoundary()でまとめて判定できる
-                    pbuff[0].push_back(p);
-                }
-                p.makeInvalid();
-            } else if (p.x > (slx - dx)) {
-                if (Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
-                    //! 計算空間の端でない場合、slx - dx から slx までの空間は下側の空間が担当するため、 slx を超えた場合のみ粒子を送信する
-                    //! また、計算空間の端にいるが、周期境界の場合も同様の処理でよいため、isNotBoundary()でまとめて判定できる
-                    if (p.x > slx) {
-                        pbuff[1].push_back(p);
-                        p.makeInvalid();
-                    }
-                } else {
-                    p.makeInvalid();
-                }
-            }
-        }
-
-        void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) {
-            if(p.y < 0.0) {
-                if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) pbuff[2].push_back(p);
-                p.makeInvalid();
-            } else if (p.y > (sly - dx)) {
-                if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
-                    if (p.y > sly) {
-                        pbuff[3].push_back(p);
-                        p.makeInvalid();
-                    }
-                } else {
-                    p.makeInvalid();
-                }
-            }
-        }
-
-        void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) {
-            if(p.z < 0.0) {
-                if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) pbuff[4].push_back(p);
-                p.makeInvalid();
-            } else if (p.z > (slz - dx)) {
-                if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
-                    if (p.z > slz) {
-                        pbuff[5].push_back(p);
-                        p.makeInvalid();
-                    }
-                } else {
-                    p.makeInvalid();
-                }
-            }
-        }
-};
+}
 #endif
