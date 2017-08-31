@@ -67,6 +67,8 @@ class Grid {
         void updateParticleVelocityEM(void);
         void updateParticlePositionEM(void);
 
+        //! 場の初期化
+        void initializeField();
     public:
         Grid();
         ~Grid();
@@ -226,7 +228,6 @@ class RootGrid : public Grid {
         void emitParticlesFromObjects(void);
 
         //! 場の初期化 / 更新
-        virtual void initializeField() override;
         virtual void updateRho(void) override;
         virtual void solvePoisson(void) override;
         virtual void updateEfield(void) override;
