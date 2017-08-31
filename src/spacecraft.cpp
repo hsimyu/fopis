@@ -322,10 +322,17 @@ std::string Spacecraft::getLogEntry() const {
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
-    ost << "    name          : " << spc.name << endl;
-    ost << "    cmat          : " << spc.num_cmat << endl;
-    ost << "    emit particles: ";
+    ost << "              name: " << spc.name << endl;
+    ost << "              cmat: " << spc.num_cmat << endl;
+    ost << "      surface_type: " << spc.surface_type << endl;
 
+    if (spc.isDielectricSurface()) {
+        for(const auto& mt : spc.materials) {
+            ost << "            index " << mt.first << ": " << mt.second << endl;
+        }
+    }
+
+    ost << "    emit particles: ";
     for(const auto& id : spc.emit_particle_ids) {
         ost << Environment::getParticleType(id)->getName() << ", " << endl;
     }

@@ -216,6 +216,12 @@ namespace Initializer {
                         obj.potential_fix = it->second.get<double>();
                     } else if (it->first == "emit_particles") {
                         obj.emit_particle_names = Utils::convertPicoJSONArrayToVectorString(it->second.get<picojson::array>());
+                    } else if (it->first == "materials") {
+                        auto material_names = it->second.get<picojson::object>();
+
+                        for(auto mit = material_names.begin(); mit != material_names.end(); ++mit) {
+                            obj.materials[ std::stoi(mit->first) ] = mit->second.to_str();
+                        }
                     }
                 }
                 Environment::objects_info.push_back( std::move(obj) );

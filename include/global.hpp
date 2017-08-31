@@ -40,6 +40,7 @@ struct ObjectInfo_t {
     unsigned int history_width;
     double potential_fix;
     std::vector<std::string> emit_particle_names;
+    std::map<int, std::string> materials;
 };
 
 #endif

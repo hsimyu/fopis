@@ -22,6 +22,7 @@ class Spacecraft {
 private:
     static unsigned int num_of_spacecraft;
     std::string name;
+    std::string surface_type;
     size_t num_cmat;
     bool is_defined_in_this_process;
     double potential;
@@ -29,6 +30,7 @@ private:
     double total_charge;
     std::vector<double> current;
     std::vector<int> emit_particle_ids;
+    std::map<int, std::string> materials;
 
     //! オブジェクト定義マップとキャパシティ定義マップ
     ObjectDefinedMapBool object_node_map;
@@ -56,8 +58,11 @@ public:
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
         const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells) :
         name(obj_info.name),
+        surface_type(obj_info.surface_type),
         num_cmat(_num_cmat),
         current{},
+        emit_particle_ids{},
+        materials{obj_info.materials},
         object_node_map(boost::extents[0][0][0]),
         object_cell_map(boost::extents[0][0][0]),
         charge_map{},
@@ -87,6 +92,7 @@ public:
     bool isDefined(void) const { return is_defined_in_this_process; }
     bool isContaining(const Particle&) const;
     bool isContaining(const Position&) const;
+    bool isDielectricSurface() const { return (surface_type == "dielectric"); }
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);
