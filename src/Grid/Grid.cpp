@@ -292,7 +292,7 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const RhoArray& rho, const int p
 }
 
 // -- DATA IO methods --
-void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) {
+void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const {
     auto getGroup = [](auto& g, const std::string& group_name) {
         if (g.exist(group_name)) {
             return g.getGroup(group_name);

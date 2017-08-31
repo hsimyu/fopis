@@ -200,7 +200,7 @@ class Grid {
         void addIDToVector(std::vector< std::vector<int> >&);
 
         // HDF5にデータを突っ込む
-        void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp);
+        void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const;
 
         // std out
         friend std::ostream& operator<<(std::ostream&, Grid*);

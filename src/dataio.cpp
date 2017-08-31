@@ -4,6 +4,7 @@
 #include "grid.hpp"
 #include "mpiw.hpp"
 #include "normalizer.hpp"
+#include "utils.hpp"
 
 #define H5_USE_BOOST
 #define USE_BOOST
@@ -11,7 +12,7 @@
 #include <simple_xdmf.hpp>
 
 namespace IO {
-    void writeDataInParallel(std::shared_ptr<Grid> g, const int timestep, const std::string& data_type_name) {
+    void writeDataInParallel(std::shared_ptr<const Grid> g, const int timestep, const std::string& data_type_name) {
         if (Environment::isRootNode) generateXdmf(timestep, data_type_name);
 
         const std::string i_timestamp = (format("%08d") % timestep).str();
@@ -183,7 +184,7 @@ namespace IO {
         ofs << format("%10d %16.7e %s") % Environment::timestep % datatime % log_entry << endl;
     }
 
-    void plotEnergy(std::shared_ptr<Grid> g, int timestep) {
+    void plotEnergy(std::shared_ptr<const Grid> g, int timestep) {
         const auto receivedParticleEnergy = MPIw::Environment::Comms["world"].sum(g->getParticleEnergy(), 0);
         const auto receivedEFieldEnergy = MPIw::Environment::Comms["world"].sum(g->getEFieldEnergy(), 0);
         const auto receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(g->getBFieldEnergy(), 0);
@@ -206,7 +207,7 @@ namespace IO {
         }
     }
 
-    void plotValidParticleNumber(std::shared_ptr<Grid> g) {
+    void plotValidParticleNumber(std::shared_ptr<const Grid> g) {
         std::vector<size_t> total_pnums;
 
         size_t total_pnum = 0;
@@ -250,7 +251,7 @@ namespace IO {
         }
     }
 
-    void plotObjectsData(std::shared_ptr<Grid> g) {
+    void plotObjectsData(std::shared_ptr<const Grid> g) {
         for(const auto& object : g->getObjects()) {
             std::string filename = "data/object_" + object.getName() + ".txt";
 
