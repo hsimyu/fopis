@@ -24,7 +24,7 @@ Grid::Grid(void) : field(std::make_unique<Field>()) {
 
 void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix, const int _to_iy, const int _to_iz) {
     this->addChild(
-        std::make_unique<ChildGrid>(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz)
+        std::make_unique<ChildGrid>(shared_from_this(), _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz)
     );
     incrementSumOfChild();
 }
@@ -405,50 +405,37 @@ void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_nam
 
 Grid::~Grid(){
     //! delete all particles
-    //! vector内のparticleは自動でデストラクタが呼ばれる
-    particles.erase(particles.begin(), particles.end());
+    if (particles.size() > 0) {
+        particles.erase(particles.begin(), particles.end());
 
-    // reserveしてあった分を削除する
-    particles.shrink_to_fit();
-
-    //! delete all children
-    auto it = children.begin();
-    while(it != children.end()) {
-        it = children.erase(it);
+        // reserveしてあった分を削除する
+        particles.shrink_to_fit();
     }
 
-    cout << "Grid Destructor Called!" << endl;
+    cout << "Grid Destructor Called! " << id << endl;
 }
 
-// --- stdout friend function ----
-void printGridInfo(std::ostream& ost, std::shared_ptr<Grid> g, int childnum) {
+void Grid::printInfo() const {
     std::string tab = "";
-    for(int i = 0; i < g->getLevel(); ++i) tab += "    ";
+    for(int i = 0; i < level; ++i) tab += "    ";
+    if (level == 0) {
+        cout << "[Grid Info]" << endl;
+    } else {
+        cout << tab << "--- child [" << id << "] ---" << endl;
+    }
+    cout << tab << "id: " << id << endl;
+    cout << tab << "level: " << level << endl;
+    cout << tab << "dx: " << format("%10.5e") % Normalizer::unnormalizeLength(dx) << "m" << endl;
+    cout << tab << "dt: " << format("%10.5e") % Normalizer::unnormalizeTime(dt) << "m" << endl;
+    cout << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % nx % ny % nz << " grids [total]" << endl;
+    cout << tab << "nx,ny,nz(+): " << format("%1%x%2%x%3%") % (nx + 2) % (ny + 2) % (nz + 2) << " grids [with glue cells]" << endl;
+    cout << tab << "parent from: " << format("%1%,%2%,%3%") % from_ix % from_iy % from_iz << endl;
+    cout << tab << "parent to  : " << format("%1%,%2%,%3%") % to_ix % to_iy % to_iz << endl;
+    cout << tab << "base positions (normalized): " << format("%1%,%2%,%3%") % base_x % base_y % base_z << endl;
+    cout << tab << "sumNumOfChild: " << this->getSumOfChild() << endl;
+    cout << tab << "numOfChild: " << this->getChildrenLength() << endl;
 
-    if(g->getLevel() > 0) ost << tab << "--- child [" << childnum << "] ---" << endl;
-    ost << tab << "id: " << g->getID() << endl;
-    ost << tab << "level: " << g->getLevel() << endl;
-    ost << tab << "dx: " << format("%10.5e") % Normalizer::unnormalizeLength(g->getDx()) << "m" << endl;
-    ost << tab << "dt: " << format("%10.5e") % Normalizer::unnormalizeTime(g->getDt()) << "m" << endl;
-    ost << tab << "nx, ny, nz: " << format("%1%x%2%x%3%") % g->getNX() % g->getNY() % g->getNZ() << " grids [total]" << endl;
-    ost << tab << "nx,ny,nz(+): " << format("%1%x%2%x%3%") % (g->getNX() + 2) % (g->getNY() + 2) % (g->getNZ() + 2) << " grids [with glue cells]" << endl;
-    ost << tab << "parent from: " << format("%1%,%2%,%3%") % g->getFromIX() % g->getFromIY() % g->getFromIZ() << endl;
-    ost << tab << "parent to  : " << format("%1%,%2%,%3%") % g->getToIX() % g->getToIY() % g->getToIZ() << endl;
-    ost << tab << "base positions (normalized): " << format("%1%,%2%,%3%") % g->getBaseX() % g->getBaseY() % g->getBaseZ() << endl;
-    ost << tab << "sumNumOfChild: " << g->getSumOfChild() << endl;
-    ost << tab << "numOfChild: " << g->getChildrenLength() << endl;
-
-    /*if(g->getChildrenLength() > 0) {
-        std::vector<Grid*>& children = g->getChildren();
-        for(unsigned int i = 0; i < children.size(); ++i) {
-            printGridInfo(ost, children[i], i);
-        }
-    }*/
+    for(const auto& child : children) {
+        child->printInfo();
+    }
 }
-
-std::ostream& operator<<(std::ostream& ost, std::shared_ptr<Grid> g){
-    ost << "[Grid Info]" << std::endl;
-    printGridInfo(ost, g, 0);
-    return ost;
-}
-

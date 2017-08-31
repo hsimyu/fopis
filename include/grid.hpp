@@ -12,7 +12,7 @@
 class ChildGrid;
 
 //! @class Grid
-class Grid {
+class Grid  : public std::enable_shared_from_this<Grid> {
     protected:
         //! グリッド関係ツリー
         std::shared_ptr<Grid> parent;
@@ -132,9 +132,6 @@ class Grid {
         void  setParent(std::shared_ptr<Grid> g){ parent = g; }
         std::shared_ptr<Grid> getParent(){ return parent; }
 
-        // Field 初期化
-        virtual void initializeField() = 0;
-
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
         void copyScalarToParent(std::string);
@@ -143,11 +140,6 @@ class Grid {
         void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(std::unique_ptr<ChildGrid>&&);
         void removeChild(const int);
-
-        /*std::vector<std::shared_ptr<ChildGrid>> getChildren() {
-            // 参照にしないと新しいポインタが生まれてしまう？
-            return children;
-        }*/
 
         int getChildrenLength() const {
             return children.size();
@@ -204,8 +196,7 @@ class Grid {
         // HDF5にデータを突っ込む
         void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const;
 
-        // std out
-        friend std::ostream& operator<<(std::ostream&, Grid*);
+        void printInfo() const;
 
         //! 粒子境界チェック
         virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) = 0;
@@ -338,9 +329,8 @@ class RootGrid : public Grid {
 
 class ChildGrid : public Grid {
     public:
-        ChildGrid(Grid*, const int, const int, const int, const int, const int, const int);
+        ChildGrid(std::shared_ptr<Grid>, const int, const int, const int, const int, const int, const int);
 
-        virtual void initializeField() override;
         virtual void updateRho(void) override;
         virtual void solvePoisson(void) override;
         virtual void updateEfield(void) override;
