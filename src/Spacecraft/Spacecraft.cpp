@@ -247,7 +247,11 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
             if (capacitance > 0.0) {
                 for(size_t i = 0; i < num_cmat; ++i) {
-                    capacity_times_phi += capacity_matrix(i, j) * (phi[pos.i][pos.j][pos.k] - charge_map[1][pos.i][pos.j][pos.k] / capacitance);
+                    double node_charge = 0.0;
+                    for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                        node_charge += charge_map[pid][pos.i][pos.j][pos.k];
+                    }
+                    capacity_times_phi += capacity_matrix(i, j) * (phi[pos.i][pos.j][pos.k] - node_charge / capacitance);
                 }
             } else {
                 for(size_t i = 0; i < num_cmat; ++i) {
@@ -288,7 +292,11 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
                     const auto& pos = capacity_matrix_relation.at(j);
 
                     if (capacitance > 0.0) {
-                        delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + charge_map[1][pos.i][pos.j][pos.k] / capacitance_map[j]);
+                        double node_charge = 0.0;
+                        for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                            node_charge += charge_map[pid][pos.i][pos.j][pos.k];
+                        }
+                        delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + node_charge / capacitance_map[j]);
                     } else {
                         delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
                     }
