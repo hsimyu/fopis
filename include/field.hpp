@@ -73,6 +73,10 @@ class Field {
         tdArray& getPoissonResidual(){ return poisson_residual; }
         tdArray& getPoissonError(){ return poisson_error; }
 
+        double poissonOperator(const tdArray& phi, const int i, const int j, const int k) const {
+            return (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]);
+        }
+
         // charge density
         void setRho(RhoArray& _rho){ rho = _rho; }
         RhoArray& getRho(){ return rho; }
