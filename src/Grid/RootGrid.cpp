@@ -74,10 +74,12 @@ RootGrid::RootGrid() : Grid() {
 
 void RootGrid::solvePoisson(void) {
     constexpr int DEFAULT_ITERATION_LOOP = 500;
+    cout << "-- Calling Children Poisson by " << id << " --" << endl;
     for(auto& child : children) {
         child->solvePoisson();
         child->copyPhiToParent();
     }
+    cout << "-- Solve Poisson by " << id << " --" << endl;
     field->solvePoissonOnRoot(DEFAULT_ITERATION_LOOP, dx);
     this->correctChildrenPhi();
 }

@@ -43,15 +43,9 @@ double Grid::getBFieldEnergy(void) const {
 }
 
 void Grid::correctChildrenPhi() {
-    return;
-}
+    tdArray& poisson_error = field->getPoissonError();
+    cout << "-- Correcting Children Phi by " << id << " --" << endl;
 
-// 子グリッドへ場の値をコピーする
-// この実装はノード to ノードの場合
-void Grid::copyScalarToChildren(std::string varname){
-    tdArray& tdValue = field->getPhi();
-
-    // @note: OpenMP
     for(int chidx = 0; chidx < children.size(); ++chidx) {
         tdArray& childValue = children[chidx]->getPhi();
 
@@ -71,34 +65,96 @@ void Grid::copyScalarToChildren(std::string varname){
 
                     // cout << format("i, j, k = %d, %d, %d") % i % j % k << endl;
                     // cout << format("ix, iy, iz = %d, %d, %d") % ix % iy % iz << endl;
-                    childValue[i][j][k] = tdValue[ix][iy][iz];
+                    childValue[i][j][k] += poisson_error[ix][iy][iz];
 
                     if(iz != child_to_iz) {
-                        childValue[i][j][k + 1] = 0.5 * (tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1]);
+                        childValue[i][j][k + 1] += 0.5 * (poisson_error[ix][iy][iz] + poisson_error[ix][iy][iz + 1]);
                     }
 
                     if(iy != child_to_iy) {
-                        childValue[i][j + 1][k] = 0.5 * (tdValue[ix][iy][iz] + tdValue[ix][iy + 1][iz]);
+                        childValue[i][j + 1][k] += 0.5 * (poisson_error[ix][iy][iz] + poisson_error[ix][iy + 1][iz]);
 
                         if(iz != child_to_iz) {
-                            childValue[i][j + 1][k + 1] = 0.25 * (tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1] + tdValue[ix][iy + 1][iz] + tdValue[ix][iy + 1][iz + 1]);
+                            childValue[i][j + 1][k + 1] += 0.25 * (poisson_error[ix][iy][iz] + poisson_error[ix][iy][iz + 1] + poisson_error[ix][iy + 1][iz] + poisson_error[ix][iy + 1][iz + 1]);
                         }
                     }
 
                     if(ix != child_to_ix) {
-                        childValue[i + 1][j][k] = 0.5 * (tdValue[ix][iy][iz] + tdValue[ix + 1][iy][iz]);
+                        childValue[i + 1][j][k] += 0.5 * (poisson_error[ix][iy][iz] + poisson_error[ix + 1][iy][iz]);
 
                         if(iz != child_to_iz) {
-                            childValue[i + 1][j][k + 1] = 0.25 * (tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1] + tdValue[ix + 1][iy][iz] + tdValue[ix + 1][iy][iz + 1]);
+                            childValue[i + 1][j][k + 1] += 0.25 * (poisson_error[ix][iy][iz] + poisson_error[ix][iy][iz + 1] + poisson_error[ix + 1][iy][iz] + poisson_error[ix + 1][iy][iz + 1]);
                         }
 
                         if(iy != child_to_iy) {
-                            childValue[i + 1][j + 1][k] = 0.25 * (tdValue[ix][iy][iz] + tdValue[ix + 1][iy][iz] + tdValue[ix][iy + 1][iz] + tdValue[ix + 1][iy + 1][iz]);
+                            childValue[i + 1][j + 1][k] += 0.25 * (poisson_error[ix][iy][iz] + poisson_error[ix + 1][iy][iz] + poisson_error[ix][iy + 1][iz] + poisson_error[ix + 1][iy + 1][iz]);
 
                             if(iz != child_to_iz) {
-                                childValue[i + 1][j + 1][k + 1] = 0.125 *
-                                    ( tdValue[ix][iy][iz] + tdValue[ix][iy][iz + 1] + tdValue[ix][iy + 1][iz] + tdValue[ix][iy + 1][iz + 1]
-                                    + tdValue[ix + 1][iy][iz] + tdValue[ix + 1][iy][iz + 1] + tdValue[ix + 1][iy + 1][iz] + tdValue[ix + 1][iy + 1][iz + 1]);
+                                childValue[i + 1][j + 1][k + 1] += 0.125 *
+                                    ( poisson_error[ix][iy][iz] + poisson_error[ix][iy][iz + 1] + poisson_error[ix][iy + 1][iz] + poisson_error[ix][iy + 1][iz + 1]
+                                    + poisson_error[ix + 1][iy][iz] + poisson_error[ix + 1][iy][iz + 1] + poisson_error[ix + 1][iy + 1][iz] + poisson_error[ix + 1][iy + 1][iz + 1]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 子グリッドへRhoをコピーする
+// この実装はノード to ノードの場合
+void Grid::interpolateRhoValueToChildren() {
+    RhoArray& tdValue = field->getRho();
+    cout << "-- Updating Children Phi by " << id << " --" << endl;
+
+    for(int chidx = 0; chidx < children.size(); ++chidx) {
+        RhoArray& childValue = children[chidx]->getRho();
+
+        int child_from_ix = children[chidx]->getFromIX();
+        int child_from_iy = children[chidx]->getFromIY();
+        int child_from_iz = children[chidx]->getFromIZ();
+        int child_to_ix = children[chidx]->getToIX();
+        int child_to_iy = children[chidx]->getToIY();
+        int child_to_iz = children[chidx]->getToIZ();
+
+        for(int ix = child_from_ix; ix <= child_to_ix; ++ix){
+            int i = 2 * (ix - child_from_ix) + 1;
+            for(int iy = child_from_iy; iy <= child_to_iy; ++iy){
+                int j = 2 * (iy - child_from_iy) + 1;
+                for(int iz = child_from_iz; iz <= child_to_iz; ++iz){
+                    int k = 2 * (iz - child_from_iz) + 1;
+
+                    // cout << format("i, j, k = %d, %d, %d") % i % j % k << endl;
+                    // cout << format("ix, iy, iz = %d, %d, %d") % ix % iy % iz << endl;
+                    childValue[0][i][j][k] = tdValue[0][ix][iy][iz];
+
+                    if(iz != child_to_iz) {
+                        childValue[0][i][j][k + 1] = 0.5 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1]);
+                    }
+
+                    if(iy != child_to_iy) {
+                        childValue[0][i][j + 1][k] = 0.5 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy + 1][iz]);
+
+                        if(iz != child_to_iz) {
+                            childValue[0][i][j + 1][k + 1] = 0.25 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1] + tdValue[0][ix][iy + 1][iz] + tdValue[0][ix][iy + 1][iz + 1]);
+                        }
+                    }
+
+                    if(ix != child_to_ix) {
+                        childValue[0][i + 1][j][k] = 0.5 * (tdValue[0][ix][iy][iz] + tdValue[0][ix + 1][iy][iz]);
+
+                        if(iz != child_to_iz) {
+                            childValue[0][i + 1][j][k + 1] = 0.25 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1] + tdValue[0][ix + 1][iy][iz] + tdValue[0][ix + 1][iy][iz + 1]);
+                        }
+
+                        if(iy != child_to_iy) {
+                            childValue[0][i + 1][j + 1][k] = 0.25 * (tdValue[0][ix][iy][iz] + tdValue[0][ix + 1][iy][iz] + tdValue[0][ix][iy + 1][iz] + tdValue[0][ix + 1][iy + 1][iz]);
+
+                            if(iz != child_to_iz) {
+                                childValue[0][i + 1][j + 1][k + 1] = 0.125 *
+                                    ( tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1] + tdValue[0][ix][iy + 1][iz] + tdValue[0][ix][iy + 1][iz + 1]
+                                    + tdValue[0][ix + 1][iy][iz] + tdValue[0][ix + 1][iy][iz + 1] + tdValue[0][ix + 1][iy + 1][iz] + tdValue[0][ix + 1][iy + 1][iz + 1]);
                             }
                         }
                     }

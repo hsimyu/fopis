@@ -74,10 +74,12 @@ int ChildGrid::getZNodeSize(void) const { return nz; }
 
 void ChildGrid::solvePoisson(void) {
     constexpr int DEFAULT_ITERATION_LOOP = 500;
+    cout << "-- Calling Children Poisson by " << id << " --" << endl;
     for(auto& child : children) {
         child->solvePoisson();
         child->copyPhiToParent();
     }
+    cout << "-- Solve Poisson by " << id << " --" << endl;
     field->solvePoissonOnChild(DEFAULT_ITERATION_LOOP, dx);
     this->correctChildrenPhi();
 }
@@ -128,9 +130,11 @@ void ChildGrid::checkZBoundary(ParticleArray& pbuff, Particle& p, const double s
 void ChildGrid::updateRho() {}
 
 void ChildGrid::copyPhiToParent(){
+    cout << "-- Updating Parent's rho by " << id << " --" << endl;
     tdArray& phi = field->getPhi();
     tdArray& residual = field->getPoissonResidual();
     tdArray& parentPhi = parent->getPhi();
+    RhoArray& parentRho = parent->getRho();
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
@@ -139,9 +143,12 @@ void ChildGrid::copyPhiToParent(){
             for(int iz = from_iz; iz <= to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
 
-                // とりあえずダイレクトにコピーする
-                //! 現在のGridのResidualを足す
-                parentPhi[ix][iy][iz] = phi[i][j][k] + residual[i][j][k];
+                //! まず v^2h -> v^h にコピーする
+                parentPhi[ix][iy][iz] = phi[i][j][k];
+
+                //! Au^2h = A^2h v^2h + r^2h となるように
+                //! PoissonOperatorを適用し、現在のGridのResidualを足したものを新しいソース項とする
+                parentRho[0][ix][iy][iz] = field->poissonOperator(parentPhi, ix, iy, iz) + residual[i][j][k];
             }
         }
     }

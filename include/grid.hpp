@@ -120,6 +120,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
 
         //! 場
         tdArray& getPhi() { return field->getPhi(); }
+        RhoArray& getRho() { return field->getRho(); }
 
         //! 物体関連
         const std::vector<Spacecraft>& getObjects() const { return objects; };
@@ -131,6 +132,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
         void correctChildrenPhi();
+        void interpolateRhoValueToChildren();
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
