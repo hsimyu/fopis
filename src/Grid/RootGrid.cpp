@@ -461,6 +461,11 @@ void RootGrid::updateRho() {
         MPIw::Environment::sendRecvField(rho[0]);
     }
 
+    //! 子に電荷を再帰的にコピ-
+    if (children.size() > 0) {
+        this->interpolateRhoValueToChildren();
+    }
+
 #ifdef CHARGE_CONSERVATION
     if (Environment::solver_type == "EM") {
         field->checkChargeConservation(old_rho, 1.0, dx);

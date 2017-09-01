@@ -118,11 +118,11 @@ void Grid::interpolateRhoValueToChildren() {
         int child_to_iy = children[chidx]->getToIY();
         int child_to_iz = children[chidx]->getToIZ();
 
-        for(int ix = child_from_ix; ix <= child_to_ix; ++ix){
+        for(int ix = child_from_ix; ix <= child_to_ix; ++ix) {
             int i = 2 * (ix - child_from_ix) + 1;
-            for(int iy = child_from_iy; iy <= child_to_iy; ++iy){
+            for(int iy = child_from_iy; iy <= child_to_iy; ++iy) {
                 int j = 2 * (iy - child_from_iy) + 1;
-                for(int iz = child_from_iz; iz <= child_to_iz; ++iz){
+                for(int iz = child_from_iz; iz <= child_to_iz; ++iz) {
                     int k = 2 * (iz - child_from_iz) + 1;
 
                     // cout << format("i, j, k = %d, %d, %d") % i % j % k << endl;
@@ -161,6 +161,8 @@ void Grid::interpolateRhoValueToChildren() {
                 }
             }
         }
+
+        if(children[chidx]->getChildrenLength() > 0) children[chidx]->interpolateRhoValueToChildren();
     }
 }
 
