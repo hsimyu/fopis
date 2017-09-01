@@ -73,8 +73,13 @@ int ChildGrid::getYNodeSize(void) const { return ny; }
 int ChildGrid::getZNodeSize(void) const { return nz; }
 
 void ChildGrid::solvePoisson(void) {
-    const int DEFAULT_ITERATION_LOOP = 500;
-    field->solvePoisson(DEFAULT_ITERATION_LOOP, dx);
+    constexpr int DEFAULT_ITERATION_LOOP = 500;
+    for(auto& child : children) {
+        child->solvePoisson();
+        child->copyPhiToParent();
+    }
+    field->solvePoissonOnChild(DEFAULT_ITERATION_LOOP, dx);
+    this->correctChildrenPhi();
 }
 
 void ChildGrid::updateEfield(void) {
@@ -122,11 +127,10 @@ void ChildGrid::checkZBoundary(ParticleArray& pbuff, Particle& p, const double s
 
 void ChildGrid::updateRho() {}
 
-void ChildGrid::copyScalarToParent(std::string varname){
-    tdArray& tdValue = field->getScalar(varname);
-
-    // @note: OpenMP
-    tdArray& parentValue = parent->getScalar(varname);
+void ChildGrid::copyPhiToParent(){
+    tdArray& phi = field->getPhi();
+    tdArray& residual = field->getPoissonResidual();
+    tdArray& parentPhi = parent->getPhi();
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
@@ -136,7 +140,8 @@ void ChildGrid::copyScalarToParent(std::string varname){
                 int k = 2 * (iz - from_iz) + 1;
 
                 // とりあえずダイレクトにコピーする
-                parentValue[ix][iy][iz] = tdValue[i][j][k];
+                //! 現在のGridのResidualを足す
+                parentPhi[ix][iy][iz] = phi[i][j][k] + residual[i][j][k];
             }
         }
     }

@@ -73,8 +73,13 @@ RootGrid::RootGrid() : Grid() {
 }
 
 void RootGrid::solvePoisson(void) {
-    const int DEFAULT_ITERATION_LOOP = 500;
-    field->solvePoisson(DEFAULT_ITERATION_LOOP, dx);
+    constexpr int DEFAULT_ITERATION_LOOP = 500;
+    for(auto& child : children) {
+        child->solvePoisson();
+        child->copyPhiToParent();
+    }
+    field->solvePoissonOnRoot(DEFAULT_ITERATION_LOOP, dx);
+    this->correctChildrenPhi();
 }
 
 void RootGrid::updateEfield(void) {

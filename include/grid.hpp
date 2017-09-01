@@ -118,6 +118,9 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void   setDt(double _dt){ dt = _dt; }
         double getDt(void) const { return dt; }
 
+        //! 場
+        tdArray& getPhi() { return field->getPhi(); }
+
         //! 物体関連
         const std::vector<Spacecraft>& getObjects() const { return objects; };
 
@@ -125,11 +128,9 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         ParticleArray& getParticles() {return particles;}
         size_t getValidParticleNumber(const int) const;
 
-        // Field内の値へのアクセスを wrap する
-        tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
-
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
+        void correctChildrenPhi();
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
@@ -337,12 +338,12 @@ class ChildGrid : public Grid {
 
         void  setParent(std::shared_ptr<Grid> g){ parent = g; }
         std::shared_ptr<Grid> getParent(){ return parent; }
+        void copyPhiToParent();
         virtual void incrementSumOfChild(void) override;
         virtual void decrementSumOfChild(void) override;
 
     private:
         std::shared_ptr<Grid> parent;
-        void copyScalarToParent(std::string);
         void checkGridValidness();
         virtual int getXNodeSize(void) const override;
         virtual int getYNodeSize(void) const override;

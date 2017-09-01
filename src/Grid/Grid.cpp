@@ -42,14 +42,18 @@ double Grid::getBFieldEnergy(void) const {
     return field->getBfieldEnergy();
 }
 
+void Grid::correctChildrenPhi() {
+    return;
+}
+
 // 子グリッドへ場の値をコピーする
 // この実装はノード to ノードの場合
 void Grid::copyScalarToChildren(std::string varname){
-    tdArray& tdValue = field->getScalar(varname);
+    tdArray& tdValue = field->getPhi();
 
     // @note: OpenMP
     for(int chidx = 0; chidx < children.size(); ++chidx) {
-        tdArray& childValue = children[chidx]->getScalar(varname);
+        tdArray& childValue = children[chidx]->getPhi();
 
         int child_from_ix = children[chidx]->getFromIX();
         int child_from_iy = children[chidx]->getFromIY();

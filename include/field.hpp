@@ -114,7 +114,8 @@ class Field {
         void setDampingBoundaryOnEfield(void);
 
         void updateBfield(const double dx, const int, const int, const int, const double dt);
-        void solvePoisson(const int, const double);
+        void solvePoissonOnRoot(const int, const double);
+        void solvePoissonOnChild(const int, const double);
 
         void initializeCurrent(const double dt);
 

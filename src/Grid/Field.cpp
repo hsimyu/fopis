@@ -8,12 +8,12 @@
 #include <algorithm>
 
 //! Poissonソルバを呼び出す
-void Field::solvePoisson(const int loopnum, const double dx) {
-    this->solvePoissonPSOR(loopnum, dx);
+void Field::solvePoissonOnRoot(const int loopnum, const double dx) {
+    this->solvePoissonPSOROnRoot(loopnum, dx);
 }
 
 //! @brief SOR法
-void Field::solvePoissonPSOR(const int loopnum, const double dx) {
+void Field::solvePoissonPSOROnRoot(const int loopnum, const double dx) {
     const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
     const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
 
@@ -33,6 +33,8 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
         Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
         Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
     };
+
+    poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
         //! is_periodicは各方向の境界について
@@ -55,14 +57,23 @@ void Field::solvePoissonPSOR(const int loopnum, const double dx) {
         //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
         MPIw::Environment::sendRecvField(phi);
 
-        if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) break;
+        if ( (loop % 10 == 0) && (this->checkPhiResidualOnRoot() < required_error) ) break;
     }
 
     this->setBoundaryConditionPhi();
+
+    //! 全グリッド上のエラーを更新
+    for(int k = 0; k < cz_with_glue; ++k){
+        for(int j = 0; j < cy_with_glue; ++j){
+            for(int i = 0; i < cx_with_glue; ++i){
+                poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
+            }
+        }
+    }
 }
 
 //! 電位分布の残差の最大ノルムを返す
-double Field::checkPhiResidual() {
+double Field::checkPhiResidualOnRoot() {
     double residual = 0.0;
     double rho_max = 0.0;
     const double normalized_eps = Normalizer::eps0;
@@ -87,6 +98,7 @@ double Field::checkPhiResidual() {
                     for(int i = 1; i < cx_with_glue - 1; ++i){
                         if((i != 1 || is_periodic[0]) && (i != cx_with_glue - 2 || is_periodic[1])) {
                             double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]) + rho[0][i][j][k]/normalized_eps;
+                            poisson_residual[i][j][k] = tmp_res;
                             residual = std::max(residual, fabs(tmp_res));
                             rho_max = std::max(rho_max, fabs(rho[0][i][j][k]));
                         }
@@ -103,6 +115,68 @@ double Field::checkPhiResidual() {
 
     return residual/(rho_max/normalized_eps);
 }
+
+void Field::solvePoissonOnChild(const int loopnum, const double dx) {
+    this->solvePoissonPSOROnChild(loopnum, dx);
+}
+
+void Field::solvePoissonPSOROnChild(const int loopnum, const double dx) {
+    const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
+    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    constexpr double required_error = 1.0e-7;
+
+    poisson_error = phi;
+
+    for(int loop = 1; loop <= loopnum; ++loop) {
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                for(int i = 1; i < cx_with_glue - 1; ++i){
+                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                }
+            }
+        }
+
+        if ( (loop % 10 == 0) && (this->checkPhiResidualOnChild() < required_error) ) break;
+    }
+
+    //! 全グリッド上のエラーを更新
+    for(int k = 0; k < cz_with_glue; ++k){
+        for(int j = 0; j < cy_with_glue; ++j){
+            for(int i = 0; i < cx_with_glue; ++i){
+                poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
+            }
+        }
+    }
+}
+
+double Field::checkPhiResidualOnChild() {
+    double residual = 0.0;
+    double rho_max = 0.0;
+    const double normalized_eps = Normalizer::eps0;
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                double tmp_res = (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]) + rho[0][i][j][k]/normalized_eps;
+                poisson_residual[i][j][k] = tmp_res;
+                residual = std::max(residual, fabs(tmp_res));
+                rho_max = std::max(rho_max, fabs(rho[0][i][j][k]));
+            }
+        }
+    }
+
+    return residual/(rho_max/normalized_eps);
+}
+
 
 void Field::setBoundaryConditionPhi(void) {
     const std::vector< AXIS > axisArray{AXIS::x, AXIS::y, AXIS::z};
