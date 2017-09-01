@@ -123,7 +123,7 @@ void RootGrid::initializeObject(void) {
         for(const auto& cell_pos : cell_array) {
             if (isInnerCellWithGlue(cell_pos[0], cell_pos[1], cell_pos[2])) {
                 auto rel_pos = Environment::getRelativePositionOnRootWithGlue(cell_pos[0], cell_pos[1], cell_pos[2]);
-                inner_cell_array.push_back( {rel_pos[0], rel_pos[1], rel_pos[2], cell_pos[3]} );
+                inner_cell_array.push_back( {{rel_pos[0], rel_pos[1], rel_pos[2], cell_pos[3]}} );
             }
         }
 
@@ -460,3 +460,6 @@ void RootGrid::updateRho() {
     }
 #endif
 }
+
+inline void RootGrid::decrementSumOfChild() { --sumTotalNumOfChildGrids; }
+inline void RootGrid::incrementSumOfChild() { ++sumTotalNumOfChildGrids; }

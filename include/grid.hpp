@@ -15,7 +15,6 @@ class ChildGrid;
 class Grid  : public std::enable_shared_from_this<Grid> {
     protected:
         //! グリッド関係ツリー
-        std::shared_ptr<Grid> parent;
         std::vector<std::unique_ptr<ChildGrid>> children;
 
         // オブジェクト定義は Node ベース
@@ -129,12 +128,8 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         // Field内の値へのアクセスを wrap する
         tdArray& getScalar(const std::string varname) { return field->getScalar(varname); }
 
-        void  setParent(std::shared_ptr<Grid> g){ parent = g; }
-        std::shared_ptr<Grid> getParent(){ return parent; }
-
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
-        void copyScalarToParent(std::string);
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
@@ -154,8 +149,8 @@ class Grid  : public std::enable_shared_from_this<Grid> {
             sumTotalNumOfChildGrids = s;
         }
 
-        void incrementSumOfChild(void);
-        void decrementSumOfChild(void);
+        virtual void incrementSumOfChild(void) = 0;
+        virtual void decrementSumOfChild(void) = 0;
 
         // update fields は各Gridクラスで実装する
         virtual void updateRho(void) = 0;
@@ -224,6 +219,9 @@ class RootGrid : public Grid {
         virtual void updateEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
+
+        virtual void incrementSumOfChild(void) override;
+        virtual void decrementSumOfChild(void) override;
 
         virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) override {
             if(p.x < 0.0) {
@@ -337,7 +335,14 @@ class ChildGrid : public Grid {
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
 
+        void  setParent(std::shared_ptr<Grid> g){ parent = g; }
+        std::shared_ptr<Grid> getParent(){ return parent; }
+        virtual void incrementSumOfChild(void) override;
+        virtual void decrementSumOfChild(void) override;
+
     private:
+        std::shared_ptr<Grid> parent;
+        void copyScalarToParent(std::string);
         void checkGridValidness();
         virtual int getXNodeSize(void) const override;
         virtual int getYNodeSize(void) const override;

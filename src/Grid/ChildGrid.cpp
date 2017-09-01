@@ -40,8 +40,6 @@ ChildGrid::ChildGrid(std::shared_ptr<Grid> g, const int _from_ix, const int _fro
 }
 
 void ChildGrid::checkGridValidness() {
-    const double refineRatio = 2.0;
-
     bool isValid = true;
 
     if(from_ix == 0 || from_iy == 0 || from_iz == 0) {
@@ -123,3 +121,33 @@ void ChildGrid::checkZBoundary(ParticleArray& pbuff, Particle& p, const double s
 }
 
 void ChildGrid::updateRho() {}
+
+void ChildGrid::copyScalarToParent(std::string varname){
+    tdArray& tdValue = field->getScalar(varname);
+
+    // @note: OpenMP
+    tdArray& parentValue = parent->getScalar(varname);
+
+    for(int ix = from_ix; ix <= to_ix; ++ix){
+        int i = 2 * (ix - from_ix) + 1;
+        for(int iy = from_iy; iy <= to_iy; ++iy){
+            int j = 2 * (iy - from_iy) + 1;
+            for(int iz = from_iz; iz <= to_iz; ++iz){
+                int k = 2 * (iz - from_iz) + 1;
+
+                // とりあえずダイレクトにコピーする
+                parentValue[ix][iy][iz] = tdValue[i][j][k];
+            }
+        }
+    }
+}
+
+void ChildGrid::decrementSumOfChild() {
+    --sumTotalNumOfChildGrids;
+    parent->decrementSumOfChild();
+}
+
+void ChildGrid::incrementSumOfChild() {
+    ++sumTotalNumOfChildGrids;
+    parent->incrementSumOfChild();
+}
