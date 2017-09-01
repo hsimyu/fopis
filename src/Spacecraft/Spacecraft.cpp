@@ -5,6 +5,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <regex>
+#include <cassert>
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
@@ -656,7 +657,7 @@ namespace ObjectUtils {
                         //! countが3なら内部と定義
                         if (object_cell_count_map[i][j][k][0] == 3) {
                             int texture_index = getTextureIndex<CellCountMapSlice>( object_cell_count_map[ boost::indices[i][j][k][ CellCountMapRange(1, 7) ] ] );
-                            obj_data.cells.push_back({i, j, k, texture_index});
+                            obj_data.cells.push_back({{i, j, k, texture_index}});
                         }
                     }
                 }
@@ -672,7 +673,7 @@ namespace ObjectUtils {
     template<typename T>
     int getTextureIndex(const T&& counts) {
         //! 6次元配列であることを期待する
-        assert(6, counts.size());
+        assert(6 == counts.size());
 
         if ((counts[0] == counts[1]) && (counts[2] == counts[3]) && (counts[4] == counts[5])) {
             //! すべての face pair の面テクスチャが一致している場合、
