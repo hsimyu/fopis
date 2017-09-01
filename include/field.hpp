@@ -9,6 +9,11 @@ class Field {
         //! rho のみ粒子種で必要な行列数が変わる
         RhoArray rho;
 
+        //! マルチグリッド Poisson 計算用
+        tdArray poisson_residual;
+        tdArray poisson_error;
+
+        //! 場
         tdArray phi;
         tdArray ex;
         tdArray ey;
@@ -31,13 +36,18 @@ class Field {
         void setNeumannPhi(const AXIS, const AXIS_SIDE);
 
         //! solver の実体
-        void solvePoissonPSOR(const int, const double);
-        void solvePoissonJacobi(const int, const double);
-        double checkPhiResidual(void);
+        void solvePoissonPSOROnRoot(const int, const double);
+        double checkPhiResidualOnRoot(void);
+
+        //! 子グリッド用
+        void solvePoissonPSOROnChild(const int, const double);
+        double checkPhiResidualOnChild(void);
 
     public:
         Field(void) :
             rho{},
+            poisson_residual(boost::extents[0][0][0], boost::fortran_storage_order()),
+            poisson_error(boost::extents[0][0][0], boost::fortran_storage_order()),
             phi(boost::extents[0][0][0], boost::fortran_storage_order()),
             ex(boost::extents[0][0][0], boost::fortran_storage_order()),
             ey(boost::extents[0][0][0], boost::fortran_storage_order()),
@@ -59,22 +69,13 @@ class Field {
         ~Field(){}
 
         // potential
-        void setPhi(tdArray& _phi){ phi = _phi; }
         tdArray& getPhi(){ return phi; }
+        tdArray& getPoissonResidual(){ return poisson_residual; }
+        tdArray& getPoissonError(){ return poisson_error; }
 
         // charge density
         void setRho(RhoArray& _rho){ rho = _rho; }
         RhoArray& getRho(){ return rho; }
-
-        auto& getScalar(const std::string varname) {
-            if(varname == "potential" || varname == "phi") {
-                return phi;
-            } else if(varname == "rho" || varname == "charge") {
-                return phi;
-            } else {
-                throw std::invalid_argument("[ERROR] Invalid varname is passed to getScalar():" + varname);
-            }
-        }
 
         // electric fields
         void setEx(tdArray& _ex){ ex = _ex; }

@@ -199,6 +199,8 @@ void Grid::initializeField(void){
     const int cz = nz + 2;
 
     field->getPhi().resize(tdExtents[cx][cy][cz]);
+    field->getPoissonResidual().resize(tdExtents[cx][cy][cz]);
+    field->getPoissonError().resize(tdExtents[cx][cy][cz]);
 
     auto& rho = field->getRho();
     for(int i = 0; i < Environment::num_of_particle_types + 1; ++i) {
