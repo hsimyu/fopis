@@ -19,9 +19,10 @@ int main(int argc, char* argv[]){
     std::shared_ptr<RootGrid> root_grid = Initializer::initTDPIC();
 
     if( Environment::isRootNode ) {
-        cout << "--  Begin Main Loop  --" << endl;
+        cout << "===== Begin Main Loop =====" << endl;
     }
 
+    root_grid->makeChild(2, 2, 2, 15, 8, 8);
     // initialized rho, phi, efield
     root_grid->updateRho();
     root_grid->solvePoisson();
@@ -30,7 +31,7 @@ int main(int argc, char* argv[]){
 
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
         if( Environment::isRootNode ) {
-            cout << "--  Iteration " << Environment::timestep << "  --" << endl;
+            cout << "====== Iteration " << Environment::timestep << " =====" << endl;
         }
         root_grid->resetObjects();
 
@@ -74,17 +75,7 @@ int main(int argc, char* argv[]){
     }
 
     if( Environment::isRootNode ) {
-        cout << "--  End A Loop  --" << endl;
-
-        // Level 1の子を作成
-        root_grid->makeChild(2, 2, 2, 8, 8, 8);
-        // root_grid->makeChild(4, 8, 8, 9, 9, 9);
-        // root_grid->getChildren()[0]->makeChild(2, 2, 2, 10, 10, 10);
-        root_grid->printInfo();
-
-        // root_grid->copyScalarToChildren("potential");
-        // root_grid->getChildren()[0]->copyScalarToChildren("potential");
-        // root_grid->getChildren()[0]->makeChild(8, 8, 8, 7, 7, 7);
+        cout << "===== End Main Loop =====" << endl;
     }
 
     return 0;

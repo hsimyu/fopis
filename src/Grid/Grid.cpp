@@ -106,7 +106,7 @@ void Grid::correctChildrenPhi() {
 // この実装はノード to ノードの場合
 void Grid::interpolateRhoValueToChildren() {
     RhoArray& tdValue = field->getRho();
-    cout << "-- Updating Children Phi by " << id << " --" << endl;
+    cout << "-- Updating Children Rho by " << id << " --" << endl;
 
     for(int chidx = 0; chidx < children.size(); ++chidx) {
         RhoArray& childValue = children[chidx]->getRho();
@@ -125,8 +125,6 @@ void Grid::interpolateRhoValueToChildren() {
                 for(int iz = child_from_iz; iz <= child_to_iz; ++iz) {
                     int k = 2 * (iz - child_from_iz) + 1;
 
-                    // cout << format("i, j, k = %d, %d, %d") % i % j % k << endl;
-                    // cout << format("ix, iy, iz = %d, %d, %d") % ix % iy % iz << endl;
                     childValue[0][i][j][k] = tdValue[0][ix][iy][iz];
 
                     if(iz != child_to_iz) {
@@ -425,8 +423,10 @@ void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_nam
         }
     }
 
-    for(int i = 0; i < children.size(); ++i) {
-        children[i]->putFieldData(group, data_type_name, i_timestamp);
+    if (data_type_name == "potential" || data_type_name == "rho") {
+        for (const auto& child : children) {
+            child->putFieldData(group, data_type_name, i_timestamp);
+        }
     }
 }
 
