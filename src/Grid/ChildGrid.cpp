@@ -217,6 +217,7 @@ void ChildGrid::copyPhiToParent(){
     RhoArray& parentRho = parent->getRho();
     const double per_dx2 = 1.0 / pow(parent->getDx(), 2);
     const double rho_coeff = -Normalizer::eps0;
+    constexpr double div = 1.0 / 12.0;
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
@@ -225,7 +226,8 @@ void ChildGrid::copyPhiToParent(){
             for(int iz = from_iz; iz <= to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
                 //! まず v^h -> v^2h にコピーする
-                parentPhi[ix][iy][iz] = phi[i][j][k];
+                //! 7-point stencil restriction
+                parentPhi[ix][iy][iz] = div * (6.0 * phi[i][j][k] + phi[i - 1][j][k] + phi[i + 1][j][k] + phi[i][j - 1][k] + phi[i][j + 1][k] + phi[i][j][k - 1] + phi[i][j][k + 1]);
             }
         }
     }
