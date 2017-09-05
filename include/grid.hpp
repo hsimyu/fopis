@@ -133,6 +133,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void copyScalarToChildren(std::string);
         void correctChildrenPhi();
         void interpolateRhoValueToChildren();
+        void restrictPhiValueToChildren();
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);

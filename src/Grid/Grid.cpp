@@ -103,7 +103,6 @@ void Grid::correctChildrenPhi() {
 }
 
 // 子グリッドへRhoをコピーする
-// この実装はノード to ノードの場合
 void Grid::interpolateRhoValueToChildren() {
     RhoArray& tdValue = field->getRho();
     cout << "-- Updating Children Rho by " << id << " --" << endl;
@@ -161,6 +160,101 @@ void Grid::interpolateRhoValueToChildren() {
         }
 
         if(children[chidx]->getChildrenLength() > 0) children[chidx]->interpolateRhoValueToChildren();
+    }
+}
+
+// 子グリッドへPhiをコピーする
+void Grid::restrictPhiValueToChildren() {
+    tdArray& parentPhi = field->getPhi();
+    cout << "-- Restricting Children Phi by " << id << " --" << endl;
+
+    for(int chidx = 0; chidx < children.size(); ++chidx) {
+        auto& child = children[chidx];
+
+        tdArray& childPhi = child->getPhi();
+        int child_from_ix = child->getFromIX();
+        int child_from_iy = child->getFromIY();
+        int child_from_iz = child->getFromIZ();
+        int child_to_ix = child->getToIX();
+        int child_to_iy = child->getToIY();
+        int child_to_iz = child->getToIZ();
+
+        const int child_nx = child->getNX();
+        const int child_ny = child->getNY();
+        const int child_nz = child->getNZ();
+
+        //! x面束縛
+        //! child_nx は 必ず奇数なので-1すれば2で割れる
+        for(int i = 1; i < child_nx + 2; i += child_nx) {
+            int ix = ((i - 1)/2) + child_from_ix;
+            for(int iy = child_from_iy; iy <= child_to_iy; ++iy) {
+                int j = 2 * (iy - child_from_iy) + 1;
+                for(int iz = child_from_iz; iz <= child_to_iz; ++iz) {
+                    int k = 2 * (iz - child_from_iz) + 1;
+                    childPhi[i][j][k] = parentPhi[ix][iy][iz];
+
+                    if(iz != child_to_iz) {
+                        childPhi[i][j][k + 1] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy][iz + 1]);
+                    }
+
+                    if(iy != child_to_iy) {
+                        childPhi[i][j + 1][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy + 1][iz]);
+
+                        if(iz != child_to_iz) {
+                            childPhi[i][j + 1][k + 1] = 0.25 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy][iz + 1] + parentPhi[ix][iy + 1][iz] + parentPhi[ix][iy + 1][iz + 1]);
+                        }
+                    }
+                }
+            }
+        }
+
+        //! y面束縛
+        for(int j = 1; j < child_ny + 2; j += child_ny) {
+            int iy = ((j - 1)/2) + child_from_iy;
+            for(int ix = child_from_ix; ix <= child_to_ix; ++ix) {
+                int i = 2 * (ix - child_from_ix) + 1;
+                for(int iz = child_from_iz; iz <= child_to_iz; ++iz) {
+                    int k = 2 * (iz - child_from_iz) + 1;
+                    childPhi[i][j][k] = parentPhi[ix][iy][iz];
+
+                    if(iz != child_to_iz) {
+                        childPhi[i][j][k + 1] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy][iz + 1]);
+                    }
+
+                    if(ix != child_to_ix) {
+                        childPhi[i + 1][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix + 1][iy][iz]);
+
+                        if(iz != child_to_iz) {
+                            childPhi[i + 1][j][k + 1] = 0.25 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy][iz + 1] + parentPhi[ix + 1][iy][iz] + parentPhi[ix + 1][iy][iz + 1]);
+                        }
+                    }
+                }
+            }
+        }
+
+        //! z面束縛
+        for(int k = 1; k < child_nz + 2; k += child_nz) {
+            int iz = ((k - 1)/2) + child_from_iz;
+            for(int ix = child_from_ix; ix <= child_to_ix; ++ix) {
+                int i = 2 * (ix - child_from_ix) + 1;
+                for(int iy = child_from_iy; iy <= child_to_iy; ++iy) {
+                    int j = 2 * (iy - child_from_iy) + 1;
+                    childPhi[i][j][k] = parentPhi[ix][iy][iz];
+
+                    if(iy != child_to_iy) {
+                        childPhi[i][j + 1][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy + 1][iz]);
+                    }
+
+                    if(ix != child_to_ix) {
+                        childPhi[i + 1][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix + 1][iy][iz]);
+
+                        if(iy != child_to_iy) {
+                            childPhi[i + 1][j + 1][k] = 0.25 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy + 1][iz] + parentPhi[ix + 1][iy][iz] + parentPhi[ix + 1][iy + 1][iz]);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

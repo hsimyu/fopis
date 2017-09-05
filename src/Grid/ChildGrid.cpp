@@ -75,6 +75,7 @@ int ChildGrid::getZNodeSize(void) const { return nz; }
 
 void ChildGrid::solvePoisson(void) {
     constexpr int DEFAULT_ITERATION_LOOP = 500;
+    this->restrictPhiValueToChildren();
     cout << "-- Calling Children Poisson by " << id << " --" << endl;
     for(auto& child : children) {
         child->solvePoisson();
