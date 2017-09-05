@@ -131,6 +131,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
 
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
+        void updateChildrenPhi();
         void correctChildrenPhi();
         void interpolateRhoValueToChildren();
         void restrictPhiValueToChildren();

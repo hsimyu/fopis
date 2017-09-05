@@ -116,8 +116,6 @@ double Field::checkPhiResidualOnRoot() {
     if(MPIw::Environment::numprocs > 1) {
         residual = MPIw::Environment::Comms["world"].max(residual);
     }
-    // cout << "resid = " << residual << endl;
-
     return residual;
 }
 
@@ -184,8 +182,6 @@ double Field::checkPhiResidualOnChild(const double dx) {
             }
         }
     }
-
-    cout << "resid = " << residual << endl;
     return residual;
 }
 

@@ -22,7 +22,8 @@ int main(int argc, char* argv[]){
         cout << "===== Begin Main Loop =====" << endl;
     }
 
-    root_grid->makeChild(2, 2, 2, 15, 8, 8);
+    root_grid->makeChild(2, 8, 8, 15, 25, 25);
+    root_grid->printInfo();
     // initialized rho, phi, efield
     root_grid->updateRho();
     root_grid->solvePoisson();

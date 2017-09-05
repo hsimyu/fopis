@@ -73,16 +73,27 @@ RootGrid::RootGrid() : Grid() {
 }
 
 void RootGrid::solvePoisson(void) {
-    constexpr int DEFAULT_ITERATION_LOOP = 500;
-    this->restrictPhiValueToChildren();
-    cout << "-- Calling Children Poisson by " << id << " --" << endl;
-    for(auto& child : children) {
-        child->solvePoisson();
-        child->copyPhiToParent();
+    constexpr int PRE_LOOP_NUM = 10;
+    constexpr int POST_LOOP_NUM = 250;
+
+    if (this->getChildrenLength() > 0) {
+        cout << "-- Solve Poisson [PRE] " << PRE_LOOP_NUM << " on RootGrid --" << endl;
+        field->solvePoissonOnRoot(PRE_LOOP_NUM, dx);
+        this->updateChildrenPhi();
+
+        cout << "-- Calling Children Poisson by " << id << " --" << endl;
+        for(auto& child : children) {
+            child->solvePoisson();
+            child->copyPhiToParent();
+        }
     }
-    cout << "-- Solve Poisson by " << id << " --" << endl;
-    field->solvePoissonOnRoot(DEFAULT_ITERATION_LOOP, dx);
-    this->correctChildrenPhi();
+
+    cout << "-- Solve Poisson [POST] " << POST_LOOP_NUM << " on RootGrid --" << endl;
+    field->solvePoissonOnRoot(POST_LOOP_NUM, dx);
+
+    if (this->getChildrenLength() > 0) {
+        this->correctChildrenPhi();
+    }
 }
 
 void RootGrid::updateEfield(void) {

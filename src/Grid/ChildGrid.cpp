@@ -74,16 +74,26 @@ int ChildGrid::getYNodeSize(void) const { return ny; }
 int ChildGrid::getZNodeSize(void) const { return nz; }
 
 void ChildGrid::solvePoisson(void) {
-    constexpr int DEFAULT_ITERATION_LOOP = 500;
-    this->restrictPhiValueToChildren();
-    cout << "-- Calling Children Poisson by " << id << " --" << endl;
-    for(auto& child : children) {
-        child->solvePoisson();
-        child->copyPhiToParent();
+    constexpr int PRE_LOOP_NUM = 10;
+    constexpr int POST_LOOP_NUM = 10;
+
+    if (this->getChildrenLength() > 0) {
+        cout << "-- Solve Poisson [PRE] " << PRE_LOOP_NUM << " on ChildGrid " << id << " --" << endl;
+        field->solvePoissonOnChild(PRE_LOOP_NUM, dx);
+        this->updateChildrenPhi();
+
+        for(auto& child : children) {
+            child->solvePoisson();
+            child->copyPhiToParent();
+        }
     }
-    cout << "-- Solve Poisson by " << id << " --" << endl;
-    field->solvePoissonOnChild(DEFAULT_ITERATION_LOOP, dx);
-    this->correctChildrenPhi();
+
+    cout << "-- Solve Poisson [POST] " << POST_LOOP_NUM << " on ChildGrid " << id << " --" << endl;
+    field->solvePoissonOnChild(POST_LOOP_NUM, dx);
+
+    if (this->getChildrenLength() > 0) {
+        this->correctChildrenPhi();
+    }
 }
 
 void ChildGrid::updateEfield(void) {
@@ -132,7 +142,6 @@ void ChildGrid::checkZBoundary(ParticleArray& pbuff, Particle& p, const double s
 void ChildGrid::updateRho() {}
 
 void ChildGrid::copyPhiToParent(){
-    cout << "-- Updating Parent's rho by " << id << " --" << endl;
     tdArray& phi = field->getPhi();
     tdArray& residual = field->getPoissonResidual();
     tdArray& parentPhi = parent->getPhi();
