@@ -41,7 +41,7 @@ class Field {
 
         //! 子グリッド用
         void solvePoissonPSOROnChild(const int, const double);
-        double checkPhiResidualOnChild(void);
+        double checkPhiResidualOnChild(const double);
 
     public:
         Field(void) :

@@ -57,7 +57,10 @@ void Field::solvePoissonPSOROnRoot(const int loopnum, const double dx) {
         //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
         MPIw::Environment::sendRecvField(phi);
 
-        if ( (loop % 10 == 0) && (this->checkPhiResidualOnRoot() < required_error) ) break;
+        if ( (loop % 10 == 0) && (this->checkPhiResidualOnRoot() < required_error) ) {
+            cout << "performed " << loop << " iterations." << endl;
+            break;
+        }
     }
 
     this->setBoundaryConditionPhi();
@@ -133,15 +136,18 @@ void Field::solvePoissonPSOROnChild(const int loopnum, const double dx) {
     poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
-        for(int k = 1; k < cz_with_glue - 1; ++k){
-            for(int j = 1; j < cy_with_glue - 1; ++j){
-                for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int k = 2; k < cz_with_glue - 2; ++k){
+            for(int j = 2; j < cy_with_glue - 2; ++j){
+                for(int i = 2; i < cx_with_glue - 2; ++i){
                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                 }
             }
         }
 
-        if ( (loop % 10 == 0) && (this->checkPhiResidualOnChild() < required_error) ) break;
+        if ( (loop % 10 == 0) && (this->checkPhiResidualOnChild(dx) < required_error) ) {
+            cout << "performed " << loop << " iterations." << endl;
+            break;
+        }
     }
 
     //! 全グリッド上のエラーを更新
@@ -154,27 +160,31 @@ void Field::solvePoissonPSOROnChild(const int loopnum, const double dx) {
     }
 }
 
-double Field::checkPhiResidualOnChild() {
+double Field::checkPhiResidualOnChild(const double dx) {
     double residual = 0.0;
-    double rho_max = 0.0;
     const double normalized_eps = Normalizer::eps0;
+    const double per_dx2 = 1.0 / pow(dx, 2);
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
-    for(int k = 1; k < cz_with_glue - 1; ++k){
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                double tmp_res = poissonOperator(phi, i, j, k) + rho[0][i][j][k]/normalized_eps;
+    for(int k = 2; k < cz_with_glue - 2; ++k){
+        for(int j = 2; j < cy_with_glue - 2; ++j){
+            for(int i = 2; i < cx_with_glue - 2; ++i){
+                double source_value = rho[0][i][j][k]/normalized_eps;
+                double tmp_res = poissonOperator(phi, i, j, k) * per_dx2 + source_value;
                 poisson_residual[i][j][k] = tmp_res;
-                residual = std::max(residual, fabs(tmp_res));
-                rho_max = std::max(rho_max, fabs(rho[0][i][j][k]));
+
+                if (fabs(tmp_res / source_value) > residual) {
+                    residual = fabs(tmp_res / source_value);
+                }
             }
         }
     }
 
-    return residual/(rho_max/normalized_eps);
+    cout << "resid = " << residual << endl;
+    return residual;
 }
 
 void Field::setBoundaryConditionPhi(void) {

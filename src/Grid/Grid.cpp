@@ -63,8 +63,6 @@ void Grid::correctChildrenPhi() {
                 for(int iz = child_from_iz; iz <= child_to_iz; ++iz){
                     int k = 2 * (iz - child_from_iz) + 1;
 
-                    // cout << format("i, j, k = %d, %d, %d") % i % j % k << endl;
-                    // cout << format("ix, iy, iz = %d, %d, %d") % ix % iy % iz << endl;
                     childValue[i][j][k] += poisson_error[ix][iy][iz];
 
                     if(iz != child_to_iz) {
@@ -105,7 +103,6 @@ void Grid::correctChildrenPhi() {
 // 子グリッドへRhoをコピーする
 void Grid::interpolateRhoValueToChildren() {
     RhoArray& tdValue = field->getRho();
-    cout << "-- Updating Children Rho by " << id << " --" << endl;
 
     for(int chidx = 0; chidx < children.size(); ++chidx) {
         RhoArray& childValue = children[chidx]->getRho();
@@ -166,7 +163,6 @@ void Grid::interpolateRhoValueToChildren() {
 // 子グリッドへPhiをコピーする
 void Grid::restrictPhiValueToChildren() {
     tdArray& parentPhi = field->getPhi();
-    cout << "-- Restricting Children Phi by " << id << " --" << endl;
 
     for(int chidx = 0; chidx < children.size(); ++chidx) {
         auto& child = children[chidx];
@@ -185,7 +181,7 @@ void Grid::restrictPhiValueToChildren() {
 
         //! x面束縛
         //! child_nx は 必ず奇数なので-1すれば2で割れる
-        for(int i = 1; i < child_nx + 2; i += child_nx) {
+        for(int i = 1; i < child_nx + 1; i += child_nx - 1) {
             int ix = ((i - 1)/2) + child_from_ix;
             for(int iy = child_from_iy; iy <= child_to_iy; ++iy) {
                 int j = 2 * (iy - child_from_iy) + 1;
@@ -209,7 +205,7 @@ void Grid::restrictPhiValueToChildren() {
         }
 
         //! y面束縛
-        for(int j = 1; j < child_ny + 2; j += child_ny) {
+        for(int j = 1; j < child_ny + 1; j += child_ny - 1) {
             int iy = ((j - 1)/2) + child_from_iy;
             for(int ix = child_from_ix; ix <= child_to_ix; ++ix) {
                 int i = 2 * (ix - child_from_ix) + 1;
@@ -233,7 +229,7 @@ void Grid::restrictPhiValueToChildren() {
         }
 
         //! z面束縛
-        for(int k = 1; k < child_nz + 2; k += child_nz) {
+        for(int k = 1; k < child_nz + 1; k += child_nz - 1) {
             int iz = ((k - 1)/2) + child_from_iz;
             for(int ix = child_from_ix; ix <= child_to_ix; ++ix) {
                 int i = 2 * (ix - child_from_ix) + 1;

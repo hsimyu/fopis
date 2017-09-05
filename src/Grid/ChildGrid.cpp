@@ -137,6 +137,7 @@ void ChildGrid::copyPhiToParent(){
     tdArray& residual = field->getPoissonResidual();
     tdArray& parentPhi = parent->getPhi();
     RhoArray& parentRho = parent->getRho();
+    const double per_dx2 = 1.0 / pow(parent->getDx(), 2);
     const double rho_coeff = -Normalizer::eps0;
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
@@ -145,20 +146,20 @@ void ChildGrid::copyPhiToParent(){
             int j = 2 * (iy - from_iy) + 1;
             for(int iz = from_iz; iz <= to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
-                //! まず v^2h -> v^h にコピーする
+                //! まず v^h -> v^2h にコピーする
                 parentPhi[ix][iy][iz] = phi[i][j][k];
             }
         }
     }
-    for(int ix = from_ix; ix <= to_ix; ++ix){
+    for(int ix = from_ix + 1; ix < to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
-        for(int iy = from_iy; iy <= to_iy; ++iy){
+        for(int iy = from_iy + 1; iy < to_iy; ++iy){
             int j = 2 * (iy - from_iy) + 1;
-            for(int iz = from_iz; iz <= to_iz; ++iz){
+            for(int iz = from_iz + 1; iz < to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
-                //! Au^2h = A^2h v^2h + r^2h となるように
-                //! PoissonOperatorを適用し、現在のGridのResidualを足したものを新しいソース項とする
-                parentRho[0][ix][iy][iz] = rho_coeff * (field->poissonOperator(parentPhi, ix, iy, iz) + residual[i][j][k]);
+                //! ソース項が A^2h v^2h + r^2h となるように
+                //! PoissonOperatorを適用し、現在のGridのResidualを足したものに-eps0をかけて新しいrhoとする
+                parentRho[0][ix][iy][iz] = rho_coeff * (field->poissonOperator(parentPhi, ix, iy, iz) * per_dx2 + residual[i][j][k]);
             }
         }
     }
