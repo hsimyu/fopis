@@ -78,7 +78,7 @@ void RootGrid::solvePoisson(void) {
 
     if (this->getChildrenLength() > 0) {
         cout << "-- Solve Poisson [PRE] " << PRE_LOOP_NUM << " on RootGrid --" << endl;
-        field->solvePoissonOnRoot(PRE_LOOP_NUM, dx);
+        this->solvePoissonPSOR(PRE_LOOP_NUM);
         this->updateChildrenPhi();
 
         cout << "-- Calling Children Poisson by " << id << " --" << endl;
@@ -89,12 +89,127 @@ void RootGrid::solvePoisson(void) {
     }
 
     cout << "-- Solve Poisson [POST] " << POST_LOOP_NUM << " on RootGrid --" << endl;
-    field->solvePoissonOnRoot(POST_LOOP_NUM, dx);
+    this->solvePoissonPSOR(POST_LOOP_NUM);
 
     if (this->getChildrenLength() > 0) {
         this->correctChildrenPhi();
     }
 }
+
+void RootGrid::solvePoissonPSOR(const int loopnum) {
+    auto& phi = field->getPhi();
+    auto& poisson_error = field->getPoissonError();
+    auto& rho = field->getRho();
+
+    const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
+    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    constexpr double required_error = 1.0e-7;
+
+    field->setBoundaryConditionPhi();
+
+    const bool is_not_boundary[6] = {
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
+    };
+
+    poisson_error = phi;
+
+    for(int loop = 1; loop <= loopnum; ++loop) {
+        //! is_not_boundaryは各方向の境界について
+        //! 「その境界は計算空間の境界でない」か「その境界が計算空間の境界であり、周期境界である」場合にtrueとなるため
+        //! 各方向の端要素の計算をIterationで計算する場合にチェックする必要がある
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+                for(int j = 1; j < cy_with_glue - 1; ++j){
+                    if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
+                        for(int i = 1; i < cx_with_glue - 1; ++i){
+                            if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                                phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
+        MPIw::Environment::sendRecvField(phi);
+
+        if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
+            cout << "performed " << loop << " iterations." << endl;
+            break;
+        }
+    }
+
+    field->setBoundaryConditionPhi();
+
+    //! 全グリッド上のエラーを更新
+    for(int k = 0; k < cz_with_glue; ++k){
+        for(int j = 0; j < cy_with_glue; ++j){
+            for(int i = 0; i < cx_with_glue; ++i){
+                poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
+            }
+        }
+    }
+}
+
+//! 電位分布の残差の最大ノルムを返す
+double RootGrid::checkPhiResidual() {
+    double residual = 0.0;
+    const double normalized_eps = Normalizer::eps0;
+
+    const bool is_not_boundary[6] = {
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
+    };
+
+    auto& phi = field->getPhi();
+    auto& rho = field->getRho();
+    auto& poisson_residual = field->getPoissonResidual();
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
+                    for(int i = 1; i < cx_with_glue - 1; ++i){
+                        if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                            double source_value = rho[0][i][j][k]/normalized_eps;
+                            double tmp_res = field->poissonOperator(phi, i, j, k) + source_value;
+                            poisson_residual[i][j][k] = tmp_res;
+
+                            if (fabs(tmp_res / source_value) > residual) {
+                                residual = fabs(tmp_res / source_value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if(MPIw::Environment::numprocs > 1) {
+        residual = MPIw::Environment::Comms["world"].max(residual);
+    }
+    return residual;
+}
+
 
 void RootGrid::updateEfield(void) {
     field->updateEfield(dx);

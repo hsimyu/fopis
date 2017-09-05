@@ -31,17 +31,8 @@ class Field {
         tdArray jy;
         tdArray jz;
 
-        void setBoundaryConditionPhi(void);
         void setDirichletPhi(const AXIS, const AXIS_SIDE);
         void setNeumannPhi(const AXIS, const AXIS_SIDE);
-
-        //! solver の実体
-        void solvePoissonPSOROnRoot(const int, const double);
-        double checkPhiResidualOnRoot(void);
-
-        //! 子グリッド用
-        void solvePoissonPSOROnChild(const int, const double);
-        double checkPhiResidualOnChild(const double);
 
     public:
         Field(void) :
@@ -72,6 +63,7 @@ class Field {
         tdArray& getPhi(){ return phi; }
         tdArray& getPoissonResidual(){ return poisson_residual; }
         tdArray& getPoissonError(){ return poisson_error; }
+        void setBoundaryConditionPhi(void);
 
         double poissonOperator(const tdArray& phi, const int i, const int j, const int k) const {
             return (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]);
@@ -118,9 +110,6 @@ class Field {
         void setDampingBoundaryOnEfield(void);
 
         void updateBfield(const double dx, const int, const int, const int, const double dt);
-        void solvePoissonOnRoot(const int, const double);
-        void solvePoissonOnChild(const int, const double);
-
         void initializeCurrent(const double dt);
 
         double getEfieldEnergy(void) const;

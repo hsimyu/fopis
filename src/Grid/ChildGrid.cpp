@@ -79,7 +79,7 @@ void ChildGrid::solvePoisson(void) {
 
     if (this->getChildrenLength() > 0) {
         cout << "-- Solve Poisson [PRE] " << PRE_LOOP_NUM << " on ChildGrid " << id << " --" << endl;
-        field->solvePoissonOnChild(PRE_LOOP_NUM, dx);
+        this->solvePoissonPSOR(PRE_LOOP_NUM);
         this->updateChildrenPhi();
 
         for(auto& child : children) {
@@ -89,12 +89,83 @@ void ChildGrid::solvePoisson(void) {
     }
 
     cout << "-- Solve Poisson [POST] " << POST_LOOP_NUM << " on ChildGrid " << id << " --" << endl;
-    field->solvePoissonOnChild(POST_LOOP_NUM, dx);
+    this->solvePoissonPSOR(POST_LOOP_NUM);
 
     if (this->getChildrenLength() > 0) {
         this->correctChildrenPhi();
     }
 }
+
+void ChildGrid::solvePoissonPSOR(const int loopnum) {
+    auto& phi = field->getPhi();
+    auto& poisson_error = field->getPoissonError();
+    auto& rho = field->getRho();
+
+    const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
+    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    constexpr double required_error = 1.0e-7;
+
+    poisson_error = phi;
+
+    for(int loop = 1; loop <= loopnum; ++loop) {
+        for(int k = 2; k < cz_with_glue - 2; ++k){
+            for(int j = 2; j < cy_with_glue - 2; ++j){
+                for(int i = 2; i < cx_with_glue - 2; ++i){
+                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                }
+            }
+        }
+
+        if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
+            cout << "performed " << loop << " iterations." << endl;
+            break;
+        }
+    }
+
+    //! 全グリッド上のエラーを更新
+    for(int k = 0; k < cz_with_glue; ++k){
+        for(int j = 0; j < cy_with_glue; ++j){
+            for(int i = 0; i < cx_with_glue; ++i){
+                poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
+            }
+        }
+    }
+}
+
+double ChildGrid::checkPhiResidual() {
+    double residual = 0.0;
+    const double normalized_eps = Normalizer::eps0;
+    const double per_dx2 = 1.0 / pow(dx, 2);
+
+    auto& phi = field->getPhi();
+    auto& rho = field->getRho();
+    auto& poisson_residual = field->getPoissonResidual();
+
+    const int cx_with_glue = phi.shape()[0];
+    const int cy_with_glue = phi.shape()[1];
+    const int cz_with_glue = phi.shape()[2];
+
+    for(int k = 2; k < cz_with_glue - 2; ++k){
+        for(int j = 2; j < cy_with_glue - 2; ++j){
+            for(int i = 2; i < cx_with_glue - 2; ++i){
+                double source_value = rho[0][i][j][k]/normalized_eps;
+                double tmp_res = field->poissonOperator(phi, i, j, k) * per_dx2 + source_value;
+                poisson_residual[i][j][k] = tmp_res;
+
+                if (fabs(tmp_res / source_value) > residual) {
+                    residual = fabs(tmp_res / source_value);
+                }
+            }
+        }
+    }
+    return residual;
+}
+
 
 void ChildGrid::updateEfield(void) {
     field->updateEfield(dx);

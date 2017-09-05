@@ -68,6 +68,10 @@ class Grid  : public std::enable_shared_from_this<Grid> {
 
         //! 場の初期化
         void initializeField();
+
+        //! ポアソンソルバの実体
+        virtual void solvePoissonPSOR(const int loopnum) = 0;
+        virtual double checkPhiResidual() = 0;
     public:
         Grid();
         ~Grid();
@@ -328,6 +332,9 @@ class RootGrid : public Grid {
         virtual int getXNodeSize(void) const override;
         virtual int getYNodeSize(void) const override;
         virtual int getZNodeSize(void) const override;
+
+        virtual void solvePoissonPSOR(const int loopnum) override;
+        virtual double checkPhiResidual() override;
 };
 
 class ChildGrid : public Grid {
@@ -355,5 +362,7 @@ class ChildGrid : public Grid {
         virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) override;
         virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) override;
         virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) override;
+        virtual void solvePoissonPSOR(const int loopnum) override;
+        virtual double checkPhiResidual() override;
 };
 #endif
