@@ -75,21 +75,19 @@ int ChildGrid::getZNodeSize(void) const { return nz; }
 
 void ChildGrid::solvePoisson(void) {
     constexpr int PRE_LOOP_NUM = 10;
-    constexpr int POST_LOOP_NUM = 10;
+    constexpr int POST_LOOP_NUM = 250;
 
     if (this->getChildrenLength() > 0) {
-        cout << "-- Solve Poisson [PRE] " << PRE_LOOP_NUM << " on ChildGrid " << id << " --" << endl;
         this->solvePoissonPSOR(PRE_LOOP_NUM);
         this->updateChildrenPhi();
 
         for(auto& child : children) {
             child->solvePoisson();
-            child->copyPhiToParent();
         }
     }
 
-    cout << "-- Solve Poisson [POST] " << POST_LOOP_NUM << " on ChildGrid " << id << " --" << endl;
     this->solvePoissonPSOR(POST_LOOP_NUM);
+    this->copyPhiToParent();
 
     if (this->getChildrenLength() > 0) {
         this->correctChildrenPhi();

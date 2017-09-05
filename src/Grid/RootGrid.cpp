@@ -77,18 +77,14 @@ void RootGrid::solvePoisson(void) {
     constexpr int POST_LOOP_NUM = 250;
 
     if (this->getChildrenLength() > 0) {
-        cout << "-- Solve Poisson [PRE] " << PRE_LOOP_NUM << " on RootGrid --" << endl;
         this->solvePoissonPSOR(PRE_LOOP_NUM);
         this->updateChildrenPhi();
 
-        cout << "-- Calling Children Poisson by " << id << " --" << endl;
         for(auto& child : children) {
             child->solvePoisson();
-            child->copyPhiToParent();
         }
     }
 
-    cout << "-- Solve Poisson [POST] " << POST_LOOP_NUM << " on RootGrid --" << endl;
     this->solvePoissonPSOR(POST_LOOP_NUM);
 
     if (this->getChildrenLength() > 0) {

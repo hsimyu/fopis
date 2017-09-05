@@ -343,6 +343,7 @@ class ChildGrid : public Grid {
 
         virtual void updateRho(void) override;
         virtual void solvePoisson(void) override;
+        void solvePoissonPost(void);
         virtual void updateEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
