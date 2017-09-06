@@ -267,16 +267,14 @@ void Grid::updateParticlePositionES(void) {
 
     for(int i = 0; i < 6; ++i) {
         for(auto& p : pbuffRecv[i]){
-#ifdef DEBUG
-            if( particles[ p.typeId ].capacity() == particles[ p.typeId ].size() ) {
-                cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::getParticleType(p.typeId)->getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
-            }
-#endif
             if( p.isValid ) {
                 particles[ p.typeId ].push_back( std::move(p) );
             }
         }
     }
+
+    //! 子グリッドチェック
+    this->checkParticlesMoveIntoChildren();
 }
 
 void Grid::updateParticlePositionEM(void) {
@@ -378,11 +376,6 @@ void Grid::updateParticlePositionEM(void) {
 
     for(int i = 0; i < 6; ++i) {
         for(auto& p : pbuffRecv[i]){
-#ifdef DEBUG
-            if( particles[ p.typeId ].capacity() == particles[ p.typeId ].size() ) {
-                cout << format("[WARNING] The size of %s array is full.: capacity = %d, size = %d") % Environment::getParticleType(p.typeId)->getName() % particles[ p.typeId ].capacity() % particles[ p.typeId ].capacity()<< endl;
-            }
-#endif
             if(p.isValid) {
                 const int pid = p.typeId;
                 const double q_per_dt = Environment::getParticleType(pid)->getChargeOfSuperParticle() / dt;
@@ -391,6 +384,39 @@ void Grid::updateParticlePositionEM(void) {
             }
         }
     }
+
+    this->checkParticlesMoveIntoChildren();
+}
+
+void Grid::checkParticlesMoveIntoChildren() {
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        for(auto& p : particles[pid]) {
+            int index = this->getChildIndexIfCovered(p.getPosition());
+
+            if (index >= 0) {
+                this->moveParticleToChild(index, p);
+            }
+        }
+    }
+}
+
+void Grid::moveParticleToChild(int child_index, Particle& p) {
+    // cout << format("It should be move to child[%d]!") % child_index << endl;
+    // cout << p << endl;
+    Particle new_particle = p; // コピー演算
+
+    auto& child = children[child_index];
+    new_particle.x = 2.0 * (new_particle.x - static_cast<double>(child->getFromIX()) + 1.0);
+    new_particle.y = 2.0 * (new_particle.y - static_cast<double>(child->getFromIY()) + 1.0);
+    new_particle.z = 2.0 * (new_particle.z - static_cast<double>(child->getFromIZ()) + 1.0);
+
+    // cout << "...will move to new particle on child grid:" << endl;
+    // cout << new_particle << endl;
+
+    //! 親グリッド上の粒子をinvalidに
+    p.makeInvalid();
+    //! 子グリッド上の粒子をpush
+    particles[p.typeId].push_back(std::move( new_particle ));
 }
 
 double Grid::getParticleEnergy(void) const {
