@@ -38,6 +38,9 @@ ChildGrid::ChildGrid(std::shared_ptr<Grid> g, const int _from_ix, const int _fro
 
     // Field初期化
     this->initializeField();
+
+    //! - particle types 分だけresize
+    particles.resize(Environment::num_of_particle_types);
 }
 
 void ChildGrid::checkGridValidness() {
