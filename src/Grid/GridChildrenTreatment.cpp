@@ -158,68 +158,8 @@ void Grid::updateChildrenPhi() {
     }
 }
 
-// 子グリッドへRhoをコピーする
-void Grid::interpolateRhoValueToChildren() {
-    RhoArray& tdValue = field->getRho();
-
-    for(int chidx = 0; chidx < children.size(); ++chidx) {
-        RhoArray& childValue = children[chidx]->getRho();
-
-        int child_from_ix = children[chidx]->getFromIX();
-        int child_from_iy = children[chidx]->getFromIY();
-        int child_from_iz = children[chidx]->getFromIZ();
-        int child_to_ix = children[chidx]->getToIX();
-        int child_to_iy = children[chidx]->getToIY();
-        int child_to_iz = children[chidx]->getToIZ();
-
-        for(int ix = child_from_ix; ix <= child_to_ix; ++ix) {
-            int i = 2 * (ix - child_from_ix) + 1;
-            for(int iy = child_from_iy; iy <= child_to_iy; ++iy) {
-                int j = 2 * (iy - child_from_iy) + 1;
-                for(int iz = child_from_iz; iz <= child_to_iz; ++iz) {
-                    int k = 2 * (iz - child_from_iz) + 1;
-
-                    childValue[0][i][j][k] = tdValue[0][ix][iy][iz];
-
-                    if(iz != child_to_iz) {
-                        childValue[0][i][j][k + 1] = 0.5 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1]);
-                    }
-
-                    if(iy != child_to_iy) {
-                        childValue[0][i][j + 1][k] = 0.5 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy + 1][iz]);
-
-                        if(iz != child_to_iz) {
-                            childValue[0][i][j + 1][k + 1] = 0.25 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1] + tdValue[0][ix][iy + 1][iz] + tdValue[0][ix][iy + 1][iz + 1]);
-                        }
-                    }
-
-                    if(ix != child_to_ix) {
-                        childValue[0][i + 1][j][k] = 0.5 * (tdValue[0][ix][iy][iz] + tdValue[0][ix + 1][iy][iz]);
-
-                        if(iz != child_to_iz) {
-                            childValue[0][i + 1][j][k + 1] = 0.25 * (tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1] + tdValue[0][ix + 1][iy][iz] + tdValue[0][ix + 1][iy][iz + 1]);
-                        }
-
-                        if(iy != child_to_iy) {
-                            childValue[0][i + 1][j + 1][k] = 0.25 * (tdValue[0][ix][iy][iz] + tdValue[0][ix + 1][iy][iz] + tdValue[0][ix][iy + 1][iz] + tdValue[0][ix + 1][iy + 1][iz]);
-
-                            if(iz != child_to_iz) {
-                                childValue[0][i + 1][j + 1][k + 1] = 0.125 *
-                                    ( tdValue[0][ix][iy][iz] + tdValue[0][ix][iy][iz + 1] + tdValue[0][ix][iy + 1][iz] + tdValue[0][ix][iy + 1][iz + 1]
-                                    + tdValue[0][ix + 1][iy][iz] + tdValue[0][ix + 1][iy][iz + 1] + tdValue[0][ix + 1][iy + 1][iz] + tdValue[0][ix + 1][iy + 1][iz + 1]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if(children[chidx]->getChildrenLength() > 0) children[chidx]->interpolateRhoValueToChildren();
-    }
-}
-
 // 子グリッドへPhiをコピーする
-void Grid::restrictPhiValueToChildren() {
+void Grid::restrictPhiToChildrenBoundary() {
     tdArray& parentPhi = field->getPhi();
 
     for(int chidx = 0; chidx < children.size(); ++chidx) {

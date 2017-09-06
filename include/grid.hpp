@@ -147,7 +147,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void updateChildrenPhi();
         void correctChildrenPhi();
         void interpolateRhoValueToChildren();
-        void restrictPhiValueToChildren();
+        void restrictPhiToChildrenBoundary();
 
         //! 子が存在する場所かどうかを判定する
         int getChildIndexIfCovered(const int i, const int j, const int k) const;
@@ -184,6 +184,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         virtual void updateRho(void) = 0;
         virtual void solvePoisson(void) = 0;
         virtual void updateEfield(void) = 0;
+        virtual void updateReferenceEfield() = 0;
         virtual void updateEfieldFDTD(void) = 0;
         virtual void updateBfield(void) = 0;
 
@@ -240,6 +241,7 @@ class RootGrid : public Grid {
         virtual void updateRho(void) override;
         virtual void solvePoisson(void) override;
         virtual void updateEfield(void) override;
+        virtual void updateReferenceEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
 
@@ -363,6 +365,7 @@ class ChildGrid : public Grid {
         virtual void solvePoisson(void) override;
         void solvePoissonPost(void);
         virtual void updateEfield(void) override;
+        virtual void updateReferenceEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
 

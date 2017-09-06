@@ -104,9 +104,7 @@ class Field {
         tdArray& getJy(){ return jy; }
         tdArray& getJz(){ return jz; }
 
-        void updateEfield(const double dx);
         void updateEfieldFDTD(const double dx, const double dt);
-        void updateReferenceEfield(void);
         void setDampingBoundaryOnEfield(void);
 
         void updateBfield(const double dx, const int, const int, const int, const double dt);

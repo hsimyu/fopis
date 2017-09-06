@@ -82,7 +82,7 @@ void ChildGrid::solvePoisson(void) {
 
     if (this->getChildrenLength() > 0) {
         this->solvePoissonPSOR(PRE_LOOP_NUM);
-        this->updateChildrenPhi();
+        this->restrictPhiToChildrenBoundary();
 
         for(auto& child : children) {
             child->solvePoisson();
@@ -167,9 +167,61 @@ double ChildGrid::checkPhiResidual() {
     return residual;
 }
 
+//! @brief 差分法で電場を更新する
+//! e = - (p_+1 - p_+0)/dx
+void ChildGrid::updateEfield() {
+    auto& ex = field->getEx();
+    auto& ey = field->getEy();
+    auto& ez = field->getEz();
+    auto& phi = field->getPhi();
 
-void ChildGrid::updateEfield(void) {
-    field->updateEfield(dx);
+    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
+    const double per_dx = 1.0 / dx;
+
+    //! @note:隣と通信しなくてもいい
+    //! phiが通信してあるため、端の要素を通信なしで計算可能
+    for(int i = 0; i < cx_with_glue; ++i){
+        for(int j = 0; j < cy_with_glue; ++j){
+            for(int k = 0; k < cz_with_glue; ++k){
+                //! 各方向には1つ少ないのでcx-1まで
+                if(i < cx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * per_dx;
+                if(j < cy_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * per_dx;
+                if(k < cz_with_glue - 1) ez[i][j][k] = (phi[i][j][k] - phi[i][j][k + 1]) * per_dx;
+            }
+        }
+    }
+
+    this->updateReferenceEfield();
+
+    for(auto& child : children) {
+        child->updateEfield();
+    }
+}
+
+//! Reference Efield (ノード上で定義される電場) を更新する
+void ChildGrid::updateReferenceEfield() {
+    auto& ex = field->getEx();
+    auto& ey = field->getEy();
+    auto& ez = field->getEz();
+    auto& exref = field->getExRef();
+    auto& eyref = field->getEyRef();
+    auto& ezref = field->getEzRef();
+    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
+
+    //! reference 更新
+    for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
+                eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
+                ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
+            }
+        }
+    }
 }
 
 void ChildGrid::updateEfieldFDTD(void) {
@@ -181,16 +233,11 @@ void ChildGrid::updateBfield(void) {
 }
 
 void ChildGrid::moveParticleToParent(Particle& p) {
-    cout << "It should be move to parent!:" << endl;
-    cout << p << endl;
     Particle new_particle = p; // コピー演算
 
     new_particle.x = (new_particle.x / 2.0 + static_cast<double>(from_ix) - 1.0);
     new_particle.y = (new_particle.y / 2.0 + static_cast<double>(from_iy) - 1.0);
     new_particle.z = (new_particle.z / 2.0 + static_cast<double>(from_iz) - 1.0);
-
-    cout << "...will move to new particle on parent grid:" << endl;
-    cout << new_particle << endl;
 
     //! 親グリッド上の粒子をinvalidに
     p.makeInvalid();
@@ -206,7 +253,7 @@ void ChildGrid::updateRho() {
     Utils::initializeRhoArray(rho);
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        double q = Environment::getParticleType(pid)->getChargeOfSuperParticle();
+        double q = Environment::getParticleType(pid)->getChargeOfSuperParticle() * 8.0;
         const auto rho_idx = pid + 1;
 
         for(auto& p : particles[pid]) {
@@ -235,11 +282,6 @@ void ChildGrid::updateRho() {
             }
         }
     }
-
-    //! 子に電荷を再帰的にコピ-
-    // if (children.size() > 0) {
-    //     this->interpolateRhoValueToChildren();
-    // }
 
     //! 子の電荷更新
     for(auto& child : children) {

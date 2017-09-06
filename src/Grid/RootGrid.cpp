@@ -78,7 +78,7 @@ void RootGrid::solvePoisson(void) {
 
     if (this->getChildrenLength() > 0) {
         this->solvePoissonPSOR(PRE_LOOP_NUM);
-        this->updateChildrenPhi();
+        this->restrictPhiToChildrenBoundary();
 
         for(auto& child : children) {
             child->solvePoisson();
@@ -206,9 +206,123 @@ double RootGrid::checkPhiResidual() {
     return residual;
 }
 
+//! @brief 差分法で電場を更新する
+//! e = - (p_+1 - p_+0)/dx
+void RootGrid::updateEfield() {
+    auto& ex = field->getEx();
+    auto& ey = field->getEy();
+    auto& ez = field->getEz();
+    auto& phi = field->getPhi();
 
-void RootGrid::updateEfield(void) {
-    field->updateEfield(dx);
+    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
+    const double per_dx = 1.0 / dx;
+
+    //! @note:隣と通信しなくてもいい
+    //! phiが通信してあるため、端の要素を通信なしで計算可能
+    for(int i = 0; i < cx_with_glue; ++i){
+        for(int j = 0; j < cy_with_glue; ++j){
+            for(int k = 0; k < cz_with_glue; ++k){
+                //! 各方向には1つ少ないのでcx-1まで
+                if(i < cx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * per_dx;
+                if(j < cy_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * per_dx;
+                if(k < cz_with_glue - 1) ez[i][j][k] = (phi[i][j][k] - phi[i][j][k + 1]) * per_dx;
+            }
+        }
+    }
+
+    this->updateReferenceEfield();
+
+    for(auto& child : children) {
+        child->updateEfield();
+    }
+}
+
+//! Reference Efield (ノード上で定義される電場) を更新する
+void RootGrid::updateReferenceEfield() {
+    auto& ex = field->getEx();
+    auto& ey = field->getEy();
+    auto& ez = field->getEz();
+    auto& phi = field->getPhi();
+    auto& exref = field->getExRef();
+    auto& eyref = field->getEyRef();
+    auto& ezref = field->getEzRef();
+    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const int cy_with_glue = ey.shape()[1] + 1;
+    const int cz_with_glue = ez.shape()[2] + 1;
+
+    //! reference 更新
+    for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
+                eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
+                ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
+            }
+        }
+    }
+
+    //! 外側境界の条件設定
+    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) {
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                exref[0][j][k] = 0.0;
+
+                // Boundary である場合、更新 (これ正しい??)
+                exref[1][j][k] = 0.5 * (phi[3][j][k] - 4.0 * phi[2][j][k] + 3.0 * phi[1][j][k]);
+            }
+        }
+    }
+
+    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) {
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                exref[cx_with_glue - 1][j][k] = 0.0;
+                exref[cx_with_glue - 2][j][k] = 0.5 * (-phi[cx_with_glue - 4][j][k] + 4.0 * phi[cx_with_glue - 3][j][k] - 3.0 * phi[cx_with_glue - 2][j][k]);
+            }
+        }
+    }
+
+    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                eyref[i][0][k] = 0.0;
+                eyref[i][1][k] = 0.5 * (phi[i][3][k] - 4.0 * phi[i][2][k] + 3.0 * phi[i][1][k]);
+            }
+        }
+    }
+
+    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                eyref[i][cy_with_glue - 1][k] = 0.0;
+                eyref[i][cy_with_glue - 2][k] = 0.5 * (-phi[i][cy_with_glue - 4][k] + 4.0 * phi[i][cy_with_glue - 3][k] - 3.0 * phi[i][cy_with_glue - 2][k]);
+            }
+        }
+    }
+
+    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                ezref[i][j][0] = 0.0;
+                ezref[i][j][1] = 0.5 * (phi[i][j][3] - 4.0 * phi[i][j][2] + 3.0 * phi[i][j][1]);
+            }
+        }
+    }
+
+    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) {
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                ezref[i][j][cz_with_glue - 1] = 0.0;
+                ezref[i][j][cz_with_glue - 2] = 0.5 * (-phi[i][j][cz_with_glue - 4] + 4.0 * phi[i][j][cz_with_glue - 3] - 3.0 * phi[i][j][cz_with_glue - 2]);
+            }
+        }
+    }
+
+    MPIw::Environment::sendRecvField(exref);
+    MPIw::Environment::sendRecvField(eyref);
+    MPIw::Environment::sendRecvField(ezref);
 }
 
 void RootGrid::updateEfieldFDTD(void) {
@@ -572,10 +686,10 @@ void RootGrid::updateRho() {
         MPIw::Environment::sendRecvField(rho[pid]);
     }
 
-    //! 子に電荷を再帰的にコピ-
-    // if (children.size() > 0) {
-    //     this->interpolateRhoValueToChildren();
-    // }
+    //! 子の電荷更新
+    for(auto& child : children) {
+        child->updateRho();
+    }
 
     //! 物体が存在する場合、電荷再配分が必要になる
     if (objects.size() > 0) {
@@ -587,11 +701,6 @@ void RootGrid::updateRho() {
         }
 
         MPIw::Environment::sendRecvField(rho[0]);
-
-        //! 子に電荷を再帰的にコピ-
-        // if (children.size() > 0) {
-        //     this->interpolateRhoValueToChildren();
-        // }
     }
 
 #ifdef CHARGE_CONSERVATION
@@ -599,11 +708,6 @@ void RootGrid::updateRho() {
         field->checkChargeConservation(old_rho, 1.0, dx);
     }
 #endif
-
-    //! 子の電荷更新
-    for(auto& child : children) {
-        child->updateRho();
-    }
 }
 
 inline void RootGrid::decrementSumOfChild() { --sumTotalNumOfChildGrids; }
