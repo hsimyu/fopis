@@ -373,10 +373,19 @@ class ChildGrid : public Grid {
     private:
         std::shared_ptr<Grid> parent;
         void checkGridValidness();
+
         virtual int getXNodeSize(void) const override;
         virtual int getYNodeSize(void) const override;
         virtual int getZNodeSize(void) const override;
-        void checkBoundary(Particle& p, const double slx, const double sly, const double slz);
+
+        void moveParticleToParent(Particle& p);
+        void checkBoundary(Particle& p, const double slx, const double sly, const double slz) {
+            if(p.x < 0.0 || p.x > slx || p.y < 0.0 || p.y > sly || p.z < 0.0 || p.z > slz) {
+                //! 親へ送る
+                this->moveParticleToParent(p);
+            }
+        }
+
         virtual void solvePoissonPSOR(const int loopnum) override;
         virtual double checkPhiResidual() override;
 };

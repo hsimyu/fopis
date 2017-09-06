@@ -180,12 +180,22 @@ void ChildGrid::updateBfield(void) {
     field->updateBfield(dx, nx, ny, nz, dt);
 }
 
-inline void ChildGrid::checkBoundary(Particle& p, const double slx, const double sly, const double slz) {
-    if(p.x < 0.0 || p.x > slx || p.y < 0.0 || p.y > sly || p.z < 0.0 || p.z > slz) {
-        //! 親へ送る
-        // this->moveParticleToParent(p);
-        p.makeInvalid();
-    }
+void ChildGrid::moveParticleToParent(Particle& p) {
+    cout << "It should be move to parent!:" << endl;
+    cout << p << endl;
+    Particle new_particle = p; // コピー演算
+
+    new_particle.x = (new_particle.x / 2.0 + static_cast<double>(from_ix) - 1.0);
+    new_particle.y = (new_particle.y / 2.0 + static_cast<double>(from_iy) - 1.0);
+    new_particle.z = (new_particle.z / 2.0 + static_cast<double>(from_iz) - 1.0);
+
+    cout << "...will move to new particle on child grid:" << endl;
+    cout << new_particle << endl;
+
+    //! 親グリッド上の粒子をinvalidに
+    p.makeInvalid();
+    //! 子グリッド上の粒子をpush
+    // particles[p.typeId].push_back(std::move( new_particle ));
 }
 
 //! 粒子の位置から電荷を空間電荷にする

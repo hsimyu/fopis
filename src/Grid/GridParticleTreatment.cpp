@@ -435,9 +435,7 @@ void ChildGrid::updateParticlePositionEM(void) {
                 p.distributeCurrentAtOldPosition(q_per_dt, jx, jy, jz);
                 p.updatePosition();
 
-                checkXBoundary(p, slx);
-                checkYBoundary(p, sly);
-                checkZBoundary(p, slz);
+                checkBoundary(p, slx, sly, slz);
 
                 // check 後も valid であれば配分してOK
                 if (p.isValid) {
