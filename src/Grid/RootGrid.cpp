@@ -573,9 +573,9 @@ void RootGrid::updateRho() {
     }
 
     //! 子に電荷を再帰的にコピ-
-    if (children.size() > 0) {
-        this->interpolateRhoValueToChildren();
-    }
+    // if (children.size() > 0) {
+    //     this->interpolateRhoValueToChildren();
+    // }
 
     //! 物体が存在する場合、電荷再配分が必要になる
     if (objects.size() > 0) {
@@ -589,9 +589,9 @@ void RootGrid::updateRho() {
         MPIw::Environment::sendRecvField(rho[0]);
 
         //! 子に電荷を再帰的にコピ-
-        if (children.size() > 0) {
-            this->interpolateRhoValueToChildren();
-        }
+        // if (children.size() > 0) {
+        //     this->interpolateRhoValueToChildren();
+        // }
     }
 
 #ifdef CHARGE_CONSERVATION
@@ -599,6 +599,11 @@ void RootGrid::updateRho() {
         field->checkChargeConservation(old_rho, 1.0, dx);
     }
 #endif
+
+    //! 子の電荷更新
+    for(auto& child : children) {
+        child->updateRho();
+    }
 }
 
 inline void RootGrid::decrementSumOfChild() { --sumTotalNumOfChildGrids; }

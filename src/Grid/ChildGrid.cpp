@@ -247,8 +247,13 @@ void ChildGrid::updateRho() {
     }
 
     //! 子に電荷を再帰的にコピ-
-    if (children.size() > 0) {
-        this->interpolateRhoValueToChildren();
+    // if (children.size() > 0) {
+    //     this->interpolateRhoValueToChildren();
+    // }
+
+    //! 子の電荷更新
+    for(auto& child : children) {
+        child->updateRho();
     }
 }
 
