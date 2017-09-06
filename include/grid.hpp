@@ -70,6 +70,9 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         virtual void updateParticlePositionES(void) = 0;
         virtual void updateParticlePositionEM(void) = 0;
 
+        //! 子に個々の粒子を移動する
+        void moveParticleToChild(int child_index, Particle& p);
+
         //! 場の初期化
         void initializeField();
 
@@ -136,6 +139,8 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         //! 粒子関連
         ParticleArray& getParticles() {return particles;}
         size_t getValidParticleNumber(const int) const;
+        void addParticle(const Particle& p);
+        void addParticle(Particle&& p);
 
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
@@ -147,11 +152,12 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         //! 子が存在する場所かどうかを判定する
         int getChildIndexIfCovered(const int i, const int j, const int k) const;
         int getChildIndexIfCovered(const Position& pos) const;
-        int getChildIndexIfCovered(Position&& pos) const;
+        bool checkSpecifiedChildDoesCoverThisPosition(const int index, const int i, const int j, const int k) const;
+        bool checkSpecifiedChildDoesCoverThisPosition(const int index, const Position& pos) const;
 
         //! 子に粒子を移動する
-        void checkParticlesMoveIntoChildren();
-        void moveParticleToChild(int child_index, Particle& p);
+        void moveParticlesIntoChildren();
+        void moveParticlesIntoSpecifiedChild(const int index);
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);

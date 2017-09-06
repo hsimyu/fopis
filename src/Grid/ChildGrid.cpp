@@ -189,13 +189,13 @@ void ChildGrid::moveParticleToParent(Particle& p) {
     new_particle.y = (new_particle.y / 2.0 + static_cast<double>(from_iy) - 1.0);
     new_particle.z = (new_particle.z / 2.0 + static_cast<double>(from_iz) - 1.0);
 
-    cout << "...will move to new particle on child grid:" << endl;
+    cout << "...will move to new particle on parent grid:" << endl;
     cout << new_particle << endl;
 
     //! 親グリッド上の粒子をinvalidに
     p.makeInvalid();
     //! 子グリッド上の粒子をpush
-    // particles[p.typeId].push_back(std::move( new_particle ));
+    parent->addParticle( std::move(new_particle) );
 }
 
 //! 粒子の位置から電荷を空間電荷にする

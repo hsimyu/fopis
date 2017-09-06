@@ -9,6 +9,23 @@ void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz,
 
 void Grid::addChild(std::unique_ptr<ChildGrid>&& child) {
     children.push_back( std::move(child) );
+
+    //! 粒子を内部に移動
+    this->moveParticlesIntoSpecifiedChild(children.size() - 1);
+}
+
+bool Grid::checkSpecifiedChildDoesCoverThisPosition(const int index, const int i, const int j, const int k) const {
+    auto& child = children[index];
+    if (
+        i >= child->getFromIX() && i < child->getToIX() &&
+        j >= child->getFromIY() && j < child->getToIY() &&
+        k >= child->getFromIZ() && k < child->getToIZ()
+    ) return true;
+    return false;
+}
+
+bool Grid::checkSpecifiedChildDoesCoverThisPosition(const int index, const Position& pos) const {
+    return checkSpecifiedChildDoesCoverThisPosition(index, pos.i, pos.j, pos.k);
 }
 
 int Grid::getChildIndexIfCovered(const int i, const int j, const int k) const {
@@ -24,10 +41,6 @@ int Grid::getChildIndexIfCovered(const int i, const int j, const int k) const {
 }
 
 int Grid::getChildIndexIfCovered(const Position& pos) const {
-    return this->getChildIndexIfCovered(pos.i, pos.j, pos.k);
-}
-
-int Grid::getChildIndexIfCovered(Position&& pos) const {
     return this->getChildIndexIfCovered(pos.i, pos.j, pos.k);
 }
 

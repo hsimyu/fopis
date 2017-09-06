@@ -11,6 +11,14 @@
 #include <random>
 #include <algorithm>
 
+void Grid::addParticle(const Particle& p) {
+    particles[p.typeId].push_back( p );
+}
+
+void Grid::addParticle(Particle&& p) {
+    particles[p.typeId].push_back( std::move(p) );
+}
+
 void Grid::updateParticleVelocity(void) {
     if (Environment::solver_type == "ES") {
         this->updateParticleVelocityES();
@@ -281,7 +289,7 @@ void RootGrid::updateParticlePositionES(void) {
     }
 
     //! 子グリッドへの移動をチェック
-    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
+    if(this->getChildrenLength() > 0) this->moveParticlesIntoChildren();
 }
 
 void RootGrid::updateParticlePositionEM(void) {
@@ -392,7 +400,7 @@ void RootGrid::updateParticlePositionEM(void) {
         }
     }
 
-    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
+    if(this->getChildrenLength() > 0) this->moveParticlesIntoChildren();
 }
 
 void ChildGrid::updateParticlePositionES(void) {
@@ -410,7 +418,7 @@ void ChildGrid::updateParticlePositionES(void) {
     }
 
     //! 子グリッドへの移動をチェック
-    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
+    if(this->getChildrenLength() > 0) this->moveParticlesIntoChildren();
 }
 
 void ChildGrid::updateParticlePositionEM(void) {
@@ -445,10 +453,11 @@ void ChildGrid::updateParticlePositionEM(void) {
         }
     }
 
-    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
+    if(this->getChildrenLength() > 0) this->moveParticlesIntoChildren();
 }
 
-void Grid::checkParticlesMoveIntoChildren() {
+void Grid::moveParticlesIntoChildren() {
+    size_t moved_num = 0;
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         for(auto& p : particles[pid]) {
             if (p.isValid) {
@@ -456,10 +465,27 @@ void Grid::checkParticlesMoveIntoChildren() {
 
                 if (index >= 0) {
                     this->moveParticleToChild(index, p);
+                    ++moved_num;
                 }
             }
         }
     }
+    cout << format("[%d-%d] %d particles move to children.") % level % id % moved_num << endl;
+}
+
+void Grid::moveParticlesIntoSpecifiedChild(const int index) {
+    size_t moved_num = 0;
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        for(auto& p : particles[pid]) {
+            if (p.isValid) {
+                if (this->checkSpecifiedChildDoesCoverThisPosition(index, p.getPosition())) {
+                    this->moveParticleToChild(index, p);
+                    ++moved_num;
+                }
+            }
+        }
+    }
+    cout << format("[%d-%d] %d particles move to children.") % level % id % moved_num << endl;
 }
 
 void Grid::moveParticleToChild(int child_index, Particle& p) {
@@ -478,7 +504,7 @@ void Grid::moveParticleToChild(int child_index, Particle& p) {
     //! 親グリッド上の粒子をinvalidに
     p.makeInvalid();
     //! 子グリッド上の粒子をpush
-    particles[p.typeId].push_back(std::move( new_particle ));
+    child->addParticle( std::move(new_particle) );
 }
 
 double Grid::getParticleEnergy(void) const {
