@@ -140,8 +140,14 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void interpolateRhoValueToChildren();
         void restrictPhiValueToChildren();
 
-        //! 子がいるかどうかを判定する
-        bool isCoveredPoint(const int i, const int j, const int k) const;
+        //! 子が存在する場所かどうかを判定する
+        int getChildIndexIfCovered(const int i, const int j, const int k) const;
+        int getChildIndexIfCovered(const Position& pos) const;
+        int getChildIndexIfCovered(Position&& pos) const;
+
+        //! 子に粒子を移動する
+        void checkParticlesMoveIntoChildren();
+        void moveParticleToChild(int child_index, Particle& p);
 
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);

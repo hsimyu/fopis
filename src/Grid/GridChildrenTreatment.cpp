@@ -11,15 +11,24 @@ void Grid::addChild(std::unique_ptr<ChildGrid>&& child) {
     children.push_back( std::move(child) );
 }
 
-bool Grid::isCoveredPoint(const int i, const int j, const int k) const {
-    for(const auto& child : children) {
+int Grid::getChildIndexIfCovered(const int i, const int j, const int k) const {
+    for(int index = 0; index < this->getChildrenLength(); ++index) {
+        auto& child = children[index];
         if (
-            i >= child->getFromIX() && i <= child->getToIX() &&
-            j >= child->getFromIY() && j <= child->getToIY() &&
-            k >= child->getFromIZ() && k <= child->getToIZ()
-        ) return true;
+            i >= child->getFromIX() && i < child->getToIX() &&
+            j >= child->getFromIY() && j < child->getToIY() &&
+            k >= child->getFromIZ() && k < child->getToIZ()
+        ) return index;
     }
-    return false;
+    return -1;
+}
+
+int Grid::getChildIndexIfCovered(const Position& pos) const {
+    return this->getChildIndexIfCovered(pos.i, pos.j, pos.k);
+}
+
+int Grid::getChildIndexIfCovered(Position&& pos) const {
+    return this->getChildIndexIfCovered(pos.i, pos.j, pos.k);
 }
 
 void Grid::correctChildrenPhi() {
