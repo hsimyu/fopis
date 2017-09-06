@@ -208,7 +208,49 @@ void ChildGrid::checkZBoundary(ParticleArray& pbuff, Particle& p, const double s
     }
 }
 
-void ChildGrid::updateRho() {}
+//! 粒子の位置から電荷を空間電荷にする
+void ChildGrid::updateRho() {
+    RhoArray& rho = field->getRho();
+
+    //! rhoを初期化
+    Utils::initializeRhoArray(rho);
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
+        double q = Environment::getParticleType(pid)->getChargeOfSuperParticle();
+        const auto rho_idx = pid + 1;
+
+        for(auto& p : particles[pid]) {
+            if(p.isValid) {
+                const auto pos = p.getPosition();
+                const int i = pos.i, j = pos.j, k = pos.k;
+
+                rho[rho_idx][i  ][j  ][k] += pos.dx2 * pos.dy2 * pos.dz2 * q;
+                rho[rho_idx][i+1][j  ][k] += pos.dx1 * pos.dy2 * pos.dz2 * q;
+                rho[rho_idx][i  ][j+1][k] += pos.dx2 * pos.dy1 * pos.dz2 * q;
+                rho[rho_idx][i+1][j+1][k] += pos.dx1 * pos.dy1 * pos.dz2 * q;
+                rho[rho_idx][i  ][j  ][k+1] += pos.dx2 * pos.dy2 * pos.dz1 * q;
+                rho[rho_idx][i+1][j  ][k+1] += pos.dx1 * pos.dy2 * pos.dz1 * q;
+                rho[rho_idx][i  ][j+1][k+1] += pos.dx2 * pos.dy1 * pos.dz1 * q;
+                rho[rho_idx][i+1][j+1][k+1] += pos.dx1 * pos.dy1 * pos.dz1 * q;
+            }
+        }
+    }
+
+    for(int pid = 1; pid < Environment::num_of_particle_types + 1; ++pid) {
+        for(int i = 1; i < nx + 2; ++i) {
+            for(int j = 1; j < ny + 2; ++j) {
+                for(int k = 1; k < nz + 2; ++k) {
+                    rho[0][i][j][k] += rho[pid][i][j][k];
+                }
+            }
+        }
+    }
+
+    //! 子に電荷を再帰的にコピ-
+    if (children.size() > 0) {
+        this->interpolateRhoValueToChildren();
+    }
+}
 
 void ChildGrid::copyPhiToParent(){
     tdArray& phi = field->getPhi();

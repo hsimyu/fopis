@@ -273,8 +273,8 @@ void Grid::updateParticlePositionES(void) {
         }
     }
 
-    //! 子グリッドチェック
-    this->checkParticlesMoveIntoChildren();
+    //! 子グリッドへの移動をチェック
+    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
 }
 
 void Grid::updateParticlePositionEM(void) {
@@ -385,7 +385,7 @@ void Grid::updateParticlePositionEM(void) {
         }
     }
 
-    this->checkParticlesMoveIntoChildren();
+    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
 }
 
 void Grid::checkParticlesMoveIntoChildren() {
