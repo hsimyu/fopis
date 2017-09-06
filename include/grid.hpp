@@ -140,6 +140,9 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void interpolateRhoValueToChildren();
         void restrictPhiValueToChildren();
 
+        //! 子がいるかどうかを判定する
+        bool isCoveredPoint(const int i, const int j, const int k) const;
+
         // 子供管理メソッド
         void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(std::unique_ptr<ChildGrid>&&);
