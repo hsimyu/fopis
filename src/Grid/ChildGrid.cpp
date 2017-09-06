@@ -177,33 +177,10 @@ void ChildGrid::updateBfield(void) {
     field->updateBfield(dx, nx, ny, nz, dt);
 }
 
-void ChildGrid::checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) {
-    if(p.x < 0.0) {
+inline void ChildGrid::checkBoundary(Particle& p, const double slx, const double sly, const double slz) {
+    if(p.x < 0.0 || p.x > slx || p.y < 0.0 || p.y > sly || p.z < 0.0 || p.z > slz) {
         //! 親へ送る
-        pbuff[0].push_back(p);
-        p.makeInvalid();
-    } else if (p.x > slx) {
-        pbuff[1].push_back(p);
-        p.makeInvalid();
-    }
-}
-
-void ChildGrid::checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) {
-    if(p.y < 0.0) {
-        pbuff[2].push_back(p);
-        p.makeInvalid();
-    } else if (p.y > sly) {
-        pbuff[3].push_back(p);
-        p.makeInvalid();
-    }
-}
-
-void ChildGrid::checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) {
-    if(p.z < 0.0) {
-        pbuff[4].push_back(p);
-        p.makeInvalid();
-    } else if (p.z > slz) {
-        pbuff[5].push_back(p);
+        // this->moveParticleToParent(p);
         p.makeInvalid();
     }
 }

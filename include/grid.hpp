@@ -61,10 +61,14 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         // 粒子更新用のメソッド
         //! ES: 静電
         //! EM: 電磁
+
+        //! 速度は同じロジックで更新できるため仮想関数でなくてよい
         void updateParticleVelocityES(void);
-        void updateParticlePositionES(void);
         void updateParticleVelocityEM(void);
-        void updateParticlePositionEM(void);
+
+        //! 粒子はRootGridのみ通信が必要になるため仮想関数化する
+        virtual void updateParticlePositionES(void) = 0;
+        virtual void updateParticlePositionEM(void) = 0;
 
         //! 場の初期化
         void initializeField();
@@ -210,11 +214,6 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const;
 
         void printInfo() const;
-
-        //! 粒子境界チェック
-        virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) = 0;
-        virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) = 0;
-        virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) = 0;
 };
 
 class RootGrid : public Grid {
@@ -238,10 +237,14 @@ class RootGrid : public Grid {
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
 
+        //! 粒子更新
+        virtual void updateParticlePositionES(void) override;
+        virtual void updateParticlePositionEM(void) override;
+
         virtual void incrementSumOfChild(void) override;
         virtual void decrementSumOfChild(void) override;
 
-        virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) override {
+        void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) {
             if(p.x < 0.0) {
                 if (Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
                     // 計算空間の端でない場合は粒子を隣へ送る
@@ -263,7 +266,7 @@ class RootGrid : public Grid {
             }
         }
 
-        virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) override {
+        void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) {
             if(p.y < 0.0) {
                 if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) pbuff[2].push_back(p);
                 p.makeInvalid();
@@ -279,7 +282,7 @@ class RootGrid : public Grid {
             }
         }
 
-        virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) override {
+        void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) {
             if(p.z < 0.0) {
                 if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) pbuff[4].push_back(p);
                 p.makeInvalid();
@@ -357,6 +360,10 @@ class ChildGrid : public Grid {
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
 
+        //! 粒子更新
+        virtual void updateParticlePositionES(void) override;
+        virtual void updateParticlePositionEM(void) override;
+
         void  setParent(std::shared_ptr<Grid> g){ parent = g; }
         std::shared_ptr<Grid> getParent(){ return parent; }
         void copyPhiToParent();
@@ -369,9 +376,7 @@ class ChildGrid : public Grid {
         virtual int getXNodeSize(void) const override;
         virtual int getYNodeSize(void) const override;
         virtual int getZNodeSize(void) const override;
-        virtual void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) override;
-        virtual void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) override;
-        virtual void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) override;
+        void checkBoundary(Particle& p, const double slx, const double sly, const double slz);
         virtual void solvePoissonPSOR(const int loopnum) override;
         virtual double checkPhiResidual() override;
 };

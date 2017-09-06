@@ -183,6 +183,13 @@ void Grid::updateParticleVelocityEM(void) {
 }
 
 void Grid::updateParticlePosition(void) {
+    //! 先に子を2回分更新する
+    for(auto& child : children) {
+        child->updateParticlePosition();
+        child->updateParticleVelocity();
+        child->updateParticlePosition();
+    }
+
     if (Environment::solver_type == "ES") {
         this->updateParticlePositionES();
     } else {
@@ -190,7 +197,7 @@ void Grid::updateParticlePosition(void) {
     }
 }
 
-void Grid::updateParticlePositionES(void) {
+void RootGrid::updateParticlePositionES(void) {
     std::vector< std::vector<Particle> > pbuff(6);
     std::vector< std::vector<Particle> > pbuffRecv(6);
 
@@ -277,7 +284,7 @@ void Grid::updateParticlePositionES(void) {
     if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
 }
 
-void Grid::updateParticlePositionEM(void) {
+void RootGrid::updateParticlePositionEM(void) {
     std::vector< std::vector<Particle> > pbuff(6);
     std::vector< std::vector<Particle> > pbuffRecv(6);
 
@@ -388,13 +395,70 @@ void Grid::updateParticlePositionEM(void) {
     if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
 }
 
+void ChildGrid::updateParticlePositionES(void) {
+    const double slx = dx * nx;
+    const double sly = dx * ny;
+    const double slz = dx * nz;
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        for(auto& p : particles[pid]) {
+            if(p.isValid) {
+                p.updatePosition();
+                checkBoundary(p, slx, sly, slz);
+            }
+        }
+    }
+
+    //! 子グリッドへの移動をチェック
+    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
+}
+
+void ChildGrid::updateParticlePositionEM(void) {
+    const double slx = dx * nx;
+    const double sly = dx * ny;
+    const double slz = dx * nz;
+
+    tdArray& jx = field->getJx();
+    tdArray& jy = field->getJy();
+    tdArray& jz = field->getJz();
+
+    // 電流配列を初期化
+    field->initializeCurrent(dt);
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        //! note: 1/dxdydz 分を係数としてかけておく必要がある？
+        const double q_per_dt = Environment::getParticleType(pid)->getCharge() / dt;
+
+        for(int i = 0; i < particles[pid].size(); ++i){
+            Particle& p = particles[pid][i];
+            if(p.isValid) {
+                p.distributeCurrentAtOldPosition(q_per_dt, jx, jy, jz);
+                p.updatePosition();
+
+                checkXBoundary(p, slx);
+                checkYBoundary(p, sly);
+                checkZBoundary(p, slz);
+
+                // check 後も valid であれば配分してOK
+                if (p.isValid) {
+                    p.distributeCurrentAtNewPosition(q_per_dt, jx, jy, jz);
+                }
+            }
+        }
+    }
+
+    if(this->getChildrenLength() > 0) this->checkParticlesMoveIntoChildren();
+}
+
 void Grid::checkParticlesMoveIntoChildren() {
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         for(auto& p : particles[pid]) {
-            int index = this->getChildIndexIfCovered(p.getPosition());
+            if (p.isValid) {
+                int index = this->getChildIndexIfCovered(p.getPosition());
 
-            if (index >= 0) {
-                this->moveParticleToChild(index, p);
+                if (index >= 0) {
+                    this->moveParticleToChild(index, p);
+                }
             }
         }
     }
