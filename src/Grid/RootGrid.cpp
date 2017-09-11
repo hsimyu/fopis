@@ -28,6 +28,9 @@ RootGrid::RootGrid() : Grid() {
     base_z = dx * static_cast<double>(from_iz);
     //! @}
 
+    //! ChildMap初期化
+    this->initializeChildMap();
+
     // Field初期化
     this->initializeField();
 

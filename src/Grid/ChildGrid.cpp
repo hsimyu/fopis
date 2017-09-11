@@ -30,6 +30,8 @@ ChildGrid::ChildGrid(std::shared_ptr<Grid> g, const int _from_ix, const int _fro
     ny = (_to_iy - _from_iy) * 2 + 1;
     nz = (_to_iz - _from_iz) * 2 + 1;
 
+    this->initializeChildMap();
+
     // refineRatioは2で固定
     dx = g->getDx() / refineRatio;
     dt = g->getDt() / refineRatio;

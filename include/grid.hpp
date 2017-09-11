@@ -9,6 +9,7 @@
 #define H5_USE_BOOST
 #include <highfive/H5File.hpp>
 
+using ChildDefinedMapInt = boost::multi_array<int, 3>;
 class ChildGrid;
 
 //! @class Grid
@@ -16,6 +17,12 @@ class Grid  : public std::enable_shared_from_this<Grid> {
     protected:
         //! グリッド関係ツリー
         std::vector<std::unique_ptr<ChildGrid>> children;
+
+        //! Childが存在する領域かどうかを保存しておく3次元配列
+        ChildDefinedMapInt child_map;
+        void initializeChildMap(void);
+        void mapWithNewChild(int child_index);
+        void resetChildMapWithSpecifiedChild(int child_index);
 
         // オブジェクト定義は Node ベース
         std::vector<Spacecraft> objects;

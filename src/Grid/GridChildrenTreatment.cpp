@@ -12,6 +12,35 @@ void Grid::addChild(std::unique_ptr<ChildGrid>&& child) {
 
     //! 粒子を内部に移動
     this->moveParticlesIntoSpecifiedChild(children.size() - 1);
+
+    //! Childrenの存在場所を塗り潰す
+    this->mapNewChildren( children.size() - 1 );
+}
+
+//! Childの存在場所をindexによって塗りつぶす
+void Grid::mapNewChild(int child_index) {
+    auto& child = children[child_index];
+
+    for(int i = child->getFromIX(); i <= child->getToIX(); ++i) {
+        for(int j = child->getFromIY(); j <= child->getToIY(); ++j) {
+            for(int k = child->getFromIZ(); k <= child->getToIZ(); ++k) {
+                child_map[i][j][k] = child_index;
+            }
+        }
+    }
+}
+
+//! Childを削除する前に存在していた場所を塗り戻す
+void Grid::resetChildMapWithSpecifiedChild(int child_index) {
+    auto& child = children[child_index];
+
+    for(int i = child->getFromIX(); i <= child->getToIX(); ++i) {
+        for(int j = child->getFromIY(); j <= child->getToIY(); ++j) {
+            for(int k = child->getFromIZ(); k <= child->getToIZ(); ++k) {
+                child_map[i][j][k] = -1;
+            }
+        }
+    }
 }
 
 bool Grid::checkSpecifiedChildDoesCoverThisPosition(const int index, const int i, const int j, const int k) const {

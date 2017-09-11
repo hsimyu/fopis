@@ -6,7 +6,7 @@
 unsigned int Grid::nextID = 0;
 
 // Grid 基底クラス用のコンストラクタ
-Grid::Grid(void) : field(std::make_unique<Field>()) {
+Grid::Grid(void) : child_map(boost::extents[0][0][0]), field(std::make_unique<Field>()) {
     sumTotalNumOfChildGrids = 0;
 
     //! UniqueなIDをセット
@@ -146,6 +146,20 @@ void Grid::initializeField(void){
     field->getJx().resize(tdExtents[cx-1][cy][cz]);
     field->getJy().resize(tdExtents[cx][cy-1][cz]);
     field->getJz().resize(tdExtents[cx][cy][cz-1]);
+}
+
+//! ChildMap の resize と 初期化
+void Grid::initializeChildMap(void) {
+    ChildDefinedMapInt::extent_gen mapExtentGen;
+    child_map.resize(mapExtentGen[nx + 2][ny + 2][nz + 2]);
+
+    for(int i = 0; i < nx + 2; ++i) {
+        for(int j = 0; j < ny + 2; ++j) {
+            for(int k = 0; k < nz + 2; ++k) {
+                child_map[i][j][k] = -1;
+            }
+        }
+    }
 }
 
 Grid::~Grid(){
