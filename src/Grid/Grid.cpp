@@ -156,7 +156,7 @@ void Grid::initializeChildMap(void) {
     for(int i = 0; i < nx + 2; ++i) {
         for(int j = 0; j < ny + 2; ++j) {
             for(int k = 0; k < nz + 2; ++k) {
-                child_map[i][j][k] = -1;
+                child_map[i][j][k] = CHILD_MAP_TAG::NOT_EXIST;
             }
         }
     }
