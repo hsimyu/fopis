@@ -31,9 +31,11 @@ void Grid::mapWithNewChild(int child_index) {
         for(int j = child_f_iy; j <= child_t_iy; ++j) {
             for(int k = child_f_iz; k <= child_t_iz; ++k) {
                 if (i == child_f_ix || i == child_t_ix || j == child_f_iy || j == child_t_iy || k == child_f_iz || k == child_t_iz) {
-                    child_map[i][j][k] = CHILD_MAP_TAG::EDGE; // edge
+                    child_map[i][j][k].tag = CHILD_MAP_TAG::EDGE;
+                    child_map[i][j][k].child_indices.push_back(child_index);
                 } else {
-                    child_map[i][j][k] = CHILD_MAP_TAG::INNER;
+                    child_map[i][j][k].tag = CHILD_MAP_TAG::INNER;
+                    child_map[i][j][k].child_indices.push_back(child_index);
                 }
             }
         }
@@ -47,7 +49,8 @@ void Grid::resetChildMapWithSpecifiedChild(int child_index) {
     for(int i = child->getFromIX(); i <= child->getToIX(); ++i) {
         for(int j = child->getFromIY(); j <= child->getToIY(); ++j) {
             for(int k = child->getFromIZ(); k <= child->getToIZ(); ++k) {
-                child_map[i][j][k] = CHILD_MAP_TAG::NOT_EXIST;
+                child_map[i][j][k].tag = CHILD_MAP_TAG::NOT_EXIST;
+                child_map[i][j][k].child_indices.clear();
             }
         }
     }
@@ -68,14 +71,14 @@ bool Grid::checkSpecifiedChildDoesCoverThisPosition(const int index, const Posit
 }
 
 int Grid::getChildIndexIfCovered(const int i, const int j, const int k) const {
-    //if (child_map[i][j][k])
-    for(int index = 0; index < this->getChildrenLength(); ++index) {
-        auto& child = children[index];
-        if (
-            i >= child->getFromIX() && i < child->getToIX() &&
-            j >= child->getFromIY() && j < child->getToIY() &&
-            k >= child->getFromIZ() && k < child->getToIZ()
-        ) return index;
+    for(int di = 0; di < 2; ++di) {
+        for(int dj = 0; dj < 2; ++dj) {
+            for(int dk = 0; dk < 2; ++dk) {
+                if (child_map[i + di][j + dj][k + dk].tag == CHILD_MAP_TAG::INNER) {
+                    return child_map[i + di][j + dj][k + dk].child_indices[0];
+                }
+            }
+        }
     }
     return -1;
 }

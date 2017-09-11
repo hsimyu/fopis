@@ -152,14 +152,6 @@ void Grid::initializeField(void){
 void Grid::initializeChildMap(void) {
     ChildDefinedMapInt::extent_gen mapExtentGen;
     child_map.resize(mapExtentGen[nx + 2][ny + 2][nz + 2]);
-
-    for(int i = 0; i < nx + 2; ++i) {
-        for(int j = 0; j < ny + 2; ++j) {
-            for(int k = 0; k < nz + 2; ++k) {
-                child_map[i][j][k] = CHILD_MAP_TAG::NOT_EXIST;
-            }
-        }
-    }
 }
 
 Grid::~Grid(){
