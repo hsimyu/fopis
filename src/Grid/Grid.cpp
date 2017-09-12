@@ -148,12 +148,6 @@ void Grid::initializeField(void){
     field->getJz().resize(tdExtents[cx][cy][cz-1]);
 }
 
-//! ChildMap の resize と 初期化
-void Grid::initializeChildMap(void) {
-    ChildDefinedMapInt::extent_gen mapExtentGen;
-    child_map.resize(mapExtentGen[nx + 2][ny + 2][nz + 2]);
-}
-
 Grid::~Grid(){
     //! delete all particles
     if (particles.size() > 0) {

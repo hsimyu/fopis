@@ -17,6 +17,11 @@ void Grid::addChild(std::unique_ptr<ChildGrid>&& child) {
     this->mapWithNewChild( children.size() - 1 );
 }
 
+//! ChildMap の resize と 初期化
+void Grid::initializeChildMap(void) {
+    ChildDefinedMapInt::extent_gen mapExtentGen;
+    child_map.resize(mapExtentGen[nx + 2][ny + 2][nz + 2]);
+}
 void Grid::mapWithNewChild(int child_index) {
     auto& child = children[child_index];
 
