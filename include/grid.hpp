@@ -239,7 +239,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         // HDF5にデータを突っ込む
         void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const;
         void plotFieldData(const std::string& data_type_name, const std::string& i_timestamp) const;
-        void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const;
+        virtual void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const = 0;
 
         void printInfo() const;
 };
@@ -327,6 +327,9 @@ class RootGrid : public Grid {
             }
         }
 
+        //! AMR Block情報を書き込む
+        virtual void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const override;
+
     private:
         //! 基本的には root_grid 中に対象の点(Object定義点)が含まれているかを判定するために呼ぶ
         //! i, j, k は整数座標(全体の計算空間上の)
@@ -399,6 +402,9 @@ class ChildGrid : public Grid {
         void copyPhiToParent();
         virtual void incrementSumOfChild(void) override;
         virtual void decrementSumOfChild(void) override;
+
+        //! AMR Block情報を書き込む
+        virtual void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const override;
 
     private:
         std::shared_ptr<Grid> parent;

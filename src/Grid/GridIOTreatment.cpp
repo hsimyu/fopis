@@ -69,19 +69,6 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const RhoArray& rho, const int p
     return true_nodes;
 }
 
-void Grid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const {
-    vtk_gen.beginBlock();
-        vtk_gen.beginDataSet(0);
-        vtk_gen.setAMRBoxNode(from_ix, to_ix, from_iy, to_iy, from_iz, to_iz); // indexing by cell number
-        vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
-        vtk_gen.endDataSet();
-    vtk_gen.endBlock();
-
-    for(const auto& child : children) {
-        child->insertAMRBlockInfo(vtk_gen, data_type_name, i_timestamp);
-    }
-}
-
 void Grid::plotFieldData(const std::string& data_type_name, const std::string& i_timestamp) const {
     SimpleVTK gen;
     gen.enableExtentManagement();

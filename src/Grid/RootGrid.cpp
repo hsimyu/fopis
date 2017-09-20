@@ -4,6 +4,9 @@
 #include "utils.hpp"
 #include "dataio.hpp"
 
+#define USE_BOOST
+#include "simple_vtk.hpp"
+
 RootGrid::RootGrid() : Grid() {
     level = 0;
 
@@ -715,3 +718,16 @@ void RootGrid::updateRho() {
 
 inline void RootGrid::decrementSumOfChild() { --sumTotalNumOfChildGrids; }
 inline void RootGrid::incrementSumOfChild() { ++sumTotalNumOfChildGrids; }
+
+void RootGrid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const {
+    vtk_gen.beginBlock();
+        vtk_gen.beginDataSet(id);
+        vtk_gen.setAMRBoxNode(from_ix, to_ix, from_iy, to_iy, from_iz, to_iz);
+        vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
+        vtk_gen.endDataSet();
+    vtk_gen.endBlock();
+
+    for(const auto& child : children) {
+        child->insertAMRBlockInfo(vtk_gen, data_type_name, i_timestamp);
+    }
+}

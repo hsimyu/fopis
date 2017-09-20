@@ -3,6 +3,9 @@
 #include "utils.hpp"
 #include "normalizer.hpp"
 
+#define USE_BOOST
+#include "simple_vtk.hpp"
+
 //! child grid constructor
 //! 渡されたGridを親とした子グリッドを生成する
 ChildGrid::ChildGrid(std::shared_ptr<Grid> g, const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix,   const int _to_iy,   const int _to_iz) : Grid() {
@@ -334,4 +337,17 @@ void ChildGrid::decrementSumOfChild() {
 void ChildGrid::incrementSumOfChild() {
     ++sumTotalNumOfChildGrids;
     parent->incrementSumOfChild();
+}
+
+void ChildGrid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const {
+    vtk_gen.beginBlock();
+        vtk_gen.beginDataSet(id);
+        vtk_gen.setAMRBoxNodeFromParentIndex(parent->getID(), from_ix - 1, to_ix - 1, from_iy - 1, to_iy - 1, from_iz - 1, to_iz - 1);
+        vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
+        vtk_gen.endDataSet();
+    vtk_gen.endBlock();
+
+    for(const auto& child : children) {
+        child->insertAMRBlockInfo(vtk_gen, data_type_name, i_timestamp);
+    }
 }
