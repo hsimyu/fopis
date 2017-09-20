@@ -10,6 +10,7 @@
 #include <highfive/H5File.hpp>
 
 class ChildGrid;
+class SimpleVTK;
 
 //! @class Grid
 class Grid  : public std::enable_shared_from_this<Grid> {
@@ -237,6 +238,8 @@ class Grid  : public std::enable_shared_from_this<Grid> {
 
         // HDF5にデータを突っ込む
         void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const;
+        void plotFieldData(const std::string& data_type_name, const std::string& i_timestamp) const;
+        void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const;
 
         void printInfo() const;
 };

@@ -3,6 +3,7 @@
 #include "global.hpp"
 #include "particle.hpp"
 class Grid;
+class RootGrid;
 class Spacecraft;
 
 namespace IO {
@@ -26,6 +27,7 @@ namespace IO {
 
     // 場のデータ等の出力用関数
     void writeDataInParallel(std::shared_ptr<const Grid>, const int, const std::string&);
+    void generateVTKHierarchicalBoxDataSet(std::shared_ptr<const RootGrid>, const int timestep, const std::string& data_type_name);
     void generateXdmf(const int timestep, const std::string& data_type_name);
 
     void print3DArray(const tdArray&);

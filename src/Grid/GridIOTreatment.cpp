@@ -2,6 +2,9 @@
 #include "normalizer.hpp"
 #include "dataio.hpp"
 
+#define USE_BOOST
+#include "simple_vtk.hpp"
+
 //! for DATA IO
 //! 粒子の位置から密度を計算する
 boost::multi_array<float, 3> Grid::getDensity(const int pid) const {
@@ -64,6 +67,49 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const RhoArray& rho, const int p
 
     // RVO
     return true_nodes;
+}
+
+void Grid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const {
+    vtk_gen.beginBlock();
+        vtk_gen.beginDataSet(0);
+        vtk_gen.setAMRBoxNode(from_ix, to_ix, from_iy, to_iy, from_iz, to_iz); // indexing by cell number
+        vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
+        vtk_gen.endDataSet();
+    vtk_gen.endBlock();
+
+    for(const auto& child : children) {
+        child->insertAMRBlockInfo(vtk_gen, data_type_name, i_timestamp);
+    }
+}
+
+void Grid::plotFieldData(const std::string& data_type_name, const std::string& i_timestamp) const {
+    SimpleVTK gen;
+    gen.enableExtentManagement();
+    gen.changeBaseExtent(0, nx-1, 0, ny-1, 0, nz-1);
+    gen.changeBaseOrigin(base_x, base_y, base_z);
+    gen.changeBaseSpacing(dx, dx, dx);
+    gen.setInnerElementPerLine(100);
+
+    gen.beginVTK("ImageData");
+        gen.beginContentWithPiece();
+            gen.beginPointData();
+            gen.setScalars(data_type_name);
+                gen.beginDataArray(data_type_name, "Float32", "ascii");
+                    if (data_type_name == "potential") {
+                        auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
+                        gen.addMultiArray(values);
+                    }
+                gen.endDataArray();
+            gen.endPointData();
+        gen.endContentWithPiece();
+    gen.endVTK();
+
+    std::string file_name = data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp;
+    gen.generate(file_name);
+
+    for(const auto& child : children) {
+        child->plotFieldData(data_type_name, i_timestamp);
+    }
 }
 
 // -- DATA IO methods --

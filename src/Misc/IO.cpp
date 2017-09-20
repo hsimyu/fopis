@@ -10,6 +10,7 @@
 #define USE_BOOST
 #include <highfive/H5File.hpp>
 #include <simple_xdmf.hpp>
+#include <simple_vtk.hpp>
 
 namespace IO {
     void writeDataInParallel(std::shared_ptr<const Grid> g, const int timestep, const std::string& data_type_name) {
@@ -88,6 +89,38 @@ namespace IO {
         }
 
         return is_valid;
+    }
+
+    void generateVTKHierarchicalBoxDataSet(std::shared_ptr<const RootGrid> root_grid, const int timestep, const std::string& data_type_name) {
+        //! 1プロセスあたりのノード数
+        const auto cx = Environment::cell_x;
+        const auto cy = Environment::cell_y;
+        const auto cz = Environment::cell_z;
+
+        //! 最大グリッド幅
+        const auto dx = static_cast<float>(Environment::dx);
+        const auto dy = static_cast<float>(Environment::dx);
+        const auto dz = static_cast<float>(Environment::dx);
+
+        const std::string i_timestamp = (format("%08d") % timestep).str();
+        const std::string f_timestamp = (format("%012.5e") % (timestep * Environment::dt)).str();
+
+        //! VTK writer
+        SimpleVTK gen;
+        gen.enableExtentManagement();
+        gen.changeBaseExtent(0, cx, 0, cy, 0, cz);
+        gen.changeBaseOrigin(0.0, 0.0, 0.0);
+        gen.changeBaseSpacing(dx, dy, dz);
+
+        gen.beginVTK("vtkHierarchicalBoxDataSet");
+        gen.setGridDescription("XYZ");
+            gen.beginContent();
+                root_grid->insertAMRBlockInfo(gen, data_type_name, i_timestamp);
+            gen.endContent();
+        gen.endVTK();
+        gen.generate(data_type_name + "_" + i_timestamp);
+
+        root_grid->plotFieldData(data_type_name, i_timestamp);
     }
 
     void generateXdmf(const int timestep, const std::string& data_type_name) {
