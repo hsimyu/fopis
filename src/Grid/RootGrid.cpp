@@ -720,7 +720,7 @@ inline void RootGrid::decrementSumOfChild() { --sumTotalNumOfChildGrids; }
 inline void RootGrid::incrementSumOfChild() { ++sumTotalNumOfChildGrids; }
 
 void RootGrid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const {
-    vtk_gen.beginBlock();
+    vtk_gen.beginBlock(0);
         vtk_gen.beginDataSet(id);
         vtk_gen.setAMRBoxNode(from_ix, to_ix, from_iy, to_iy, from_iz, to_iz);
         vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");

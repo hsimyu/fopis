@@ -340,11 +340,11 @@ void ChildGrid::incrementSumOfChild() {
 }
 
 void ChildGrid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const {
-    vtk_gen.beginBlock();
-        vtk_gen.beginDataSet(id);
-        vtk_gen.setAMRBoxNodeFromParentIndex(parent->getID(), from_ix - 1, to_ix - 1, from_iy - 1, to_iy - 1, from_iz - 1, to_iz - 1);
-        vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
-        vtk_gen.endDataSet();
+    vtk_gen.beginBlock(level);
+    vtk_gen.beginDataSet(id);
+    vtk_gen.setAMRBoxNodeFromParentIndex(parent->getID(), level - 1, from_ix - 1, to_ix - 1, from_iy - 1, to_iy - 1, from_iz - 1, to_iz - 1);
+    vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
+    vtk_gen.endDataSet();
     vtk_gen.endBlock();
 
     for(const auto& child : children) {
