@@ -98,6 +98,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         //! ポアソンソルバの実体
         virtual void solvePoissonPSOR(const int loopnum) = 0;
         virtual double checkPhiResidual() = 0;
+
     public:
         Grid();
         ~Grid();
@@ -383,7 +384,7 @@ class RootGrid : public Grid {
 
 class ChildGrid : public Grid {
     public:
-        ChildGrid(std::shared_ptr<Grid>, const int, const int, const int, const int, const int, const int);
+        ChildGrid(Grid*, const int, const int, const int, const int, const int, const int);
 
         virtual void updateRho(void) override;
         virtual void solvePoisson(void) override;
@@ -397,8 +398,7 @@ class ChildGrid : public Grid {
         virtual void updateParticlePositionES(void) override;
         virtual void updateParticlePositionEM(void) override;
 
-        void  setParent(std::shared_ptr<Grid> g){ parent = g; }
-        std::shared_ptr<Grid> getParent(){ return parent; }
+        void setParent(Grid* g){ parent = g; }
         void copyPhiToParent();
         virtual void incrementSumOfChild(void) override;
         virtual void decrementSumOfChild(void) override;
@@ -407,7 +407,7 @@ class ChildGrid : public Grid {
         virtual void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const override;
 
     private:
-        std::shared_ptr<Grid> parent;
+        Grid* parent;
         void checkGridValidness();
 
         virtual int getXNodeSize(void) const override;

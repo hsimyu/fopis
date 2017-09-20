@@ -8,7 +8,7 @@
 
 //! child grid constructor
 //! 渡されたGridを親とした子グリッドを生成する
-ChildGrid::ChildGrid(std::shared_ptr<Grid> g, const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix,   const int _to_iy,   const int _to_iz) : Grid() {
+ChildGrid::ChildGrid(Grid* g, const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix,   const int _to_iy,   const int _to_iz) : Grid() {
     constexpr double refineRatio = 2.0;
 
     parent = g;

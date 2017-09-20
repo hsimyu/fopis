@@ -2,7 +2,7 @@
 
 void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix, const int _to_iy, const int _to_iz) {
     this->addChild(
-        std::make_unique<ChildGrid>(shared_from_this(), _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz)
+        std::make_unique<ChildGrid>(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz)
     );
     incrementSumOfChild();
 }
@@ -22,6 +22,7 @@ void Grid::initializeChildMap(void) {
     ChildDefinedMapInt::extent_gen mapExtentGen;
     child_map.resize(mapExtentGen[nx + 2][ny + 2][nz + 2]);
 }
+
 void Grid::mapWithNewChild(int child_index) {
     auto& child = children[child_index];
 
