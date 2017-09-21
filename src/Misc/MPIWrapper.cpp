@@ -278,7 +278,10 @@ namespace MPIw {
         std::string result = "";
         if (Environment::rank == target_rank) {
             for (int source_rank = 0; source_rank < Environment::numprocs; ++source_rank) {
-                if (source_rank == target_rank) continue;
+                if (source_rank == target_rank) {
+                    result += content;
+                    continue;
+                }
 
                 MPI_Status status;
                 MPI_Probe(source_rank, TAG::GATHER_STRINGS, comm, &status);

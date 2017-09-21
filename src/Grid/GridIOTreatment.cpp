@@ -72,7 +72,7 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const RhoArray& rho, const int p
 void Grid::plotFieldData(const std::string& data_type_name, const std::string& i_timestamp) const {
     SimpleVTK gen;
     gen.enableExtentManagement();
-    gen.changeBaseExtent(0, nx-1, 0, ny-1, 0, nz-1);
+    gen.changeBaseExtent(0, this->getXNodeSize() - 1, 0, this->getYNodeSize() - 1, 0, this->getZNodeSize() - 1);
     gen.changeBaseOrigin(base_x, base_y, base_z);
     gen.changeBaseSpacing(dx, dx, dx);
     gen.setInnerElementPerLine(100);

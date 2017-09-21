@@ -111,14 +111,20 @@ namespace IO {
         gen.changeBaseExtent(0, cx, 0, cy, 0, cz);
         gen.changeBaseOrigin(0.0, 0.0, 0.0);
         gen.changeBaseSpacing(dx, dy, dz);
+        root_grid->insertAMRBlockInfo(gen, data_type_name, i_timestamp);
+        std::string content = gen.getRawString();
+        std::string result = MPIw::Environment::Comms["world"].gatherStringsTo(0, content);
 
-        gen.beginVTK("vtkHierarchicalBoxDataSet");
-        gen.setGridDescription("XYZ");
-            gen.beginContent();
-                root_grid->insertAMRBlockInfo(gen, data_type_name, i_timestamp);
-            gen.endContent();
-        gen.endVTK();
-        gen.generate(data_type_name + "_" + i_timestamp);
+        if (Environment::isRootNode) {
+            gen.init();
+            gen.beginVTK("vtkHierarchicalBoxDataSet");
+            gen.setGridDescription("XYZ");
+                gen.beginContent();
+                    gen.addItem(result);
+                gen.endContent();
+            gen.endVTK();
+            gen.generate(data_type_name + "_" + i_timestamp);
+        }
 
         root_grid->plotFieldData(data_type_name, i_timestamp);
     }
