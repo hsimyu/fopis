@@ -111,7 +111,9 @@ namespace IO {
         gen.changeBaseExtent(0, cx, 0, cy, 0, cz);
         gen.changeBaseOrigin(0.0, 0.0, 0.0);
         gen.changeBaseSpacing(dx, dy, dz);
+        gen.beginVTKPartial("vtkHierarchicalBoxDataSet");
         root_grid->insertAMRBlockInfo(gen, data_type_name, i_timestamp);
+        gen.endVTKPartial();
         std::string content = gen.getRawString();
         std::string result = MPIw::Environment::Comms["world"].gatherStringsTo(0, content);
 
