@@ -45,6 +45,9 @@ namespace MPIw {
             double min(double);
             int    min(int);
 
+            // treats strings
+            std::string gatherStringsTo(int target_rank, std::string& content) const;
+
             // send
             void send(Particle const&, const int);
             void recv(Particle&, const int);

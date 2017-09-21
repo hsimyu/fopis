@@ -14,6 +14,7 @@ namespace MPIw {
         SENDRECV_PARTICLE_LENGTH,
         SENDRECV_FIELD,
         PARTICIPATE_NEW_COMM,
+        GATHER_STRINGS,
     };
 
     // Environmentのstatic変数の実体
@@ -273,7 +274,31 @@ namespace MPIw {
         return res;
     }
 
-    //! @note: prev == nextの場合はわざわざ通信しなくてよいので効率を上げられる
+    std::string Communicator::gatherStringsTo(int target_rank, std::string& content) const {
+        std::string result = "";
+        if (Environment::rank == target_rank) {
+            for (int source_rank = 0; source_rank < Environment::numprocs; ++source_rank) {
+                if (source_rank == target_rank) continue;
+
+                MPI_Status status;
+                MPI_Probe(source_rank, TAG::GATHER_STRINGS, comm, &status);
+
+                int num_of_received_elements;
+                MPI_Get_count(&status, MPI_CHAR, &num_of_received_elements);
+
+                char* buff = new char[ num_of_received_elements ];
+                MPI_Recv(buff, num_of_received_elements, MPI_CHAR, source_rank, TAG::GATHER_STRINGS, comm, &status);
+                std::string temporary_result(buff);
+                delete [] buff;
+
+                result += temporary_result;
+            }
+        } else {
+            MPI_Send(content.c_str(), content.size(), MPI_CHAR, target_rank, TAG::GATHER_STRINGS, comm);
+        }
+        return result;
+    }
+
     void Communicator::sendRecvFieldX(tdArray& tdValue, const int prev, const int next) {
         MPI_Status s;
         boost::multi_array<double, 2> buff(boost::extents[ tdValue.shape()[1] ][ tdValue.shape()[2] ]);
