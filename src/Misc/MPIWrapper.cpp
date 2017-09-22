@@ -289,8 +289,9 @@ namespace MPIw {
                 int num_of_received_elements;
                 MPI_Get_count(&status, MPI_CHAR, &num_of_received_elements);
 
-                char* buff = new char[ num_of_received_elements ];
+                char* buff = new char[ num_of_received_elements + 1 ];
                 MPI_Recv(buff, num_of_received_elements, MPI_CHAR, source_rank, TAG::GATHER_STRINGS, comm, &status);
+                buff[num_of_received_elements] = '\0';
                 std::string temporary_result(buff);
                 delete [] buff;
 
