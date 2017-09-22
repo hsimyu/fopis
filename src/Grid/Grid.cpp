@@ -10,7 +10,8 @@ Grid::Grid(void) : child_map(boost::extents[0][0][0]), field(std::make_unique<Fi
     sumTotalNumOfChildGrids = 0;
 
     //! UniqueなIDをセット
-    id = 100000 * MPIw::Environment::rank + this->getNextID();
+    constexpr int minimum_id_offset = 10;
+    id = minimum_id_offset * MPIw::Environment::rank + this->getNextID();
 }
 
 //! @note: childrenのエネルギーも取る?
