@@ -8,6 +8,10 @@
 #include "normalizer.hpp"
 #include <tdpic_configure.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace Initializer {
     std::shared_ptr<RootGrid> initTDPIC() {
         // load parameter from json
@@ -17,6 +21,15 @@ namespace Initializer {
 
         // EnvironmentにMPIw::Environment情報をセット
         Initializer::setMPIInfoToEnv();
+
+        // EnviromentにOpenMPスレッド数をセット
+        #ifdef _OPENMP
+        cout << "[INFO] OpenMP is defined." << endl;
+        Environment::num_threads = omp_get_max_threads();
+        #else
+        cout << "[INFO] OpenMP is not defined." << endl;
+        Environment::num_threads = 1;
+        #endif
 
         //! initialize normalizer
         //! normalizerのセットはGridの生成より先

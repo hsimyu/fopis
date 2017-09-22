@@ -11,6 +11,7 @@ int Environment::num_of_particle_types;
 int Environment::timestep;
 int Environment::max_timestep;
 bool Environment::useExistingCapacityMatrix = false;
+int Environment::num_threads;
 double Environment::dx;
 double Environment::dt;
 int Environment::nx, Environment::ny, Environment::nz;
@@ -95,6 +96,7 @@ bool Environment::isBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
 void Environment::printInfo(void){
     cout << "[Environment]" << endl;
     cout << "      jobtype: " << jobtype << endl;
+    cout << "      threads: " << num_threads << endl;
     cout << "     max pnum: " << max_particle_num << endl;
     cout << " max timestep: " << max_timestep << endl;
     cout << "boundary cond: " << boundary << endl;

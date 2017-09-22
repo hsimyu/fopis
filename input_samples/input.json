@@ -53,7 +53,10 @@
             "surface_type": "perfect",
             "history_width": 1,
             "potential_fix": 0.0,
-            "emit_particles": ["Beam1"]
+            "emit_particles": ["Beam1"],
+            "materials": {
+                "1": "PerfectConductor"
+            }
         }
     },
     "IO": {

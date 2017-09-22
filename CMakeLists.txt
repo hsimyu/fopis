@@ -113,11 +113,13 @@ else()
     # Flags for Darwin build
     set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
 
-    # OpenMPI
-    set(CMAKE_C_COMPILER /usr/local/bin/mpicc)
-    set(CMAKE_CXX_COMPILER /usr/local/bin/mpicxx)
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64")
+    # OpenMPI compilers
+    set(CMAKE_CXX_COMPILER /usr/local/opt/llvm/bin/clang++)
+    link_directories(/usr/local/opt/llvm/lib)
+
+    # CXX Flags
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64 -fopenmp")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64 -fopenmp")
 
     # MPI LIBRARIES
     find_library(MPI_LIBS mpi HINTS /usr/local/lib)

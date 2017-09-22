@@ -10,6 +10,7 @@ struct Environment {
         static int num_of_particle_types;
         static int timestep;
         static int max_timestep;
+        static int num_threads;
         static double dx;
         static double dt;
         static int nx, ny, nz;
