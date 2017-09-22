@@ -24,10 +24,8 @@ namespace Initializer {
 
         // EnviromentにOpenMPスレッド数をセット
         #ifdef _OPENMP
-        cout << "[INFO] OpenMP is defined." << endl;
         Environment::num_threads = omp_get_max_threads();
         #else
-        cout << "[INFO] OpenMP is not defined." << endl;
         Environment::num_threads = 1;
         #endif
 
@@ -42,7 +40,7 @@ namespace Initializer {
         Initializer::loadParticleType(inputs);
 
         if( Environment::isRootNode ) {
-            cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
+            cout << "---    [ TDPIC " << TDPIC_VERSION << " ]      --" << endl;
             cout << "   Built date: " << TDPIC_DATE << endl;
             cout << " Git Revision: " << TDPIC_REVISION << endl;
             cout << "MPI processes: " << format("%d") % MPIw::Environment::numprocs << endl << endl;

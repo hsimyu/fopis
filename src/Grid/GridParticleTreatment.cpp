@@ -11,6 +11,10 @@
 #include <random>
 #include <algorithm>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 void Grid::addParticle(const Particle& p) {
     particles[p.typeId].push_back( p );
 }
@@ -214,7 +218,13 @@ void RootGrid::updateParticlePositionES(void) {
     const double slz = dx * nz;
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        for(auto& p : particles[pid]) {
+        auto& parray = particles[pid];
+        const auto size = parray.size();
+
+        #pragma omp parallel for shared(parray, pbuff)
+        for(int i = 0; i < size; ++i) {
+            auto& p = parray[i];
+
             if(p.isValid) {
                 p.updatePosition();
                 checkXBoundary(pbuff, p, slx);

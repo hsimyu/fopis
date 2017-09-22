@@ -111,7 +111,7 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         "</Project>\n")
 else()
     # Flags for Darwin build
-    set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-qual -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
+    set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
 
     # OpenMPI compilers
     set(CMAKE_CXX_COMPILER /usr/local/opt/llvm/bin/clang++)

@@ -275,7 +275,10 @@ class RootGrid : public Grid {
                 if (Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
                     // 計算空間の端でない場合は粒子を隣へ送る
                     // 計算空間の端にいるが、周期境界の場合も粒子を送る必要がある -> isNotBoundary()でまとめて判定できる
-                    pbuff[0].push_back(p);
+                    #pragma omp critical
+                    {
+                        pbuff[0].push_back(p);
+                    }
                 }
                 p.makeInvalid();
             } else if (p.x > (slx - dx)) {
@@ -283,7 +286,10 @@ class RootGrid : public Grid {
                     //! 計算空間の端でない場合、slx - dx から slx までの空間は下側の空間が担当するため、 slx を超えた場合のみ粒子を送信する
                     //! また、計算空間の端にいるが、周期境界の場合も同様の処理でよいため、isNotBoundary()でまとめて判定できる
                     if (p.x > slx) {
-                        pbuff[1].push_back(p);
+                        #pragma omp critical
+                        {
+                            pbuff[1].push_back(p);
+                        }
                         p.makeInvalid();
                     }
                 } else {
@@ -294,12 +300,20 @@ class RootGrid : public Grid {
 
         void checkYBoundary(ParticleArray& pbuff, Particle& p, const double sly) {
             if(p.y < 0.0) {
-                if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) pbuff[2].push_back(p);
+                if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
+                    #pragma omp critical
+                    {
+                        pbuff[2].push_back(p);
+                    }
+                }
                 p.makeInvalid();
             } else if (p.y > (sly - dx)) {
                 if (Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
                     if (p.y > sly) {
-                        pbuff[3].push_back(p);
+                        #pragma omp critical
+                        {
+                            pbuff[3].push_back(p);
+                        }
                         p.makeInvalid();
                     }
                 } else {
@@ -310,12 +324,20 @@ class RootGrid : public Grid {
 
         void checkZBoundary(ParticleArray& pbuff, Particle& p, const double slz) {
             if(p.z < 0.0) {
-                if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) pbuff[4].push_back(p);
+                if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)){
+                    #pragma omp critical
+                    {
+                        pbuff[4].push_back(p);
+                    }
+                }
                 p.makeInvalid();
             } else if (p.z > (slz - dx)) {
                 if (Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
                     if (p.z > slz) {
-                        pbuff[5].push_back(p);
+                        #pragma omp critical
+                        {
+                            pbuff[5].push_back(p);
+                        }
                         p.makeInvalid();
                     }
                 } else {
