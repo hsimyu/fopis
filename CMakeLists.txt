@@ -30,7 +30,6 @@ endif()
 
 # add include and submodules
 include_directories(${CMAKE_SOURCE_DIR}/picojson)
-include_directories(${CMAKE_SOURCE_DIR}/SimpleXdmf/include)
 include_directories(${CMAKE_SOURCE_DIR}/SimpleVTK/include)
 include_directories(${CMAKE_SOURCE_DIR}/HighFive/include)
 include_directories(${CMAKE_SOURCE_DIR}/include)

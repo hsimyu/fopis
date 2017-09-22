@@ -79,98 +79,52 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
 
     gen.beginVTK("ImageData");
         gen.beginContentWithPiece();
-            gen.beginPointData();
-            gen.setScalars(data_type_name);
-                gen.beginDataArray(data_type_name, "Float32", "ascii");
-                    if (data_type_name == "potential") {
-                        auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
+            if (data_type_name == "potential" || data_type_name == "rho") {
+                gen.beginPointData();
+                gen.setScalars(data_type_name);
+                    gen.beginDataArray(data_type_name, "Float32", "ascii");
+                        if (data_type_name == "potential") {
+                            auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
+                            gen.addMultiArray(values);
+                        } else {
+                            auto values = this->getTrueNodes(field->getRho(), 0, Normalizer::unnormalizeRho(1.0));
+                            gen.addMultiArray(values);
+                        }
+                    gen.endDataArray();
+                gen.endPointData();
+            } else if (data_type_name == "efield" || data_type_name == "bfield") {
+                gen.beginPointData();
+                gen.setVectors(data_type_name);
+                    gen.beginDataArray(data_type_name, "Float32", "ascii");
+                        // const std::array<std::string, 3> axis{{"ex", "ey", "ez"}};
+                        // if (group_name == "ex") {
+                        //     auto values = this->getTrueNodes(field->getExRef(), Normalizer::unnormalizeEfield(1.0));
+                        // } else if (group_name == "ey") {
+                        //     auto values = this->getTrueNodes(field->getEyRef(), Normalizer::unnormalizeEfield(1.0));
+                        // } else if (group_name == "ez") {
+                        //     auto values = this->getTrueNodes(field->getEzRef(), Normalizer::unnormalizeEfield(1.0));
+                        // }
+                    gen.endDataArray();
+                gen.endPointData();
+            } else if (data_type_name == "density") {
+                gen.beginCellData();
+                gen.setScalars(data_type_name);
+                for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                    const std::string& pname = Environment::getParticleType(pid)->getName();
+                    auto values = this->getDensity(pid);
+                    gen.beginDataArray(pname, "Float32", "ascii");
                         gen.addMultiArray(values);
-                    }
-                gen.endDataArray();
-            gen.endPointData();
+                    gen.endDataArray();
+                }
+                gen.endCellData();
+            }
         gen.endContentWithPiece();
     gen.endVTK();
 
-    std::string file_name = data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp;
+    std::string file_name = "data/" + data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp;
     gen.generate(file_name);
 
     for(const auto& child : children) {
         child->plotFieldData(data_type_name, i_timestamp);
-    }
-}
-
-// -- DATA IO methods --
-void Grid::putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const {
-    auto getGroup = [](auto& g, const std::string& group_name) {
-        if (g.exist(group_name)) {
-            return g.getGroup(group_name);
-        } else {
-            return g.createGroup(group_name);
-        }
-    };
-
-    const std::string& level_str = "level" + std::to_string(level);
-    HighFive::Group local_group = getGroup(group, level_str);
-
-    if (data_type_name == "potential") {
-        auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
-        auto dataset = local_group.createDataSet<float>(data_type_name, HighFive::DataSpace::From(values));
-        dataset.write(values);
-    } else if(data_type_name == "rho") {
-        auto values = this->getTrueNodes(field->getRho(), 0, Normalizer::unnormalizeRho(1.0));
-        auto dataset = local_group.createDataSet<float>(data_type_name, HighFive::DataSpace::From(values));
-        dataset.write(values);
-    } else if(data_type_name == "efield") {
-        HighFive::Group data_type_group = getGroup(local_group, data_type_name);
-
-        const std::array<std::string, 3> axis{{"ex", "ey", "ez"}};
-        for(const auto& group_name : axis) {
-            if (group_name == "ex") {
-                auto values = this->getTrueNodes(field->getExRef(), Normalizer::unnormalizeEfield(1.0));
-                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
-                dataset.write(values);
-            } else if (group_name == "ey") {
-                auto values = this->getTrueNodes(field->getEyRef(), Normalizer::unnormalizeEfield(1.0));
-                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
-                dataset.write(values);
-            } else if (group_name == "ez") {
-                auto values = this->getTrueNodes(field->getEzRef(), Normalizer::unnormalizeEfield(1.0));
-                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
-                dataset.write(values);
-            }
-        }
-    } else if(data_type_name == "bfield") {
-        HighFive::Group data_type_group = getGroup(local_group, data_type_name);
-        const std::array<std::string, 3> axis{{"bx", "by", "bz"}};
-
-        for(const auto& group_name : axis) {
-            if (group_name == "bx") {
-                auto values = this->getTrueNodes(field->getBxRef(), Normalizer::unnormalizeBfield(1.0));
-                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
-                dataset.write(values);
-            } else if (group_name == "by") {
-                auto values = this->getTrueNodes(field->getByRef(), Normalizer::unnormalizeBfield(1.0));
-                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
-                dataset.write(values);
-            } else if (group_name == "bz") {
-                auto values = this->getTrueNodes(field->getBzRef(), Normalizer::unnormalizeBfield(1.0));
-                auto dataset = local_group.createDataSet<float>(group_name, HighFive::DataSpace::From(values));
-                dataset.write(values);
-            }
-        }
-    } else if(data_type_name == "density") {
-        HighFive::Group data_type_group = getGroup(local_group, data_type_name);
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            const std::string& pname = Environment::getParticleType(pid)->getName();
-            auto values = this->getDensity(pid);
-            auto dataset = data_type_group.createDataSet<float>(pname, HighFive::DataSpace::From(values));
-            dataset.write(values);
-        }
-    }
-
-    if (data_type_name == "potential" || data_type_name == "rho") {
-        for (const auto& child : children) {
-            child->putFieldData(group, data_type_name, i_timestamp);
-        }
     }
 }

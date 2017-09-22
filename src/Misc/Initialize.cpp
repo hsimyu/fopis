@@ -31,8 +31,8 @@ namespace Initializer {
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC v" << TDPIC_VERSION << " ]      --" << endl;
             cout << "   Built date: " << TDPIC_DATE << endl;
-            cout << " Git Revision: " << TDPIC_REVISION << endl << endl;
-            cout << "MPI processes: " << format("%d") % MPIw::Environment::numprocs << endl;
+            cout << " Git Revision: " << TDPIC_REVISION << endl;
+            cout << "MPI processes: " << format("%d") % MPIw::Environment::numprocs << endl << endl;
 
             Environment::printInfo();
             Environment::checkPlasmaInfo();

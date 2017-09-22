@@ -6,9 +6,6 @@
 #include "environment.hpp"
 #include "spacecraft.hpp"
 
-#define H5_USE_BOOST
-#include <highfive/H5File.hpp>
-
 class ChildGrid;
 class SimpleVTK;
 
@@ -237,8 +234,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         std::vector< std::vector<int> > getIDMapOnRoot(void);
         void addIDToVector(std::vector< std::vector<int> >&);
 
-        // HDF5にデータを突っ込む
-        void putFieldData(HighFive::Group& group, const std::string& data_type_name, const std::string& i_timestamp) const;
+        // VTKにデータを突っ込む
         void plotFieldData(const std::string& data_type_name, const std::string& i_timestamp) const;
         virtual void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const = 0;
 

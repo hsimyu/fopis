@@ -7,31 +7,18 @@
 #include "utils.hpp"
 
 #define H5_USE_BOOST
-#define USE_BOOST
 #include <highfive/H5File.hpp>
-#include <simple_xdmf.hpp>
+
+#define USE_BOOST
 #include <simple_vtk.hpp>
 
 namespace IO {
-    void writeDataInParallel(std::shared_ptr<const Grid> g, const int timestep, const std::string& data_type_name) {
-        if (Environment::isRootNode) generateXdmf(timestep, data_type_name);
-
+    void writeDataInParallel(std::shared_ptr<const RootGrid> root_grid, const int timestep, const std::string& data_type_name) {
         const std::string i_timestamp = (format("%08d") % timestep).str();
-        const std::string rank_str = "proc_" + (format("%08d") % MPIw::Environment::rank).str();
-        const std::string file_name = "data/" + rank_str + ".h5";
+        const std::string f_timestamp = (format("%012.5e") % (timestep * Environment::dt)).str();
 
-        using H5F = HighFive::File;
-        // initialize file pointer only once
-        static H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
-
-        HighFive::Group data_group;
-        if (file.exist(i_timestamp)) {
-            data_group = file.getGroup(i_timestamp);
-        } else {
-            data_group = file.createGroup(i_timestamp);
-        }
-
-        g->putFieldData(data_group, data_type_name, i_timestamp);
+        generateVTKHierarchicalBoxDataSet(root_grid, i_timestamp, data_type_name);
+        root_grid->plotFieldData(data_type_name, i_timestamp);
     }
 
     void writeCmatrixData(const Spacecraft& obj) {
@@ -91,7 +78,7 @@ namespace IO {
         return is_valid;
     }
 
-    void generateVTKHierarchicalBoxDataSet(std::shared_ptr<const RootGrid> root_grid, const int timestep, const std::string& data_type_name) {
+    void generateVTKHierarchicalBoxDataSet(std::shared_ptr<const RootGrid> root_grid, const std::string& i_timestamp, const std::string& data_type_name) {
         //! 1プロセスあたりのノード数
         const auto cx = Environment::cell_x;
         const auto cy = Environment::cell_y;
@@ -101,9 +88,6 @@ namespace IO {
         const auto dx = static_cast<float>(Environment::dx);
         const auto dy = static_cast<float>(Environment::dx);
         const auto dz = static_cast<float>(Environment::dx);
-
-        const std::string i_timestamp = (format("%08d") % timestep).str();
-        const std::string f_timestamp = (format("%012.5e") % (timestep * Environment::dt)).str();
 
         //! VTK writer
         SimpleVTK gen;
@@ -125,91 +109,8 @@ namespace IO {
                     gen.addItem(result);
                 gen.endContent();
             gen.endVTK();
-            gen.generate(data_type_name + "_" + i_timestamp);
+            gen.generate("data/" + data_type_name + "_" + i_timestamp);
         }
-
-        root_grid->plotFieldData(data_type_name, i_timestamp);
-    }
-
-    void generateXdmf(const int timestep, const std::string& data_type_name) {
-        //! 1プロセスあたりのノード数
-        const auto cx = Environment::cell_x;
-        const auto cy = Environment::cell_y;
-        const auto cz = Environment::cell_z;
-
-        //! 最大グリッド幅
-        const auto dx = static_cast<float>(Environment::dx);
-        const auto dy = static_cast<float>(Environment::dx);
-        const auto dz = static_cast<float>(Environment::dx);
-
-        const std::string i_timestamp = (format("%08d") % timestep).str();
-        const std::string f_timestamp = (format("%012.5e") % (timestep * Environment::dt)).str();
-        //! XDMF writing
-        SimpleXdmf gen;
-
-        //! 実際のデータ用のDomain
-        gen.beginDomain(data_type_name);
-            gen.beginGrid("", "Collection");
-                gen.beginTime("");
-                gen.setValue(f_timestamp);
-                gen.endTime();
-
-                //! 全空間
-                gen.begin3DStructuredGrid("Entire Space", "3DCoRectMesh", Environment::nx, Environment::ny, Environment::nz);
-                    gen.add3DGeometryOrigin("", 0.0f, 0.0f, 0.0f, dx, dy, dz);
-                gen.end3DStructuredGrid();
-
-                //! 各グリッド
-                for(size_t xrank = 0; xrank < Environment::proc_x; ++xrank) {
-                    //! 一番上の時以外は上側のGlueノードを含める
-                    const auto xsize = (xrank == Environment::proc_x - 1) ? cx : cx + 1;
-                    for(size_t yrank = 0; yrank < Environment::proc_y; ++yrank) {
-                        const auto ysize = (yrank == Environment::proc_y - 1) ? cy : cy + 1;
-                        for(size_t zrank = 0; zrank < Environment::proc_z; ++zrank) {
-                            const auto zsize = (zrank == Environment::proc_z - 1) ? cz : cz + 1;
-                            const auto rank = Environment::getSpecifiedRankFromXYZRanks(xrank, yrank, zrank);
-                            const std::string rankString = "proc_" + (format("%08d") % rank).str();
-
-                            gen.begin3DStructuredGrid(rankString, "3DCoRectMesh", xsize, ysize, zsize);
-                                gen.add3DGeometryOrigin("", dx * cx * xrank, dy * cy * yrank, dz * cz * zrank, dx, dy, dz);
-
-                                if (data_type_name == "potential" || data_type_name == "rho") {
-                                    gen.beginAttribute(data_type_name);
-                                    gen.setCenter("Node");
-                                        gen.beginDataItem();
-                                        gen.setFormat("HDF");
-                                        gen.setDimensions(xsize, ysize, zsize);
-                                            gen.addItem(rankString + ".h5:/" + i_timestamp + "/level0/" + data_type_name);
-                                        gen.endDataItem();
-                                    gen.endAttribute();
-                                } else if (data_type_name == "efield" || data_type_name == "bfield") {
-                                    gen.beginAttribute(data_type_name, "Vector");
-                                    gen.setCenter("Node");
-                                        gen.beginDataItem();
-                                        gen.setFormat("HDF");
-                                        gen.setDimensions(xsize, ysize, zsize);
-                                            gen.addItem(rankString + ".h5:/" + i_timestamp + "/level0/" + data_type_name);
-                                        gen.endDataItem();
-                                    gen.endAttribute();
-                                } else if (data_type_name == "density") {
-                                    gen.beginAttribute(data_type_name);
-                                    gen.setCenter("Cell");
-                                        gen.beginDataItem();
-                                        gen.setFormat("HDF");
-                                        gen.setDimensions(xsize - 1, ysize - 1, zsize - 1);
-                                            gen.addItem(rankString + ".h5:/" + i_timestamp + "/level0/" + data_type_name);
-                                        gen.endDataItem();
-                                    gen.endAttribute();
-                                }
-
-                            gen.end3DStructuredGrid();
-                        }
-                    }
-                }
-            gen.endGrid();
-        gen.endDomain();
-        gen.generate("data/" + data_type_name + "_" + i_timestamp + ".xmf");
-
     }
 
     void putHeader(const std::string& filename, const std::string& header) {

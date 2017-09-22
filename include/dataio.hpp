@@ -26,8 +26,8 @@ namespace IO {
     bool loadCmatrixData(Spacecraft& obj);
 
     // 場のデータ等の出力用関数
-    void writeDataInParallel(std::shared_ptr<const Grid>, const int, const std::string&);
-    void generateVTKHierarchicalBoxDataSet(std::shared_ptr<const RootGrid>, const int timestep, const std::string& data_type_name);
+    void writeDataInParallel(std::shared_ptr<const RootGrid>, const int, const std::string&);
+    void generateVTKHierarchicalBoxDataSet(std::shared_ptr<const RootGrid>, const std::string& i_timestamp, const std::string& data_type_name);
     void generateXdmf(const int timestep, const std::string& data_type_name);
 
     void print3DArray(const tdArray&);
