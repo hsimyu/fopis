@@ -8,10 +8,6 @@ unsigned int Grid::nextID = 0;
 // Grid 基底クラス用のコンストラクタ
 Grid::Grid(void) : child_map(boost::extents[0][0][0]), field(std::make_unique<Field>()) {
     sumTotalNumOfChildGrids = 0;
-
-    //! UniqueなIDをセット
-    constexpr int minimum_id_offset = 10;
-    id = minimum_id_offset * MPIw::Environment::rank + this->getNextID();
 }
 
 //! @note: childrenのエネルギーも取る?

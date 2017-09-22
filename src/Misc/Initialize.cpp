@@ -46,7 +46,7 @@ namespace Initializer {
             Utils::createDir("data");
             Utils::createDir("data/resume");
             Utils::createDir("data/objects");
-            Utils::createDir("data/raw_hdf5_data");
+            Utils::createDir("data/raw_data");
         }
 
         std::shared_ptr<RootGrid> root_grid;

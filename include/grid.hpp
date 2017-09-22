@@ -101,7 +101,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         ~Grid();
 
         unsigned int getNextID(void) {
-            return nextID++;
+            return ++nextID;
         }
 
         // IDへのsetterは提供しない、代わりにresetterを用意

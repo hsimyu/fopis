@@ -121,7 +121,7 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
         gen.endContentWithPiece();
     gen.endVTK();
 
-    std::string file_name = "data/" + data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp;
+    std::string file_name = "data/raw_data/" + data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp;
     gen.generate(file_name);
 
     for(const auto& child : children) {

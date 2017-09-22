@@ -104,8 +104,8 @@ namespace IO {
         if (Environment::isRootNode) {
             gen.init();
             gen.beginVTK("vtkHierarchicalBoxDataSet");
-            gen.setGridDescription("XYZ");
                 gen.beginContent();
+                gen.setGridDescription("XYZ");
                     gen.addItem(result);
                 gen.endContent();
             gen.endVTK();

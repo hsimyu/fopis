@@ -14,6 +14,10 @@ ChildGrid::ChildGrid(Grid* g, const int _from_ix, const int _from_iy, const int 
     parent = g;
     level = g->getLevel() + 1;
 
+    //! UniqueなIDをセット
+    constexpr int minimum_id_offset = 10;
+    id = minimum_id_offset * MPIw::Environment::rank + this->getNextID();
+
     //! @{
     //! 子グリッドの場合, from_ix, to_ix変数は純粋に親グリッドの何番目に乗っているかを表す
     //! Glue cell 分も考慮した方に乗る
@@ -343,7 +347,7 @@ void ChildGrid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_t
     vtk_gen.beginBlock(level);
     vtk_gen.beginDataSet(id);
     vtk_gen.setAMRBoxNodeFromParentIndex(parent->getID(), level - 1, from_ix - 1, to_ix - 1, from_iy - 1, to_iy - 1, from_iz - 1, to_iz - 1);
-    vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
+    vtk_gen.setFile("raw_data/" + data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
     vtk_gen.endDataSet();
     vtk_gen.endBlock();
 

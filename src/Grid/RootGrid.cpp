@@ -10,6 +10,9 @@
 RootGrid::RootGrid() : Grid() {
     level = 0;
 
+    //! UniqueなIDをセット
+    id = MPIw::Environment::rank;
+
     nx = Environment::cell_x;
     ny = Environment::cell_y;
     nz = Environment::cell_z;
@@ -723,7 +726,7 @@ void RootGrid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_ty
     vtk_gen.beginBlock(0);
         vtk_gen.beginDataSet(id);
         vtk_gen.setAMRBoxNode(from_ix, from_ix + this->getXNodeSize() - 1, from_iy, from_iy + this->getYNodeSize() - 1, from_iz, from_iz + this->getZNodeSize() - 1);
-        vtk_gen.setFile(data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
+        vtk_gen.setFile("raw_data/" + data_type_name + "_id_" + std::to_string(id) + "_" + i_timestamp + ".vti");
         vtk_gen.endDataSet();
     vtk_gen.endBlock();
 
