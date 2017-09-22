@@ -38,9 +38,13 @@ void Grid::updateParticleVelocityES(void) {
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         double qm = 0.5 * (Environment::getParticleType(pid)->getCharge()) / (Environment::getParticleType(pid)->getMass());
+        auto& parray = particles[pid];
+        const auto size = parray.size();
 
-        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
-            Particle& p = particles[pid][pnum];
+        #pragma omp parallel for shared(exref, eyref, ezref)
+        for(int pnum = 0; pnum < size; ++pnum){
+            auto& p = parray[pnum];
+
             if(p.isValid) {
                 //! 毎回生成するよりコピーのが早い？
                 Position pos(p);
@@ -55,7 +59,7 @@ void Grid::updateParticleVelocityES(void) {
                 double v7 = qm * pos.dx2 * pos.dy1 * pos.dz1;
                 double v8 = qm * pos.dx1 * pos.dy1 * pos.dz1;
 
-                const double ex =  v1*exref[i][j][k]
+                const double ex = v1*exref[i][j][k]
                     + v2*exref[i+1][j][k]
                     + v3*exref[i][j+1][k]
                     + v4*exref[i+1][j+1][k]
@@ -63,7 +67,7 @@ void Grid::updateParticleVelocityES(void) {
                     + v6*exref[i+1][j][k+1]
                     + v7*exref[i][j+1][k+1]
                     + v8*exref[i+1][j+1][k+1];
-                const double ey =  v1*eyref[i][j][k]
+                const double ey = v1*eyref[i][j][k]
                     + v2*eyref[i+1][j][k]
                     + v3*eyref[i][j+1][k]
                     + v4*eyref[i+1][j+1][k]
@@ -71,7 +75,7 @@ void Grid::updateParticleVelocityES(void) {
                     + v6*eyref[i+1][j][k+1]
                     + v7*eyref[i][j+1][k+1]
                     + v8*eyref[i+1][j+1][k+1];
-                const double ez =  v1*ezref[i][j][k]
+                const double ez = v1*ezref[i][j][k]
                     + v2*ezref[i+1][j][k]
                     + v3*ezref[i][j+1][k]
                     + v4*ezref[i+1][j+1][k]
@@ -111,9 +115,13 @@ void Grid::updateParticleVelocityEM(void) {
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         double qm = 0.5 * (Environment::getParticleType(pid)->getCharge()) / (Environment::getParticleType(pid)->getMass());
+        auto& parray = particles[pid];
+        const auto size = parray.size();
 
-        for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
-            Particle& p = particles[pid][pnum];
+        #pragma omp parallel for shared(exref, eyref, ezref, bxref, byref, bzref)
+        for(int pnum = 0; pnum < size; ++pnum){
+            auto& p = parray[pnum];
+
             if(p.isValid) {
                 //! 毎回生成するよりコピーのが早い？
                 Position pos(p);
