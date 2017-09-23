@@ -58,9 +58,15 @@ message(STATUS "Boost LIBRARIES  : ${Boost_LIBRARIES}")
 # HDF5 and zlib
 set (LIB_TYPE STATIC)
 string(TOLOWER ${LIB_TYPE} SEARCH_TYPE)
-find_package (HDF5 NAMES hdf5 REQUIRED COMPONENTS C ${SEARCH_TYPE} )
-link_directories(${HDF5_LIBRARY_DIRS}) # for zlib inclusion
-set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_C_${LIB_TYPE}_LIBRARY})
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    set(HDF5_LIBRARY "${LOCAL_LIBRARYDIR}/lib/libhdf5.a")
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_LIBRARY})
+else()
+    find_package (HDF5 NAMES hdf5 REQUIRED COMPONENTS C ${SEARCH_TYPE} HINTS ${LOCAL_LIBRARYDIR}/lib)
+    link_directories(${HDF5_LIBRARY_DIRS}) # for zlib inclusion
+    set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_C_${LIB_TYPE}_LIBRARY})
+endif()
 
 # Doxygen (optional)
 find_package(Doxygen)

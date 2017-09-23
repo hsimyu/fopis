@@ -6,7 +6,7 @@
 	url = https://github.com/google/googletest.git
 [submodule "HighFive"]
 	path = HighFive
-	url = github.com:BlueBrain/HighFive
+	url = https://github.com/BlueBrain/HighFive
 [submodule "SimpleVTK"]
 	path = SimpleVTK
 	url = https://github.com/hsimyu/SimpleVTK
