@@ -171,6 +171,16 @@ message(STATUS "Current source files: ${SRCS}")
 add_executable(tdpic ${SRCS})
 target_link_libraries(tdpic ${CXX_REQUIRED_LIBS})
 
+install(
+    TARGETS tdpic
+    DESTINATION bin
+)
+
+install(
+    DIRECTORY input_samples
+    DESTINATION .
+)
+
 add_executable(mpirun_tdpic EXCLUDE_FROM_ALL ${SRCS})
 target_link_libraries(mpirun_tdpic ${CXX_REQUIRED_LIBS})
 
