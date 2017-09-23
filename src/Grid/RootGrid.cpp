@@ -414,7 +414,8 @@ void RootGrid::initializeObjectsCmatrix(void) {
 
         std::unique_ptr<Utils::ProgressManager> pm;
         if (MPIw::Environment::isRootNode(obj.getName())) {
-            pm = std::make_unique<Utils::ProgressManager>(num_cmat, "cmat_solve");
+            std::unique_ptr<Utils::ProgressManager> tmp_pm(new Utils::ProgressManager(num_cmat, "cmat_solve"));
+            pm = std::move(tmp_pm);
         }
 
         for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {

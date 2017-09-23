@@ -1,9 +1,10 @@
 #include "grid.hpp"
 
 void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz, const int _to_ix, const int _to_iy, const int _to_iz) {
-    this->addChild(
-        std::make_unique<ChildGrid>(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz)
-    );
+    std::unique_ptr<ChildGrid> new_child_ptr(new ChildGrid(this, _from_ix, _from_iy, _from_iz, _to_ix, _to_iy, _to_iz));
+
+    this->addChild( std::move(new_child_ptr) );
+
     incrementSumOfChild();
 }
 

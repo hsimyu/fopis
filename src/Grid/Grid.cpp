@@ -6,7 +6,9 @@
 unsigned int Grid::nextID = 0;
 
 // Grid 基底クラス用のコンストラクタ
-Grid::Grid(void) : child_map(boost::extents[0][0][0]), field(std::make_unique<Field>()) {
+Grid::Grid(void) : child_map(boost::extents[0][0][0]) {
+    std::unique_ptr<Field> init_field(new Field());
+    field = std::move(init_field);
     sumTotalNumOfChildGrids = 0;
 }
 
