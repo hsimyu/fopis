@@ -126,9 +126,13 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
     };
 
+    auto time_counter = Utils::TimeCounter::getInstance();
+
+    time_counter->begin("solvePoisson/updatePoissonErrorPre");
     poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
+        time_counter->switchTo("solvePoisson/mainLoop");
         //! is_not_boundaryは各方向の境界について
         //! 「その境界は計算空間の境界でない」か「その境界が計算空間の境界であり、周期境界である」場合にtrueとなるため
         //! 各方向の端要素の計算をIterationで計算する場合にチェックする必要がある
@@ -168,9 +172,11 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
             }
         }
 
+        time_counter->switchTo("solvePoisson/sendPhi");
         //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
         MPIw::Environment::sendRecvField(phi);
 
+        time_counter->switchTo("solvePoisson/checkResidual");
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
             if (Environment::isRootNode) {
                 cout << "[INFO] solve poisson: performed " << loop << " iterations." << endl;
@@ -179,9 +185,11 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         }
     }
 
+    time_counter->switchTo("solvePoisson/setBoundaryCondition");
     field->setBoundaryConditionPhi();
 
     //! 全グリッド上のエラーを更新
+    time_counter->switchTo("solvePoisson/updatePoissonErrorPost");
     #pragma omp parallel for shared(poisson_error, phi)
     for(int k = 0; k < cz_with_glue; ++k){
         for(int j = 0; j < cy_with_glue; ++j){
@@ -190,6 +198,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
             }
         }
     }
+    time_counter->end();
 }
 
 //! 電位分布の残差の最大ノルムを返す
