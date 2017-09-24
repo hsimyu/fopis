@@ -18,11 +18,11 @@ int main(int argc, char* argv[]){
     MPIw::Environment mpiEnv(argc, argv);
 
     std::shared_ptr<RootGrid> root_grid = Initializer::initTDPIC();
-    Utils::TimeCounter time_counter;
+    auto time_counter = Utils::TimeCounter::getInstance();
 
     if( Environment::isRootNode ) {
         cout << "===== Begin Main Loop =====" << endl;
-        time_counter.enableReport();
+        time_counter->enableReport();
     }
 
     // root_grid->makeChild(2, 2, 2, 8, 8, 15);
@@ -30,38 +30,38 @@ int main(int argc, char* argv[]){
     // root_grid->printInfo();
 
     // initialized rho, phi, efield
-    time_counter.begin("updateRho");
+    time_counter->begin("updateRho");
         root_grid->updateRho();
-    time_counter.switchTo("solvePoisson");
+    time_counter->switchTo("solvePoisson");
         root_grid->solvePoisson();
-    time_counter.switchTo("updateEfield");
+    time_counter->switchTo("updateEfield");
         root_grid->updateEfield();
-    time_counter.switchTo("updateBfield");
+    time_counter->switchTo("updateBfield");
         root_grid->updateBfield();
-    time_counter.end();
+    time_counter->end();
 
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
         if( Environment::isRootNode ) {
             cout << "====== Iteration " << Environment::timestep << " =====" << endl;
         }
-        time_counter.begin("resetObjects");
+        time_counter->begin("resetObjects");
         root_grid->resetObjects();
 
         // -- timing: t + 0.5 dt --
         // 速度更新
-        time_counter.switchTo("updateParticleVelocity");
+        time_counter->switchTo("updateParticleVelocity");
         root_grid->updateParticleVelocity();
 
         // 位置更新
-        time_counter.switchTo("updateParticlePosition");
+        time_counter->switchTo("updateParticlePosition");
         root_grid->updateParticlePosition(); // jx, jy, jz もここで update される
 
         // 粒子注入
-        time_counter.switchTo("injectParticleFromBoundary");
+        time_counter->switchTo("injectParticleFromBoundary");
         root_grid->injectParticlesFromBoundary();
 
         // 粒子放出
-        time_counter.switchTo("emitParticlesFromObjects");
+        time_counter->switchTo("emitParticlesFromObjects");
         root_grid->emitParticlesFromObjects();
 
         // -- timing: t + dt --
@@ -69,47 +69,47 @@ int main(int argc, char* argv[]){
             // 電磁計算の場合はFDTDとPoisson解くのを分ける
             if ( Environment::timestep % 1 == 0 ) {
                 // 新しい位置に対応する電荷密度算出
-                time_counter.switchTo("updateRho");
+                time_counter->switchTo("updateRho");
                 root_grid->updateRho();
 
                 // Poisson を解く (FDTDの場合はたまにでいい?)
-                time_counter.switchTo("solvePoisson");
+                time_counter->switchTo("solvePoisson");
                 root_grid->solvePoisson();
 
                 // 電場更新
-                time_counter.switchTo("updateEfield");
+                time_counter->switchTo("updateEfield");
                 root_grid->updateEfield();
             } else {
                 // FDTDで電場更新
-                time_counter.switchTo("updateEfieldFDTD");
+                time_counter->switchTo("updateEfieldFDTD");
                 root_grid->updateEfieldFDTD();
             }
 
             // 磁場更新
-            time_counter.switchTo("updateBfield");
+            time_counter->switchTo("updateBfield");
             root_grid->updateBfield();
 
             // 磁場プロット
-            time_counter.switchTo("plotData");
+            time_counter->switchTo("plotData");
             if(Environment::plotBfield()) {
                 IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
             }
         } else {
             // 静電計算の場合
             // 新しい位置に対応する電荷密度算出
-            time_counter.switchTo("updateRho");
+            time_counter->switchTo("updateRho");
             root_grid->updateRho();
 
             // Poisson を解く
-            time_counter.switchTo("solvePoisson");
+            time_counter->switchTo("solvePoisson");
             root_grid->solvePoisson();
 
             // 電場更新
-            time_counter.switchTo("updateEfield");
+            time_counter->switchTo("updateEfield");
             root_grid->updateEfield();
         }
 
-        time_counter.switchTo("plotData");
+        time_counter->switchTo("plotData");
         if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
         if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
         if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
@@ -120,12 +120,14 @@ int main(int argc, char* argv[]){
 
         IO::plotObjectsData(root_grid);
         IO::plotValidParticleNumber(root_grid);
-        time_counter.end();
+        time_counter->end();
     }
 
     if( Environment::isRootNode ) {
         cout << "===== End Main Loop =====" << endl;
     }
+
+    time_counter->destroy();
 
     return 0;
 }

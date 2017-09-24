@@ -9,6 +9,8 @@
 #include <boost/numeric/ublas/io.hpp>
 
 namespace Utils {
+    TimeCounter* TimeCounter::instance = nullptr;
+
     //! キャパシティ行列用だけに使うため、受け取った参照先を直接置き換える実装で良い
     void makeInvert(dMatrix& lhs) {
         namespace ublas = boost::numeric::ublas;

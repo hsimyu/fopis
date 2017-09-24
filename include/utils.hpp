@@ -85,6 +85,9 @@ namespace Utils {
 
     class TimeCounter {
     private:
+        // singleton
+        static TimeCounter* instance;
+
         using Time = std::chrono::high_resolution_clock;
         Time::time_point begin_time_point;
 
@@ -92,18 +95,11 @@ namespace Utils {
         std::string current_activity;
         bool print_report_on_destruct;
 
-        void addNewActivity(const std::string& activity_name) {
-            std::chrono::seconds s(0);
-            elapsed_times[activity_name] = std::move(s);
-        }
-
         void setCurrentActivity(const std::string& activity_name) {
             current_activity = activity_name;
         }
 
-    public:
         TimeCounter() : elapsed_times{}, current_activity{}, print_report_on_destruct{false} {}
-
         ~TimeCounter() {
             if (print_report_on_destruct) {
                 cout << "====== Computation Time Report ======" << endl;
@@ -116,19 +112,38 @@ namespace Utils {
             }
         }
 
-        void begin(const std::string& activity_name) {
-            if (elapsed_times.count(activity_name) == 0) {
-                addNewActivity(activity_name);
+    public:
+        static TimeCounter* getInstance() {
+            if (instance == nullptr) {
+                instance = new TimeCounter;
             }
+            return instance;
+        }
 
+        static void destroy() {
+            delete instance;
+        }
+
+        void begin(const std::string& activity_name) {
             setCurrentActivity(activity_name);
 
             begin_time_point = Time::now();
         }
 
         void end() {
-            const auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(Time::now() - begin_time_point);
-            elapsed_times[current_activity] += elapsed_time;
+            if (current_activity != "") {
+                const auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(Time::now() - begin_time_point);
+                constexpr char delim = '/';
+
+                auto activities = split(current_activity, delim);
+                std::string nested_activity_name = "";
+
+                for (const auto& act : activities) {
+                    nested_activity_name += delim + act;
+                    elapsed_times[nested_activity_name] += elapsed_time;
+                }
+                setCurrentActivity("");
+            }
         }
 
         void switchTo(const std::string& activity_name) {

@@ -668,9 +668,13 @@ void RootGrid::updateRho() {
     auto old_rho = rho;
 #endif
 
+    auto time_counter = Utils::TimeCounter::getInstance();
+
     //! rhoを初期化
+    time_counter->switchTo("updateRho/initializeRhoArray");
     Utils::initializeRhoArray(rho);
 
+    time_counter->switchTo("updateRho/mainLoop");
     #pragma omp parallel for shared(rho)
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
         double q = Environment::getParticleType(pid)->getChargeOfSuperParticle();
@@ -701,6 +705,7 @@ void RootGrid::updateRho() {
         }
     }
 
+    time_counter->switchTo("updateRho/applyCharge");
     for(auto& obj : objects) {
         if (obj.isDefined()) {
             //! 物体に配分された電荷を現在の rho に印加する
@@ -708,6 +713,7 @@ void RootGrid::updateRho() {
         }
     }
 
+    time_counter->switchTo("updateRho/totalCharge Computation");
     for(int pid = 1; pid < Environment::num_of_particle_types + 1; ++pid) {
         for(int i = 1; i < nx + 2; ++i) {
             for(int j = 1; j < ny + 2; ++j) {
@@ -719,15 +725,18 @@ void RootGrid::updateRho() {
     }
 
     //! rho を隣に送る
+    time_counter->switchTo("updateRho/sendRho");
     for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
         MPIw::Environment::sendRecvField(rho[pid]);
     }
 
     //! 子の電荷更新
+    time_counter->switchTo("updateRho/childRho");
     for(auto& child : children) {
         child->updateRho();
     }
 
+    time_counter->switchTo("updateRho/redistributeObjectsCharge");
     //! 物体が存在する場合、電荷再配分が必要になる
     if (objects.size() > 0) {
         //! 一度 Poisson を解いて phi を更新
@@ -745,6 +754,8 @@ void RootGrid::updateRho() {
         field->checkChargeConservation(old_rho, 1.0, dx);
     }
 #endif
+
+    time_counter->end();
 }
 
 inline void RootGrid::decrementSumOfChild() { --sumTotalNumOfChildGrids; }
