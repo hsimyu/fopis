@@ -178,7 +178,7 @@ install(
 
 install(
     DIRECTORY input_samples
-    DESTINATION .
+    DESTINATION ""
 )
 
 add_executable(mpirun_tdpic EXCLUDE_FROM_ALL ${SRCS})
