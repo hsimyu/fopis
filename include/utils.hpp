@@ -82,6 +82,64 @@ namespace Utils {
             }
         }
     };
+
+    class TimeCounter {
+    private:
+        using Time = std::chrono::high_resolution_clock;
+        Time::time_point begin_time_point;
+
+        std::map<std::string, std::chrono::milliseconds> elapsed_times;
+        std::string current_activity;
+        bool print_report_on_destruct;
+
+        void addNewActivity(const std::string& activity_name) {
+            std::chrono::seconds s(0);
+            elapsed_times[activity_name] = std::move(s);
+        }
+
+        void setCurrentActivity(const std::string& activity_name) {
+            current_activity = activity_name;
+        }
+
+    public:
+        TimeCounter() : elapsed_times{}, current_activity{}, print_report_on_destruct{false} {}
+
+        ~TimeCounter() {
+            if (print_report_on_destruct) {
+                cout << "====== Computation Time Report ======" << endl;
+                std::chrono::milliseconds total_time(0);
+                for(const auto& pairs : elapsed_times) {
+                    cout << format("  [%s] %s msecs.") % pairs.first % pairs.second.count() << endl;
+                    total_time += pairs.second;
+                }
+                cout << format("  [%s] %s msecs.") % "Total" % total_time.count() << endl;
+            }
+        }
+
+        void begin(const std::string& activity_name) {
+            if (elapsed_times.count(activity_name) == 0) {
+                addNewActivity(activity_name);
+            }
+
+            setCurrentActivity(activity_name);
+
+            begin_time_point = Time::now();
+        }
+
+        void end() {
+            const auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(Time::now() - begin_time_point);
+            elapsed_times[current_activity] += elapsed_time;
+        }
+
+        void switchTo(const std::string& activity_name) {
+            end();
+            begin(activity_name);
+        }
+
+        void enableReport() {
+            print_report_on_destruct = true;
+        }
+    };
 }
 
 #endif
