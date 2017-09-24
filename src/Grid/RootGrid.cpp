@@ -180,7 +180,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     field->setBoundaryConditionPhi();
 
     //! 全グリッド上のエラーを更新
-    #pragma omp parallel shared(poisson_error, phi)
+    #pragma omp parallel for shared(poisson_error, phi)
     for(int k = 0; k < cz_with_glue; ++k){
         for(int j = 0; j < cy_with_glue; ++j){
             for(int i = 0; i < cx_with_glue; ++i){
