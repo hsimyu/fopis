@@ -34,7 +34,6 @@ namespace Utils {
     }
 
     void initializeRhoArray(std::vector<tdArray>& x) {
-        
         for(int id = 0; id < x.size(); ++id) {
             for(int i = 0; i < x[0].shape()[0]; ++i) {
                 for(int j = 0; j < x[0].shape()[1]; ++j) {

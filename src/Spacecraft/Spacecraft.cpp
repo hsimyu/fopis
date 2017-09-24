@@ -44,7 +44,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
         //! キャパシタンス行列のサイズを物体サイズに変更
         capacity_matrix.resize(num_cmat, num_cmat);
-        
         tdArray::extent_gen tdExtents;
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
             //! Node ベース, glue cell ありの電荷密度マップを生成
@@ -183,7 +182,7 @@ void Spacecraft::removeInnerParticle(Particle& p) const {
 }
 
 void Spacecraft::distributeInnerParticleCharge(Particle& p) {
-    if (isContaining(p)) { 
+    if (isContaining(p)) {
         const auto id = p.typeId;
         const auto q = p.getChargeOfSuperParticle();
         const auto pos = p.getPosition();
@@ -448,8 +447,8 @@ namespace ObjectUtils {
             std::string buffer;
 
             //! vとf 始まりの文字列にマッチするパターン
-            std::regex re_vertex(R"(^v (.*)$)");
-            std::regex re_face(R"(^f (.*)$)");
+            std::regex re_vertex("v (.*)");
+            std::regex re_face("f (.*)");
 
             //! vertexとfaceを一時格納しておくarray
             using Vertex = std::array<int, 3>;
