@@ -9,7 +9,7 @@
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectCells& cells) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectCells& cells, const ObjectNodeTextures& textures) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -18,15 +18,15 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     potential_fix = Normalizer::normalizePotential(obj_info.potential_fix);
 
     if (is_defined_in_this_process) {
-        //! セルマップは int で texture_index を持つ
-        ObjectDefinedMapInt::extent_gen objectIntExtents;
-        object_cell_map.resize(objectIntExtents[nx + 1][ny + 1][nz + 1]);
+        //! セル定義マップ
+        ObjectDefinedMapBool::extent_gen objectBoolExtents;
+        object_cell_map.resize(objectBoolExtents[nx + 1][ny + 1][nz + 1]);
 
         // セル定義マップを初期化
         for(int i = 0; i < nx + 2; ++i) {
             for (int j = 0; j < ny + 2; ++j) {
                 for (int k = 0; k < nz + 2; ++k) {
-                    if (i != nx + 1 && j != ny + 1 && k != nz + 1) object_cell_map[i][j][k] = 0;
+                    if (i != nx + 1 && j != ny + 1 && k != nz + 1) object_cell_map[i][j][k] = false;
                 }
             }
         }
@@ -73,46 +73,39 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
         //! セルベースの物体定義 (物体内部判定用)
         for(const auto& cell_pos : cells) {
-            object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = cell_pos[3];
-            if (material_capacitances.count( cell_pos[3] ) == 0) {
-                //! マッピングに使う物理定数の値を property_list から取り出しておく
-                if (material_property_list.count( material_names[ cell_pos[3] ] ) > 0 ) {
-                    //! 各ノードの capacitance = 真空の誘電率 * 比誘電率でいい?
-                    material_capacitances[ cell_pos[3] ] = Normalizer::normalizeCapacitance(
-                        eps0 * material_property_list.at( material_names[ cell_pos[3] ] ).at("RelativePermittivity")
-                    );
-                } else {
-                    //! material名の指定がおかしかった場合は落とす
-                    std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ cell_pos[3] ] % cell_pos[3]).str();
-
-                    std::cerr << "[ERROR] " << error_message << endl;
-                    throw std::invalid_argument(error_message);
-                }
-            }
+            object_cell_map[cell_pos[0]][cell_pos[1]][cell_pos[2]] = true;
         }
 
         //! 誘電体計算用の静電容量値をノードごとに計算
         for (const auto& one_node : capacity_matrix_relation) {
             const auto& cmat_number = one_node.first;
             const auto& pos = one_node.second;
+            const auto& texture = textures.at(cmat_number);
 
-            //! とりあえずノード周りの(最大)8セルの平均値?
+            //! ノード周りのFaceに割り当てられたTextureの平均値から計算
             double capacitance = 0.0;
-            double valid_cell_count = 0;
 
-            for(int di = -1; di < 1; ++di) {
-                for(int dj = -1; dj < 1; ++dj) {
-                    for(int dk = -1; dk < 1; ++dk) {
-                        if (object_cell_map[pos.i + di][pos.j + dj][pos.k + dk] > 0) {
-                            capacitance += material_capacitances[ object_cell_map[pos.i + di][pos.j + dj][pos.k + dk] ];
-                            ++valid_cell_count;
-                        }
+            for(const auto& texture_indicies : texture) {
+                if (material_capacitances.count( texture_indicies ) == 0) {
+                    //! マッピングに使う物理定数の値を property_list から取り出しておく
+                    if (material_property_list.count( material_names[ texture_indicies ] ) > 0 ) {
+                        //! 各ノードの capacitance = 真空の誘電率 * 比誘電率でいい?
+                        material_capacitances[ texture_indicies ] = Normalizer::normalizeCapacitance(
+                            eps0 * material_property_list.at( material_names[ texture_indicies ] ).at("RelativePermittivity")
+                        );
+                    } else {
+                        //! material名の指定がおかしかった場合は落とす
+                        std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ texture_indicies ] % texture_indicies).str();
+
+                        std::cerr << "[ERROR] " << error_message << endl;
+                        throw std::invalid_argument(error_message);
                     }
                 }
+
+                capacitance += material_capacitances[ texture_indicies ];
             }
 
-            capacitance_map[ cmat_number ] = capacitance / valid_cell_count;
-            // cout << format("cmat[%d]'s capacitance is %s. [%s, %d]") % cmat_number % capacitance_map[ cmat_number ] % capacitance % valid_cell_count << endl;
+            capacitance_map[ cmat_number ] = capacitance / texture.size();
         }
     }
 }
@@ -171,7 +164,7 @@ bool Spacecraft::isContaining(const Position& pos) const {
     if (!is_defined_in_this_process) return false;
 
     if (Environment::isValidPosition(pos)) {
-        return (object_cell_map[pos.i][pos.j][pos.k] > 0);
+        return object_cell_map[pos.i][pos.j][pos.k];
     } else {
         return false;
     }
@@ -427,18 +420,22 @@ namespace ObjectUtils {
             const auto nx = Environment::nx;
             const auto ny = Environment::ny;
             const auto nz = Environment::nz;
-            ObjectDefinedMapBool object_node_map(boost::extents[nx][ny][nz]);
+            ObjectDefinedMapInt object_node_map(boost::extents[nx][ny][nz]);
 
-            using ObjectFaceMap = boost::multi_array<int, 4>;
-            ObjectFaceMap object_xface_map(boost::extents[nx][ny - 1][nz - 1][2]);
-            ObjectFaceMap object_yface_map(boost::extents[nx - 1][ny][nz - 1][2]);
-            ObjectFaceMap object_zface_map(boost::extents[nx - 1][ny - 1][nz][2]);
+            using ObjectFaceMap = boost::multi_array<bool, 3>;
+            ObjectFaceMap object_xface_map(boost::extents[nx][ny - 1][nz - 1]);
+            ObjectFaceMap object_yface_map(boost::extents[nx - 1][ny][nz - 1]);
+            ObjectFaceMap object_zface_map(boost::extents[nx - 1][ny - 1][nz]);
 
             //! 初期化
             for(int i = 0; i < nx; ++i) {
                 for (int j = 0; j < ny; ++j) {
                     for (int k = 0; k < nz; ++k) {
-                        object_node_map[i][j][k] = false;
+                        object_node_map[i][j][k] = -1;
+
+                        if (j != ny - 1 && k != nz - 1) object_xface_map[i][j][k] = false;
+                        if (i != nx - 1 && k != nz - 1) object_yface_map[i][j][k] = false;
+                        if (i != nx - 1 && j != ny - 1) object_zface_map[i][j][k] = false;
                     }
                 }
             }
@@ -505,14 +502,17 @@ namespace ObjectUtils {
 
                     for(int j = miny; j < maxy + 1; ++j) {
                         for(int k = minz; k < maxz + 1; ++k) {
-                            if (!object_node_map[i][j][k]) {
+                            if (object_node_map[i][j][k] < 0) {
                                 obj_data.nodes[num_cmat] = {{i, j, k}};
+                                obj_data.textures[num_cmat] = {face[4]};
+                                object_node_map[i][j][k] = num_cmat;
                                 ++num_cmat;
-                                object_node_map[i][j][k] = true;
+                            } else {
+                                obj_data.textures[ object_node_map[i][j][k] ].push_back(face[4]);
                             }
+
                             if (j != maxy && k != maxz) {
-                                object_xface_map[i][j][k][0] = 1;
-                                object_xface_map[i][j][k][1] = face[4];
+                                object_xface_map[i][j][k] = true;
                             }
                         }
                     }
@@ -526,14 +526,17 @@ namespace ObjectUtils {
 
                     for(int i = minx; i < maxx + 1; ++i) {
                         for(int k = minz; k < maxz + 1; ++k) {
-                            if (!object_node_map[i][j][k]) {
+                            if (object_node_map[i][j][k] < 0) {
                                 obj_data.nodes[num_cmat] = {{i, j, k}};
+                                obj_data.textures[num_cmat] = {face[4]};
+                                object_node_map[i][j][k] = num_cmat;
                                 ++num_cmat;
-                                object_node_map[i][j][k] = true;
+                            } else {
+                                obj_data.textures[ object_node_map[i][j][k] ].push_back(face[4]);
                             }
+
                             if (i != maxx && k != maxz) {
-                                object_yface_map[i][j][k][0] = 1;
-                                object_yface_map[i][j][k][1] = face[4];
+                                object_yface_map[i][j][k] = true;
                             }
                         }
                     }
@@ -547,14 +550,17 @@ namespace ObjectUtils {
 
                     for(int i = minx; i < maxx + 1; ++i) {
                         for(int j = miny; j < maxy + 1; ++j) {
-                            if (!object_node_map[i][j][k]) {
+                            if (object_node_map[i][j][k] < 0) {
                                 obj_data.nodes[num_cmat] = {{i, j, k}};
+                                obj_data.textures[num_cmat] = {face[4]};
+                                object_node_map[i][j][k] = num_cmat;
                                 ++num_cmat;
-                                object_node_map[i][j][k] = true;
+                            } else {
+                                obj_data.textures[ object_node_map[i][j][k] ].push_back(face[4]);
                             }
+
                             if (i != maxx && j != maxy) {
-                                object_zface_map[i][j][k][0] = 1;
-                                object_zface_map[i][j][k][1] = face[4];
+                                object_zface_map[i][j][k] = true;
                             }
                         }
                     }
@@ -564,26 +570,21 @@ namespace ObjectUtils {
             }
 
             //! セルマップ定義のためにFaceを使ってカウントする
-            using CellCountMap = boost::multi_array<int, 4>;
-            using CellCountMapSlice = CellCountMap::array_view<1>::type;
-            using CellCountMapRange = CellCountMap::index_range;
-            CellCountMap object_cell_count_map(boost::extents[nx - 1][ny - 1][nz - 1][7]);
+            using CellCountMap = boost::multi_array<int, 3>;
+            CellCountMap object_cell_count_map(boost::extents[nx - 1][ny - 1][nz - 1]);
+
             for (int j = 0; j < ny - 1; ++j) {
                 for (int k = 0; k < nz - 1; ++k) {
                     for(int lower_index = 0; lower_index < nx - 1; ++lower_index) {
                         //! 下端を見つける
-                        if (object_xface_map[lower_index][j][k][0] == 1) {
+                        if (object_xface_map[lower_index][j][k]) {
+
                             //! 下端が見つかった場合は上端を探す
                             for(int upper_index = lower_index + 1; upper_index < nx - 1; ++upper_index) {
-                                if (object_xface_map[upper_index][j][k][0] == 1) {
+                                if (object_xface_map[upper_index][j][k]) {
                                     //! 上端が見つかったら間を塗る
                                     for(int i = lower_index; i < upper_index; ++i) {
-                                        object_cell_count_map[i][j][k][0] += 1;
-
-                                        //! 下端の面の色
-                                        object_cell_count_map[i][j][k][1] = object_xface_map[lower_index][j][k][1];
-                                        //! 上端の面の色
-                                        object_cell_count_map[i][j][k][2] = object_xface_map[upper_index][j][k][1];
+                                        object_cell_count_map[i][j][k] += 1;
                                     }
 
                                     //! 下端のindexを進めてループを抜ける
@@ -595,22 +596,18 @@ namespace ObjectUtils {
                     }
                 }
             }
+
             for(int i = 0; i < nx - 1; ++i) {
                 for (int k = 0; k < nz - 1; ++k) {
                     for(int lower_index = 0; lower_index < ny - 1; ++lower_index) {
                         //! 下端を見つける
-                        if (object_yface_map[i][lower_index][k][0] == 1) {
+                        if (object_yface_map[i][lower_index][k]) {
                             //! 下端が見つかった場合は上端を探す
                             for(int upper_index = lower_index + 1; upper_index < ny - 1; ++upper_index) {
-                                if (object_yface_map[i][upper_index][k][0] == 1) {
+                                if (object_yface_map[i][upper_index][k]) {
                                     //! 上端が見つかったら間を塗る
                                     for(int j = lower_index; j < upper_index; ++j) {
-                                        object_cell_count_map[i][j][k][0] += 1;
-
-                                        //! 下端の面の色
-                                        object_cell_count_map[i][j][k][3] = object_yface_map[i][lower_index][k][1];
-                                        //! 上端の面の色
-                                        object_cell_count_map[i][j][k][4] = object_yface_map[i][upper_index][k][1];
+                                        object_cell_count_map[i][j][k] += 1;
                                     }
 
                                     //! 下端のindexを進めてループを抜ける
@@ -622,22 +619,18 @@ namespace ObjectUtils {
                     }
                 }
             }
+
             for(int i = 0; i < nx - 1; ++i) {
                 for (int j = 0; j < ny - 1; ++j) {
                     for(int lower_index = 0; lower_index < nz - 1; ++lower_index) {
                         //! 下端を見つける
-                        if (object_zface_map[i][j][lower_index][0] == 1) {
+                        if (object_zface_map[i][j][lower_index]) {
                             //! 下端が見つかった場合は上端を探す
                             for(int upper_index = lower_index + 1; upper_index < nz - 1; ++upper_index) {
-                                if (object_zface_map[i][j][upper_index][0] == 1) {
+                                if (object_zface_map[i][j][upper_index]) {
                                     //! 上端が見つかったら間を塗る
                                     for(int k = lower_index; k < upper_index; ++k) {
-                                        object_cell_count_map[i][j][k][0] += 1;
-
-                                        //! 下端の面の色
-                                        object_cell_count_map[i][j][k][5] = object_zface_map[i][j][lower_index][1];
-                                        //! 上端の面の色
-                                        object_cell_count_map[i][j][k][6] = object_zface_map[i][j][upper_index][1];
+                                        object_cell_count_map[i][j][k] += 1;
                                     }
 
                                     //! 下端のindexを進めてループを抜ける
@@ -654,9 +647,8 @@ namespace ObjectUtils {
                 for (int j = 0; j < ny - 1; ++j) {
                     for (int k = 0; k < nz - 1; ++k) {
                         //! countが3なら内部と定義
-                        if (object_cell_count_map[i][j][k][0] == 3) {
-                            int texture_index = getTextureIndex<CellCountMapSlice>( object_cell_count_map[ boost::indices[i][j][k][ CellCountMapRange(1, 7) ] ] );
-                            obj_data.cells.push_back({{i, j, k, texture_index}});
+                        if (object_cell_count_map[i][j][k] == 3) {
+                            obj_data.cells.push_back({{i, j, k}});
                         }
                     }
                 }
@@ -667,56 +659,5 @@ namespace ObjectUtils {
         }
 
         return obj_data;
-    }
-
-    template<typename T>
-    int getTextureIndex(const T&& counts) {
-        //! 6次元配列であることを期待する
-        assert(6 == counts.size());
-
-        if ((counts[0] == counts[1]) && (counts[2] == counts[3]) && (counts[4] == counts[5])) {
-            //! すべての face pair の面テクスチャが一致している場合、
-            //! 数の少ない要素を優先する
-            std::map<int, int> index_counts;
-
-            for (int idx = 0; idx < 6; ++idx) {
-                index_counts[counts[idx]] += 1;
-            }
-
-            int minimum_index = -1;
-            int minimum_count = 100000;
-            for (auto& pair : index_counts) {
-                if (pair.second < minimum_count) minimum_index = pair.first;
-            }
-
-            return minimum_index;
-        } else {
-            // 4つのペアから1つの値を決定するラムダ
-
-            //! 不一致のペアがあるなら、それ以外を優先
-            if (counts[0] != counts[1]) {
-                return determineOneValueFromFourElems(counts[2], counts[3], counts[4], counts[5]);
-            } else if (counts[2] != counts[3]) {
-                return determineOneValueFromFourElems(counts[0], counts[1], counts[4], counts[5]);
-            } else {
-                return determineOneValueFromFourElems(counts[0], counts[1], counts[2], counts[3]);
-            }
-        }
-
-        throw std::logic_error("something wrong on getTextureIndex()...");
-    }
-
-    template<typename T>
-    T determineOneValueFromFourElems(T v1, T v2, T v3, T v4) {
-        if (v1 == v2 && v2 == v3 && v3 == v4 ) {
-            //! 全部一致(基本的にこのケースが多いはず)
-            return v1;
-        } else if (v1 == v2 && v3 == v4) {
-            return v1; // どっちも別の値でペアになっている時は早いやつを優先
-        } else if (v3 != v4) {
-            return v1; // この場合、v1 == v2 または v1 != v2 だが、どちらの場合も v1 を返すので判定不要
-        } else {
-            return v3;
-        }
     }
 }

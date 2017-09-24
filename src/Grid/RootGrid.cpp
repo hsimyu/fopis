@@ -387,6 +387,7 @@ void RootGrid::initializeObject(void) {
 
         unsigned int num_cmat = object_data.nodes.size();
         const auto& node_array = object_data.nodes;
+        const auto& textures = object_data.textures;
 
         //! innerと判定されたやつだけ渡す
         ObjectNodes inner_node_array;
@@ -411,13 +412,13 @@ void RootGrid::initializeObject(void) {
         for(const auto& cell_pos : cell_array) {
             if (isInnerCellWithGlue(cell_pos[0], cell_pos[1], cell_pos[2])) {
                 auto rel_pos = Environment::getRelativePositionOnRootWithGlue(cell_pos[0], cell_pos[1], cell_pos[2]);
-                inner_cell_array.push_back( {{rel_pos[0], rel_pos[1], rel_pos[2], cell_pos[3]}} );
+                inner_cell_array.push_back( {{rel_pos[0], rel_pos[1], rel_pos[2]}} );
             }
         }
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, inner_cell_array);
+        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, inner_cell_array, textures);
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);

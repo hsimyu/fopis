@@ -108,7 +108,7 @@ namespace Utils {
                     cout << format("  %s: %s msecs.") % pairs.first % pairs.second.count() << endl;
                     total_time += pairs.second;
                 }
-                cout << format("Total: %s secs.") % std::chrono::duration_cast<std::chrono::seconds>(total_time).count() << endl;
+                cout << format("Total: %s msecs.") % total_time.count() << endl;
             }
         }
 

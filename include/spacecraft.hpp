@@ -8,11 +8,13 @@
 using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
 using ObjectDefinedMapInt = boost::multi_array<int, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
-using ObjectCells = std::vector<std::array<int, 4>>;
+using ObjectNodeTextures = std::map< unsigned int, std::vector<int> >;
+using ObjectCells = std::vector<std::array<int, 3>>;
 using PropertyPair = std::map<std::string, double>;
 
 struct ObjectDataFromFile {
     ObjectNodes nodes;
+    ObjectNodeTextures textures;
     ObjectCells cells;
 };
 
@@ -35,8 +37,10 @@ private:
     std::map<int, std::string> material_names;
     std::map<int, double> material_capacitances;
 
-    //! オブジェクト定義マップと電荷定義マップ
-    ObjectDefinedMapInt object_cell_map;
+    //! セルベースのオブジェクト定義マップ
+    ObjectDefinedMapBool object_cell_map;
+
+    //! ノードベースの電荷定義マップ
     RhoArray charge_map;
 
     //! キャパシタンス行列
@@ -52,7 +56,7 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectCells&);
+    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectCells&, const ObjectNodeTextures&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
@@ -60,7 +64,7 @@ private:
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
-        const ObjectNodes& nodes, const ObjectCells& cells) :
+        const ObjectNodes& nodes, const ObjectCells& cells, const ObjectNodeTextures& textures) :
         name(obj_info.name),
         surface_type(obj_info.surface_type),
         num_cmat(_num_cmat),
@@ -73,7 +77,7 @@ public:
         capacity_matrix(0, 0),
         capacity_matrix_relation{},
         capacitance_map{} {
-        construct(nx, ny, nz, obj_info, nodes, cells);
+        construct(nx, ny, nz, obj_info, nodes, cells, textures);
     }
 
     // アクセサ
