@@ -725,7 +725,7 @@ void RootGrid::updateRho() {
     }
 
     //! rho を隣に送る
-    time_counter->switchTo("updateRho/sendRho");
+    time_counter->switchTo("updateRho/sendRhoAll");
     for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
         MPIw::Environment::sendRecvField(rho[pid]);
     }
@@ -736,16 +736,18 @@ void RootGrid::updateRho() {
         child->updateRho();
     }
 
-    time_counter->switchTo("updateRho/redistributeObjectsCharge");
     //! 物体が存在する場合、電荷再配分が必要になる
     if (objects.size() > 0) {
         //! 一度 Poisson を解いて phi を更新
+        time_counter->switchTo("solvePoisson");
         solvePoisson();
 
+        time_counter->switchTo("updateRho/redistributeCharge");
         for(auto& obj : objects) {
             if (obj.isDefined()) obj.redistributeCharge(rho, field->getPhi());
         }
 
+        time_counter->switchTo("updateRho/sendRhoZero");
         MPIw::Environment::sendRecvField(rho[0]);
     }
 
