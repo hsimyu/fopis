@@ -234,7 +234,7 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     auto q = getTotalCharge(rho);
 
     if (MPIw::Environment::isRootNode(name)) {
-        cout << format("%s: %16.7e") % "charge before redist" % q << endl;
+        cout << format("[INFO] [%s] charge before redist: %16.7e") % name % q << endl;
     }
 
     double capacity_times_phi = 0.0;
@@ -337,7 +337,7 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     total_charge = q;
 
     if (MPIw::Environment::isRootNode(name)) {
-        cout << format("%s: %16.7e") % "charge after redist " % q << endl;
+        cout << format("[INFO] [%s] charge after redist: %16.7e") % name % q << endl;
     }
 }
 

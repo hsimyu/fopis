@@ -117,13 +117,13 @@ namespace IO {
         auto openmode = (Environment::timestep == 1) ? std::ios::out : std::ios::app;
         std::ofstream ofs(filename, openmode);
 
-        ofs << format("%s,%s,%s") % "Timestep" % "Datatime" % header << endl; 
+        ofs << format("%10s %16s %s") % "Timestep" % "Datatime" % header << endl; 
     }
 
     void putLog(const std::string& filename, const std::string& log_entry) {
         const auto datatime = Environment::getDataTime();
         std::ofstream ofs(filename, std::ios::app);
-        ofs << format("%10d,%16.7e,%s") % Environment::timestep % datatime % log_entry << endl;
+        ofs << format("%10d %16.7e %s") % Environment::timestep % datatime % log_entry << endl;
     }
 
     void plotEnergy(std::shared_ptr<const Grid> g, int timestep) {
@@ -135,11 +135,11 @@ namespace IO {
             std::string filename = "data/energy.txt";
 
             if(timestep == 1) {
-                const auto header = (format("%16s,%16s,%16s,%16s") % "Energy [J]" % "Particle [J]" % "EField [J]" % "BField [J]").str();
+                const auto header = (format("%16s %16s %16s %16s") % "Energy [J]" % "Particle [J]" % "EField [J]" % "BField [J]").str();
                 putHeader(filename, header);
             }
 
-            std::string entry = (format("%16.7e,%16.7e,%16.7e,%16.7e") %
+            std::string entry = (format("%16.7e %16.7e %16.7e %16.7e") %
                 Normalizer::unnormalizeEnergy(receivedParticleEnergy + receivedEFieldEnergy + receivedBFieldEnergy) %
                 Normalizer::unnormalizeEnergy(receivedParticleEnergy) %
                 Normalizer::unnormalizeEnergy(receivedEFieldEnergy) %
