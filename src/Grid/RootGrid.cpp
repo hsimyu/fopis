@@ -671,6 +671,7 @@ void RootGrid::updateRho() {
     //! rhoを初期化
     Utils::initializeRhoArray(rho);
 
+    #pragma omp parallel for shared(rho)
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
         double q = Environment::getParticleType(pid)->getChargeOfSuperParticle();
         const auto rho_idx = pid + 1;
