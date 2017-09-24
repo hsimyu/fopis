@@ -76,16 +76,17 @@ std::string ParticleType::calcMemory() const {
 // util
 void ParticleType::printInfo() const {
     cout << "[ParticleType  : " << getName() << "]" << endl;
-    cout << "             id: " << getId() << endl;
-    cout << "           type: " << getType() << endl;
-    cout << "           mass: " << getMass() << endl;
-    cout << "         charge: " << getCharge() << "e" << endl;
-    cout << "        density: " << getDensity() << "/m^3" << endl;
-    cout << "    temperature: " << getTemperature() << "eV" << endl;
-    cout << "           size: " << getSize() << endl;
-    cout << "       per_cell: " << getPcell() << endl;
-    cout << "    totalNumber: " << getTotalNumber() << endl;
-    cout << "         memory: " << calcMemory() << endl;
+    cout << "                      id: " << getId() << endl;
+    cout << "                    type: " << getType() << endl;
+    cout << "                    mass: " << getMass() << endl;
+    cout << "                  charge: " << getCharge() << "e" << endl;
+    cout << "                 density: " << getDensity() << "/m^3" << endl;
+    cout << "             temperature: " << getTemperature() << "eV" << endl;
+    cout << "                    size: " << getSize() << endl;
+    cout << "                per_cell: " << getPcell() << endl;
+    cout << "total_number in node    : " << getTotalNumber() << endl;
+    cout << "total number in all node: " << (getTotalNumber() * Environment::proc_x * Environment::proc_y * Environment::proc_z) << endl;
+    cout << "                  memory: " << calcMemory() << endl;
 }
 
 //! 背景プラズマ用
