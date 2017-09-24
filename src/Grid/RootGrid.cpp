@@ -132,13 +132,35 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         //! is_not_boundaryは各方向の境界について
         //! 「その境界は計算空間の境界でない」か「その境界が計算空間の境界であり、周期境界である」場合にtrueとなるため
         //! 各方向の端要素の計算をIterationで計算する場合にチェックする必要がある
-        for(int k = 1; k < cz_with_glue - 1; ++k){
-            if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
-                for(int j = 1; j < cy_with_glue - 1; ++j){
-                    if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                        for(int i = 1; i < cx_with_glue - 1; ++i){
-                            if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
-                                phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+
+        #pragma omp parallel shared(phi)
+        {
+            //! 奇数グリッド更新
+            #pragma omp for
+            for(int k = 1; k < cz_with_glue - 1; k += 2){
+                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+                    for(int j = 1; j < cy_with_glue - 1; ++j){
+                        if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
+                            for(int i = 1; i < cx_with_glue - 1; ++i){
+                                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            //! 偶数グリッド更新
+            #pragma omp for
+            for(int k = 2; k < cz_with_glue - 1; k += 2){
+                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+                    for(int j = 1; j < cy_with_glue - 1; ++j){
+                        if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
+                            for(int i = 1; i < cx_with_glue - 1; ++i){
+                                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                                }
                             }
                         }
                     }
@@ -150,7 +172,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         MPIw::Environment::sendRecvField(phi);
 
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
-            cout << "performed " << loop << " iterations." << endl;
+            if (Environment::isRootNode) cout << "[INFO] solve poisson: performed " << loop << " iterations." << endl;
             break;
         }
     }
@@ -158,6 +180,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     field->setBoundaryConditionPhi();
 
     //! 全グリッド上のエラーを更新
+    #pragma omp parallel shared(poisson_error, phi)
     for(int k = 0; k < cz_with_glue; ++k){
         for(int j = 0; j < cy_with_glue; ++j){
             for(int i = 0; i < cx_with_glue; ++i){
