@@ -42,6 +42,14 @@ int ParticleType::updateTotalNumber(void){
     int cellY = (Environment::onHighYedge) ? Environment::cell_y - 1 : Environment::cell_y;
     int cellZ = (Environment::onHighZedge) ? Environment::cell_z - 1 : Environment::cell_z;
     totalNumber = cellX * cellY * cellZ * particle_per_cell;
+
+    if (totalNumber > Environment::max_particle_num) {
+        if (Environment::isRootNode) {
+            cout << format("[WARNING] total particle number %d for '%s' exceeds embedded max particle number %d.") % totalNumber % name % Environment::max_particle_num << endl;
+        }
+
+        totalNumber = Environment::max_particle_num;
+    }
     return totalNumber;
 }
 
@@ -60,8 +68,7 @@ double ParticleType::calcPlasmaFrequency(void) const {
 std::string ParticleType::calcMemory() const {
     static constexpr double memory_per_particle = 8.0*6 + 4.0*2;
 
-    double pmem = (this->getTotalNumber() > Environment::max_particle_num) ?
-        this->getTotalNumber() * memory_per_particle : Environment::max_particle_num * memory_per_particle;
+    double pmem = this->getTotalNumber() * memory_per_particle;
 
     return Utils::prettyMemoryString(pmem);
 }
