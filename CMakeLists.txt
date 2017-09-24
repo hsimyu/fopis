@@ -173,12 +173,12 @@ target_link_libraries(tdpic ${CXX_REQUIRED_LIBS})
 
 install(
     TARGETS tdpic
-    DESTINATION bin
+    DESTINATION .
 )
 
 install(
     DIRECTORY input_samples
-    DESTINATION ""
+    DESTINATION .
 )
 
 add_executable(mpirun_tdpic EXCLUDE_FROM_ALL ${SRCS})
