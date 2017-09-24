@@ -2,7 +2,7 @@
     "Environment": {
         "max_timestep": 10,
         "job_type": "new",
-        "solver_type": "ES",
+        "solver_type": "EM",
         "boundary": "DDDDDD",
         "dimension": "3D",
         "nx": 32,
@@ -12,7 +12,7 @@
         "proc_y": 1,
         "proc_z": 1,
         "dx": 1.0,
-        "dt": 1e-8
+        "dt": 1e-9
     },
     "Plasma": {
         "Electron": {
@@ -30,6 +30,21 @@
             "density": 1.0e7,
             "temperature": 1.0,
             "particle_per_cell": 20
+        },
+        "Beam1": {
+            "type": "beam",
+            "mass": 1.0,
+            "charge": -1.0,
+            "density": 1.0e7,
+            "temperature": 1.0,
+            "particle_per_cell": 20,
+            "emission_position": [15.0, 17.5, 16.5],
+            "emission_vector": [-1.0, 0.0, 0.0],
+            "emission_type": "beam",
+            "emission_radius": 0.01,
+            "accel_potential": 50.0,
+            "beam_current": 10e-3,
+            "beam_divergence": 0.0
         }
     },
     "Object": {
@@ -38,7 +53,7 @@
             "surface_type": "perfect",
             "history_width": 1,
             "potential_fix": 0.0,
-            "emit_particles": [],
+            "emit_particles": ["Beam1"],
             "materials": {
                 "1": "PerfectConductor"
             }
