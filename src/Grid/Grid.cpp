@@ -155,8 +155,6 @@ Grid::~Grid(){
         // reserveしてあった分を削除する
         particles.shrink_to_fit();
     }
-
-    cout << "Grid Destructor Called! " << id << endl;
 }
 
 void Grid::printInfo() const {

@@ -214,6 +214,7 @@ double RootGrid::checkPhiResidual() {
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
+    #pragma omp parallel for shared(poisson_residual) reduction(max: residual)
     for(int k = 1; k < cz_with_glue - 1; ++k){
         if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
             for(int j = 1; j < cy_with_glue - 1; ++j){
