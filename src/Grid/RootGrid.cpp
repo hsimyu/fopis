@@ -172,7 +172,9 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         MPIw::Environment::sendRecvField(phi);
 
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
-            if (Environment::isRootNode) cout << "[INFO] solve poisson: performed " << loop << " iterations." << endl;
+            if (Environment::isRootNode) {
+                cout << "[INFO] solve poisson: performed " << loop << " iterations." << endl;
+            }
             break;
         }
     }

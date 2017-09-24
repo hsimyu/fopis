@@ -281,7 +281,7 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     }
 
     if (MPIw::Environment::isRootNode(name)) {
-        cout << "[" << name << "] potential = " << Normalizer::unnormalizePotential(potential) << " V. " << endl;
+        cout << format("[INFO] [%s] potential = %s V") % name % Normalizer::unnormalizePotential(potential) << endl;
     }
 
     if (this->isDielectricSurface()) {
@@ -337,7 +337,7 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     total_charge = q;
 
     if (MPIw::Environment::isRootNode(name)) {
-        cout << format("[INFO] [%s] charge after redist: %16.7e") % name % q << endl;
+        cout << format("[INFO] [%s] charge after redist : %16.7e") % name % q << endl;
     }
 }
 
