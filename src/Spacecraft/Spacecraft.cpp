@@ -15,6 +15,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     ++num_of_spacecraft;
     potential = 0.0;
     total_charge = 0.0;
+    file_name = Utils::extractFileName(obj_info.file_name);
     potential_fix = Normalizer::normalizePotential(obj_info.potential_fix);
 
     if (is_defined_in_this_process) {
@@ -393,6 +394,7 @@ std::string Spacecraft::getLogEntry() const {
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
     ost << "              name: " << spc.name << endl;
+    ost << "  object file name: " << spc.file_name << endl;
     ost << "              cmat: " << spc.num_cmat << endl;
     ost << "      surface_type: " << spc.surface_type << endl;
 

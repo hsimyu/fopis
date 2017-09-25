@@ -25,7 +25,13 @@ class Spacecraft {
 private:
     static const std::map<std::string, PropertyPair> material_property_list;
     static unsigned int num_of_spacecraft;
+
+    //! 計算中での物体名
     std::string name;
+
+    //! 実際に読み込むobjファイル名
+    std::string file_name;
+
     std::string surface_type;
     size_t num_cmat;
     bool is_defined_in_this_process;
@@ -83,6 +89,7 @@ public:
     // アクセサ
     void setName(const std::string _name) { name = _name; }
     std::string getName() const { return name; }
+    std::string getFileName() const { return file_name; }
 
     auto getPotential(void) const { return potential; }
     auto getPotentialFix(void) const { return potential_fix; }

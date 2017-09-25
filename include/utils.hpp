@@ -15,6 +15,7 @@ namespace Utils {
     std::string readFile(const std::string&);
     picojson::value::object readJSONFile(const std::string&);
     void createDir(std::string);
+    std::string extractFileName(const std::string& target);
 
     //! 保存用のデータ変換系
     std::vector<double> convertPicoJSONArrayToVectorDouble(const picojson::array& pico_array);

@@ -133,6 +133,11 @@ namespace Utils {
         }
     }
 
+    std::string extractFileName(const std::string& target) {
+        std::vector<std::string> strings = split(target, '/');
+        return strings[ strings.size() - 1 ];
+    }
+
     std::string readFile(const std::string& file_name){
         if(isExistingFile(file_name)) {
             std::ifstream ifs;

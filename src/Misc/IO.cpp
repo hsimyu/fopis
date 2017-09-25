@@ -24,7 +24,7 @@ namespace IO {
     void writeCmatrixData(const Spacecraft& obj) {
         using H5F = HighFive::File;
 
-        const std::string file_name = "data/objects/" + obj.getName() + ".h5";
+        const std::string file_name = "data/objects/" + obj.getFileName() + ".h5";
         H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
 
         const auto num_of_cmatrix = obj.getCmatSize();
@@ -36,13 +36,25 @@ namespace IO {
             }
         }
 
-        auto data_set = file.createDataSet<double>("capacity_matrix", HighFive::DataSpace::From(capacity_matrix_data));
-        data_set.write(capacity_matrix_data);
+        {
+            auto data_set = file.createDataSet<double>("capacity_matrix", HighFive::DataSpace::From(capacity_matrix_data));
+            data_set.write(capacity_matrix_data);
+        }
+
+        {
+            auto data_set = file.createDataSet<double>("grid_spacing", HighFive::DataSpace::From(Environment::dx));
+            data_set.write(Environment::dx);
+        }
+
+        {
+            auto data_set = file.createDataSet<double>("time_spacing", HighFive::DataSpace::From(Environment::dt));
+            data_set.write(Environment::dt);
+        }
     }
 
     bool loadCmatrixData(Spacecraft& obj) {
 		using H5F = HighFive::File;
-        const std::string file_name = "data/objects/" + obj.getName() + ".h5";
+        const std::string file_name = "data/objects/" + obj.getFileName() + ".h5";
 
         if (MPIw::Environment::isRootNode(obj.getName())) {
             cout << "-- Cmatrix Loading from existing file: " << file_name << " --" << endl;
@@ -55,23 +67,48 @@ namespace IO {
 
             if (file.exist(data_set_name)) {
                 const auto num_of_cmatrix = obj.getCmatSize();
+
+                //! Capacity Matrix Read
                 auto data_set = file.getDataSet(data_set_name);
                 boost::multi_array<double, 2> read_data;
                 data_set.read(read_data);
 
-                is_valid = (read_data.shape()[0] == num_of_cmatrix && read_data.shape()[1] == num_of_cmatrix);
+                //! Spacing Read
+                auto grid_spacing_set = file.getDataSet("grid_spacing");
+                auto time_spacing_set = file.getDataSet("time_spacing");
+                double grid_spacing, time_spacing;
+                grid_spacing_set.read(grid_spacing);
+                time_spacing_set.read(time_spacing);
+
+                is_valid = 
+                    (read_data.shape()[0] == num_of_cmatrix && read_data.shape()[1] == num_of_cmatrix)
+                    && (Environment::dx == grid_spacing) && (Environment::dt == time_spacing);
 
                 if (is_valid && obj.isDefined() ) {
                     if (MPIw::Environment::isRootNode(obj.getName())) {
                         cout << "-- [INFO] This is valid data. --" << endl;
+                        cout << " data_col_size: " << read_data.shape()[0] << endl;
+                        cout << " data_row_size: " << read_data.shape()[1] << endl;
+                        cout << "  grid_spacing: " << grid_spacing << endl;
+                        cout << "  time_spacing: " << time_spacing << endl;
                     }
+
                     for(unsigned int i = 0; i < num_of_cmatrix; ++i) {
                         for(unsigned int j = 0; j < num_of_cmatrix; ++j) {
                             obj.setCmatValue(i, j, read_data[i][j]);
                         }
                     }
+
                     obj.updateTotalCmatValue();
                 }
+            } else {
+                if (MPIw::Environment::isRootNode(obj.getName())) {
+                    cout << format("[WARNING] Dataset %s does not exist in the file %s.") % data_set_name % file_name << endl;
+                }
+            }
+        } else {
+            if (MPIw::Environment::isRootNode(obj.getName())) {
+                cout << format("[WARNING] File %s does not exist.") % file_name << endl;
             }
         }
 
