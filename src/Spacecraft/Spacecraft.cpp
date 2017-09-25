@@ -454,6 +454,8 @@ namespace ObjectUtils {
             using Face = std::array<int, 5>;
             std::vector<Vertex> vertices;
             std::vector<Face> faces;
+            
+            std::map<int, int> texture_counts{};
 
             while (!file_input.eof()) {
                 std::getline(file_input, buffer);
@@ -479,6 +481,10 @@ namespace ObjectUtils {
                     {
                         const auto& splitted_face = Utils::split(fs[1], '/');
                         face_numbers[4] = static_cast<int>(std::stoi(splitted_face[1]));
+
+                        //! テクスチャが何回出てきたかカウントする
+                        texture_counts[ face_numbers[4] ] += 1;
+
                     }
 
                     faces.push_back( std::move(face_numbers) );
@@ -568,6 +574,13 @@ namespace ObjectUtils {
                     }
                 } else {
                     throw std::logic_error("Face type cannot be determinted by vertices position.");
+                }
+            }
+
+            //! テクスチャカウントを表示
+            if (Environment::isRootNode) {
+                for(const auto& pair : texture_counts) {
+                    cout << format("[OBJECT DEFINE INFO] texture index %s: %s faces") % pair.first % pair.second << endl;
                 }
             }
 
