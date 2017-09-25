@@ -61,7 +61,7 @@ namespace IO {
 
                 is_valid = (read_data.shape()[0] == num_of_cmatrix && read_data.shape()[1] == num_of_cmatrix);
 
-                if (is_valid) {
+                if (is_valid && obj.isDefined() ) {
                     if (MPIw::Environment::isRootNode(obj.getName())) {
                         cout << "-- [INFO] This is valid data. --" << endl;
                     }
