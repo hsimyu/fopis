@@ -73,8 +73,9 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
     SimpleVTK gen;
     gen.enableExtentManagement();
     gen.changeBaseExtent(0, this->getXNodeSize() - 1, 0, this->getYNodeSize() - 1, 0, this->getZNodeSize() - 1);
-    gen.changeBaseOrigin(base_x, base_y, base_z);
-    gen.changeBaseSpacing(dx, dx, dx);
+    gen.changeBaseOrigin(Normalizer::unnormalizeLength(base_x), Normalizer::unnormalizeLength(base_y), Normalizer::unnormalizeLength(base_z));
+    const auto base_spacing = Normalizer::unnormalizeLength(dx);
+    gen.changeBaseSpacing(base_spacing, base_spacing, base_spacing);
     gen.setInnerElementPerLine(100);
 
     gen.beginVTK("ImageData");
