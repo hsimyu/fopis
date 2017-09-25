@@ -78,35 +78,38 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         }
 
         //! 誘電体計算用の静電容量値をノードごとに計算
-        for (const auto& one_node : capacity_matrix_relation) {
-            const auto& cmat_number = one_node.first;
-            const auto& pos = one_node.second;
-            const auto& texture = textures.at(cmat_number);
 
-            //! ノード周りのFaceに割り当てられたTextureの平均値から計算
-            double capacitance = 0.0;
+        if ( this->isDielectricSurface() ) {
+            for (const auto& one_node : capacity_matrix_relation) {
+                const auto& cmat_number = one_node.first;
+                const auto& pos = one_node.second;
+                const auto& texture = textures.at(cmat_number);
 
-            for(const auto& texture_indicies : texture) {
-                if (material_capacitances.count( texture_indicies ) == 0) {
-                    //! マッピングに使う物理定数の値を property_list から取り出しておく
-                    if (material_property_list.count( material_names[ texture_indicies ] ) > 0 ) {
-                        //! 各ノードの capacitance = 真空の誘電率 * 比誘電率でいい?
-                        material_capacitances[ texture_indicies ] = Normalizer::normalizeCapacitance(
-                            eps0 * material_property_list.at( material_names[ texture_indicies ] ).at("RelativePermittivity")
-                        );
-                    } else {
-                        //! material名の指定がおかしかった場合は落とす
-                        std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ texture_indicies ] % texture_indicies).str();
+                //! ノード周りのFaceに割り当てられたTextureの平均値から計算
+                double capacitance = 0.0;
 
-                        std::cerr << "[ERROR] " << error_message << endl;
-                        throw std::invalid_argument(error_message);
+                for(const auto& texture_indicies : texture) {
+                    if (material_capacitances.count( texture_indicies ) == 0) {
+                        //! マッピングに使う物理定数の値を property_list から取り出しておく
+                        if (material_property_list.count( material_names[ texture_indicies ] ) > 0 ) {
+                            //! 各ノードの capacitance = 真空の誘電率 * 比誘電率でいい?
+                            material_capacitances[ texture_indicies ] = Normalizer::normalizeCapacitance(
+                                eps0 * material_property_list.at( material_names[ texture_indicies ] ).at("RelativePermittivity")
+                            );
+                        } else {
+                            //! material名の指定がおかしかった場合は落とす
+                            std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ texture_indicies ] % texture_indicies).str();
+
+                            std::cerr << "[ERROR] " << error_message << endl;
+                            throw std::invalid_argument(error_message);
+                        }
                     }
+
+                    capacitance += material_capacitances[ texture_indicies ];
                 }
 
-                capacitance += material_capacitances[ texture_indicies ];
+                capacitance_map[ cmat_number ] = capacitance / texture.size();
             }
-
-            capacitance_map[ cmat_number ] = capacitance / texture.size();
         }
     }
 }
