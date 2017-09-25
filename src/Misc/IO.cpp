@@ -50,7 +50,7 @@ namespace IO {
 
         bool is_valid = false;
         if (Utils::isExistingFile(file_name)) {
-            H5F file(file_name, H5F::ReadWrite);
+            H5F file(file_name, H5F::ReadWrite, HighFive::MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
             const std::string data_set_name = "capacity_matrix";
 
             if (file.exist(data_set_name)) {

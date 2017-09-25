@@ -1,5 +1,6 @@
 #!/bin/sh
 INSTALL_LOCATION=$HOME/local
+MPI_COMPILER=/usr/local/bin/mpicc
 HDF5_VER=1.10.1
 HDF5_URL=https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-${HDF5_VER}.tar.bz2
 
@@ -24,14 +25,14 @@ cd ..
 wget ${HDF5_URL}
 tar zxvf hdf5-${HDF5_VER}.tar.bz2
 cd hdf5-${HDF5_VER}
-./configure --enable-build-mode=production --enable-cxx --prefix=${INSTALL_LOCATION} --with-zlib=${INSTALL_LOCATION}/include,${INSTALL_LOCATION}/lib
+CC=${MPI_COMPILER} ./configure --prefix=${INSTALL_LOCATION} --disable-shared --enable-build-mode=production --enable-parallel --with-zlib=${INSTALL_LOCATION}/include,${INSTALL_LOCATION}/lib
 make
 make install
 cd ..
 
 cd ..
-rm -rf ./libraries
+# rm -rf ./libraries
 
 mkdir build
 cd build
-cmake ..
+cmake .. -DLOCAL_LIBRARYDIR=${INSTALL_LOCATION}
