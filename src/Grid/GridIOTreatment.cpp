@@ -49,6 +49,28 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double
     return true_nodes;
 }
 
+//! Glueノードを含まないデータを生成
+boost::multi_array<float, 4> Grid::getTrueNodeVectors(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const {
+    int xsize = this->getXNodeSize();
+    int ysize = this->getYNodeSize();
+    int zsize = this->getZNodeSize();
+
+    boost::multi_array<float, 4> true_nodes(boost::extents[3][xsize][ysize][zsize]);
+
+    for(int k = 1; k < zsize + 1; ++k){
+        for(int j = 1; j < ysize + 1; ++j){
+            for(int i = 1; i < xsize + 1; ++i){
+                true_nodes[0][i - 1][j - 1][k - 1] = static_cast<float>(xvector[i][j][k] * unnorm);
+                true_nodes[1][i - 1][j - 1][k - 1] = static_cast<float>(yvector[i][j][k] * unnorm);
+                true_nodes[2][i - 1][j - 1][k - 1] = static_cast<float>(zvector[i][j][k] * unnorm);
+            }
+        }
+    }
+
+    // RVO
+    return true_nodes;
+}
+
 //! RhoArray用
 boost::multi_array<float, 3> Grid::getTrueNodes(const RhoArray& rho, const int pid, const double unnorm) const {
     int xsize = this->getXNodeSize();
@@ -79,6 +101,8 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
     gen.setInnerElementPerLine(100);
 
     gen.beginVTK("ImageData");
+    gen.setVersion("0.1");
+    gen.setByteOrder("LittleEndian");
         gen.beginContentWithPiece();
             if (data_type_name == "potential" || data_type_name == "rho") {
                 gen.beginPointData();
@@ -97,14 +121,14 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                 gen.beginPointData();
                 gen.setVectors(data_type_name);
                     gen.beginDataArray(data_type_name, "Float32", "ascii");
-                        // const std::array<std::string, 3> axis{{"ex", "ey", "ez"}};
-                        // if (group_name == "ex") {
-                        //     auto values = this->getTrueNodes(field->getExRef(), Normalizer::unnormalizeEfield(1.0));
-                        // } else if (group_name == "ey") {
-                        //     auto values = this->getTrueNodes(field->getEyRef(), Normalizer::unnormalizeEfield(1.0));
-                        // } else if (group_name == "ez") {
-                        //     auto values = this->getTrueNodes(field->getEzRef(), Normalizer::unnormalizeEfield(1.0));
-                        // }
+                    gen.setNumberOfComponents("3");
+                        if (data_type_name == "efield") {
+                            auto values = this->getTrueNodeVectors(field->getExRef(), field->getEyRef(), field->getEzRef(), Normalizer::unnormalizeEfield(1.0));
+                            gen.addMultiArray(values);
+                        } else {
+                            auto values = this->getTrueNodeVectors(field->getBxRef(), field->getByRef(), field->getBzRef(), Normalizer::unnormalizeBfield(1.0));
+                            gen.addMultiArray(values);
+                        }
                     gen.endDataArray();
                 gen.endPointData();
             } else if (data_type_name == "density") {
