@@ -11,7 +11,8 @@ RootGrid::RootGrid() : Grid() {
     level = 0;
 
     //! UniqueなIDをセット
-    id = MPIw::Environment::rank;
+    constexpr int minimum_id_offset = 10;
+    id = minimum_id_offset * MPIw::Environment::rank + this->getNextID();
 
     nx = Environment::cell_x;
     ny = Environment::cell_y;

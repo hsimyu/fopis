@@ -132,7 +132,9 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
         }
 
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
-            cout << "performed " << loop << " iterations." << endl;
+            if (Environment::isRootNode) {
+                cout << "performed " << loop << " iterations." << endl;
+            }
             break;
         }
     }
