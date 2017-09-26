@@ -133,11 +133,16 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                 gen.endPointData();
             } else if (data_type_name == "density") {
                 gen.beginCellData();
-                gen.setScalars(data_type_name);
+                std::string pnames = "";
                 for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-                    const std::string& pname = Environment::getParticleType(pid)->getName();
-                    auto values = this->getDensity(pid);
-                    gen.beginDataArray(pname, "Float32", "ascii");
+                    pnames += Environment::getParticleType(pid)->getName();
+
+                    if (pid != Environment::num_of_particle_types - 1) pnames += " ";
+                }
+                gen.setScalars(pnames);
+                for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                    gen.beginDataArray(Environment::getParticleType(pid)->getName(), "Float32", "ascii");
+                        auto values = this->getDensity(pid);
                         gen.addMultiArray(values);
                     gen.endDataArray();
                 }
