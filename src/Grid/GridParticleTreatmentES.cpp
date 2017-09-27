@@ -14,6 +14,7 @@ void Grid::updateParticleVelocityES(void) {
     tdArray& exref = field->getExRef();
     tdArray& eyref = field->getEyRef();
     tdArray& ezref = field->getEzRef();
+    const double time_factor = 1.0 / pow(2, level);
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         double qm = 0.5 * (Environment::getParticleType(pid)->getCharge()) / (Environment::getParticleType(pid)->getMass());
@@ -76,9 +77,9 @@ void Grid::updateParticleVelocityES(void) {
                 double vyt = vy1 + vz1*bx - vx1 * bz;
                 double vzt = vz1 + vx1*by - vy1 * bx;
 
-                p.vx = vx1 + ex + boris*(vyt*bz - vzt*by);
-                p.vy = vy1 + ey + boris*(vzt*bx - vxt*bz);
-                p.vz = vz1 + ez + boris*(vxt*by - vyt*bx);
+                p.vx = vx1 + (ex + boris*(vyt*bz - vzt*by)) * time_factor;
+                p.vy = vy1 + (ey + boris*(vzt*bx - vxt*bz)) * time_factor;
+                p.vz = vz1 + (ez + boris*(vxt*by - vyt*bx)) * time_factor;
             }
         }
     }

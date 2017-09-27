@@ -103,8 +103,13 @@ class Grid  : public std::enable_shared_from_this<Grid> {
 
         //! メインの計算ループ関数
         void mainLoop();
+
+        //! メインループの実体は仮想関数として各派生クラスで実装
         virtual void mainLoopES() = 0;
         virtual void mainLoopEM() = 0;
+
+        //! 場の値の初期化
+        void initialize();
 
         unsigned int getNextID(void) {
             return ++nextID;

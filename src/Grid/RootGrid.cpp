@@ -88,12 +88,16 @@ void RootGrid::mainLoopES() {
     time_counter->begin("resetObjects");
     this->resetObjects();
 
-    // -- timing: t --
+    // -- timing: 0 --
+
+    //! 子グリッド上のループを1回分先に呼び出し、
+    //! 各関数においてももう一度呼び出すことで時間感覚を合わせる
     for (auto& child : children) {
-        child->mainLoop();
+        // -- timing: 0.5 dt --
         child->mainLoop();
     }
 
+    // -- timing: dt --
     // 速度更新
     time_counter->switchTo("updateParticleVelocity");
     this->updateParticleVelocity();
@@ -122,8 +126,6 @@ void RootGrid::mainLoopES() {
     // 電場更新
     time_counter->switchTo("updateEfield");
     this->updateEfield();
-
-    // -- timing: t + dt --
 
     time_counter->end();
 }
@@ -178,7 +180,7 @@ void RootGrid::mainLoopEM() {
 }
 
 void RootGrid::solvePoisson(void) {
-    constexpr int PRE_LOOP_NUM = 10;
+    constexpr int PRE_LOOP_NUM = 20;
     constexpr int POST_LOOP_NUM = 250;
 
     if (this->getChildrenLength() > 0) {
@@ -831,17 +833,17 @@ void RootGrid::updateRho() {
         }
     }
 
-    //! rho を隣に送る
-    time_counter->switchTo("updateRho/sendRhoAll");
-    for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
-        MPIw::Environment::sendRecvField(rho[pid]);
-    }
-
-    //! 子の電荷更新
+    //! 子の電荷の対応部分をRootにコピー(いらないかも)
     time_counter->switchTo("updateRho/childRho");
     for(auto& child : children) {
         child->updateRho();
         child->copyRhoToParent();
+    }
+
+    //! rho を隣に送る
+    time_counter->switchTo("updateRho/sendRhoAll");
+    for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
+        MPIw::Environment::sendRecvField(rho[pid]);
     }
 
     //! 物体が存在する場合、電荷再配分が必要になる

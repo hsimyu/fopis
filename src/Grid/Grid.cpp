@@ -20,6 +20,19 @@ void Grid::mainLoop() {
     }
 }
 
+void Grid::initialize() {
+    // initialized rho, phi, efield
+    for(auto& child : children) {
+        child->initialize();
+    }
+
+    this->updateRho();
+    this->solvePoisson();
+    this->updateEfield();
+    this->updateBfield();
+}
+
+
 //! @note: childrenのエネルギーも取る?
 double Grid::getEFieldEnergy(void) const {
     return field->getEfieldEnergy();

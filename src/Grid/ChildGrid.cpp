@@ -90,7 +90,6 @@ void ChildGrid::mainLoopES() {
 
     for (auto& child : children) {
         child->mainLoop();
-        child->mainLoop();
     }
 
     time_counter->begin("updateParticleVelocity");
@@ -332,9 +331,9 @@ void ChildGrid::updateRho() {
         }
     }
 
-    //! 子の電荷更新
     for(auto& child : children) {
         child->updateRho();
+        child->copyRhoToParent();
     }
 }
 
@@ -370,9 +369,7 @@ void ChildGrid::copyPhiToParent(){
                 int k = 2 * (iz - from_iz) + 1;
                 //! ソース項が A^2h v^2h + r^2h となるように
                 //! PoissonOperatorを適用し、現在のGridのResidualを足したものに-eps0をかけて新しいrhoとする
-                cout << "oldrho in parent: " << parentRho[0][ix][iy][iz] << endl;
                 parentRho[0][ix][iy][iz] = rho_coeff * (field->poissonOperator(parentPhi, ix, iy, iz) * per_dx2 + residual[i][j][k]);
-                cout << "rho in parent: " << parentRho[0][ix][iy][iz] << endl;
             }
         }
     }

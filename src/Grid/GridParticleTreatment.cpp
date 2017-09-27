@@ -17,6 +17,10 @@ void Grid::addParticle(Particle&& p) {
 }
 
 void Grid::updateParticleVelocity(void) {
+    for(auto& child : children) {
+        child->updateParticleVelocity();
+    }
+
     if (Environment::solver_type == "ES") {
         this->updateParticleVelocityES();
     } else {
@@ -25,6 +29,10 @@ void Grid::updateParticleVelocity(void) {
 }
 
 void Grid::updateParticlePosition(void) {
+    for(auto& child : children) {
+        child->updateParticlePosition();
+    }
+
     if (Environment::solver_type == "ES") {
         this->updateParticlePositionES();
     } else {

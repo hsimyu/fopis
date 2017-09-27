@@ -27,17 +27,7 @@ int main(int argc, char* argv[]){
 
     root_grid->makeChild(2, 2, 2, 8, 8, 15);
     // root_grid->printInfo();
-
-    // initialized rho, phi, efield
-    time_counter->begin("updateRho");
-        root_grid->updateRho();
-    time_counter->switchTo("solvePoisson");
-        root_grid->solvePoisson();
-    time_counter->switchTo("updateEfield");
-        root_grid->updateEfield();
-    time_counter->switchTo("updateBfield");
-        root_grid->updateBfield();
-    time_counter->end();
+    root_grid->initialize();
 
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
         if( Environment::isRootNode ) {
