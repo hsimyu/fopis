@@ -86,7 +86,7 @@ int ChildGrid::getYNodeSize(void) const { return ny; }
 int ChildGrid::getZNodeSize(void) const { return nz; }
 
 void ChildGrid::solvePoisson(void) {
-    constexpr int PRE_LOOP_NUM = 10;
+    constexpr int PRE_LOOP_NUM = 100;
     constexpr int POST_LOOP_NUM = 250;
 
     if (this->getChildrenLength() > 0) {
@@ -112,7 +112,7 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
     auto& rho = field->getRho();
 
     const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
-    const double rho_coeff = pow(dx, 2) / Normalizer::getEps0(level);
+    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -123,9 +123,9 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
     poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
-        for(int k = 2; k < cz_with_glue - 2; ++k){
-            for(int j = 2; j < cy_with_glue - 2; ++j){
-                for(int i = 2; i < cx_with_glue - 2; ++i){
+        for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                for(int i = 1; i < cx_with_glue - 1; ++i){
                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                 }
             }
@@ -140,9 +140,9 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
     }
 
     //! 全グリッド上のエラーを更新
-    for(int k = 0; k < cz_with_glue; ++k){
-        for(int j = 0; j < cy_with_glue; ++j){
-            for(int i = 0; i < cx_with_glue; ++i){
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
                 poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
             }
         }
@@ -151,7 +151,7 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
 
 double ChildGrid::checkPhiResidual() {
     double residual = 0.0;
-    const double normalized_eps = Normalizer::getEps0(level);
+    const double normalized_eps = Normalizer::eps0;
     const double per_dx2 = 1.0 / pow(dx, 2);
 
     auto& phi = field->getPhi();
@@ -162,9 +162,9 @@ double ChildGrid::checkPhiResidual() {
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
-    for(int k = 2; k < cz_with_glue - 2; ++k){
-        for(int j = 2; j < cy_with_glue - 2; ++j){
-            for(int i = 2; i < cx_with_glue - 2; ++i){
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
                 double source_value = rho[0][i][j][k]/normalized_eps;
                 double tmp_res = field->poissonOperator(phi, i, j, k) * per_dx2 + source_value;
                 poisson_residual[i][j][k] = tmp_res;
@@ -249,10 +249,14 @@ void ChildGrid::moveParticleToParent(Particle& p) {
     new_particle.x = (new_particle.x / 2.0 + static_cast<double>(from_ix) - 1.0);
     new_particle.y = (new_particle.y / 2.0 + static_cast<double>(from_iy) - 1.0);
     new_particle.z = (new_particle.z / 2.0 + static_cast<double>(from_iz) - 1.0);
+    new_particle.vx *= 2.0;
+    new_particle.vy *= 2.0;
+    new_particle.vz *= 2.0;
 
-    //! 親グリッド上の粒子をinvalidに
+    //! 子グリッド上の粒子をinvalidに
     p.makeInvalid();
-    //! 子グリッド上の粒子をpush
+
+    //! 親グリッド上に粒子をpush
     parent->addParticle( std::move(new_particle) );
 }
 
@@ -305,14 +309,15 @@ void ChildGrid::updateRho() {
 
 void ChildGrid::copyPhiToParent(){
     tdArray& phi = field->getPhi();
+    RhoArray& rho = field->getRho();
     tdArray& residual = field->getPoissonResidual();
     tdArray& parentPhi = parent->getPhi();
     RhoArray& parentRho = parent->getRho();
     const double per_dx2 = 1.0 / pow(parent->getDx(), 2);
-    const double rho_coeff = -Normalizer::getEps0(level - 1);
+    const double rho_coeff = -Normalizer::eps0;
 
-    // 4.0 は 親にコピーする時の電位単位変換の係数、12.0は7-point stencilで平均化するための係数
-    constexpr double div = 4.0 / 12.0;
+    // 1/12.0は7-point stencilで平均化するための係数
+    constexpr double div = 1.0 / 12.0;
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
@@ -326,15 +331,37 @@ void ChildGrid::copyPhiToParent(){
             }
         }
     }
-    for(int ix = from_ix + 1; ix < to_ix; ++ix){
+    for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
-        for(int iy = from_iy + 1; iy < to_iy; ++iy){
+        for(int iy = from_iy; iy <= to_iy; ++iy){
             int j = 2 * (iy - from_iy) + 1;
-            for(int iz = from_iz + 1; iz < to_iz; ++iz){
+            for(int iz = from_iz; iz <= to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
                 //! ソース項が A^2h v^2h + r^2h となるように
                 //! PoissonOperatorを適用し、現在のGridのResidualを足したものに-eps0をかけて新しいrhoとする
+                cout << "oldrho in parent: " << parentRho[0][ix][iy][iz] << endl;
                 parentRho[0][ix][iy][iz] = rho_coeff * (field->poissonOperator(parentPhi, ix, iy, iz) * per_dx2 + residual[i][j][k]);
+                cout << "rho in parent: " << parentRho[0][ix][iy][iz] << endl;
+            }
+        }
+    }
+}
+
+void ChildGrid::copyRhoToParent() const {
+    RhoArray& rho = field->getRho();
+    RhoArray& parentRho = parent->getRho();
+
+    // 1/12.0は7-point stencilで平均化するための係数
+    constexpr double div = 1.0 / 12.0;
+
+    for(int ix = from_ix; ix <= to_ix; ++ix){
+        int i = 2 * (ix - from_ix) + 1;
+        for(int iy = from_iy; iy <= to_iy; ++iy){
+            int j = 2 * (iy - from_iy) + 1;
+            for(int iz = from_iz; iz <= to_iz; ++iz){
+                int k = 2 * (iz - from_iz) + 1;
+                //! 7-point stencil restriction
+                parentRho[0][ix][iy][iz] = div * (6.0 * rho[0][i][j][k] + rho[0][i - 1][j][k] + rho[0][i + 1][j][k] + rho[0][i][j - 1][k] + rho[0][i][j + 1][k] + rho[0][i][j][k - 1] + rho[0][i][j][k + 1]);
             }
         }
     }

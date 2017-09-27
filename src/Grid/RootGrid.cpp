@@ -90,16 +90,16 @@ void RootGrid::solvePoisson(void) {
         this->solvePoissonPSOR(PRE_LOOP_NUM);
         this->restrictPhiToChildrenBoundary();
 
-        for(auto& child : children) {
-            child->solvePoisson();
-        }
+        // for(auto& child : children) {
+        //     child->solvePoisson();
+        // }
     }
 
     this->solvePoissonPSOR(POST_LOOP_NUM);
 
-    if (this->getChildrenLength() > 0) {
-        this->correctChildrenPhi();
-    }
+    // if (this->getChildrenLength() > 0) {
+    //     this->correctChildrenPhi();
+    // }
 }
 
 void RootGrid::solvePoissonPSOR(const int loopnum) {
@@ -116,8 +116,6 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
 
     constexpr double required_error = 1.0e-7;
 
-    field->setBoundaryConditionPhi();
-
     const bool is_not_boundary[6] = {
         Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
         Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
@@ -129,7 +127,10 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
 
     auto time_counter = Utils::TimeCounter::getInstance();
 
-    time_counter->begin("solvePoisson/updatePoissonErrorPre");
+    time_counter->begin("solvePoisson/initializePhiArray");
+    Utils::initialize3DArray(phi);
+
+    time_counter->switchTo("solvePoisson/updatePoissonErrorPre");
     poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
@@ -745,6 +746,7 @@ void RootGrid::updateRho() {
     time_counter->switchTo("updateRho/childRho");
     for(auto& child : children) {
         child->updateRho();
+        child->copyRhoToParent();
     }
 
     //! 物体が存在する場合、電荷再配分が必要になる

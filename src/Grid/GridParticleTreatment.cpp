@@ -24,11 +24,11 @@ void Grid::addParticle(Particle&& p) {
 }
 
 void Grid::updateParticleVelocity(void) {
-    if (Environment::solver_type == "ES") {
-        this->updateParticleVelocityES();
-    } else {
-        this->updateParticleVelocityEM();
-    }
+    // if (Environment::solver_type == "ES") {
+    //     this->updateParticleVelocityES();
+    // } else {
+    //     this->updateParticleVelocityEM();
+    // }
 }
 
 void Grid::updateParticleVelocityES(void) {
@@ -206,7 +206,6 @@ void Grid::updateParticlePosition(void) {
     //! 先に子を2回分更新する
     for(auto& child : children) {
         child->updateParticlePosition();
-        child->updateParticleVelocity();
         child->updateParticlePosition();
     }
 
@@ -507,20 +506,19 @@ void Grid::moveParticlesIntoSpecifiedChild(const int index) {
 }
 
 void Grid::moveParticleToChild(int child_index, Particle& p) {
-    // cout << format("It should be move to child[%d]!") % child_index << endl;
-    // cout << p << endl;
     Particle new_particle = p; // コピー演算
 
     auto& child = children[child_index];
     new_particle.x = 2.0 * (new_particle.x - static_cast<double>(child->getFromIX()) + 1.0);
     new_particle.y = 2.0 * (new_particle.y - static_cast<double>(child->getFromIY()) + 1.0);
     new_particle.z = 2.0 * (new_particle.z - static_cast<double>(child->getFromIZ()) + 1.0);
-
-    // cout << "...will move to new particle on child grid:" << endl;
-    // cout << new_particle << endl;
+    new_particle.vx /= 2.0;
+    new_particle.vy /= 2.0;
+    new_particle.vz /= 2.0;
 
     //! 親グリッド上の粒子をinvalidに
     p.makeInvalid();
+
     //! 子グリッド上の粒子をpush
     child->addParticle( std::move(new_particle) );
 }

@@ -116,11 +116,6 @@ public:
         return normalized_phi * V_unit;
     }
 
-    //! 1 -> m^2 kg / s^2 C = V
-    static double unnormalizePotential(double normalized_phi, const int grid_division_level) {
-        return normalized_phi * V_unit * pow(pow(2, grid_division_level), 2);
-    }
-
     //! C / s -> 1
     static double normalizeCurrent(double raw_current) {
         return raw_current / A_unit;

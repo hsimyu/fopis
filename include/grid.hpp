@@ -162,7 +162,6 @@ class Grid  : public std::enable_shared_from_this<Grid> {
 
         // 親子でのScalarやりとり用
         void copyScalarToChildren(std::string);
-        void updateChildrenPhi();
         void correctChildrenPhi();
         void interpolateRhoValueToChildren();
         void restrictPhiToChildrenBoundary();
@@ -419,6 +418,7 @@ class ChildGrid : public Grid {
 
         void setParent(Grid* g){ parent = g; }
         void copyPhiToParent();
+        void copyRhoToParent() const;
         virtual void incrementSumOfChild(void) override;
         virtual void decrementSumOfChild(void) override;
 
