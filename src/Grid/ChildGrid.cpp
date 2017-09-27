@@ -88,6 +88,11 @@ int ChildGrid::getZNodeSize(void) const { return nz; }
 void ChildGrid::mainLoopES() {
     auto time_counter = Utils::TimeCounter::getInstance();
 
+    for (auto& child : children) {
+        child->mainLoop();
+        child->mainLoop();
+    }
+
     time_counter->begin("updateParticleVelocity");
     this->updateParticleVelocity();
 
@@ -108,7 +113,7 @@ void ChildGrid::mainLoopEM() {
 }
 
 void ChildGrid::solvePoisson(void) {
-    constexpr int PRE_LOOP_NUM = 100;
+    constexpr int PRE_LOOP_NUM = 10;
     constexpr int POST_LOOP_NUM = 250;
 
     if (this->getChildrenLength() > 0) {
@@ -116,16 +121,20 @@ void ChildGrid::solvePoisson(void) {
         this->restrictPhiToChildrenBoundary();
 
         for(auto& child : children) {
-            child->solvePoisson();
+            child->solvePoissonFromParent();
         }
     }
 
     this->solvePoissonPSOR(POST_LOOP_NUM);
-    this->copyPhiToParent();
 
     if (this->getChildrenLength() > 0) {
         this->correctChildrenPhi();
     }
+}
+
+void ChildGrid::solvePoissonFromParent(void) {
+    this->solvePoisson();
+    this->copyPhiToParent();
 }
 
 void ChildGrid::solvePoissonPSOR(const int loopnum) {

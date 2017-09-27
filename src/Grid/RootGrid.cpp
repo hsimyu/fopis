@@ -88,7 +88,12 @@ void RootGrid::mainLoopES() {
     time_counter->begin("resetObjects");
     this->resetObjects();
 
-    // -- timing: t + 0.5 dt --
+    // -- timing: t --
+    for (auto& child : children) {
+        child->mainLoop();
+        child->mainLoop();
+    }
+
     // 速度更新
     time_counter->switchTo("updateParticleVelocity");
     this->updateParticleVelocity();
@@ -117,6 +122,8 @@ void RootGrid::mainLoopES() {
     // 電場更新
     time_counter->switchTo("updateEfield");
     this->updateEfield();
+
+    // -- timing: t + dt --
 
     time_counter->end();
 }
@@ -178,16 +185,16 @@ void RootGrid::solvePoisson(void) {
         this->solvePoissonPSOR(PRE_LOOP_NUM);
         this->restrictPhiToChildrenBoundary();
 
-        // for(auto& child : children) {
-        //     child->solvePoisson();
-        // }
+        for(auto& child : children) {
+            child->solvePoissonFromParent();
+        }
     }
 
     this->solvePoissonPSOR(POST_LOOP_NUM);
 
-    // if (this->getChildrenLength() > 0) {
-    //     this->correctChildrenPhi();
-    // }
+    if (this->getChildrenLength() > 0) {
+        this->correctChildrenPhi();
+    }
 }
 
 void RootGrid::solvePoissonPSOR(const int loopnum) {
