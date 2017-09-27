@@ -25,8 +25,7 @@ int main(int argc, char* argv[]){
         time_counter->enableReport();
     }
 
-    // root_grid->makeChild(2, 2, 2, 8, 8, 15);
-    // root_grid->makeChild(15, 15, 8, 18, 20, 25);
+    root_grid->makeChild(2, 2, 2, 8, 8, 15);
     // root_grid->printInfo();
 
     // initialized rho, phi, efield

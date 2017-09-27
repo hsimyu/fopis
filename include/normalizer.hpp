@@ -41,6 +41,10 @@ public:
     static double mu0;
     static double c;
 
+    static double getEps0(const int grid_division_level) {
+        return pow(pow(2, grid_division_level), 3) * eps0;
+    }
+
     static void setLengthUnit(const double _u) {
         x_unit = _u;
         updatePhysicalConstants();
@@ -112,6 +116,11 @@ public:
         return normalized_phi * V_unit;
     }
 
+    //! 1 -> m^2 kg / s^2 C = V
+    static double unnormalizePotential(double normalized_phi, const int grid_division_level) {
+        return normalized_phi * V_unit * pow(pow(2, grid_division_level), 2);
+    }
+
     //! C / s -> 1
     static double normalizeCurrent(double raw_current) {
         return raw_current / A_unit;
@@ -125,6 +134,11 @@ public:
     //! 1 -> C / m^3
     static double unnormalizeRho(double normalized_rho) {
         return normalized_rho * e_unit / x_pow_3;
+    }
+
+    //! 1 -> C / m^3
+    static double unnormalizeRho(double normalized_rho, const int grid_division_level) {
+        return normalized_rho * e_unit * pow(pow(2, grid_division_level), 3) / x_pow_3;
     }
 
     //! V/m = m kg / s^3 A = m kg / s^2 C -> 1

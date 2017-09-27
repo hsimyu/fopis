@@ -112,7 +112,7 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
     auto& rho = field->getRho();
 
     const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
-    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
+    const double rho_coeff = pow(dx, 2) / Normalizer::getEps0(level);
 
     const int cx_with_glue = phi.shape()[0];
     const int cy_with_glue = phi.shape()[1];
@@ -151,7 +151,7 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
 
 double ChildGrid::checkPhiResidual() {
     double residual = 0.0;
-    const double normalized_eps = Normalizer::eps0;
+    const double normalized_eps = Normalizer::getEps0(level);
     const double per_dx2 = 1.0 / pow(dx, 2);
 
     auto& phi = field->getPhi();
@@ -263,8 +263,11 @@ void ChildGrid::updateRho() {
     //! rhoを初期化
     Utils::initializeRhoArray(rho);
 
+    //! 同じサイズの超粒子でも小さいグリッドの方が密度への寄与が大きい
+    const double density_coeff = pow(pow(2, level), 3);
+
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
-        double q = Environment::getParticleType(pid)->getChargeOfSuperParticle() * 8.0;
+        double q = Environment::getParticleType(pid)->getChargeOfSuperParticle() * density_coeff;
         const auto rho_idx = pid + 1;
 
         for(auto& p : particles[pid]) {
@@ -306,8 +309,10 @@ void ChildGrid::copyPhiToParent(){
     tdArray& parentPhi = parent->getPhi();
     RhoArray& parentRho = parent->getRho();
     const double per_dx2 = 1.0 / pow(parent->getDx(), 2);
-    const double rho_coeff = -Normalizer::eps0;
-    constexpr double div = 1.0 / 12.0;
+    const double rho_coeff = -Normalizer::getEps0(level - 1);
+
+    // 4.0 は 親にコピーする時の電位単位変換の係数、12.0は7-point stencilで平均化するための係数
+    constexpr double div = 4.0 / 12.0;
 
     for(int ix = from_ix; ix <= to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;

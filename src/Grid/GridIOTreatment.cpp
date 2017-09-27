@@ -13,7 +13,7 @@ boost::multi_array<float, 3> Grid::getDensity(const int pid) const {
     const int ysize = this->getYNodeSize() - 1;
     const int zsize = this->getZNodeSize() - 1;
 
-    boost::multi_array<float, 3> zones(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
+    boost::multi_array<float, 3> zones(boost::extents[xsize][ysize][zsize]);
     const auto size = static_cast<float>(Normalizer::unnormalizeDensity(Environment::getParticleType(pid)->getSize()));
 
     for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
@@ -35,7 +35,7 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const tdArray& x3D, const double
     int ysize = this->getYNodeSize();
     int zsize = this->getZNodeSize();
 
-    boost::multi_array<float, 3> true_nodes(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
+    boost::multi_array<float, 3> true_nodes(boost::extents[xsize][ysize][zsize]);
 
     for(int k = 1; k < zsize + 1; ++k){
         for(int j = 1; j < ysize + 1; ++j){
@@ -77,7 +77,7 @@ boost::multi_array<float, 3> Grid::getTrueNodes(const RhoArray& rho, const int p
     int ysize = this->getYNodeSize();
     int zsize = this->getZNodeSize();
 
-    boost::multi_array<float, 3> true_nodes(boost::extents[xsize][ysize][zsize], boost::fortran_storage_order());
+    boost::multi_array<float, 3> true_nodes(boost::extents[xsize][ysize][zsize]);
 
     for(int k = 1; k < zsize + 1; ++k){
         for(int j = 1; j < ysize + 1; ++j){
@@ -109,11 +109,16 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                 gen.setScalars(data_type_name);
                     gen.beginDataArray(data_type_name, "Float32", "ascii");
                         if (data_type_name == "potential") {
-                            auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0));
+                            auto values = this->getTrueNodes(field->getPhi(), Normalizer::unnormalizePotential(1.0, level));
                             gen.addMultiArray(values);
                         } else {
-                            auto values = this->getTrueNodes(field->getRho(), 0, Normalizer::unnormalizeRho(1.0));
-                            gen.addMultiArray(values);
+                            if (level == 0) {
+                                auto values = this->getTrueNodes(field->getRho(), 0, Normalizer::unnormalizeRho(1.0));
+                                gen.addMultiArray(values);
+                            } else {
+                                auto values = this->getTrueNodes(field->getRho(), 0, Normalizer::unnormalizeRho(1.0) / 8.0);
+                                gen.addMultiArray(values);
+                            }
                         }
                     gen.endDataArray();
                 gen.endPointData();
