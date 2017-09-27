@@ -12,6 +12,14 @@ Grid::Grid(void) : child_map(boost::extents[0][0][0]) {
     sumTotalNumOfChildGrids = 0;
 }
 
+void Grid::mainLoop() {
+    if ( Environment::solver_type == "EM" ) {
+        this->mainLoopEM();
+    } else {
+        this->mainLoopES();
+    }
+}
+
 //! @note: childrenのエネルギーも取る?
 double Grid::getEFieldEnergy(void) const {
     return field->getEfieldEnergy();

@@ -43,72 +43,9 @@ int main(int argc, char* argv[]){
         if( Environment::isRootNode ) {
             cout << "====== Iteration " << Environment::timestep << " =====" << endl;
         }
-        time_counter->begin("resetObjects");
-        root_grid->resetObjects();
+        root_grid->mainLoop();
 
-        // -- timing: t + 0.5 dt --
-        // 速度更新
-        time_counter->switchTo("updateParticleVelocity");
-        root_grid->updateParticleVelocity();
-
-        // 位置更新
-        time_counter->switchTo("updateParticlePosition");
-        root_grid->updateParticlePosition(); // jx, jy, jz もここで update される
-
-        // 粒子注入
-        time_counter->switchTo("injectParticleFromBoundary");
-        root_grid->injectParticlesFromBoundary();
-
-        // 粒子放出
-        time_counter->switchTo("emitParticlesFromObjects");
-        root_grid->emitParticlesFromObjects();
-
-        // -- timing: t + dt --
-        if ( Environment::solver_type == "EM" ) {
-            // 電磁計算の場合はFDTDとPoisson解くのを分ける
-            if ( Environment::timestep % 1 == 0 ) {
-                // 新しい位置に対応する電荷密度算出
-                time_counter->switchTo("updateRho");
-                root_grid->updateRho();
-
-                // Poisson を解く (FDTDの場合はたまにでいい?)
-                time_counter->switchTo("solvePoisson");
-                root_grid->solvePoisson();
-
-                // 電場更新
-                time_counter->switchTo("updateEfield");
-                root_grid->updateEfield();
-            } else {
-                // FDTDで電場更新
-                time_counter->switchTo("updateEfieldFDTD");
-                root_grid->updateEfieldFDTD();
-            }
-
-            // 磁場更新
-            time_counter->switchTo("updateBfield");
-            root_grid->updateBfield();
-
-            // 磁場プロット
-            time_counter->switchTo("plotData");
-            if(Environment::plotBfield()) {
-                IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
-            }
-        } else {
-            // 静電計算の場合
-            // 新しい位置に対応する電荷密度算出
-            time_counter->switchTo("updateRho");
-            root_grid->updateRho();
-
-            // Poisson を解く
-            time_counter->switchTo("solvePoisson");
-            root_grid->solvePoisson();
-
-            // 電場更新
-            time_counter->switchTo("updateEfield");
-            root_grid->updateEfield();
-        }
-
-        time_counter->switchTo("plotData");
+        time_counter->begin("plotData");
         if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
         if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
         if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
@@ -116,6 +53,11 @@ int main(int argc, char* argv[]){
         if(Environment::plotEnergy())       IO::plotEnergy(root_grid, Environment::timestep);
         if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->getParticles());
         if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->getParticles());
+
+        // 磁場プロット
+        if(Environment::solver_type == "EM" && Environment::plotBfield()) {
+            IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
+        }
 
         IO::plotObjectsData(root_grid);
         IO::plotValidParticleNumber(root_grid);

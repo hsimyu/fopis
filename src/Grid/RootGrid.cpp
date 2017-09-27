@@ -82,6 +82,94 @@ RootGrid::RootGrid() : Grid() {
     }
 }
 
+void RootGrid::mainLoopES() {
+    auto time_counter = Utils::TimeCounter::getInstance();
+
+    time_counter->begin("resetObjects");
+    this->resetObjects();
+
+    // -- timing: t + 0.5 dt --
+    // 速度更新
+    time_counter->switchTo("updateParticleVelocity");
+    this->updateParticleVelocity();
+
+    // 位置更新
+    time_counter->switchTo("updateParticlePosition");
+    this->updateParticlePosition(); // jx, jy, jz もここで update される
+
+    // 粒子注入
+    time_counter->switchTo("injectParticleFromBoundary");
+    this->injectParticlesFromBoundary();
+
+    // 粒子放出
+    time_counter->switchTo("emitParticlesFromObjects");
+    this->emitParticlesFromObjects();
+
+    // 静電計算の場合
+    // 新しい位置に対応する電荷密度算出
+    time_counter->switchTo("updateRho");
+    this->updateRho();
+
+    // Poisson を解く
+    time_counter->switchTo("solvePoisson");
+    this->solvePoisson();
+
+    // 電場更新
+    time_counter->switchTo("updateEfield");
+    this->updateEfield();
+
+    time_counter->end();
+}
+
+void RootGrid::mainLoopEM() {
+    auto time_counter = Utils::TimeCounter::getInstance();
+
+    time_counter->begin("resetObjects");
+    this->resetObjects();
+
+    // -- timing: t + 0.5 dt --
+    // 速度更新
+    time_counter->switchTo("updateParticleVelocity");
+    this->updateParticleVelocity();
+
+    // 位置更新
+    time_counter->switchTo("updateParticlePosition");
+    this->updateParticlePosition(); // jx, jy, jz もここで update される
+
+    // 粒子注入
+    time_counter->switchTo("injectParticleFromBoundary");
+    this->injectParticlesFromBoundary();
+
+    // 粒子放出
+    time_counter->switchTo("emitParticlesFromObjects");
+    this->emitParticlesFromObjects();
+
+    // 電磁計算の場合はFDTDとPoisson解くのを分ける
+    if ( Environment::timestep % 1 == 0 ) {
+        // 新しい位置に対応する電荷密度算出
+        time_counter->switchTo("updateRho");
+        this->updateRho();
+
+        // Poisson を解く (FDTDの場合はたまにでいい?)
+        time_counter->switchTo("solvePoisson");
+        this->solvePoisson();
+
+        // 電場更新
+        time_counter->switchTo("updateEfield");
+        this->updateEfield();
+    } else {
+        // FDTDで電場更新
+        time_counter->switchTo("updateEfieldFDTD");
+        this->updateEfieldFDTD();
+    }
+
+    // 磁場更新
+    time_counter->switchTo("updateBfield");
+    this->updateBfield();
+
+    time_counter->end();
+}
+
 void RootGrid::solvePoisson(void) {
     constexpr int PRE_LOOP_NUM = 10;
     constexpr int POST_LOOP_NUM = 250;

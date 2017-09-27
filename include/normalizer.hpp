@@ -131,11 +131,6 @@ public:
         return normalized_rho * e_unit / x_pow_3;
     }
 
-    //! 1 -> C / m^3
-    static double unnormalizeRho(double normalized_rho, const int grid_division_level) {
-        return normalized_rho * e_unit * pow(pow(2, grid_division_level), 3) / x_pow_3;
-    }
-
     //! V/m = m kg / s^3 A = m kg / s^2 C -> 1
     static double normalizeEfield(double raw_efield) {
         return raw_efield * x_unit / V_unit;

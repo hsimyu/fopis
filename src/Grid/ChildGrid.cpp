@@ -85,6 +85,28 @@ int ChildGrid::getXNodeSize(void) const { return nx; }
 int ChildGrid::getYNodeSize(void) const { return ny; } 
 int ChildGrid::getZNodeSize(void) const { return nz; }
 
+void ChildGrid::mainLoopES() {
+    auto time_counter = Utils::TimeCounter::getInstance();
+
+    time_counter->begin("updateParticleVelocity");
+    this->updateParticleVelocity();
+
+    time_counter->switchTo("updateParticlePosition");
+    this->updateParticlePosition();
+
+    time_counter->switchTo("updateRho");
+    this->updateRho();
+
+    time_counter->switchTo("solvePoisson");
+    this->solvePoisson();
+
+    time_counter->switchTo("updateEfield");
+    this->updateEfield();
+}
+
+void ChildGrid::mainLoopEM() {
+}
+
 void ChildGrid::solvePoisson(void) {
     constexpr int PRE_LOOP_NUM = 100;
     constexpr int POST_LOOP_NUM = 250;

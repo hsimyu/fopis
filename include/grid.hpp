@@ -101,6 +101,11 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         Grid();
         ~Grid();
 
+        //! メインの計算ループ関数
+        void mainLoop();
+        virtual void mainLoopES() = 0;
+        virtual void mainLoopEM() = 0;
+
         unsigned int getNextID(void) {
             return ++nextID;
         }
@@ -244,6 +249,8 @@ class Grid  : public std::enable_shared_from_this<Grid> {
 class RootGrid : public Grid {
     public:
         RootGrid();
+        virtual void mainLoopES() override;
+        virtual void mainLoopEM() override;
 
         void injectParticlesFromBoundary(void);
 
@@ -403,6 +410,8 @@ class RootGrid : public Grid {
 class ChildGrid : public Grid {
     public:
         ChildGrid(Grid*, const int, const int, const int, const int, const int, const int);
+        virtual void mainLoopES() override;
+        virtual void mainLoopEM() override;
 
         virtual void updateRho(void) override;
         virtual void solvePoisson(void) override;
