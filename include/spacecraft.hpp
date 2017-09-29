@@ -67,6 +67,11 @@ private:
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
 
+    //! 実際の電荷配分関数
+    void distributeInnerParticleChargeToXsurface(const Position& pos, const int id, const double charge);
+    void distributeInnerParticleChargeToYsurface(const Position& pos, const int id, const double charge);
+    void distributeInnerParticleChargeToZsurface(const Position& pos, const int id, const double charge);
+
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,

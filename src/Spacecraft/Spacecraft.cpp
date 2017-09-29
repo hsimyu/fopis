@@ -182,21 +182,123 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     if (isContaining(p)) {
         const auto id = p.typeId;
         const auto q = p.getChargeOfSuperParticle();
-        const auto pos = p.getPosition();
+        auto pos = p.getPosition();
+        const auto old_pos = p.getOldPosition();
 
-        charge_map[id][pos.i    ][pos.j    ][pos.k    ] += q * pos.dx2 * pos.dy2 * pos.dz2;
-        charge_map[id][pos.i + 1][pos.j    ][pos.k    ] += q * pos.dx1 * pos.dy2 * pos.dz2;
-        charge_map[id][pos.i    ][pos.j + 1][pos.k    ] += q * pos.dx2 * pos.dy1 * pos.dz2;
-        charge_map[id][pos.i + 1][pos.j + 1][pos.k    ] += q * pos.dx1 * pos.dy1 * pos.dz2;
-        charge_map[id][pos.i    ][pos.j    ][pos.k + 1] += q * pos.dx2 * pos.dy2 * pos.dz1;
-        charge_map[id][pos.i + 1][pos.j    ][pos.k + 1] += q * pos.dx1 * pos.dy2 * pos.dz1;
-        charge_map[id][pos.i    ][pos.j + 1][pos.k + 1] += q * pos.dx2 * pos.dy1 * pos.dz1;
-        charge_map[id][pos.i + 1][pos.j + 1][pos.k + 1] += q * pos.dx1 * pos.dy1 * pos.dz1;
+        bool move_along_x = (pos.i != old_pos.i);
+        bool move_along_y = (pos.j != old_pos.j);
+        bool move_along_z = (pos.k != old_pos.k);
+
+        if (move_along_x && move_along_y && move_along_z) {
+            const double mvx = fabs(p.vx);
+            const double mvy = fabs(p.vy);
+            const double mvz = fabs(p.vz);
+
+            if (mvx >= mvy) {
+                if (mvx >= mvz) {
+                    const int di = (p.vx > 0.0) ? 0 : 1;
+                    const int dj = (p.vy > 0.0) ? -1 : 1;
+                    const int dk = (p.vz > 0.0) ? -1 : 1;
+                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
+                    this->distributeInnerParticleChargeToXsurface(pos, id, q);
+                } else {
+                    const int di = (p.vx > 0.0) ? -1 : 1;
+                    const int dj = (p.vy > 0.0) ? -1 : 1;
+                    const int dk = (p.vz > 0.0) ? 0 : 1;
+                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
+                    this->distributeInnerParticleChargeToZsurface(pos, id, q);
+                }
+            } else {
+                if (mvy >= mvz) {
+                    const int di = (p.vx > 0.0) ? -1 : 1;
+                    const int dj = (p.vy > 0.0) ? 0 : 1;
+                    const int dk = (p.vz > 0.0) ? -1 : 1;
+                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
+                    this->distributeInnerParticleChargeToYsurface(pos, id, q);
+                } else {
+                    const int di = (p.vx > 0.0) ? -1 : 1;
+                    const int dj = (p.vy > 0.0) ? -1 : 1;
+                    const int dk = (p.vz > 0.0) ? 0 : 1;
+                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
+                    this->distributeInnerParticleChargeToZsurface(pos, id, q);
+                }
+            }
+        } else if (move_along_x && move_along_y) {
+            if (fabs(p.vx) >= fabs(p.vy)) {
+                const int di = (p.vx > 0.0) ? 0 : 1;
+                const int dj = (p.vy > 0.0) ? -1 : 1;
+                pos.setIJK(pos.i + di, pos.j + dj, pos.k);
+                this->distributeInnerParticleChargeToXsurface(pos, id, q);
+            } else {
+                const int di = (p.vx > 0.0) ? -1 : 1;
+                const int dj = (p.vy > 0.0) ? 0 : 1;
+                pos.setIJK(pos.i + di, pos.j + dj, pos.k);
+                this->distributeInnerParticleChargeToYsurface(pos, id, q);
+            }
+        } else if (move_along_x && move_along_z) {
+            if (fabs(p.vx) >= fabs(p.vz)) {
+                const int di = (p.vx > 0.0) ? 0 : 1;
+                const int dk = (p.vz > 0.0) ? -1 : 1;
+                pos.setIJK(pos.i + di, pos.j, pos.k + dk);
+                this->distributeInnerParticleChargeToXsurface(pos, id, q);
+            } else {
+                const int di = (p.vx > 0.0) ? -1 : 1;
+                const int dk = (p.vz > 0.0) ? 0 : 1;
+                pos.setIJK(pos.i + di, pos.j, pos.k + dk);
+                this->distributeInnerParticleChargeToZsurface(pos, id, q);
+            }
+        } else if (move_along_y && move_along_z) {
+            if (fabs(p.vy) >= fabs(p.vz)) {
+                const int dj = (p.vy > 0.0) ? 0 : 1;
+                const int dk = (p.vz > 0.0) ? -1 : 1;
+                pos.setIJK(pos.i, pos.j + dj, pos.k + dk);
+                this->distributeInnerParticleChargeToYsurface(pos, id, q);
+            } else {
+                const int dj = (p.vy > 0.0) ? -1 : 1;
+                const int dk = (p.vz > 0.0) ? 0 : 1;
+                pos.setIJK(pos.i, pos.j + dj, pos.k + dk);
+                this->distributeInnerParticleChargeToZsurface(pos, id, q);
+            }
+        } else if (move_along_x) {
+            const int di = (p.vx > 0.0) ? 0 : 1;
+            pos.setIJK(pos.i + di, pos.j, pos.k);
+            this->distributeInnerParticleChargeToXsurface(pos, id, q);
+        } else if (move_along_y) {
+            const int dj = (p.vy > 0.0) ? 0 : 1;
+            pos.setIJK(pos.i, pos.j + dj, pos.k);
+            this->distributeInnerParticleChargeToYsurface(pos, id, q);
+        } else if (move_along_z) {
+            const int dk = (p.vz > 0.0) ? 0 : 1;
+            pos.setIJK(pos.i, pos.j, pos.k + dk);
+            this->distributeInnerParticleChargeToZsurface(pos, id, q);
+        } else {
+            throw std::logic_error("[ERROR] An Invalid Logic on Particle Collection!!!!!");
+        }
 
         current[id] += q;
-
         p.makeInvalid();
     }
+}
+
+inline void Spacecraft::distributeInnerParticleChargeToXsurface(const Position& pos, const int id, const double charge) {
+    charge_map[id][pos.i][pos.j    ][pos.k    ] += charge * pos.dy2 * pos.dz2;
+    charge_map[id][pos.i][pos.j + 1][pos.k    ] += charge * pos.dy1 * pos.dz2;
+    charge_map[id][pos.i][pos.j    ][pos.k + 1] += charge * pos.dy2 * pos.dz1;
+    charge_map[id][pos.i][pos.j + 1][pos.k + 1] += charge * pos.dy1 * pos.dz1;
+}
+
+inline void Spacecraft::distributeInnerParticleChargeToYsurface(const Position& pos, const int id, const double charge) {
+    charge_map[id][pos.i    ][pos.j][pos.k    ] += charge * pos.dx2 * pos.dz2;
+    charge_map[id][pos.i + 1][pos.j][pos.k    ] += charge * pos.dx1 * pos.dz2;
+    charge_map[id][pos.i    ][pos.j][pos.k + 1] += charge * pos.dx2 * pos.dz1;
+    charge_map[id][pos.i + 1][pos.j][pos.k + 1] += charge * pos.dx1 * pos.dz1;
+}
+
+inline void Spacecraft::distributeInnerParticleChargeToZsurface(const Position& pos, const int id, const double charge) {
+    charge_map[id][pos.i    ][pos.j    ][pos.k] += charge * pos.dy2 * pos.dx2;
+    charge_map[id][pos.i    ][pos.j + 1][pos.k] += charge * pos.dy1 * pos.dx2;
+    charge_map[id][pos.i + 1][pos.j    ][pos.k] += charge * pos.dy2 * pos.dx1;
+    charge_map[id][pos.i + 1][pos.j + 1][pos.k] += charge * pos.dy1 * pos.dx1;
 }
 
 void Spacecraft::subtractChargeOfParticle(const Particle& p) {
