@@ -29,7 +29,10 @@ void Grid::initialize() {
     this->updateRho();
     this->solvePoisson();
     this->updateEfield();
-    this->updateBfield();
+
+    if (Environment::solver_type == "EM") {
+        this->updateBfield();
+    }
 }
 
 

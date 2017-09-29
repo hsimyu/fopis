@@ -180,7 +180,7 @@ void RootGrid::mainLoopEM() {
 }
 
 void RootGrid::solvePoisson(void) {
-    constexpr int PRE_LOOP_NUM = 20;
+    constexpr int PRE_LOOP_NUM = 100;
     constexpr int POST_LOOP_NUM = 250;
 
     if (this->getChildrenLength() > 0) {
@@ -196,6 +196,10 @@ void RootGrid::solvePoisson(void) {
 
     if (this->getChildrenLength() > 0) {
         this->correctChildrenPhi();
+
+        for(auto& child : children) {
+            child->solvePoisson();
+        }
     }
 }
 
@@ -224,10 +228,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
 
     auto time_counter = Utils::TimeCounter::getInstance();
 
-    time_counter->begin("solvePoisson/initializePhiArray");
-    Utils::initialize3DArray(phi);
-
-    time_counter->switchTo("solvePoisson/updatePoissonErrorPre");
+    time_counter->begin("solvePoisson/updatePoissonErrorPre");
     poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
@@ -290,9 +291,9 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     //! 全グリッド上のエラーを更新
     time_counter->switchTo("solvePoisson/updatePoissonErrorPost");
     #pragma omp parallel for shared(poisson_error, phi)
-    for(int k = 0; k < cz_with_glue; ++k){
-        for(int j = 0; j < cy_with_glue; ++j){
-            for(int i = 0; i < cx_with_glue; ++i){
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int i = 1; i < cx_with_glue - 1; ++i){
                 poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
             }
         }

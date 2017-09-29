@@ -112,7 +112,7 @@ void ChildGrid::mainLoopEM() {
 }
 
 void ChildGrid::solvePoisson(void) {
-    constexpr int PRE_LOOP_NUM = 10;
+    constexpr int PRE_LOOP_NUM = 100;
     constexpr int POST_LOOP_NUM = 250;
 
     if (this->getChildrenLength() > 0) {
@@ -128,6 +128,10 @@ void ChildGrid::solvePoisson(void) {
 
     if (this->getChildrenLength() > 0) {
         this->correctChildrenPhi();
+
+        for(auto& child : children) {
+            child->solvePoisson();
+        }
     }
 }
 
@@ -149,30 +153,24 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
     const int cz_with_glue = phi.shape()[2];
 
     constexpr double required_error = 1.0e-7;
-
     poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
-        for(int k = 1; k < cz_with_glue - 1; ++k){
-            for(int j = 1; j < cy_with_glue - 1; ++j){
-                for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int k = 2; k < cz_with_glue - 2; ++k){
+            for(int j = 2; j < cy_with_glue - 2; ++j){
+                for(int i = 2; i < cx_with_glue - 2; ++i){
                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                 }
             }
         }
 
-        if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
-            if (Environment::isRootNode) {
-                cout << "performed " << loop << " iterations." << endl;
-            }
-            break;
-        }
+        if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) break;
     }
 
     //! 全グリッド上のエラーを更新
-    for(int k = 1; k < cz_with_glue - 1; ++k){
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
+    for(int k = 2; k < cz_with_glue - 2; ++k){
+        for(int j = 2; j < cy_with_glue - 2; ++j){
+            for(int i = 2; i < cx_with_glue - 2; ++i){
                 poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
             }
         }
@@ -192,9 +190,9 @@ double ChildGrid::checkPhiResidual() {
     const int cy_with_glue = phi.shape()[1];
     const int cz_with_glue = phi.shape()[2];
 
-    for(int k = 1; k < cz_with_glue - 1; ++k){
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
+    for(int k = 2; k < cz_with_glue - 2; ++k){
+        for(int j = 2; j < cy_with_glue - 2; ++j){
+            for(int i = 2; i < cx_with_glue - 2; ++i){
                 double source_value = rho[0][i][j][k]/normalized_eps;
                 double tmp_res = field->poissonOperator(phi, i, j, k) * per_dx2 + source_value;
                 poisson_residual[i][j][k] = tmp_res;
@@ -270,6 +268,7 @@ void ChildGrid::updateEfieldFDTD(void) {
 }
 
 void ChildGrid::updateBfield(void) {
+    cout << Environment::rankStr() << format("Level %d: updateBfield(%s, %s, %s, %s, %s)") % level % dx % nx % ny % nz % dt << endl;
     field->updateBfield(dx, nx, ny, nz, dt);
 }
 
@@ -349,11 +348,11 @@ void ChildGrid::copyPhiToParent(){
     // 1/12.0は7-point stencilで平均化するための係数
     constexpr double div = 1.0 / 12.0;
 
-    for(int ix = from_ix; ix <= to_ix; ++ix){
+    for(int ix = from_ix + 1; ix < to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
-        for(int iy = from_iy; iy <= to_iy; ++iy){
+        for(int iy = from_iy + 1; iy < to_iy; ++iy){
             int j = 2 * (iy - from_iy) + 1;
-            for(int iz = from_iz; iz <= to_iz; ++iz){
+            for(int iz = from_iz + 1; iz < to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
                 //! まず v^h -> v^2h にコピーする
                 //! 7-point stencil restriction
@@ -361,11 +360,11 @@ void ChildGrid::copyPhiToParent(){
             }
         }
     }
-    for(int ix = from_ix; ix <= to_ix; ++ix){
+    for(int ix = from_ix + 1; ix < to_ix; ++ix){
         int i = 2 * (ix - from_ix) + 1;
-        for(int iy = from_iy; iy <= to_iy; ++iy){
+        for(int iy = from_iy + 1; iy < to_iy; ++iy){
             int j = 2 * (iy - from_iy) + 1;
-            for(int iz = from_iz; iz <= to_iz; ++iz){
+            for(int iz = from_iz + 1; iz < to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
                 //! ソース項が A^2h v^2h + r^2h となるように
                 //! PoissonOperatorを適用し、現在のGridのResidualを足したものに-eps0をかけて新しいrhoとする
@@ -389,7 +388,7 @@ void ChildGrid::copyRhoToParent() const {
             for(int iz = from_iz; iz <= to_iz; ++iz){
                 int k = 2 * (iz - from_iz) + 1;
                 //! 7-point stencil restriction
-                parentRho[0][ix][iy][iz] = div * (6.0 * rho[0][i][j][k] + rho[0][i - 1][j][k] + rho[0][i + 1][j][k] + rho[0][i][j - 1][k] + rho[0][i][j + 1][k] + rho[0][i][j][k - 1] + rho[0][i][j][k + 1]);
+                parentRho[0][ix][iy][iz] += div * (6.0 * rho[0][i][j][k] + rho[0][i - 1][j][k] + rho[0][i + 1][j][k] + rho[0][i][j - 1][k] + rho[0][i][j + 1][k] + rho[0][i][j][k - 1] + rho[0][i][j][k + 1]);
             }
         }
     }

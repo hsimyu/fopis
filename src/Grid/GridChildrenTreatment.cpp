@@ -168,6 +168,91 @@ void Grid::restrictPhiToChildrenBoundary() {
         const int child_nz = child->getNZ();
 
         //! x面束縛
+        for(int i = 1; i < child_nx + 1; i += child_nx - 1) {
+            int ix = ((i - 1) / 2) + child_from_ix;
+            for(int j = 1; j < child_ny + 1; ++j) {
+                int iy = (j / 2) + child_from_iy;
+                for(int k = 1; k < child_nz + 1; ++k) {
+                    int iz = (k / 2) + child_from_iz;
+                    const bool j_is_odd = (j % 2 == 1);
+                    const bool k_is_odd = (k % 2 == 1);
+
+                    if (j_is_odd && k_is_odd) {
+                        childPhi[i][j][k] = parentPhi[ix][iy][iz];
+                    } else if (j_is_odd) {
+                        childPhi[i][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy][iz - 1]);
+                    } else if (k_is_odd) {
+                        childPhi[i][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy - 1][iz]);
+                    } else {
+                        childPhi[i][j][k] = 0.25 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy - 1][iz] + parentPhi[ix][iy][iz - 1] + parentPhi[ix][iy - 1][iz - 1]);
+                    }
+                }
+            }
+        }
+        //! y面束縛
+        for(int j = 1; j < child_ny + 1; j += child_ny - 1) {
+            int iy = ((j - 1) / 2) + child_from_iy;
+            for(int i = 1; i < child_nx + 1; ++i) {
+                int ix = (i / 2) + child_from_ix;
+                for(int k = 1; k < child_nz + 1; ++k) {
+                    int iz = (k / 2) + child_from_iz;
+                    const bool i_is_odd = (i % 2 == 1);
+                    const bool k_is_odd = (k % 2 == 1);
+
+                    if (i_is_odd && k_is_odd) {
+                        childPhi[i][j][k] = parentPhi[ix][iy][iz];
+                    } else if (i_is_odd) {
+                        childPhi[i][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy][iz - 1]);
+                    } else if (k_is_odd) {
+                        childPhi[i][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix - 1][iy][iz]);
+                    } else {
+                        childPhi[i][j][k] = 0.25 * (parentPhi[ix][iy][iz] + parentPhi[ix - 1][iy][iz] + parentPhi[ix][iy][iz - 1] + parentPhi[ix - 1][iy][iz - 1]);
+                    }
+                }
+            }
+        }
+        //! z面束縛
+        for(int k = 1; k < child_nz + 1; k += child_nz - 1) {
+            int iz = ((k - 1) / 2) + child_from_iz;
+            for(int i = 1; i < child_nx + 1; ++i) {
+                int ix = (i / 2) + child_from_ix;
+                for(int j = 1; j < child_ny + 1; ++j) {
+                    int iy = (j / 2) + child_from_iy;
+                    const bool i_is_odd = (i % 2 == 1);
+                    const bool j_is_odd = (j % 2 == 1);
+
+                    if (i_is_odd && j_is_odd) {
+                        childPhi[i][j][k] = parentPhi[ix][iy][iz];
+                    } else if (i_is_odd) {
+                        childPhi[i][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy - 1][iz]);
+                    } else if (j_is_odd) {
+                        childPhi[i][j][k] = 0.5 * (parentPhi[ix][iy][iz] + parentPhi[ix - 1][iy][iz]);
+                    } else {
+                        childPhi[i][j][k] = 0.25 * (parentPhi[ix][iy][iz] + parentPhi[ix][iy - 1][iz] + parentPhi[ix - 1][iy][iz] + parentPhi[ix - 1][iy - 1][iz]);
+                    }
+                }
+            }
+        }
+    }
+}
+/*
+// 子グリッドへPhiをコピーする
+void Grid::restrictPhiToChildrenBoundary() {
+    tdArray& parentPhi = field->getPhi();
+
+    for(int chidx = 0; chidx < children.size(); ++chidx) {
+        auto& child = children[chidx];
+
+        tdArray& childPhi = child->getPhi();
+        int child_from_ix = child->getFromIX();
+        int child_from_iy = child->getFromIY();
+        int child_from_iz = child->getFromIZ();
+
+        const int child_nx = child->getNX();
+        const int child_ny = child->getNY();
+        const int child_nz = child->getNZ();
+
+        //! x面束縛
         for(int i = 0; i < child_nx + 2; i += child_nx + 1) {
             int ix = (i / 2) + child_from_ix;
             for(int j = 0; j < child_ny + 2; ++j) {
@@ -235,3 +320,4 @@ void Grid::restrictPhiToChildrenBoundary() {
         }
     }
 }
+*/
