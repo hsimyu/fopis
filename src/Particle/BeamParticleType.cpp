@@ -26,8 +26,8 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
 
         return Position{
             relative_emission_position.x + random_timewidth * vel.vx,
-            relative_emission_position.y + random_timewidth * vel.vy + random_y_width,
-            relative_emission_position.z + random_timewidth * vel.vz + random_z_width
+            relative_emission_position.y + random_timewidth * vel.vy + random_ywidth,
+            relative_emission_position.z + random_timewidth * vel.vz + random_zwidth
         };
     } else if (fabs(emission_vector[1]) == 1.0) {
         std::uniform_real_distribution<> dist_x(0.0, Normalizer::normalizeLength(emission_radius));
@@ -36,9 +36,9 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
         const double random_zwidth = dist_z(mt_z);
 
         return Position{
-            relative_emission_position.x + random_timewidth * vel.vx + random_x_width,
+            relative_emission_position.x + random_timewidth * vel.vx + random_xwidth,
             relative_emission_position.y + random_timewidth * vel.vy,
-            relative_emission_position.z + random_timewidth * vel.vz + random_z_width
+            relative_emission_position.z + random_timewidth * vel.vz + random_zwidth
         };
 
     } else if (fabs(emission_vector[2]) == 1.0) {
@@ -48,12 +48,12 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
         const double random_ywidth = dist_y(mt_y);
 
         return Position{
-            relative_emission_position.x + random_timewidth * vel.vx + random_x_width,
-            relative_emission_position.y + random_timewidth * vel.vy + random_y_width,
+            relative_emission_position.x + random_timewidth * vel.vx + random_xwidth,
+            relative_emission_position.y + random_timewidth * vel.vy + random_ywidth,
             relative_emission_position.z + random_timewidth * vel.vz
         };
     } else {
-        std::string error_message = (format("[ERROR] Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")
+        std::string error_message = (format("[ERROR] Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
         throw std::invalid_argument(error_message);
     }
 }
