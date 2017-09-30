@@ -112,6 +112,8 @@ class Velocity {
 
         //! Particle用のコンストラクタはinlineで書けない
         Velocity(const Particle&);
+
+        Velocity(void) {}
         ~Velocity(){}
 
         //! コピー演算
