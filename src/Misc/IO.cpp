@@ -87,8 +87,8 @@ namespace IO {
                 if (is_valid && obj.isDefined() ) {
                     if (MPIw::Environment::isRootNode(obj.getName())) {
                         cout << "-- [INFO] This is valid data. --" << endl;
-                        cout << " data_col_size: " << read_data.shape()[0] << endl;
-                        cout << " data_row_size: " << read_data.shape()[1] << endl;
+                        cout << "  data_col_size: " << read_data.shape()[0] << endl;
+                        cout << "  data_row_size: " << read_data.shape()[1] << endl;
                         cout << "  grid_spacing: " << grid_spacing << endl;
                         cout << "  time_spacing: " << time_spacing << endl;
                     }

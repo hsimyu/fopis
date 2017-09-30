@@ -75,18 +75,18 @@ std::string ParticleType::calcMemory() const {
 
 // util
 void ParticleType::printInfo() const {
-    cout << "[ParticleType  : " << getName() << "]" << endl;
-    cout << "                      id: " << getId() << endl;
-    cout << "                    type: " << getType() << endl;
-    cout << "                    mass: " << getMass() << endl;
-    cout << "                  charge: " << getCharge() << "e" << endl;
-    cout << "                 density: " << getDensity() << "/m^3" << endl;
-    cout << "             temperature: " << getTemperature() << "eV" << endl;
-    cout << "                    size: " << getSize() << endl;
-    cout << "                per_cell: " << getPcell() << endl;
-    cout << "total_number in node    : " << getTotalNumber() << endl;
-    cout << "total number in all node: " << (getTotalNumber() * Environment::proc_x * Environment::proc_y * Environment::proc_z) << endl;
-    cout << "                  memory: " << calcMemory() << endl;
+    cout << "[ParticleType : " << getName() << "]" << endl;
+    cout << "  id: " << getId() << endl;
+    cout << "  type: " << getType() << endl;
+    cout << "  mass: " << getMass() << endl;
+    cout << "  charge: " << getCharge() << "e" << endl;
+    cout << "  density: " << getDensity() << "/m^3" << endl;
+    cout << "  temperature: " << getTemperature() << "eV" << endl;
+    cout << "  size: " << getSize() << endl;
+    cout << "  per_cell: " << getPcell() << endl;
+    cout << "  total_number in node: " << getTotalNumber() << endl;
+    cout << "  total number in all node: " << (getTotalNumber() * Environment::proc_x * Environment::proc_y * Environment::proc_z) << endl;
+    cout << "  memory / process: " << calcMemory() << endl;
 }
 
 //! 背景プラズマ用
@@ -171,88 +171,4 @@ Velocity AmbientParticleType::generateNewVelocity(void) {
 
     Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
     return v;
-}
-
-Particle BeamParticleType::generateNewParticle() {
-    Particle p(id);
-    Velocity vel = this->generateNewVelocity();
-    p.setVelocity(vel);
-    p.setPosition(this->generateNewPosition(vel));
-
-    return p;
-}
-
-Position BeamParticleType::generateNewPosition(const Velocity& vel) {
-    std::uniform_real_distribution<> dist_t(0.0, 1.0);
-    const double random_timewidth = dist_t(mt_x);
-
-    //! 放出方向周りに幅を持たせるには回転行列の実装が必要か？
-    // std::uniform_real_distribution<> dist_x(0.0, emission_radius);
-    // std::uniform_real_distribution<> dist_y(0.0, emission_radius);
-    // const double random_xwidth = dist_x(mt_x);
-    // const double random_ywidth = dist_y(mt_x); // (0, 0, 1)を法線とする平面上の円の中の1点
-
-    Position p(relative_emission_position.x + random_timewidth * vel.vx, relative_emission_position.y + random_timewidth * vel.vy, relative_emission_position.z + random_timewidth * vel.vz);
-    return p;
-}
-
-Velocity BeamParticleType::generateNewVelocity() {
-    const double deviation = this->calcDeviation();
-    std::normal_distribution<> dist_vx(0.0, deviation);
-    std::normal_distribution<> dist_vy(0.0, deviation);
-    std::normal_distribution<> dist_vz(0.0, deviation);
-
-    Velocity v(dist_vx(mt_vx) + emission_velocity.vx, dist_vy(mt_vy) + emission_velocity.vy, dist_vz(mt_vz) + emission_velocity.vz);
-    return v;
-}
-
-void BeamParticleType::updateEmissionVelocity() {
-    double acceleration = getAcceleration();
-
-    emission_velocity.vx = acceleration * emission_vector[0];
-    emission_velocity.vy = acceleration * emission_vector[1];
-    emission_velocity.vz = acceleration * emission_vector[2];
-}
-
-void BeamParticleType::setEmissionPosition(const std::vector<double>& pos) {
-    if (pos.size() != 3) {
-        throw std::invalid_argument("The size of the argument for setEmissionPosition() must be 3.");
-    }
-
-    const auto& rel_pos = Environment::getRelativePositionOnRootWithoutGlue(pos[0], pos[1], pos[2]);
-    emission_position = Position(pos[0], pos[1], pos[2]);
-    relative_emission_position = Position(rel_pos[0], rel_pos[1], rel_pos[2]);
-}
-
-void BeamParticleType::setEmissionVector(const std::vector<double>& val) {
-    if (val.size() != 3) {
-        throw std::invalid_argument("The size of the argument for setEmissionVector() must be 3.");
-    }
-
-    //! 正規化
-    double emission_normal = sqrt(pow(val[0], 2) + pow(val[1], 2) + pow(val[2], 2));
-    for(int i = 0; i < 3; ++i) {
-        emission_vector[i] = val[i] / emission_normal;
-    }
-
-    updateEmissionVelocity();
-}
-
-double BeamParticleType::getEmissionAmount() const {
-    return beam_current / (fabs(charge) * size);
-}
-
-void BeamParticleType::printInfo() const {
-    ParticleType::printInfo();
-    cout << "  emission_type: " << emission_type << endl;
-    cout << " beam_potential: " << Normalizer::unnormalizePotential(accel_potential) << "V" << endl;
-    cout << "   beam_current: " << Normalizer::unnormalizeCurrent(beam_current) << "A" << endl;
-    cout << "   emiss_amount: " << getEmissionAmount() << " particles / step" << endl;
-    cout << "beam_divergence: " << beam_divergence << "A" << endl;
-    cout << " emiss_position: " << emission_position.x << ", " << emission_position.y << ", " << emission_position.z << endl;
-    cout << "   emiss_vector: " << emission_vector[0] << ", " << emission_vector[1] << ", " << emission_vector[2] << endl;
-
-    if (getAcceleration() > 1.0) {
-        cout << "[WARNING] Acceleration for this particle type exceeds 1.0: " << getAcceleration() << "." << endl;
-    }
 }

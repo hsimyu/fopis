@@ -48,15 +48,28 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         tdArray::extent_gen tdExtents;
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
             //! Node ベース, glue cell ありの電荷密度マップを生成
-            charge_map.emplace_back(tdExtents[nx + 2][ny + 2][nz + 2], boost::fortran_storage_order());
+            charge_map.emplace_back(tdExtents[nx + 2][ny + 2][nz + 2]);
 
             //! 電流 in/out を記録する要素を初期化
             current.push_back(0.0);
 
-            //! 放出粒子のID追加判定
-            auto itr = std::find(obj_info.emit_particle_names.begin(), obj_info.emit_particle_names.end(), Environment::getParticleType(pid)->getName());
-            if (itr != obj_info.emit_particle_names.end()) {
-                emit_particle_ids.push_back(pid);
+            const std::string pname = Environment::getParticleType(pid)->getName();
+
+            //! jsonから読み取ったObjectInfo_t内の放出粒子名の指定が定義と一致していなかった場合を排除する
+            if (obj_info.emit_particle_info.count(pname) > 0) {
+                auto& pinfo = obj_info.emit_particle_info.at(pname);
+
+                //! 相対的な粒子位置を計算
+                const auto& rel_pos = Environment::getRelativePositionOnRootWithoutGlue(
+                    pinfo.emission_position[0],
+                    pinfo.emission_position[1],
+                    pinfo.emission_position[2]
+                );
+
+                LocalParticleEmissionInfo local_pinfo;
+                local_pinfo.relative_emission_position = Position(rel_pos[0], rel_pos[1], rel_pos[2]);
+                local_pinfo.emission_vector = {pinfo.emission_vector[0], pinfo.emission_vector[1], pinfo.emission_vector[2]};
+                emit_particle_info[ pid ] = local_pinfo;
             }
         }
 
@@ -78,7 +91,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         }
 
         //! 誘電体計算用の静電容量値をノードごとに計算
-
         if ( this->isDielectricSurface() ) {
             for (const auto& one_node : capacity_matrix_relation) {
                 const auto& cmat_number = one_node.first;
@@ -301,23 +313,6 @@ inline void Spacecraft::distributeInnerParticleChargeToZsurface(const Position& 
     charge_map[id][pos.i + 1][pos.j + 1][pos.k] += charge * pos.dy1 * pos.dx1;
 }
 
-void Spacecraft::subtractChargeOfParticle(const Particle& p) {
-    const auto id = p.typeId;
-    const auto q = p.getChargeOfSuperParticle();
-    const auto pos = p.getOldPosition();
-
-    charge_map[id][pos.i    ][pos.j    ][pos.k    ] -= q * pos.dx2 * pos.dy2 * pos.dz2;
-    charge_map[id][pos.i + 1][pos.j    ][pos.k    ] -= q * pos.dx1 * pos.dy2 * pos.dz2;
-    charge_map[id][pos.i    ][pos.j + 1][pos.k    ] -= q * pos.dx2 * pos.dy1 * pos.dz2;
-    charge_map[id][pos.i + 1][pos.j + 1][pos.k    ] -= q * pos.dx1 * pos.dy1 * pos.dz2;
-    charge_map[id][pos.i    ][pos.j    ][pos.k + 1] -= q * pos.dx2 * pos.dy2 * pos.dz1;
-    charge_map[id][pos.i + 1][pos.j    ][pos.k + 1] -= q * pos.dx1 * pos.dy2 * pos.dz1;
-    charge_map[id][pos.i    ][pos.j + 1][pos.k + 1] -= q * pos.dx2 * pos.dy1 * pos.dz1;
-    charge_map[id][pos.i + 1][pos.j + 1][pos.k + 1] -= q * pos.dx1 * pos.dy1 * pos.dz1;
-
-    current[id] -= q;
-}
-
 void Spacecraft::applyCharge(RhoArray& rho) const {
     //! 電荷分布を場に印加する
     for(const auto& one_node : capacity_matrix_relation) {
@@ -442,19 +437,43 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
 //! 粒子放出関連
 void Spacecraft::emitParticles(ParticleArray& parray) {
-    for(const auto& id : emit_particle_ids) {
+    for(const auto& pinfo : emit_particle_info) {
+        const auto id = pinfo.first;
+        const auto& info = pinfo.second;
         const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
         const auto max_amount = emit_ptype_ptr->getEmissionAmount();
 
-        for(int i = 0; i < max_amount; ++i) {
-            Particle p = emit_ptype_ptr->generateNewParticle();
+        if (emit_ptype_ptr->getType() == "beam") {
+            const auto beam_ptype_ptr = Environment::getBeamParticleType(id);
 
-            if (this->isValidEmission(p)) {
-                this->subtractChargeOfParticle(p);
-                parray[id].push_back( std::move(p) );
+            for(int i = 0; i < max_amount; ++i) {
+                Particle p = beam_ptype_ptr->generateNewParticle(info.relative_emission_position, info.emission_vector);
+                cout << p << endl;
+
+                // if (this->isValidEmission(p)) {
+                //     this->subtractChargeOfParticle(p);
+                //     parray[id].push_back( std::move(p) );
+                // }
             }
         }
     }
+}
+
+void Spacecraft::subtractChargeOfParticle(const Particle& p) {
+    const auto id = p.typeId;
+    const auto q = p.getChargeOfSuperParticle();
+    const auto pos = p.getOldPosition();
+
+    charge_map[id][pos.i    ][pos.j    ][pos.k    ] -= q * pos.dx2 * pos.dy2 * pos.dz2;
+    charge_map[id][pos.i + 1][pos.j    ][pos.k    ] -= q * pos.dx1 * pos.dy2 * pos.dz2;
+    charge_map[id][pos.i    ][pos.j + 1][pos.k    ] -= q * pos.dx2 * pos.dy1 * pos.dz2;
+    charge_map[id][pos.i + 1][pos.j + 1][pos.k    ] -= q * pos.dx1 * pos.dy1 * pos.dz2;
+    charge_map[id][pos.i    ][pos.j    ][pos.k + 1] -= q * pos.dx2 * pos.dy2 * pos.dz1;
+    charge_map[id][pos.i + 1][pos.j    ][pos.k + 1] -= q * pos.dx1 * pos.dy2 * pos.dz1;
+    charge_map[id][pos.i    ][pos.j + 1][pos.k + 1] -= q * pos.dx2 * pos.dy1 * pos.dz1;
+    charge_map[id][pos.i + 1][pos.j + 1][pos.k + 1] -= q * pos.dx1 * pos.dy1 * pos.dz1;
+
+    current[id] -= q;
 }
 
 bool Spacecraft::isValidEmission(Particle& p) const {
@@ -498,20 +517,32 @@ std::string Spacecraft::getLogEntry() const {
 }
 
 std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
-    ost << "              name: " << spc.name << endl;
+    ost << "  name: " << spc.name << endl;
     ost << "  object file name: " << spc.file_name << endl;
-    ost << "              cmat: " << spc.num_cmat << endl;
-    ost << "      surface_type: " << spc.surface_type << endl;
+    ost << "  cmat: " << spc.num_cmat << endl;
+    ost << "  surface_type: " << spc.surface_type << endl;
 
     if (spc.isDielectricSurface()) {
         for(const auto& mt : spc.material_names) {
-            ost << "               index " << mt.first << ": " << mt.second << endl;
+            ost << "    index " << mt.first << ": " << mt.second << endl;
         }
     }
 
-    ost << "    emit particles: ";
-    for(const auto& id : spc.emit_particle_ids) {
-        ost << Environment::getParticleType(id)->getName() << ", " << endl;
+    ost << "  emit particles: \n";
+    for(const auto& pair : spc.emit_particle_info) {
+        ost << "    " << Environment::getParticleType(pair.first)->getName() << ": \n";
+
+        const auto& local_pinfo = pair.second;
+        ost << "      relative_emission_position: " <<
+            format("%s %s %s\n") %
+            local_pinfo.relative_emission_position.i %
+            local_pinfo.relative_emission_position.j %
+            local_pinfo.relative_emission_position.k;
+        ost << "      emission_vector: " <<
+            format("%s %s %s") %
+            local_pinfo.emission_vector[0] %
+            local_pinfo.emission_vector[1] %
+            local_pinfo.emission_vector[2] << endl;
     }
 
     return ost;

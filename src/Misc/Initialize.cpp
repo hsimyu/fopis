@@ -230,7 +230,23 @@ namespace Initializer {
                     } else if (it->first == "potential_fix") {
                         obj.potential_fix = it->second.get<double>();
                     } else if (it->first == "emit_particles") {
-                        obj.emit_particle_names = Utils::convertPicoJSONArrayToVectorString(it->second.get<picojson::array>());
+                        auto particle_names = it->second.get<picojson::object>();
+
+                        for(auto pit = particle_names.begin(); pit != particle_names.end(); ++pit) {
+                            const std::string pname = pit->first;
+
+                            ParticleEmissionInfo pinfo;
+
+                            auto inner = pit->second.get<picojson::object>();
+                            for(auto inner_pit = inner.begin(); inner_pit != inner.end(); ++inner_pit) {
+                                if (inner_pit->first == "emission_position") {
+                                    pinfo.emission_position = Utils::convertPicoJSONArrayToVectorDouble( inner_pit->second.get<picojson::array>() );
+                                } else if (inner_pit->first == "emission_vector") {
+                                    pinfo.emission_vector = Utils::convertPicoJSONArrayToVectorDouble( inner_pit->second.get<picojson::array>() );
+                                }
+                            }
+                            obj.emit_particle_info[pname] = pinfo;
+                        }
                     } else if (it->first == "materials") {
                         auto material_names = it->second.get<picojson::object>();
 
@@ -285,8 +301,6 @@ namespace Initializer {
                 beam->setBeamDivergence( plasma["beam_divergence"].get<double>() );
                 beam->setEmissionRadius( plasma["emission_radius"].get<double>() );
                 beam->setEmissionType( plasma["emission_type"].to_str() );
-                beam->setEmissionPosition( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_position"].get<picojson::array>() ) );
-                beam->setEmissionVector( Utils::convertPicoJSONArrayToVectorDouble( plasma["emission_vector"].get<picojson::array>() ) );
                 Environment::addBeamParticleType(beam);
             }
 

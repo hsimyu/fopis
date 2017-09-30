@@ -32,6 +32,12 @@ constexpr int MAX_PARTICLE_NUM = 100000000;
 enum class AXIS {x, y, z};
 enum class AXIS_SIDE {low, up};
 
+//! 粒子放出用個別情報の構造体
+struct ParticleEmissionInfo {
+    std::vector<double> emission_position;
+    std::vector<double> emission_vector;
+};
+
 //! 物体情報用の構造体
 struct ObjectInfo_t {
     std::string name;
@@ -39,7 +45,7 @@ struct ObjectInfo_t {
     std::string surface_type;
     unsigned int history_width;
     double potential_fix;
-    std::vector<std::string> emit_particle_names;
+    std::map<std::string, ParticleEmissionInfo> emit_particle_info;
     std::map<int, std::string> materials;
 };
 

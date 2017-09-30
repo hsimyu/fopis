@@ -39,7 +39,13 @@ private:
     double potential_fix;
     double total_charge;
     std::vector<double> current;
-    std::vector<int> emit_particle_ids;
+
+    struct LocalParticleEmissionInfo {
+        Position relative_emission_position;
+        std::array<double, 3> emission_vector;
+    };
+
+    std::map<int, LocalParticleEmissionInfo> emit_particle_info;
     std::map<int, std::string> material_names;
     std::map<int, double> material_capacitances;
 
@@ -80,7 +86,7 @@ public:
         surface_type(obj_info.surface_type),
         num_cmat(_num_cmat),
         current{},
-        emit_particle_ids{},
+        emit_particle_info{},
         material_names{obj_info.materials},
         material_capacitances{},
         object_cell_map(boost::extents[0][0][0]),
@@ -118,7 +124,7 @@ public:
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);
-    bool hasEmitParticles() const {return (emit_particle_ids.size() > 0);}
+    bool hasEmitParticles() const {return (emit_particle_info.size() > 0);}
     bool isValidEmission(Particle& p) const;
     void subtractChargeOfParticle(const Particle& p);
 

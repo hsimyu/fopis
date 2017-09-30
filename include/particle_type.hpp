@@ -1,11 +1,10 @@
 #ifndef __TDPIC_PARTICLE_TYPE_HPP_INCLUDED__
 #define __TDPIC_PARTICLE_TYPE_HPP_INCLUDED__
 
-#include <random>
+#include "global.hpp"
 #include "position.hpp"
+#include <random>
 
-class Position;
-class Velocity;
 class Grid;
 class Particle;
 
@@ -113,7 +112,6 @@ class EmissionParticleType : public ParticleType {
 
     public:
         EmissionParticleType() : ParticleType(){}
-        virtual Particle generateNewParticle() = 0;
         virtual double getEmissionAmount() const = 0;
 };
 
@@ -121,30 +119,22 @@ class EmissionParticleType : public ParticleType {
 class BeamParticleType : public EmissionParticleType {
     protected:
         std::string emission_type;
-        Position emission_position;
-        Position relative_emission_position;
-        std::vector<double> emission_vector;
         double accel_potential;
         double beam_current;
         double beam_divergence;
         double emission_radius;
 
-        Velocity emission_velocity;
-        void updateEmissionVelocity();
-
     public:
-        BeamParticleType() : EmissionParticleType(), emission_vector{0.0, 0.0, 0.0}, emission_radius(0.0), emission_velocity{0.0, 0.0, 0.0} {}
+        BeamParticleType() : EmissionParticleType(), emission_radius(0.0) {}
 
         void setEmissionType(const std::string& type) {
             emission_type = type;
-            updateEmissionVelocity();
         }
 
         std::string getEmissionType() const {return emission_type;}
 
         void setAcceleratingPotential(const double value) {
             accel_potential = value;
-            updateEmissionVelocity();
         }
 
         double getAcceleratingPotential() const {return accel_potential;}
@@ -159,17 +149,11 @@ class BeamParticleType : public EmissionParticleType {
         void setEmissionRadius(const double value) { emission_radius = value; }
         double setEmissionRadius() const {return emission_radius;}
 
-        void setEmissionPosition(const std::vector<double>& pos);
-        Position getEmissionPosition() const {return emission_position;}
-
-        void setEmissionVector(const std::vector<double>& pos);
-        std::vector<double> getEmissionVector() const {return emission_vector;}
-
         virtual double getEmissionAmount() const override;
 
-        virtual Particle generateNewParticle() override;
-        Position generateNewPosition(const Velocity& vel);
-        Velocity generateNewVelocity();
+        Particle generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector);
+        Position generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel);
+        Velocity generateNewVelocity(const std::array<double, 3>& emission_vector);
         virtual void printInfo() const override;
 };
 #endif

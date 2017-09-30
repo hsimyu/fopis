@@ -93,47 +93,57 @@ bool Environment::isBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
 }
 
 
-void Environment::printInfo(void){
+void Environment::printInfo(void) {
     cout << "[Environment]" << endl;
-    cout << "      jobtype: " << jobtype << endl;
-    cout << "      threads: " << num_threads << endl;
-    cout << "     max pnum: " << max_particle_num << endl;
-    cout << " max timestep: " << max_timestep << endl;
-    cout << "boundary cond: " << boundary << endl;
-    cout << "           dx: " << (format("%8.2f") % dx).str() << "   m" << endl;
-    cout << "           dt: " << (format("%6.2e") % dt).str() << " sec" << endl;
-    cout << "   nx, ny, nz: " << format("%1%x%2%x%3%") % nx % ny % nz << " grids [total]" << endl;
-    cout << "      process: " << format("%1%x%2%x%3%") % proc_x % proc_y % proc_z << " = " << (proc_x * proc_y * proc_z) << " procs" << endl;
-    cout << "         cell: " << format("%1%x%2%x%3%") % cell_x % cell_y % cell_z << " grids [/proc] " << endl;
-    cout << "      cell(+): " << format("%1%x%2%x%3%") % (cell_x + 2) % (cell_y + 2) % (cell_z + 2) << " grids [/proc] (with glue cells) " << endl << endl;
+    cout << "  jobtype: " << jobtype << endl;
+    cout << "  threads: " << num_threads << endl;
+    cout << "  max pnum: " << max_particle_num << endl;
+    cout << "  max timestep: " << max_timestep << endl;
+    cout << "  boundary cond: " << boundary << endl;
+    cout << "  dx: " << (format("%8.2f") % dx).str() << "   m" << endl;
+    cout << "  dt: " << (format("%6.2e") % dt).str() << " sec" << endl;
+    cout << "  nx, ny, nz: " << format("%1%x%2%x%3%") % nx % ny % nz << " grids [total]" << endl;
+    cout << "  process: " << format("%1%x%2%x%3%") % proc_x % proc_y % proc_z << " = " << (proc_x * proc_y * proc_z) << " procs" << endl;
+    cout << "  cell: " << format("%1%x%2%x%3%") % cell_x % cell_y % cell_z << " grids [/proc] " << endl;
+    cout << "  cell(+): " << format("%1%x%2%x%3%") % (cell_x + 2) % (cell_y + 2) % (cell_z + 2) << " grids [/proc] (with glue cells) " << endl << endl;
 
-    cout << "    [IO width]" << endl;
-    cout << "      energy_dist: " << plot_energy_dist_width << endl;
+    cout << "  [IO width]" << endl;
+    cout << "    energy_dist: " << plot_energy_dist_width << endl;
     cout << "    velocity_dist: " << plot_velocity_dist_width << endl;
-    cout << "        potential: " << plot_potential_width << endl;
-    cout << "              rho: " << plot_rho_width << endl;
-    cout << "           efield: " << plot_efield_width << endl;
-    cout << "           bfield: " << plot_bfield_width << endl;
-    cout << "         particle: " << plot_particle_width << endl;
-    cout << "           energy: " << plot_energy_width << endl << endl;
+    cout << "    potential: " << plot_potential_width << endl;
+    cout << "    rho: " << plot_rho_width << endl;
+    cout << "    efield: " << plot_efield_width << endl;
+    cout << "    bfield: " << plot_bfield_width << endl;
+    cout << "    particle: " << plot_particle_width << endl;
+    cout << "    energy: " << plot_energy_width << endl << endl;
 
-    cout << "    [Objects]" << endl;
+    cout << "  [Objects]" << endl;
     for(const auto& object_info : objects_info) {
-        cout << "        [" << object_info.name << "]" << endl;
-        cout << "                file_name: "<< object_info.file_name << endl;
-        cout << "             surface_type: "<< object_info.surface_type << endl;
-        cout << "            history_width: "<< object_info.history_width << endl << endl;
+        cout << "    [" << object_info.name << "]" << endl;
+        cout << "      file_name: " << object_info.file_name << endl;
+        cout << "      surface_type: " << object_info.surface_type << endl;
+        cout << "      history_width: " << object_info.history_width << endl;
+        cout << "      emit_particle: " << endl;
+
+        for(const auto& emit_pinfo : object_info.emit_particle_info) {
+            cout << "        name: " << emit_pinfo.first << endl;
+
+            const auto& pinfo = emit_pinfo.second;
+            cout << "        emission_position: " << format("%s %s %s") % pinfo.emission_position[0] % pinfo.emission_position[1] % pinfo.emission_position[2] << endl;
+            cout << "        emission_vector: " << format("%s %s %s") % pinfo.emission_vector[0] % pinfo.emission_vector[1] % pinfo.emission_vector[2] << endl;
+        }
     }
+    cout << endl;
 }
 
 void Environment::checkCFLCondition(void) {
     cout << "[CFL Validation]" << endl;
 
     const auto courant = Normalizer::c;
-    cout << "    Courant number: " << courant << endl;
+    cout << "  Courant number: " << courant << endl;
 
     if ( courant > 1.0 ) {
-        cout << "    [ERROR] Courant number exceeds 1.0. " << endl;
+        cout << "  [ERROR] Courant number exceeds 1.0. " << endl;
         MPIw::Environment::abort(1);
     }
 }
@@ -150,30 +160,30 @@ void Environment::checkPlasmaInfo(void) {
         // プラズマ特徴量のチェック
         double debye = pt->calcDebyeLength();
         
-        cout << "    [Debye Length]:" << endl;
-        cout << "        Debye Length: " << debye << " m" << endl;
-        cout << "        Debye / dx = "  << debye / dx << " > 1.0?: " << ((debye / dx > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
-        cout << "        (nx * dx) / Debye = " << (nx * dx) / debye << " > 1.0?: "
+        cout << "  [Debye Length]:" << endl;
+        cout << "    Debye Length: " << debye << " m" << endl;
+        cout << "    Debye / dx = "  << debye / dx << " > 1.0?: " << ((debye / dx > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
+        cout << "    (nx * dx) / Debye = " << (nx * dx) / debye << " > 1.0?: "
             << ((((nx     * dx) / debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
-        cout << "        (ny * dx) / Debye = " << (ny * dx) / debye << " > 1.0?: "
+        cout << "    (ny * dx) / Debye = " << (ny * dx) / debye << " > 1.0?: "
             << ((((ny     * dx) / debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
-        cout << "        (nz * dx) / Debye = " << (nz * dx) / debye << " > 1.0?: "
+        cout << "    (nz * dx) / Debye = " << (nz * dx) / debye << " > 1.0?: "
             << ((((nz * dx) / debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
 
         // 1/ld_total^2 = \sigma 1/ld_i^2
         if (pt->getType() == "ambient") total_debye += 1.0/pow(debye, 2);
 
-        cout << "    [Thermal Velocity]" << endl;
-        cout << "        Vth = " << pt->calcThermalVelocity() << " < 0.4?: "
+        cout << "  [Thermal Velocity]" << endl;
+        cout << "    Vth = " << pt->calcThermalVelocity() << " < 0.4?: "
             << (pt->calcThermalVelocity() < 1.0 ? "OK" : "*NOT SATISFIED*") << endl << endl;
 
-        cout << "    [Plasma Frequency]" << endl;
+        cout << "  [Plasma Frequency]" << endl;
         double omega_p = pt->calcPlasmaFrequency();
-        cout << "        omega_p = " << omega_p << endl;
-        cout << "        1 / omega_p = " << 1.0 / omega_p << endl;
-        cout << "        1 / (omega_p * dt) = " << 1.0 / (omega_p * dt) << " > 5.0?: "
+        cout << "    omega_p = " << omega_p << endl;
+        cout << "    1 / omega_p = " << 1.0 / omega_p << endl;
+        cout << "    1 / (omega_p * dt) = " << 1.0 / (omega_p * dt) << " > 5.0?: "
             << ( (1.0 / (omega_p * dt)) > 5.0 ? "OK" : "*NOT SATISFIED*") << endl;
-        cout << "        1 / (omega_p * dt) < total_timestep?: "
+        cout << "    1 / (omega_p * dt) < total_timestep?: "
             << ( (1.0 / (omega_p * dt)) < max_timestep ? "OK" : "*NOT SATISFIED*") << endl;
         cout << endl;
     }
@@ -183,12 +193,12 @@ void Environment::checkPlasmaInfo(void) {
 
     cout << "[Total Debye Length]:" << endl;
     cout << "Total Debye Length: " << total_debye << " m" <<  endl;
-    cout << "    Total Debye / dx = "  << total_debye / dx << " > 1.0?: " << ((total_debye / dx > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
-    cout << "    (nx * dx) / Total Debye = " << (nx * dx) / total_debye << " > 1.0?: "
+    cout << "  Total Debye / dx = "  << total_debye / dx << " > 1.0?: " << ((total_debye / dx > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
+    cout << "  (nx * dx) / Total Debye = " << (nx * dx) / total_debye << " > 1.0?: "
             << ((((nx * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
-    cout << "    (ny * dx) / Total Debye = " << (ny * dx) / total_debye << " > 1.0?: "
+    cout << "  (ny * dx) / Total Debye = " << (ny * dx) / total_debye << " > 1.0?: "
             << ((((ny * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
-    cout << "    (nz * dx) / Total Debye = " << (nz * dx) / total_debye << " > 1.0?: "
+    cout << "  (nz * dx) / Total Debye = " << (nz * dx) / total_debye << " > 1.0?: "
             << ((((nz * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
 }
 
