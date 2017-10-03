@@ -182,7 +182,7 @@ bool Spacecraft::isContaining(const Particle& p) const {
     return this->isContaining(p.getPosition());
 }
 
-bool Spacecraft::isContaining(const Position& pos) const {
+inline bool Spacecraft::isContaining(const Position& pos) const {
     if (!is_defined_in_this_process) return false;
 
     if (Environment::isValidPosition(pos)) {
@@ -448,45 +448,80 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
     for(const auto& pinfo : emit_particle_info) {
         const auto id = pinfo.first;
         const auto& info = pinfo.second;
-        const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
-        const auto max_amount = emit_ptype_ptr->getEmissionAmount();
 
-        if (emit_ptype_ptr->getType() == "beam") {
-            const auto beam_ptype_ptr = Environment::getBeamParticleType(id);
+        if (Environment::isValidPosition(info.relative_emission_position)) {
+            const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
+            const auto max_amount = emit_ptype_ptr->getEmissionAmount();
 
-            for(int i = 0; i < max_amount; ++i) {
-                Particle p = beam_ptype_ptr->generateNewParticle(info.relative_emission_position, info.emission_vector);
-                cout << p << endl;
+            //! 放出時に呼び出すメンバ関数ポインタ
+            std::function<void(Position&, const int, const double)> emission_func;
 
-                // if (this->isValidEmission(p)) {
-                //     this->subtractChargeOfParticle(p);
-                //     parray[id].push_back( std::move(p) );
-                // }
+            //! 放出時の座標修正子
+            if (fabs(info.emission_vector[0]) == 1.0) {
+                emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromXsurface(rel_pos, pos, id, charge);
+                };
+            } else if (fabs(info.emission_vector[1]) == 1.0) {
+                emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromYsurface(rel_pos, pos, id, charge);
+                };
+            } else if (fabs(info.emission_vector[2]) == 1.0) {
+                emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromZsurface(rel_pos, pos, id, charge);
+                };
+            } else {
+                std::string error_message = (format("[ERROR] At Spacecraft::emitParticles: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
+                throw std::invalid_argument(error_message);
+            }
+
+            if (emit_ptype_ptr->getType() == "beam") {
+                const auto beam_ptype_ptr = Environment::getBeamParticleType(id);
+                const auto charge = beam_ptype_ptr->getCharge();
+
+                for(int i = 0; i < max_amount; ++i) {
+                    Particle p = beam_ptype_ptr->generateNewParticle(info.relative_emission_position, info.emission_vector);
+
+                    if (this->isValidEmission(p)) {
+                        auto pos = p.getPosition();
+                        emission_func(pos, id, charge);
+                        parray[id].push_back( std::move(p) );
+                    }
+                }
             }
         }
     }
 }
 
-void Spacecraft::subtractChargeOfParticle(const Particle& p) {
-    const auto id = p.typeId;
-    const auto q = p.getChargeOfSuperParticle();
-    const auto pos = p.getOldPosition();
+inline void Spacecraft::subtractChargeOfParticleFromXsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
+    charge_map[id][emission_pos.i][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dy2 * pos.dz2;
+    charge_map[id][emission_pos.i][emission_pos.j + 1][emission_pos.k    ] -= charge * pos.dy1 * pos.dz2;
+    charge_map[id][emission_pos.i][emission_pos.j    ][emission_pos.k + 1] -= charge * pos.dy2 * pos.dz1;
+    charge_map[id][emission_pos.i][emission_pos.j + 1][emission_pos.k + 1] -= charge * pos.dy1 * pos.dz1;
 
-    charge_map[id][pos.i    ][pos.j    ][pos.k    ] -= q * pos.dx2 * pos.dy2 * pos.dz2;
-    charge_map[id][pos.i + 1][pos.j    ][pos.k    ] -= q * pos.dx1 * pos.dy2 * pos.dz2;
-    charge_map[id][pos.i    ][pos.j + 1][pos.k    ] -= q * pos.dx2 * pos.dy1 * pos.dz2;
-    charge_map[id][pos.i + 1][pos.j + 1][pos.k    ] -= q * pos.dx1 * pos.dy1 * pos.dz2;
-    charge_map[id][pos.i    ][pos.j    ][pos.k + 1] -= q * pos.dx2 * pos.dy2 * pos.dz1;
-    charge_map[id][pos.i + 1][pos.j    ][pos.k + 1] -= q * pos.dx1 * pos.dy2 * pos.dz1;
-    charge_map[id][pos.i    ][pos.j + 1][pos.k + 1] -= q * pos.dx2 * pos.dy1 * pos.dz1;
-    charge_map[id][pos.i + 1][pos.j + 1][pos.k + 1] -= q * pos.dx1 * pos.dy1 * pos.dz1;
-
-    current[id] -= q;
+    current[id] -= charge;
 }
 
-bool Spacecraft::isValidEmission(Particle& p) const {
+inline void Spacecraft::subtractChargeOfParticleFromYsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
+    charge_map[id][emission_pos.i    ][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx2 * pos.dz2;
+    charge_map[id][emission_pos.i + 1][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx1 * pos.dz2;
+    charge_map[id][emission_pos.i    ][emission_pos.j    ][emission_pos.k + 1] -= charge * pos.dx2 * pos.dz1;
+    charge_map[id][emission_pos.i + 1][emission_pos.j    ][emission_pos.k + 1] -= charge * pos.dx1 * pos.dz1;
+
+    current[id] -= charge;
+}
+
+inline void Spacecraft::subtractChargeOfParticleFromZsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
+    charge_map[id][emission_pos.i    ][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx2 * pos.dy2;
+    charge_map[id][emission_pos.i + 1][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx1 * pos.dy2;
+    charge_map[id][emission_pos.i    ][emission_pos.j + 1][emission_pos.k    ] -= charge * pos.dx2 * pos.dy1;
+    charge_map[id][emission_pos.i + 1][emission_pos.j + 1][emission_pos.k    ] -= charge * pos.dx1 * pos.dy1;
+
+    current[id] -= charge;
+}
+
+inline bool Spacecraft::isValidEmission(Particle& p) const {
     //! 放出前は内部、放出後は外部に入れば valid と見なす
-    return ( (!isContaining(p)) && isContaining(p.getOldPosition()) );
+    return ( (isContaining(p)) && !isContaining(p.getNewPosition()) );
 }
 
 //! I/O関連

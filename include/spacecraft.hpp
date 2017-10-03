@@ -78,6 +78,11 @@ private:
     void distributeInnerParticleChargeToYsurface(const Position& pos, const int id, const double charge);
     void distributeInnerParticleChargeToZsurface(const Position& pos, const int id, const double charge);
 
+    //! 粒子放出時の電荷計算用
+    void subtractChargeOfParticleFromXsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
+    void subtractChargeOfParticleFromYsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
+    void subtractChargeOfParticleFromZsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
+
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
@@ -126,7 +131,6 @@ public:
     void emitParticles(ParticleArray& parray);
     bool hasEmitParticles() const {return (emit_particle_info.size() > 0);}
     bool isValidEmission(Particle& p) const;
-    void subtractChargeOfParticle(const Particle& p);
 
     // その他ユーティリティ関数
     void makeCmatrixInvert(void);
