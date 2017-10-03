@@ -135,6 +135,7 @@ public:
     void applyCharge(RhoArray&) const;
     void redistributeCharge(RhoArray&, const tdArray&);
     void resetCurrent();
+    void sumCurrent();
 
     // IO関数
     std::string getLogHeader() const;

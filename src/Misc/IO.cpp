@@ -234,14 +234,17 @@ namespace IO {
         for(const auto& object : g->getObjects()) {
             std::string filename = "data/object_" + object.getName() + ".txt";
 
-            if ( MPIw::Environment::isRootNode(object.getName()) ) {
-                if(Environment::timestep == 1) {
-                    const auto header = object.getLogHeader();
-                    putHeader(filename, header);
-                }
+            if (object.isDefined()) {
+                object.sumCurrent();
+                if ( MPIw::Environment::isRootNode(object.getName()) ) {
+                    if(Environment::timestep == 1) {
+                        const auto header = object.getLogHeader();
+                        putHeader(filename, header);
+                    }
 
-                const std::string& entry = object.getLogEntry();
-                putLog(filename, entry);
+                    const std::string& entry = object.getLogEntry();
+                    putLog(filename, entry);
+                }
             }
         }
     }

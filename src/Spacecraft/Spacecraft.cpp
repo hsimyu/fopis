@@ -148,6 +148,12 @@ auto Spacecraft::getTotalCharge(const RhoArray& rho) const {
     return q;
 }
 
+void Spacecraft::sumCurrent() {
+    for(auto& v : current) {
+        v = MPIw::Environment::Comms[name]->sum(v);
+    }
+}
+
 void Spacecraft::resetCurrent() {
     for(auto& v : current) {
         v = 0.0;
