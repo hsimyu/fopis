@@ -2,17 +2,17 @@
     "Environment": {
         "max_timestep": 10,
         "job_type": "new",
-        "solver_type": "EM",
+        "solver_type": "ES",
         "boundary": "DDDDDD",
         "dimension": "3D",
         "nx": 32,
         "ny": 32,
         "nz": 32,
-        "proc_x": 1,
-        "proc_y": 1,
+        "proc_x": 2,
+        "proc_y": 2,
         "proc_z": 1,
-        "dx": 1.0,
-        "dt": 1e-9
+        "dx": 0.1,
+        "dt": 1e-8
     },
     "Plasma": {
         "Electron": {
@@ -21,7 +21,7 @@
             "charge": -1.0,
             "density": 1.0e7,
             "temperature": 1.0,
-            "particle_per_cell": 20
+            "particle_per_cell": 40
         },
         "Proton": {
             "type": "ambient",
@@ -29,33 +29,35 @@
             "charge": 1.0,
             "density": 1.0e7,
             "temperature": 1.0,
-            "particle_per_cell": 20
+            "particle_per_cell": 40
         },
-        "Beam1": {
+        "ElectronBeam1": {
             "type": "beam",
             "mass": 1.0,
             "charge": -1.0,
             "density": 1.0e7,
             "temperature": 1.0,
             "particle_per_cell": 20,
-            "emission_position": [15.0, 17.5, 16.5],
-            "emission_vector": [-1.0, 0.0, 0.0],
             "emission_type": "beam",
             "emission_radius": 0.01,
             "accel_potential": 50.0,
-            "beam_current": 10e-3,
+            "beam_current": 1e-5,
             "beam_divergence": 0.0
         }
     },
     "Object": {
-        "Sp0": {
+        "Spacecraft_0": {
             "file_name": "objects/cube.obj",
             "surface_type": "perfect",
             "history_width": 1,
             "potential_fix": 0.0,
-            "emit_particles": ["Beam1"],
+            "emit_particles": {
+                "ElectronBeam1": {
+                    "emission_position": [15.0, 17.5, 16.5],
+                    "emission_vector": [-1.0, 0.0, 0.0]
+                }
+            },
             "materials": {
-                "1": "PerfectConductor"
             }
         }
     },

@@ -476,7 +476,7 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
 
             if (emit_ptype_ptr->getType() == "beam") {
                 const auto beam_ptype_ptr = Environment::getBeamParticleType(id);
-                const auto charge = beam_ptype_ptr->getCharge();
+                const auto charge = beam_ptype_ptr->getChargeOfSuperParticle();
 
                 for(int i = 0; i < max_amount; ++i) {
                     Particle p = beam_ptype_ptr->generateNewParticle(info.relative_emission_position, info.emission_vector);
