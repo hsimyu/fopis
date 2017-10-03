@@ -232,19 +232,15 @@ namespace IO {
 
     void plotObjectsData(std::shared_ptr<const Grid> g) {
         for(const auto& object : g->getObjects()) {
-            std::string filename = "data/object_" + object.getName() + ".txt";
-
-            if (object.isDefined()) {
-                object.sumCurrent();
-                if ( MPIw::Environment::isRootNode(object.getName()) ) {
-                    if(Environment::timestep == 1) {
-                        const auto header = object.getLogHeader();
-                        putHeader(filename, header);
-                    }
-
-                    const std::string& entry = object.getLogEntry();
-                    putLog(filename, entry);
+            if ( MPIw::Environment::isRootNode(object.getName()) ) {
+                std::string filename = "data/object_" + object.getName() + ".txt";
+                if(Environment::timestep == 1) {
+                    const auto header = object.getLogHeader();
+                    putHeader(filename, header);
                 }
+
+                const std::string& entry = object.getLogEntry();
+                putLog(filename, entry);
             }
         }
     }

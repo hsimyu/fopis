@@ -150,7 +150,7 @@ auto Spacecraft::getTotalCharge(const RhoArray& rho) const {
 
 void Spacecraft::sumCurrent() {
     for(auto& v : current) {
-        v = MPIw::Environment::Comms[name]->sum(v);
+        v = MPIw::Environment::Comms[name].sum(v);
     }
 }
 
@@ -435,6 +435,8 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     q = getTotalCharge(rho);
     // update total charge for output
     total_charge = q;
+    // update total current for output
+    sumCurrent();
 
     if (MPIw::Environment::isRootNode(name)) {
         cout << format("[INFO] [%s] charge after redist : %16.7e") % name % q << endl;
