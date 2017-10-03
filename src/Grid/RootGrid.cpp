@@ -141,6 +141,10 @@ void RootGrid::mainLoopEM() {
     time_counter->switchTo("updateParticleVelocity");
     this->updateParticleVelocity();
 
+    // 粒子放出
+    time_counter->switchTo("emitParticlesFromObjects");
+    this->emitParticlesFromObjects();
+
     // 位置更新
     time_counter->switchTo("updateParticlePosition");
     this->updateParticlePosition(); // jx, jy, jz もここで update される
@@ -149,28 +153,15 @@ void RootGrid::mainLoopEM() {
     time_counter->switchTo("injectParticleFromBoundary");
     this->injectParticlesFromBoundary();
 
-    // 粒子放出
-    time_counter->switchTo("emitParticlesFromObjects");
-    this->emitParticlesFromObjects();
+    // 新しい位置に対応する電荷密度算出
+    time_counter->switchTo("updateRho");
+    this->updateRho();
 
-    // 電磁計算の場合はFDTDとPoisson解くのを分ける
-    if ( Environment::timestep % 1 == 0 ) {
-        // 新しい位置に対応する電荷密度算出
-        time_counter->switchTo("updateRho");
-        this->updateRho();
+    time_counter->switchTo("updateEfieldFDTD");
+    this->updateEfieldFDTD();
 
-        // Poisson を解く (FDTDの場合はたまにでいい?)
-        time_counter->switchTo("solvePoisson");
-        this->solvePoisson();
-
-        // 電場更新
-        time_counter->switchTo("updateEfield");
-        this->updateEfield();
-    } else {
-        // FDTDで電場更新
-        time_counter->switchTo("updateEfieldFDTD");
-        this->updateEfieldFDTD();
-    }
+    time_counter->switchTo("solvePoissonCorrection");
+    this->solvePoissonCorrection();
 
     // 磁場更新
     time_counter->switchTo("updateBfield");
@@ -345,6 +336,141 @@ double RootGrid::checkPhiResidual() {
     }
 
     if(MPIw::Environment::numprocs > 1) {
+        residual = MPIw::Environment::Comms["world"].max(residual);
+    }
+    return residual;
+}
+
+void RootGrid::solvePoissonCorrection(void) {
+    constexpr int POST_LOOP_NUM = 250;
+    this->solvePoissonCorrectionPSOR(POST_LOOP_NUM);
+}
+
+//! FDTD用にsolvePoissonの代わりに誤差計算を行う
+void RootGrid::solvePoissonCorrectionPSOR(const int loopnum) {
+    //! 残差を更新
+    this->checkPhiResidual();
+
+    auto& residual = field->getPoissonResidual();
+    auto& poisson_error = field->getPoissonError();
+
+    const double omega = 2.0/(1.0 + sin(M_PI/(residual.shape()[0] - 2))); // spectral radius
+    const double coeff = pow(dx, 2);
+
+    const int cx_with_glue = residual.shape()[0];
+    const int cy_with_glue = residual.shape()[1];
+    const int cz_with_glue = residual.shape()[2];
+
+    constexpr double required_error = 1.0e-7;
+
+    const bool is_not_boundary[6] = {
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
+    };
+
+    for(int loop = 1; loop <= loopnum; ++loop) {
+        #pragma omp parallel shared(poisson_error,residual)
+        {
+            //! 奇数グリッド更新
+            #pragma omp for
+            for(int k = 1; k < cz_with_glue - 1; k += 2){
+                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+                    for(int j = 1; j < cy_with_glue - 1; ++j){
+                        if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
+                            for(int i = 1; i < cx_with_glue - 1; ++i){
+                                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                                    poisson_error[i][j][k] = (1.0 - omega) * poisson_error[i][j][k] + omega * (poisson_error[i+1][j][k] + poisson_error[i-1][j][k] + poisson_error[i][j+1][k] + poisson_error[i][j-1][k] + poisson_error[i][j][k+1] + poisson_error[i][j][k-1] + coeff * residual[i][j][k])/6.0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            //! 偶数グリッド更新
+            #pragma omp for
+            for(int k = 2; k < cz_with_glue - 1; k += 2){
+                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+                    for(int j = 1; j < cy_with_glue - 1; ++j){
+                        if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
+                            for(int i = 1; i < cx_with_glue - 1; ++i){
+                                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                                    poisson_error[i][j][k] = (1.0 - omega) * poisson_error[i][j][k] + omega * (poisson_error[i+1][j][k] + poisson_error[i-1][j][k] + poisson_error[i][j+1][k] + poisson_error[i][j-1][k] + poisson_error[i][j][k+1] + poisson_error[i][j][k-1] + coeff * residual[i][j][k])/6.0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        MPIw::Environment::sendRecvField(poisson_error);
+
+        if ( (loop % 10 == 0) && (this->checkPhiCorrectionResidual() < required_error) ) {
+            if (Environment::isRootNode) {
+                cout << "[INFO] solve poisson correction: performed " << loop << " iterations." << endl;
+            }
+            break;
+        }
+    }
+
+    auto& phi = field->getPhi();
+
+    #pragma omp parallel for shared(poisson_error, phi)
+    for (int i = 0; i < cx_with_glue; ++i) {
+        for (int j = 0; j < cy_with_glue; ++j) {
+            for (int k = 0; k < cz_with_glue; ++k) {
+                phi[i][j][k] += poisson_error[i][j][k];
+            }
+        }
+    }
+}
+
+//! 電位分布の残差の残差の最大ノルムを返す
+double RootGrid::checkPhiCorrectionResidual() {
+    double residual = 0.0;
+
+    const bool is_not_boundary[6] = {
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
+    };
+
+    auto& poisson_error = field->getPoissonError();
+    auto& poisson_residual = field->getPoissonResidual();
+
+    const int cx_with_glue = poisson_residual.shape()[0];
+    const int cy_with_glue = poisson_residual.shape()[1];
+    const int cz_with_glue = poisson_residual.shape()[2];
+
+    #pragma omp parallel for reduction(max: residual)
+    for(int k = 1; k < cz_with_glue - 1; ++k){
+        if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
+                    for(int i = 1; i < cx_with_glue - 1; ++i){
+                        if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                            double source_value = poisson_residual[i][j][k];
+                            double tmp_res = field->poissonOperator(poisson_error, i, j, k) + source_value;
+
+                            if (fabs(tmp_res / source_value) > residual) {
+                                residual = fabs(tmp_res / source_value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (MPIw::Environment::numprocs > 1) {
         residual = MPIw::Environment::Comms["world"].max(residual);
     }
     return residual;

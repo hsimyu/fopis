@@ -270,6 +270,7 @@ class RootGrid : public Grid {
         //! 場の初期化 / 更新
         virtual void updateRho(void) override;
         virtual void solvePoisson(void) override;
+        void solvePoissonCorrection(void);
         virtual void updateEfield(void) override;
         virtual void updateReferenceEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
@@ -410,6 +411,9 @@ class RootGrid : public Grid {
 
         virtual void solvePoissonPSOR(const int loopnum) override;
         virtual double checkPhiResidual() override;
+
+        void solvePoissonCorrectionPSOR(const int loopnum);
+        double checkPhiCorrectionResidual();
 };
 
 class ChildGrid : public Grid {
