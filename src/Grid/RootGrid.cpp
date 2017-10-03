@@ -102,17 +102,17 @@ void RootGrid::mainLoopES() {
     time_counter->switchTo("updateParticleVelocity");
     this->updateParticleVelocity();
 
-    // 位置更新
+    // 粒子放出
+    time_counter->switchTo("emitParticlesFromObjects");
+    this->emitParticlesFromObjects();
+
+    // 粒子位置更新
     time_counter->switchTo("updateParticlePosition");
     this->updateParticlePosition(); // jx, jy, jz もここで update される
 
     // 粒子注入
     time_counter->switchTo("injectParticleFromBoundary");
     this->injectParticlesFromBoundary();
-
-    // 粒子放出
-    time_counter->switchTo("emitParticlesFromObjects");
-    this->emitParticlesFromObjects();
 
     // 静電計算の場合
     // 新しい位置に対応する電荷密度算出
