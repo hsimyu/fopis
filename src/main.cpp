@@ -25,8 +25,8 @@ int main(int argc, char* argv[]){
         time_counter->enableReport();
     }
 
-    // root_grid->makeChild(2, 2, 2, 8, 8, 15);
-    // root_grid->printInfo();
+    // root_grid->makeGrandChildRecursive();
+    root_grid->printInfo();
     root_grid->initialize();
 
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {

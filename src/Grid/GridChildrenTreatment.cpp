@@ -235,3 +235,13 @@ void Grid::restrictPhiToChildrenBoundary() {
         }
     }
 }
+
+void Grid::makeGrandChildRecursive() {
+    this->makeChild(3, 3, 3, 8, 8, 8);
+
+    if (level < 4) {
+        for(auto& child : children) {
+            child->makeGrandChildRecursive();
+        }
+    }
+}

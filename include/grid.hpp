@@ -190,6 +190,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void makeChild(const int, const int, const int, const int, const int, const int);
         void addChild(std::unique_ptr<ChildGrid>&&);
         void removeChild(const int);
+        void makeGrandChildRecursive();
 
         int getChildrenLength() const {
             return children.size();
