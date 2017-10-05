@@ -491,6 +491,7 @@ void RootGrid::updateEfield() {
 
     //! @note:隣と通信しなくてもいい
     //! phiが通信してあるため、端の要素を通信なしで計算可能
+    #pragma omp parallel for shared(ex, ey, ez)
     for(int i = 0; i < cx_with_glue; ++i){
         for(int j = 0; j < cy_with_glue; ++j){
             for(int k = 0; k < cz_with_glue; ++k){
@@ -523,69 +524,79 @@ void RootGrid::updateReferenceEfield() {
     const int cz_with_glue = ez.shape()[2] + 1;
 
     //! reference 更新
-    for(int i = 1; i < cx_with_glue - 1; ++i){
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
-                exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
-                eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
-                ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
-            }
-        }
-    }
-
-    //! 外側境界の条件設定
-    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) {
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
-                exref[0][j][k] = 0.0;
-
-                // Boundary である場合、更新 (これ正しい??)
-                exref[1][j][k] = 0.5 * (phi[3][j][k] - 4.0 * phi[2][j][k] + 3.0 * phi[1][j][k]);
-            }
-        }
-    }
-
-    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) {
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
-                exref[cx_with_glue - 1][j][k] = 0.0;
-                exref[cx_with_glue - 2][j][k] = 0.5 * (-phi[cx_with_glue - 4][j][k] + 4.0 * phi[cx_with_glue - 3][j][k] - 3.0 * phi[cx_with_glue - 2][j][k]);
-            }
-        }
-    }
-
-    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) {
-        for(int i = 1; i < cx_with_glue - 1; ++i){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
-                eyref[i][0][k] = 0.0;
-                eyref[i][1][k] = 0.5 * (phi[i][3][k] - 4.0 * phi[i][2][k] + 3.0 * phi[i][1][k]);
-            }
-        }
-    }
-
-    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) {
-        for(int i = 1; i < cx_with_glue - 1; ++i){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
-                eyref[i][cy_with_glue - 1][k] = 0.0;
-                eyref[i][cy_with_glue - 2][k] = 0.5 * (-phi[i][cy_with_glue - 4][k] + 4.0 * phi[i][cy_with_glue - 3][k] - 3.0 * phi[i][cy_with_glue - 2][k]);
-            }
-        }
-    }
-
-    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) {
+    #pragma omp parallel shared(ex, ey, ez, exref, eyref, ezref)
+    {
+        #pragma omp for
         for(int i = 1; i < cx_with_glue - 1; ++i){
             for(int j = 1; j < cy_with_glue - 1; ++j){
-                ezref[i][j][0] = 0.0;
-                ezref[i][j][1] = 0.5 * (phi[i][j][3] - 4.0 * phi[i][j][2] + 3.0 * phi[i][j][1]);
+                for(int k = 1; k < cz_with_glue - 1; ++k){
+                    exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
+                    eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
+                    ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
+                }
             }
         }
-    }
 
-    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) {
-        for(int i = 1; i < cx_with_glue - 1; ++i){
+        //! 外側境界の条件設定
+        if (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) {
+            #pragma omp for
             for(int j = 1; j < cy_with_glue - 1; ++j){
-                ezref[i][j][cz_with_glue - 1] = 0.0;
-                ezref[i][j][cz_with_glue - 2] = 0.5 * (-phi[i][j][cz_with_glue - 4] + 4.0 * phi[i][j][cz_with_glue - 3] - 3.0 * phi[i][j][cz_with_glue - 2]);
+                for(int k = 1; k < cz_with_glue - 1; ++k){
+                    exref[0][j][k] = 0.0;
+
+                    // Boundary である場合、更新 (これ正しい??)
+                    exref[1][j][k] = 0.5 * (phi[3][j][k] - 4.0 * phi[2][j][k] + 3.0 * phi[1][j][k]);
+                }
+            }
+        }
+
+        if (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) {
+            #pragma omp for
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                for(int k = 1; k < cz_with_glue - 1; ++k){
+                    exref[cx_with_glue - 1][j][k] = 0.0;
+                    exref[cx_with_glue - 2][j][k] = 0.5 * (-phi[cx_with_glue - 4][j][k] + 4.0 * phi[cx_with_glue - 3][j][k] - 3.0 * phi[cx_with_glue - 2][j][k]);
+                }
+            }
+        }
+
+        if (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) {
+            #pragma omp for
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                for(int k = 1; k < cz_with_glue - 1; ++k){
+                    eyref[i][0][k] = 0.0;
+                    eyref[i][1][k] = 0.5 * (phi[i][3][k] - 4.0 * phi[i][2][k] + 3.0 * phi[i][1][k]);
+                }
+            }
+        }
+
+        if (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) {
+            #pragma omp for
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                for(int k = 1; k < cz_with_glue - 1; ++k){
+                    eyref[i][cy_with_glue - 1][k] = 0.0;
+                    eyref[i][cy_with_glue - 2][k] = 0.5 * (-phi[i][cy_with_glue - 4][k] + 4.0 * phi[i][cy_with_glue - 3][k] - 3.0 * phi[i][cy_with_glue - 2][k]);
+                }
+            }
+        }
+
+        if (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) {
+            #pragma omp for
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                for(int j = 1; j < cy_with_glue - 1; ++j){
+                    ezref[i][j][0] = 0.0;
+                    ezref[i][j][1] = 0.5 * (phi[i][j][3] - 4.0 * phi[i][j][2] + 3.0 * phi[i][j][1]);
+                }
+            }
+        }
+
+        if (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) {
+            #pragma omp for
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                for(int j = 1; j < cy_with_glue - 1; ++j){
+                    ezref[i][j][cz_with_glue - 1] = 0.0;
+                    ezref[i][j][cz_with_glue - 2] = 0.5 * (-phi[i][j][cz_with_glue - 4] + 4.0 * phi[i][j][cz_with_glue - 3] - 3.0 * phi[i][j][cz_with_glue - 2]);
+                }
             }
         }
     }
