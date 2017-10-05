@@ -9,7 +9,7 @@ bin_name=tdpic
 path_to_bin=../${bin_name}
 
 if [ -e ${path_to_bin} ]; then
-    aprun -n $QSUB_PROCS -d $QSUB_CPUS -N $QSUB_PPN ${path_to_bin}  > ./std.out
+    mpiexec.hydra ${path_to_bin}  > ./std.out
     RC=$?
     if [ $RC -gt 0 ]; then
         echo "[ERROR] return code: $RC"

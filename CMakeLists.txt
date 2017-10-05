@@ -6,6 +6,7 @@ option(COPY_SAMPLE_INPUT "Copy input.json to build dir." ON)
 option(DEBUG "Build in Debug Mode." ON)
 option(CHARGE_CONSERVATION "Check charge conservation on each step." ON)
 option(WITH_TEST "Build Test code." OFF)
+option(OLD_CRAY_ENV "System B and C" OFF)
 set(LOCAL_LIBRARYDIR "NOTFOUND" CACHE PATH "Specified local library path to include and link.")
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -56,20 +57,21 @@ message(STATUS "Boost INCLUDE DIR: ${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost LIBRARIES  : ${Boost_LIBRARIES}")
 
 # HDF5 and zlib
-set (LIB_TYPE STATIC)
-string(TOLOWER ${LIB_TYPE} SEARCH_TYPE)
-
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(HDF5_LIBRARY "${LOCAL_LIBRARYDIR}/lib/libhdf5.a;${LOCAL_LIBRARYDIR}/lib/libz.a")
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_LIBRARY})
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
     link_directories( "$ENV{HDF5_DIR}/lib" )
     include_directories( "$ENV{HDF5_INCLUDE_OPTS}" )
-    find_library(HDF5_LIBRARY NAMES hdf5 PATHS "$ENV{HDF5_DIR}/lib")
-    find_library(ZLIB_LIBRARY NAMES z)
+    find_library(HDF5_LIBRARY NAMES libhdf5.a PATHS "$ENV{HDF5_DIR}/lib")
+    find_library(ZLIB_LIBRARY NAMES libz.a)
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_LIBRARY} ${ZLIB_LIBRARY})
 else()
     find_package (HDF5 NAMES hdf5 REQUIRED COMPONENTS C ${SEARCH_TYPE} HINTS ${LOCAL_LIBRARYDIR}/lib)
+
+    set (LIB_TYPE STATIC)
+    string(TOLOWER ${LIB_TYPE} SEARCH_TYPE)
+
     link_directories(${HDF5_LIBRARY_DIRS}) # for zlib inclusion
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_C_${LIB_TYPE}_LIBRARY})
 endif()
@@ -91,8 +93,19 @@ ENDIF(DOXYGEN_FOUND)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
     set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wwrite-strings -Wpointer-arith -Winit-self")
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -mkl -qopenmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcmodel=medium -fpic -dynamic -shared-intel -mkl -qopenmp")
+
+    if(OLD_CRAY_ENV)
+
+        set(CMAKE_CXX_COMPILER mpiicpc)
+        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -shared-intel -qopenmp -static_mpi")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -parallel -mcmodel=medium -fpic -shared-intel -qopenmp -static_mpi")
+
+    else()
+
+        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -qopenmp")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -parallel -mcmodel=medium -fpic -shared-intel -dynamic -qopenmp")
+
+    endif()
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(CXX_WARNING_FLAGS "/W4")
 
