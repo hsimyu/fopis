@@ -141,7 +141,7 @@ else()
 
     # CXX Flags
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64 -fopenmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -m64 -fopenmp")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -m64 -fopenmp")
 
     # MPI LIBRARIES
     find_library(MPI_LIBS mpi HINTS /usr/local/lib)

@@ -702,6 +702,7 @@ void RootGrid::initializeObjectsCmatrix(void) {
 
             solvePoisson();
 
+            #pragma omp parallel for ordered shared(obj)
             for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
                 double value = 0.0;
                 if (obj.isMyCmat(cmat_row_itr)) {
@@ -710,11 +711,15 @@ void RootGrid::initializeObjectsCmatrix(void) {
                     value = phi[target_pos.i][target_pos.j][target_pos.k];
                 }
 
-                if (obj.isDefined()) {
-                    //! bcastの代わりにsumしてしまう
-                    value = MPIw::Environment::Comms[obj.getName()].sum(value);
-                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
+                #pragma omp ordered
+                {
+                    if (obj.isDefined()) {
+                        //! bcastの代わりにsumしてしまう
+                        value = MPIw::Environment::Comms[obj.getName()].sum(value);
+                    }
                 }
+
+                obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
             }
 
             //! 付与した単位電荷を消去する
