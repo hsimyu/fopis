@@ -67,10 +67,10 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
     find_library(ZLIB_LIBRARY NAMES libz.a)
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_LIBRARY} ${ZLIB_LIBRARY})
 else()
-    find_package (HDF5 NAMES hdf5 REQUIRED COMPONENTS C ${SEARCH_TYPE} HINTS ${LOCAL_LIBRARYDIR}/lib)
-
     set (LIB_TYPE STATIC)
     string(TOLOWER ${LIB_TYPE} SEARCH_TYPE)
+
+    find_package (HDF5 NAMES hdf5 REQUIRED COMPONENTS C ${SEARCH_TYPE} HINTS ${LOCAL_LIBRARYDIR}/lib)
 
     link_directories(${HDF5_LIBRARY_DIRS}) # for zlib inclusion
     set(CXX_REQUIRED_LIBS ${CXX_REQUIRED_LIBS} ${HDF5_C_${LIB_TYPE}_LIBRARY})
