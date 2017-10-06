@@ -597,10 +597,11 @@ std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
 }
 
 void Spacecraft::insertPotentialData(SimpleVTK& gen, const tdArray& phi) const {
+    const auto unnorm = Normalizer::unnormalizePotential(1.0);
     for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
         if (isMyCmat(cmat_itr)) {
             const auto& pos = capacity_matrix_relation.at(cmat_itr);
-            gen.addItem(phi[pos.i][pos.j][pos.k]);
+            gen.addItem(unnorm * phi[pos.i][pos.j][pos.k]);
         }
     }
 }
@@ -644,8 +645,8 @@ void Spacecraft::plotPotentialMapping(const int timestep, const tdArray& phi) co
             gen.setNumberOfPoints(num_cmat);
             gen.setNumberOfCells(connected_list.size());
                 gen.beginPointData();
-                gen.setScalars("phi");
-                    gen.beginDataArray("phi", "Float32", "ascii");
+                gen.setScalars("potential");
+                    gen.beginDataArray("potential", "Float32", "ascii");
                         insertPotentialData(gen, phi);
                     gen.endDataArray();
                 gen.endPointData();
