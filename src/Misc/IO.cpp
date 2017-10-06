@@ -230,10 +230,11 @@ namespace IO {
         }
     }
 
-    void plotObjectsData(std::shared_ptr<const Grid> g) {
+    void plotObjectsData(std::shared_ptr<Grid> g) {
         for(const auto& object : g->getObjects()) {
             if ( MPIw::Environment::isRootNode(object.getName()) ) {
                 std::string filename = "data/object_" + object.getName() + ".txt";
+
                 if(Environment::timestep == 1) {
                     const auto header = object.getLogHeader();
                     putHeader(filename, header);
@@ -241,6 +242,8 @@ namespace IO {
 
                 const std::string& entry = object.getLogEntry();
                 putLog(filename, entry);
+
+                object.plotPotentialMapping(Environment::timestep, g->getPhi());
             }
         }
     }

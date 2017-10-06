@@ -9,6 +9,7 @@ using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
 using ObjectDefinedMapInt = boost::multi_array<int, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
 using ObjectNodeTextures = std::map< unsigned int, std::vector<int> >;
+using ObjectConnectivityList = std::vector< std::vector<unsigned int> >;
 using ObjectCells = std::vector<std::array<int, 3>>;
 using PropertyPair = std::map<std::string, double>;
 
@@ -16,9 +17,11 @@ struct ObjectDataFromFile {
     ObjectNodes nodes;
     ObjectNodeTextures textures;
     ObjectCells cells;
+    ObjectConnectivityList connected_list;
 };
 
 class Particle;
+class SimpleVTK;
 
 //! @class: Spacecraft
 class Spacecraft {
@@ -61,6 +64,7 @@ private:
 
     //! キャパシタンス行列の番号と対応する物体の位置を格納する
     std::map<size_t, Position> capacity_matrix_relation;
+
     //! キャパシタンス行列の番号と対応する静電容量の値を格納する
     std::map<size_t, double> capacitance_map;
 
@@ -68,7 +72,7 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectCells&, const ObjectNodeTextures&);
+    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectCells&, const ObjectNodeTextures&, const ObjectConnectivityList&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
@@ -83,10 +87,23 @@ private:
     void subtractChargeOfParticleFromYsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
     void subtractChargeOfParticleFromZsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
 
+    //! 接続リストは物体が定義されたプロセスが持つことにしてしまう
+    ObjectConnectivityList connected_list;
+
+    //! VTKに表面マップなどを追加するための関数
+    void insertPotentialData(SimpleVTK& gen, const tdArray& phi) const;
+    void insertPoints(SimpleVTK& gen) const;
+    void insertConnectivity(SimpleVTK& gen) const;
+    void insertOffsets(SimpleVTK& gen) const;
+    void insertTypes(SimpleVTK& gen) const;
+
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
-        const ObjectNodes& nodes, const ObjectCells& cells, const ObjectNodeTextures& textures) :
+        const ObjectNodes& nodes,
+        const ObjectCells& cells,
+        const ObjectNodeTextures& textures,
+        const ObjectConnectivityList& clist) :
         name(obj_info.name),
         surface_type(obj_info.surface_type),
         num_cmat(_num_cmat),
@@ -99,7 +116,7 @@ public:
         capacity_matrix(0, 0),
         capacity_matrix_relation{},
         capacitance_map{} {
-        construct(nx, ny, nz, obj_info, nodes, cells, textures);
+        construct(nx, ny, nz, obj_info, nodes, cells, textures, clist);
     }
 
     // アクセサ
@@ -142,6 +159,7 @@ public:
     void sumCurrent();
 
     // IO関数
+    void plotPotentialMapping(const int timestep, const tdArray& phi) const;
     std::string getLogHeader() const;
     std::string getLogEntry() const;
     friend std::ostream& operator<<(std::ostream&, const Spacecraft&);

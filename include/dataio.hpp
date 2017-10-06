@@ -21,7 +21,7 @@ namespace IO {
     void plotParticleDistribution(ParticleArray const&, const std::string, const std::string);
 
     //! オブジェクトデータ入出力
-    void plotObjectsData(std::shared_ptr<const Grid>);
+    void plotObjectsData(std::shared_ptr<Grid>);
     void writeCmatrixData(const Spacecraft& obj);
     bool loadCmatrixData(Spacecraft& obj);
 

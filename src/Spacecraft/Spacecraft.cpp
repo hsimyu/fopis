@@ -7,9 +7,12 @@
 #include <regex>
 #include <cassert>
 
+#define USE_BOOST
+#include <simple_vtk.hpp>
+
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectCells& cells, const ObjectNodeTextures& textures) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectCells& cells, const ObjectNodeTextures& textures, const ObjectConnectivityList& clist) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -19,6 +22,8 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     potential_fix = Normalizer::normalizePotential(obj_info.potential_fix);
 
     if (is_defined_in_this_process) {
+        connected_list = clist;
+
         //! セル定義マップ
         ObjectDefinedMapBool::extent_gen objectBoolExtents;
         object_cell_map.resize(objectBoolExtents[nx + 1][ny + 1][nz + 1]);
@@ -591,6 +596,84 @@ std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
     return ost;
 }
 
+void Spacecraft::insertPotentialData(SimpleVTK& gen, const tdArray& phi) const {
+    for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
+        if (isMyCmat(cmat_itr)) {
+            const auto& pos = capacity_matrix_relation.at(cmat_itr);
+            gen.addItem(phi[pos.i][pos.j][pos.k]);
+        }
+    }
+}
+
+void Spacecraft::insertConnectivity(SimpleVTK& gen) const {
+    for(const auto& vect : connected_list) {
+        gen.addVector(vect);
+    }
+}
+
+void Spacecraft::insertPoints(SimpleVTK& gen) const {
+    for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
+        if (isMyCmat(cmat_itr)) {
+            const auto& pos = capacity_matrix_relation.at(cmat_itr);
+            gen.addItem(pos.i, pos.j, pos.k);
+        }
+    }
+}
+
+void Spacecraft::insertOffsets(SimpleVTK& gen) const {
+    std::vector<int> offsets(connected_list.size());
+
+    for(int i = 0; i < connected_list.size(); ++i) {
+        offsets[i] = 4 * (i + 1);
+    }
+
+    gen.addVector(offsets);
+}
+
+void Spacecraft::insertTypes(SimpleVTK& gen) const {
+    std::vector<int> types(connected_list.size(), 8);
+
+    gen.addVector(types);
+}
+
+void Spacecraft::plotPotentialMapping(const int timestep, const tdArray& phi) const {
+    SimpleVTK gen;
+    gen.beginVTK("UnstructuredGrid");
+        gen.beginContent();
+            gen.beginPiece();
+            gen.setNumberOfPoints(num_cmat);
+            gen.setNumberOfCells("6");
+                gen.beginPointData();
+                gen.setScalars("phi");
+                    gen.beginDataArray("phi", "Float32", "ascii");
+                        insertPotentialData(gen, phi);
+                    gen.endDataArray();
+                gen.endPointData();
+
+                gen.beginPoints();
+                    gen.beginDataArray("Points", "Float32", "ascii");
+                    gen.setNumberOfComponents("3");
+                        insertPoints(gen);
+                    gen.endDataArray();
+                gen.endPoints();
+
+                gen.beginCells();
+                    gen.beginDataArray("connectivity", "Int32", "ascii");
+                        this->insertConnectivity(gen);
+                    gen.endDataArray();
+                    gen.beginDataArray("offsets", "Int32", "ascii");
+                        this->insertOffsets(gen);
+                    gen.endDataArray();
+                    gen.beginDataArray("types", "UInt8", "ascii");
+                        this->insertTypes(gen);
+                    gen.endDataArray();
+                gen.endCells();
+            gen.endPiece();
+        gen.endContent();
+    gen.endVTK();
+
+    gen.generate(name + "_potential_mapping_" + std::to_string(timestep));
+}
 
 // Utility Functions for Objects
 namespace ObjectUtils {
@@ -759,7 +842,7 @@ namespace ObjectUtils {
             //! テクスチャカウントを表示
             if (Environment::isRootNode) {
                 for(const auto& pair : texture_counts) {
-                    cout << format("[OBJECT DEFINE INFO] texture index %s: %s faces") % pair.first % pair.second << endl;
+                    cout << format("  [OBJECT DEFINE INFO] texture index %s: %s faces") % pair.first % pair.second << endl;
                 }
             }
 
@@ -845,6 +928,71 @@ namespace ObjectUtils {
                             obj_data.cells.push_back({{i, j, k}});
                         }
                     }
+                }
+            }
+
+            //! Connectivity List の 計算
+            for(unsigned int cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
+                const auto& pos = obj_data.nodes[cmat_itr];
+                const auto i = pos[0];
+                const auto j = pos[1];
+                const auto k = pos[2];
+
+                // x-face check
+                if (object_cell_count_map[i][j][k] == 3 && object_cell_count_map[i - 1][j][k] != 3) {
+                    std::vector<unsigned int> clist = {
+                        cmat_itr,
+                        static_cast<unsigned int>(object_node_map[i][j + 1][k   ]),
+                        static_cast<unsigned int>(object_node_map[i][j    ][k + 1]),
+                        static_cast<unsigned int>(object_node_map[i][j + 1][k + 1])
+                    };
+                    obj_data.connected_list.push_back(clist);
+                } else if (object_cell_count_map[i][j][k] != 3 && object_cell_count_map[i - 1][j][k] == 3) {
+                    std::vector<unsigned int> clist = {
+                        cmat_itr,
+                        static_cast<unsigned int>(object_node_map[i][j + 1][k    ]),
+                        static_cast<unsigned int>(object_node_map[i][j    ][k + 1]),
+                        static_cast<unsigned int>(object_node_map[i][j + 1][k + 1])
+                    };
+                    obj_data.connected_list.push_back(clist);
+                }
+
+                // y-face check
+                if (object_cell_count_map[i][j][k] == 3 && object_cell_count_map[i][j - 1][k] != 3) {
+                    std::vector<unsigned int> clist = {
+                        cmat_itr,
+                        static_cast<unsigned int>(object_node_map[i + 1][j][k    ]),
+                        static_cast<unsigned int>(object_node_map[i    ][j][k + 1]),
+                        static_cast<unsigned int>(object_node_map[i + 1][j][k + 1])
+                    };
+                    obj_data.connected_list.push_back(clist);
+                } else if (object_cell_count_map[i][j][k] != 3 && object_cell_count_map[i][j - 1][k] == 3) {
+                    std::vector<unsigned int> clist = {
+                        cmat_itr,
+                        static_cast<unsigned int>(object_node_map[i + 1][j][k    ]),
+                        static_cast<unsigned int>(object_node_map[i    ][j][k + 1]),
+                        static_cast<unsigned int>(object_node_map[i + 1][j][k + 1])
+                    };
+                    obj_data.connected_list.push_back(clist);
+                }
+
+                // z-face check
+                if (object_cell_count_map[i][j][k] == 3 && object_cell_count_map[i][j][k - 1] != 3) {
+                    std::vector<unsigned int> clist = {
+                        cmat_itr,
+                        static_cast<unsigned int>(object_node_map[i + 1][j    ][k]),
+                        static_cast<unsigned int>(object_node_map[i    ][j + 1][k]),
+                        static_cast<unsigned int>(object_node_map[i + 1][j + 1][k])
+                    };
+                    obj_data.connected_list.push_back(clist);
+                } else if (object_cell_count_map[i][j][k] != 3 && object_cell_count_map[i][j][k - 1] == 3) {
+                    std::vector<unsigned int> clist = {
+                        cmat_itr,
+                        static_cast<unsigned int>(object_node_map[i + 1][j    ][k]),
+                        static_cast<unsigned int>(object_node_map[i    ][j + 1][k]),
+                        static_cast<unsigned int>(object_node_map[i + 1][j + 1][k])
+                    };
+                    obj_data.connected_list.push_back(clist);
                 }
             }
         } else {
