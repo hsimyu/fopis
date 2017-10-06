@@ -105,6 +105,15 @@ struct Environment {
             }};
         }
 
+        static std::array<int, 3> getAbsolutePosition(const int i, const int j, const int k) {
+            return std::array<int, 3>{{
+                (i - 1) + Environment::getAssignedXBegin(),
+                (j - 1) + Environment::getAssignedYBegin(),
+                (k - 1) + Environment::getAssignedZBegin()
+            }};
+        }
+
+
         static bool isValidPosition(const Position& pos);
 
         //! 各方向の境界条件を取得する

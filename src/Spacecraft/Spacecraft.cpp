@@ -612,11 +612,11 @@ void Spacecraft::insertConnectivity(SimpleVTK& gen) const {
 }
 
 void Spacecraft::insertPoints(SimpleVTK& gen) const {
+    const auto unnorm = Normalizer::unnormalizeLength(1.0);
     for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
-        if (isMyCmat(cmat_itr)) {
-            const auto& pos = capacity_matrix_relation.at(cmat_itr);
-            gen.addItem(pos.i, pos.j, pos.k);
-        }
+        const auto& pos = capacity_matrix_relation.at(cmat_itr);
+        const auto abs_pos = Environment::getAbsolutePosition(pos.i, pos.j, pos.k);
+        gen.addItem(unnorm * abs_pos[0], unnorm * abs_pos[1], unnorm * abs_pos[2]);
     }
 }
 
@@ -642,7 +642,7 @@ void Spacecraft::plotPotentialMapping(const int timestep, const tdArray& phi) co
         gen.beginContent();
             gen.beginPiece();
             gen.setNumberOfPoints(num_cmat);
-            gen.setNumberOfCells("6");
+            gen.setNumberOfCells(connected_list.size());
                 gen.beginPointData();
                 gen.setScalars("phi");
                     gen.beginDataArray("phi", "Float32", "ascii");
@@ -672,7 +672,8 @@ void Spacecraft::plotPotentialMapping(const int timestep, const tdArray& phi) co
         gen.endContent();
     gen.endVTK();
 
-    gen.generate(name + "_potential_mapping_" + std::to_string(timestep));
+    constexpr char* filepath_header = "data/";
+    gen.generate(filepath_header + name + "_potential_mapping_" + std::to_string(timestep));
 }
 
 // Utility Functions for Objects
