@@ -228,7 +228,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         //! 「その境界は計算空間の境界でない」か「その境界が計算空間の境界であり、周期境界である」場合にtrueとなるため
         //! 各方向の端要素の計算をIterationで計算する場合にチェックする必要がある
 
-        #pragma omp parallel shared(phi)
+        #pragma omp parallel
         {
             //! 奇数グリッド更新
             #pragma omp for
@@ -281,7 +281,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
 
     //! 全グリッド上のエラーを更新
     time_counter->switchTo("solvePoisson/updatePoissonErrorPost");
-    #pragma omp parallel for shared(poisson_error, phi)
+    #pragma omp parallel for
     for(int k = 1; k < cz_with_glue - 1; ++k){
         for(int j = 1; j < cy_with_glue - 1; ++j){
             for(int i = 1; i < cx_with_glue - 1; ++i){
@@ -699,9 +699,10 @@ void RootGrid::initializeObjectsCmatrix(void) {
                 rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
             }
 
+            Utils::initialize3DArray(phi);
             solvePoisson();
 
-            #pragma omp parallel for ordered shared(obj)
+            //#pragma omp parallel for ordered shared(obj)
             for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
                 double value = 0.0;
                 if (obj.isMyCmat(cmat_row_itr)) {
@@ -710,15 +711,11 @@ void RootGrid::initializeObjectsCmatrix(void) {
                     value = phi[target_pos.i][target_pos.j][target_pos.k];
                 }
 
-                #pragma omp ordered
-                {
-                    if (obj.isDefined()) {
-                        //! bcastの代わりにsumしてしまう
-                        value = MPIw::Environment::Comms[obj.getName()].sum(value);
-                    }
+                if (obj.isDefined()) {
+                    //! bcastの代わりにsumしてしまう
+                    value = MPIw::Environment::Comms[obj.getName()].sum(value);
+                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
                 }
-
-                obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
             }
 
             //! 付与した単位電荷を消去する
