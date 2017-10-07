@@ -61,7 +61,7 @@ RootGrid::RootGrid() : Grid() {
 
     for(int id = 0; id < Environment::num_of_particle_types; ++id){
         //! 各粒子分のメモリをreserveしておく
-        particles[id].reserve(Environment::max_particle_num);
+        particles[id].reserve(Environment::getParticleType(id)->getTotalNumber() * 2);
 
         //! 初期化時は背景粒子のみ生成
         if (Environment::getParticleType(id)->getType() == "ambient") {

@@ -67,8 +67,9 @@ double ParticleType::calcPlasmaFrequency(void) const {
 
 std::string ParticleType::calcMemory() const {
     static constexpr double memory_per_particle = 8.0*6 + 4.0*2;
+    static constexpr double memory_buff_coeff = 2.0;
 
-    double pmem = this->getTotalNumber() * memory_per_particle;
+    double pmem = this->getTotalNumber() * memory_per_particle * memory_buff_coeff;
 
     return Utils::prettyMemoryString(pmem);
 }
