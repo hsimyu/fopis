@@ -392,6 +392,7 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
     if (this->isDielectricSurface()) {
         //! 誘電体の場合
+        double sum_delta_rho = 0.0;
         for(unsigned int i = 0; i < num_cmat; ++i) {
             double delta_rho = 0.0;
 
@@ -412,15 +413,20 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
                 }
             }
             delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
+            sum_delta_rho += delta_rho;
 
             if (isMyCmat(i)) {
                 const auto& target_pos = capacity_matrix_relation.at(i);
                 rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
             }
         }
+
+        if (MPIw::Environment::isRootNode(name)) {
+            cout << format("[INFO] [%s] sum of redist charge: %16.7e") % name % sum_delta_rho << endl;
+        }
     } else {
-        double sum_delta_rho = 0.0;
         //! 完全導体の場合
+        double sum_delta_rho = 0.0;
         for(unsigned int i = 0; i < num_cmat; ++i) {
             double delta_rho = 0.0;
 

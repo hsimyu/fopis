@@ -10,3 +10,6 @@
 [submodule "SimpleVTK"]
 	path = SimpleVTK
 	url = https://github.com/hsimyu/SimpleVTK
+[submodule "eigen"]
+	path = eigen
+	url = https://github.com/RLovelett/eigen

@@ -7,6 +7,7 @@
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <Eigen/Core>
 
 namespace Utils {
     TimeCounter* TimeCounter::instance = nullptr;
