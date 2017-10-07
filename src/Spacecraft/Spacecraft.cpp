@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <regex>
 #include <cassert>
+#include <Eigen/Dense>
 
 #define USE_BOOST
 #include <simple_vtk.hpp>
@@ -177,7 +178,7 @@ void Spacecraft::updateTotalCmatValue() {
 
 void Spacecraft::makeCmatrixInvert(void) {
     //! B行列 -> C行列に変換
-    Utils::makeInvert(capacity_matrix);
+    capacity_matrix = capacity_matrix.inverse();
     this->updateTotalCmatValue();
 }
 

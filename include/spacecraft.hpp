@@ -4,6 +4,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include "position.hpp"
 #include "field.hpp"
+#include <Eigen/Core>
 
 using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
 using ObjectDefinedMapInt = boost::multi_array<int, 3>;
@@ -20,6 +21,7 @@ struct ObjectDataFromFile {
     ObjectConnectivityList connected_list;
 };
 
+class Matrix2d;
 class Particle;
 class SimpleVTK;
 
@@ -59,7 +61,7 @@ private:
     RhoArray charge_map;
 
     //! キャパシタンス行列
-    using Cmatrix = boost::numeric::ublas::matrix<double>;
+    using Cmatrix = Eigen::MatrixXd;
     Cmatrix capacity_matrix;
 
     //! キャパシタンス行列の番号と対応する物体の位置を格納する

@@ -2,7 +2,6 @@
 #define __TDPIC_UTILS_H_INCLUDED__
 #include <picojson.h>
 #include "global.hpp"
-#include <boost/numeric/ublas/matrix.hpp>
 #include <chrono>
 
 namespace Utils {
@@ -28,10 +27,6 @@ namespace Utils {
 
     void initialize3DArray(tdArray&);
     void initializeRhoArray(std::vector<tdArray>&);
-
-    //! 逆行列を解く
-    using dMatrix = boost::numeric::ublas::matrix<double>;
-    void makeInvert(dMatrix&);
 
     class ProgressManager {
     private:
