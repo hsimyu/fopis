@@ -100,7 +100,7 @@ void RootGrid::mainLoopES() {
     // -- timing: dt --
     // 速度更新
     time_counter->switchTo("updateParticleVelocity");
-    // this->updateParticleVelocity();
+    this->updateParticleVelocity();
 
     // 粒子放出
     time_counter->switchTo("emitParticlesFromObjects");
@@ -620,6 +620,7 @@ void RootGrid::updateBfield(void) {
 
 void RootGrid::updateDensity(void) {
     auto& density = field->getDensity();
+    Utils::initializeRhoArray(density);
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         const auto& parray = particles[pid];
