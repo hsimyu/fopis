@@ -9,13 +9,14 @@ void Grid::makeChild(const int _from_ix, const int _from_iy, const int _from_iz,
 }
 
 void Grid::addChild(std::unique_ptr<ChildGrid>&& child) {
-    children.push_back( std::move(child) );
+    children.push_back(std::move(child));
 
     //! 粒子を内部に移動
-    this->moveParticlesIntoSpecifiedChild(children.size() - 1);
+    const int new_index = static_cast<int>(children.size() - 1);
+    this->moveParticlesIntoSpecifiedChild(new_index);
 
     //! Childrenの存在場所を塗り潰す
-    this->mapWithNewChild( children.size() - 1 );
+    this->mapWithNewChild(new_index);
 }
 
 //! ChildMap の resize と 初期化
@@ -24,7 +25,7 @@ void Grid::initializeChildMap(void) {
     child_map.resize(mapExtentGen[nx + 2][ny + 2][nz + 2]);
 }
 
-void Grid::mapWithNewChild(int child_index) {
+void Grid::mapWithNewChild(const int child_index) {
     auto& child = children[child_index];
 
     const auto child_f_ix = child->getFromIX();
@@ -50,7 +51,7 @@ void Grid::mapWithNewChild(int child_index) {
 }
 
 //! Childを削除する前に存在していた場所を塗り戻す
-void Grid::resetChildMapWithSpecifiedChild(int child_index) {
+void Grid::resetChildMapWithSpecifiedChild(const int child_index) {
     auto& child = children[child_index];
 
     for(int i = child->getFromIX(); i <= child->getToIX(); ++i) {

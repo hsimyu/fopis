@@ -30,8 +30,8 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         using ChildDefinedMapInt = boost::multi_array<ChildMapInfo_t, 3>;
         ChildDefinedMapInt child_map;
         void initializeChildMap(void);
-        void mapWithNewChild(int child_index);
-        void resetChildMapWithSpecifiedChild(int child_index);
+        void mapWithNewChild(const int child_index);
+        void resetChildMapWithSpecifiedChild(const int child_index);
 
         // オブジェクト定義は Node ベース
         std::vector<Spacecraft> objects;
@@ -192,7 +192,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void removeChild(const int);
         void makeGrandChildRecursive();
 
-        int getChildrenLength() const {
+        size_t getChildrenLength() const {
             return children.size();
         }
 

@@ -53,13 +53,13 @@ struct Environment {
             ambient_particles.push_back(ptr);
             ++num_of_particle_types;
         }
-        static int getNumOfAmbientParticles() {return ambient_particles.size();}
+        static size_t getNumOfAmbientParticles() {return ambient_particles.size();}
 
         static void addBeamParticleType(const std::shared_ptr<BeamParticleType>& ptr) {
             beam_particles.push_back(ptr);
             ++num_of_particle_types;
         }
-        static int getNumOfBeamParticles() {return beam_particles.size();}
+        static size_t getNumOfBeamParticles() {return beam_particles.size();}
 
         using ParticleTypePtr = std::shared_ptr<ParticleType>;
         using EmissionParticleTypePtr = std::shared_ptr<EmissionParticleType>;

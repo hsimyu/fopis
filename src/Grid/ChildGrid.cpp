@@ -148,17 +148,17 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
     const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
     const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
 
-    const int cx_with_glue = phi.shape()[0];
-    const int cy_with_glue = phi.shape()[1];
-    const int cz_with_glue = phi.shape()[2];
+    const auto cx_with_glue = phi.shape()[0];
+    const auto cy_with_glue = phi.shape()[1];
+    const auto cz_with_glue = phi.shape()[2];
 
     constexpr double required_error = 1.0e-7;
     poisson_error = phi;
 
     for(int loop = 1; loop <= loopnum; ++loop) {
-        for(int k = 2; k < cz_with_glue - 2; ++k){
-            for(int j = 2; j < cy_with_glue - 2; ++j){
-                for(int i = 2; i < cx_with_glue - 2; ++i){
+        for(size_t k = 2; k < cz_with_glue - 2; ++k){
+            for(size_t j = 2; j < cy_with_glue - 2; ++j){
+                for(size_t i = 2; i < cx_with_glue - 2; ++i){
                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                 }
             }
@@ -168,9 +168,9 @@ void ChildGrid::solvePoissonPSOR(const int loopnum) {
     }
 
     //! 全グリッド上のエラーを更新
-    for(int k = 2; k < cz_with_glue - 2; ++k){
-        for(int j = 2; j < cy_with_glue - 2; ++j){
-            for(int i = 2; i < cx_with_glue - 2; ++i){
+    for(size_t k = 2; k < cz_with_glue - 2; ++k){
+        for(size_t j = 2; j < cy_with_glue - 2; ++j){
+            for(size_t i = 2; i < cx_with_glue - 2; ++i){
                 poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
             }
         }
@@ -186,13 +186,13 @@ double ChildGrid::checkPhiResidual() {
     auto& rho = field->getRho();
     auto& poisson_residual = field->getPoissonResidual();
 
-    const int cx_with_glue = phi.shape()[0];
-    const int cy_with_glue = phi.shape()[1];
-    const int cz_with_glue = phi.shape()[2];
+    const size_t cx_with_glue = phi.shape()[0];
+    const size_t cy_with_glue = phi.shape()[1];
+    const size_t cz_with_glue = phi.shape()[2];
 
-    for(int k = 2; k < cz_with_glue - 2; ++k){
-        for(int j = 2; j < cy_with_glue - 2; ++j){
-            for(int i = 2; i < cx_with_glue - 2; ++i){
+    for(size_t k = 2; k < cz_with_glue - 2; ++k){
+        for(size_t j = 2; j < cy_with_glue - 2; ++j){
+            for(size_t i = 2; i < cx_with_glue - 2; ++i){
                 double source_value = rho[0][i][j][k]/normalized_eps;
                 double tmp_res = field->poissonOperator(phi, i, j, k) * per_dx2 + source_value;
                 poisson_residual[i][j][k] = tmp_res;
@@ -214,16 +214,16 @@ void ChildGrid::updateEfield() {
     auto& ez = field->getEz();
     auto& phi = field->getPhi();
 
-    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
-    const int cy_with_glue = ey.shape()[1] + 1;
-    const int cz_with_glue = ez.shape()[2] + 1;
+    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const size_t cy_with_glue = ey.shape()[1] + 1;
+    const size_t cz_with_glue = ez.shape()[2] + 1;
     const double per_dx = 1.0 / dx;
 
     //! @note:隣と通信しなくてもいい
     //! phiが通信してあるため、端の要素を通信なしで計算可能
-    for(int i = 0; i < cx_with_glue; ++i){
-        for(int j = 0; j < cy_with_glue; ++j){
-            for(int k = 0; k < cz_with_glue; ++k){
+    for(size_t i = 0; i < cx_with_glue; ++i){
+        for(size_t j = 0; j < cy_with_glue; ++j){
+            for(size_t k = 0; k < cz_with_glue; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
                 if(i < cx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * per_dx;
                 if(j < cy_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * per_dx;
@@ -247,14 +247,14 @@ void ChildGrid::updateReferenceEfield() {
     auto& exref = field->getExRef();
     auto& eyref = field->getEyRef();
     auto& ezref = field->getEzRef();
-    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
-    const int cy_with_glue = ey.shape()[1] + 1;
-    const int cz_with_glue = ez.shape()[2] + 1;
+    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const size_t cy_with_glue = ey.shape()[1] + 1;
+    const size_t cz_with_glue = ez.shape()[2] + 1;
 
     //! reference 更新
-    for(int i = 1; i < cx_with_glue - 1; ++i){
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
+    for(size_t i = 1; i < cx_with_glue - 1; ++i){
+        for(size_t j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t k = 1; k < cz_with_glue - 1; ++k){
                 exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
                 eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
                 ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);

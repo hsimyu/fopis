@@ -67,7 +67,7 @@ class Field {
         tdArray& getPoissonError(){ return poisson_error; }
         void setBoundaryConditionPhi(void);
 
-        double poissonOperator(const tdArray& phi, const int i, const int j, const int k) const {
+        double poissonOperator(const tdArray& phi, const size_t i, const size_t j, const size_t k) const {
             return (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]);
         }
 

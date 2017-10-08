@@ -58,9 +58,9 @@ class Position {
             y = _y;
             z = _z;
 
-            i = floor(x) + 1;
-            j = floor(y) + 1;
-            k = floor(z) + 1;
+            i = static_cast<int>(floor(x)) + 1;
+            j = static_cast<int>(floor(y)) + 1;
+            k = static_cast<int>(floor(z)) + 1;
 
             this->updateDelta();
         }
