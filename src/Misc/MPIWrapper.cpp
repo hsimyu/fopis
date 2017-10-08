@@ -244,6 +244,15 @@ namespace MPIw {
         return res;
     }
 
+    std::vector<float> Communicator::sum(std::vector<float>& values) {
+        const int size = values.size();
+
+        std::vector<float> res(size);
+        MPI_Allreduce(values.data(), res.data(), size, MPI_FLOAT, MPI_SUM, comm);
+
+        return res;
+    }
+
     int Communicator::sum(int value) {
         int res = 0;
         MPI_Allreduce(&value, &res, 1, MPI_INT, MPI_SUM, comm);
