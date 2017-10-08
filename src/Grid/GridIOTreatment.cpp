@@ -21,7 +21,7 @@ boost::multi_array<float, 3> Grid::getDensity(const int pid) const {
 
         if(p.isValid) {
             Position pos(p);
-            zones[pos.i - 1][pos.j - 1][pos.k - 1] += size;
+            // zones[pos.i - 1][pos.j - 1][pos.k - 1] += size;
         }
     }
 

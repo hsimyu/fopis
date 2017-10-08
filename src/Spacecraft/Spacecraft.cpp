@@ -342,11 +342,13 @@ inline void Spacecraft::distributeInnerParticleChargeToZsurface(const Position& 
 
 void Spacecraft::applyCharge(RhoArray& rho) const {
     //! 電荷分布を場に印加する
-    for(const auto& one_node : capacity_matrix_relation) {
+    for(const auto& one_node : whole_capacity_matrix_relation) {
         const auto& pos = one_node.second;
 
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
+        if (Environment::isValidPosition(pos)) {
+            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
+            }
         }
     }
 }
