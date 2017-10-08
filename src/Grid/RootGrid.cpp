@@ -661,6 +661,7 @@ void RootGrid::initializeObject(void) {
         if (MPIw::Environment::isRootNode(obj_name)) {
             cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
             cout << objects[ objects.size() - 1 ] << endl;
+            objects[ objects.size() - 1 ].saveWholeNodePositions(node_array);
         }
     }
 }

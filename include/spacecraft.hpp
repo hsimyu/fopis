@@ -64,8 +64,11 @@ private:
     using Cmatrix = Eigen::MatrixXd;
     Cmatrix capacity_matrix;
 
-    //! キャパシタンス行列の番号と対応する物体の位置を格納する
+    //! 自分が担当するキャパシタンス行列の番号と対応する物体の位置を格納する
     std::map<size_t, Position> capacity_matrix_relation;
+
+    //! 全体のキャパシタンス行列の番号と対応する物体の位置を格納する (RootNode用)
+    std::map<size_t, Position> whole_capacity_matrix_relation;
 
     //! キャパシタンス行列の番号と対応する静電容量の値を格納する
     std::map<size_t, double> capacitance_map;
@@ -93,15 +96,19 @@ private:
     ObjectConnectivityList connected_list;
 
     //! VTKに表面マップなどを追加するための関数
-    void insertPotentialData(SimpleVTK& gen, const tdArray& phi) const;
     void insertPoints(SimpleVTK& gen) const;
     void insertConnectivity(SimpleVTK& gen) const;
     void insertOffsets(SimpleVTK& gen) const;
     void insertTypes(SimpleVTK& gen) const;
 
+    //! 表面にマップするデータを物体定義済みプロセスから取得する
+    template<typename T>
+    std::vector<T> getWholePotentialMap(const tdArray& phi) const;
+
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
-        const unsigned int _num_cmat, const ObjectInfo_t& obj_info,
+        const unsigned int _num_cmat,
+        const ObjectInfo_t& obj_info,
         const ObjectNodes& nodes,
         const ObjectCells& cells,
         const ObjectNodeTextures& textures,
@@ -117,6 +124,7 @@ public:
         charge_map{},
         capacity_matrix(0, 0),
         capacity_matrix_relation{},
+        whole_capacity_matrix_relation{},
         capacitance_map{} {
         construct(nx, ny, nz, obj_info, nodes, cells, textures, clist);
     }
@@ -130,6 +138,7 @@ public:
     auto getPotentialFix(void) const { return potential_fix; }
     void setPotentialFix(const double val) { potential_fix = val; }
 
+    void saveWholeNodePositions(const ObjectNodes& whole_nodes);
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
 

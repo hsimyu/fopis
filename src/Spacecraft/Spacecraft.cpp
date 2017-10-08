@@ -51,6 +51,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
         //! キャパシタンス行列のサイズを物体サイズに変更
         capacity_matrix.resize(num_cmat, num_cmat);
+
         tdArray::extent_gen tdExtents;
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
             //! Node ベース, glue cell ありの電荷密度マップを生成
@@ -129,6 +130,20 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
                 capacitance_map[ cmat_number ] = capacitance / texture.size();
             }
         }
+    }
+}
+
+void Spacecraft::saveWholeNodePositions(const ObjectNodes& whole_nodes) {
+    //! RootNodeのみ、全体のノード位置を出力用に保持する
+    //! 判定はGrid側で既に終わっているので必要なし
+    for(const auto& node_pair : whole_nodes) {
+        const auto cmat_itr = node_pair.first;
+        const auto& node_pos = node_pair.second;
+        const auto i = node_pos[0];
+        const auto j = node_pos[1];
+        const auto k = node_pos[2];
+
+        whole_capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
     }
 }
 
@@ -604,16 +619,6 @@ std::ostream& operator<<(std::ostream& ost, const Spacecraft& spc) {
     return ost;
 }
 
-void Spacecraft::insertPotentialData(SimpleVTK& gen, const tdArray& phi) const {
-    const auto unnorm = Normalizer::unnormalizePotential(1.0);
-    for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
-        if (isMyCmat(cmat_itr)) {
-            const auto& pos = capacity_matrix_relation.at(cmat_itr);
-            gen.addItem(unnorm * phi[pos.i][pos.j][pos.k]);
-        }
-    }
-}
-
 void Spacecraft::insertConnectivity(SimpleVTK& gen) const {
     for(const auto& vect : connected_list) {
         gen.addVector(vect);
@@ -623,9 +628,8 @@ void Spacecraft::insertConnectivity(SimpleVTK& gen) const {
 void Spacecraft::insertPoints(SimpleVTK& gen) const {
     const auto unnorm = Normalizer::unnormalizeLength(1.0);
     for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
-        const auto& pos = capacity_matrix_relation.at(cmat_itr);
-        const auto abs_pos = Environment::getAbsolutePosition(pos.i, pos.j, pos.k);
-        gen.addItem(unnorm * abs_pos[0], unnorm * abs_pos[1], unnorm * abs_pos[2]);
+        const auto& pos = whole_capacity_matrix_relation.at(cmat_itr);
+        gen.addItem(unnorm * pos.i, unnorm * pos.j, unnorm * pos.k);
     }
 }
 
@@ -645,44 +649,68 @@ void Spacecraft::insertTypes(SimpleVTK& gen) const {
     gen.addVector(types);
 }
 
+template<typename T>
+std::vector<T> Spacecraft::getWholePotentialMap(const tdArray& phi) const {
+    std::vector<T> potential_values(num_cmat);
+    const auto unnorm = Normalizer::unnormalizePotential(1.0);
+
+    for(unsigned int cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
+        if (isMyCmat(cmat_itr)) {
+            const auto& pos = capacity_matrix_relation.at(cmat_itr);
+            potential_values[cmat_itr] = static_cast<T>(unnorm * phi[pos.i][pos.j][pos.k]);
+        }
+    }
+
+    auto result = MPIw::Environment::Comms[name].sum(potential_values);
+
+    return result;
+}
+
 void Spacecraft::plotPotentialMapping(const int timestep, const tdArray& phi) const {
-    SimpleVTK gen;
-    gen.beginVTK("UnstructuredGrid");
-        gen.beginContent();
-            gen.beginPiece();
-            gen.setNumberOfPoints(num_cmat);
-            gen.setNumberOfCells(connected_list.size());
-                gen.beginPointData();
-                gen.setScalars("potential");
-                    gen.beginDataArray("potential", "Float32", "ascii");
-                        insertPotentialData(gen, phi);
-                    gen.endDataArray();
-                gen.endPointData();
+    if (!isDefined()) return;
 
-                gen.beginPoints();
-                    gen.beginDataArray("Points", "Float32", "ascii");
-                    gen.setNumberOfComponents("3");
-                        insertPoints(gen);
-                    gen.endDataArray();
-                gen.endPoints();
+    //! 全体の電位マップを集める
+    std::vector<float> potential_values = this->getWholePotentialMap<float>(phi);
 
-                gen.beginCells();
-                    gen.beginDataArray("connectivity", "Int32", "ascii");
-                        this->insertConnectivity(gen);
-                    gen.endDataArray();
-                    gen.beginDataArray("offsets", "Int32", "ascii");
-                        this->insertOffsets(gen);
-                    gen.endDataArray();
-                    gen.beginDataArray("types", "UInt8", "ascii");
-                        this->insertTypes(gen);
-                    gen.endDataArray();
-                gen.endCells();
-            gen.endPiece();
-        gen.endContent();
-    gen.endVTK();
+    if (MPIw::Environment::isRootNode(name)) {
+        SimpleVTK gen;
+        gen.beginVTK("UnstructuredGrid");
+            gen.beginContent();
+                gen.beginPiece();
+                gen.setNumberOfPoints(num_cmat);
+                gen.setNumberOfCells(connected_list.size());
+                    gen.beginPointData();
+                    gen.setScalars("potential");
+                        gen.beginDataArray("potential", "Float32", "ascii");
+                            gen.addVector(potential_values);
+                        gen.endDataArray();
+                    gen.endPointData();
 
-    constexpr char* filepath_header = "data/";
-    gen.generate(filepath_header + name + "_potential_mapping_" + std::to_string(timestep));
+                    gen.beginPoints();
+                        gen.beginDataArray("Points", "Float32", "ascii");
+                        gen.setNumberOfComponents("3");
+                            insertPoints(gen);
+                        gen.endDataArray();
+                    gen.endPoints();
+
+                    gen.beginCells();
+                        gen.beginDataArray("connectivity", "Int32", "ascii");
+                            this->insertConnectivity(gen);
+                        gen.endDataArray();
+                        gen.beginDataArray("offsets", "Int32", "ascii");
+                            this->insertOffsets(gen);
+                        gen.endDataArray();
+                        gen.beginDataArray("types", "UInt8", "ascii");
+                            this->insertTypes(gen);
+                        gen.endDataArray();
+                    gen.endCells();
+                gen.endPiece();
+            gen.endContent();
+        gen.endVTK();
+
+        constexpr char* filepath_header = "data/";
+        gen.generate(filepath_header + name + "_potential_mapping_" + std::to_string(timestep));
+    }
 }
 
 // Utility Functions for Objects
