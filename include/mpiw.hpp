@@ -73,9 +73,9 @@ namespace MPIw {
             void sendRecvFieldX(tdArray&, const int, const int);
             void sendRecvFieldY(tdArray&, const int, const int);
             void sendRecvFieldZ(tdArray&, const int, const int);
-            void sendRecvScalarX(tdArray&, const int, const int);
-            void sendRecvScalarY(tdArray&, const int, const int);
-            void sendRecvScalarZ(tdArray&, const int, const int);
+            void sendRecvScalarX(tdArray&, const int, const int, const unsigned int);
+            void sendRecvScalarY(tdArray&, const int, const int, const unsigned int);
+            void sendRecvScalarZ(tdArray&, const int, const int, const unsigned int);
     };
 
     MPI_Datatype registerParticleType(void);
@@ -135,7 +135,8 @@ namespace MPIw {
             static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&, const int, const int, std::string);
 
             static void sendRecvField(tdArray&);
-            static void sendRecvScalar(tdArray&);
+            static void sendRecvNodeScalar(tdArray&);
+            static void sendRecvCellScalar(tdArray&);
     };
 
 };

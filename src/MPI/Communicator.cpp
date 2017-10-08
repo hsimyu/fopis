@@ -353,28 +353,28 @@ namespace MPIw {
         }
     }
 
-    void Communicator::sendRecvScalarX(tdArray& tdValue, const int prev, const int next) {
+    void Communicator::sendRecvScalarX(tdArray& tdValue, const int prev, const int next, const unsigned int glue_size) {
         MPI_Status s;
 
         const auto size_x = tdValue.shape()[0];
         const auto size_y = tdValue.shape()[1];
         const auto size_z = tdValue.shape()[2];
 
-        boost::multi_array<double, 3> buff_upper(boost::extents[2][size_y][size_z]);
-        boost::multi_array<double, 3> buff_lower(boost::extents[2][size_y][size_z]);
+        boost::multi_array<double, 3> buff_upper(boost::extents[glue_size][size_y][size_z]);
+        boost::multi_array<double, 3> buff_lower(boost::extents[glue_size][size_y][size_z]);
 
         #pragma omp parallel
         {
             #pragma omp for
             for(int j = 0; j < size_y; ++j) {
                 for(int k = 0; k < size_z; ++k) {
-                    //! 下側の値をバッファへ詰める
-                    buff_lower[0][j][k] = tdValue[0][j][k];
-                    buff_lower[1][j][k] = tdValue[1][j][k];
+                    for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                        //! 下側の値をバッファへ詰める
+                        buff_lower[glue_index][j][k] = tdValue[(glue_size - 1) - glue_index][j][k];
 
-                    //! 上側の値をバッファへ詰める
-                    buff_upper[0][j][k] = tdValue[size_x - 2][j][k];
-                    buff_upper[1][j][k] = tdValue[size_x - 1][j][k];
+                        //! 上側の値をバッファへ詰める
+                        buff_upper[glue_index][j][k] = tdValue[size_x - 1 - glue_index][j][k];
+                    }
                 }
             }
 
@@ -386,34 +386,34 @@ namespace MPIw {
                 #pragma omp for
                 for(int j = 0; j < size_y; ++j) {
                     for(int k = 0; k < size_z; ++k) {
-                        tdValue[0][j][k] += buff_upper[0][j][k];
-                        tdValue[1][j][k] += buff_upper[1][j][k];
-
-                        tdValue[size_x - 2][j][k] += buff_lower[0][j][k];
-                        tdValue[size_x - 1][j][k] += buff_lower[1][j][k];
+                        for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            tdValue[(glue_size - 1) - glue_index][j][k] += buff_upper[glue_index][j][k];
+                            tdValue[size_x - 1 - glue_index][j][k] += buff_lower[glue_index][j][k];
+                        }
                     }
                 }
             } else {
-                int length = 2 * size_y * size_z;
+                unsigned int length = glue_size * size_y * size_z;
 
                 #pragma omp single
                 {
                     MPI_Sendrecv_replace(buff_upper.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_SCALAR_UPPER, prev, TAG::SENDRECV_SCALAR_UPPER, comm, &s);
                 }
-                // buff_upper に下側からの値が入る
+                // buff_upper に上側からの値が入る (0->1の順で外側から)
 
                 #pragma omp single
                 {
                     MPI_Sendrecv_replace(buff_lower.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_SCALAR_LOWER, next, TAG::SENDRECV_SCALAR_LOWER, comm, &s);
                 }
-                // buff_lower に上側からの値が入る
+                // buff_lower に上側からの値が入る (0->1の順で外側から)
 
                 if (::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
                     #pragma omp for
                     for(int j = 0; j < size_y; ++j) {
                         for(int k = 0; k < size_z; ++k) {
-                            tdValue[size_x - 2][j][k] += buff_lower[0][j][k];
-                            tdValue[size_x - 1][j][k] += buff_lower[1][j][k];
+                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                                tdValue[size_x - 1 - glue_index][j][k] += buff_lower[glue_index][j][k];
+                            }
                         }
                     }
                 }
@@ -422,8 +422,9 @@ namespace MPIw {
                     #pragma omp for
                     for(int j = 0; j < size_y; ++j) {
                         for(int k = 0; k < size_z; ++k) {
-                            tdValue[0][j][k] += buff_upper[0][j][k];
-                            tdValue[1][j][k] += buff_upper[1][j][k];
+                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                                tdValue[(glue_size - 1) - glue_index][j][k] += buff_upper[glue_index][j][k];
+                            }
                         }
                     }
                 }
@@ -431,33 +432,25 @@ namespace MPIw {
         }
     }
 
-    void Communicator::sendRecvScalarY(tdArray& tdValue, const int prev, const int next) {
+    void Communicator::sendRecvScalarY(tdArray& tdValue, const int prev, const int next, const unsigned int glue_size) {
         MPI_Status s;
 
         const auto size_x = tdValue.shape()[0];
         const auto size_y = tdValue.shape()[1];
         const auto size_z = tdValue.shape()[2];
 
-        boost::multi_array<double, 3> buff_upper(boost::extents[2][size_x][size_z]);
-        boost::multi_array<double, 3> buff_lower(boost::extents[2][size_x][size_z]);
+        boost::multi_array<double, 3> buff_upper(boost::extents[glue_size][size_x][size_z]);
+        boost::multi_array<double, 3> buff_lower(boost::extents[glue_size][size_x][size_z]);
 
         #pragma omp parallel
         {
-            //! 下側の値をバッファへ詰める
             #pragma omp for
             for(int i = 0; i < size_x; ++i) {
                 for(int k = 0; k < size_z; ++k) {
-                    buff_lower[0][i][k] = tdValue[i][0][k];
-                    buff_lower[1][i][k] = tdValue[i][1][k];
-                }
-            }
-
-            //! 上側の値をバッファへ詰める
-            #pragma omp for
-            for(int i = 0; i < size_x; ++i) {
-                for(int k = 0; k < size_z; ++k) {
-                    buff_upper[0][i][k] = tdValue[i][size_y - 2][k];
-                    buff_upper[1][i][k] = tdValue[i][size_y - 1][k];
+                    for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                        buff_lower[glue_index][i][k] = tdValue[i][(glue_size - 1) - glue_index][k];
+                        buff_upper[glue_index][i][k] = tdValue[i][size_y - 1 - glue_index][k];
+                    }
                 }
             }
 
@@ -468,15 +461,14 @@ namespace MPIw {
                 #pragma omp for
                 for(int i = 0; i < size_x; ++i) {
                     for(int k = 0; k < size_z; ++k) {
-                        tdValue[i][0][k] += buff_upper[0][i][k];
-                        tdValue[i][1][k] += buff_upper[1][i][k];
-
-                        tdValue[i][size_y - 2][k] += buff_lower[0][i][k];
-                        tdValue[i][size_y - 1][k] += buff_lower[1][i][k];
+                        for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            tdValue[i][(glue_size - 1) - glue_index][k] += buff_upper[glue_index][i][k];
+                            tdValue[i][size_y - 1 - glue_index][k] += buff_lower[glue_index][i][k];
+                        }
                     }
                 }
             } else {
-                int length = 2 * size_x * size_z;
+                int length = glue_size * size_x * size_z;
 
                 #pragma omp barrier
                 #pragma omp single
@@ -495,8 +487,9 @@ namespace MPIw {
                     #pragma omp for
                     for(int i = 0; i < size_x; ++i) {
                         for(int k = 0; k < size_z; ++k) {
-                            tdValue[i][size_y - 2][k] += buff_lower[0][i][k];
-                            tdValue[i][size_y - 1][k] += buff_lower[1][i][k];
+                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                                tdValue[i][size_y - 1 - glue_index][k] += buff_lower[glue_index][i][k];
+                            }
                         }
                     }
                 }
@@ -505,8 +498,9 @@ namespace MPIw {
                     #pragma omp for
                     for(int i = 0; i < size_x; ++i) {
                         for(int k = 0; k < size_z; ++k) {
-                            tdValue[i][0][k] += buff_upper[0][i][k];
-                            tdValue[i][1][k] += buff_upper[1][i][k];
+                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                                tdValue[i][(glue_size - 1) - glue_index][k] += buff_upper[glue_index][i][k];
+                            }
                         }
                     }
                 }
@@ -514,52 +508,43 @@ namespace MPIw {
         }
     }
 
-    void Communicator::sendRecvScalarZ(tdArray& tdValue, const int prev, const int next) {
+    void Communicator::sendRecvScalarZ(tdArray& tdValue, const int prev, const int next, const unsigned int glue_size) {
         MPI_Status s;
 
         const auto size_x = tdValue.shape()[0];
         const auto size_y = tdValue.shape()[1];
         const auto size_z = tdValue.shape()[2];
 
-        boost::multi_array<double, 3> buff_upper(boost::extents[2][size_x][size_y]);
-        boost::multi_array<double, 3> buff_lower(boost::extents[2][size_x][size_y]);
+        boost::multi_array<double, 3> buff_upper(boost::extents[glue_size][size_x][size_y]);
+        boost::multi_array<double, 3> buff_lower(boost::extents[glue_size][size_x][size_y]);
 
         #pragma omp parallel
         {
-            //! 下側の値をバッファへ詰める
             #pragma omp for
             for(int i = 0; i < size_x; ++i) {
                 for(int j = 0; j < size_y; ++j) {
-                    buff_lower[0][i][j] = tdValue[i][j][0];
-                    buff_lower[1][i][j] = tdValue[i][j][1];
+                    for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                        buff_lower[glue_index][i][j] = tdValue[i][j][(glue_size - 1) - glue_index];
+                        buff_upper[glue_index][i][j] = tdValue[i][j][size_z - 1 - glue_index];
+                    }
                 }
             }
 
-            //! 上側の値をバッファへ詰める
-            #pragma omp for
-            for(int i = 0; i < size_x; ++i) {
-                for(int j = 0; j < size_y; ++j) {
-                    buff_upper[0][i][j] = tdValue[i][j][size_z - 2];
-                    buff_upper[1][i][j] = tdValue[i][j][size_z - 1];
-                }
-            }
+            #pragma omp barrier
 
             if ( (prev == Environment::rank) && (next == Environment::rank) ) {
-                #pragma omp barrier
                 #pragma omp for
                 for(int i = 0; i < size_x; ++i) {
                     for(int j = 0; j < size_y; ++j) {
-                        tdValue[i][j][0] += buff_upper[0][i][j];
-                        tdValue[i][j][1] += buff_upper[1][i][j];
-
-                        tdValue[i][j][size_z - 2] += buff_lower[0][i][j];
-                        tdValue[i][j][size_z - 1] += buff_lower[1][i][j];
+                        for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            tdValue[i][j][(glue_size - 1) - glue_index] += buff_upper[glue_index][i][j];
+                            tdValue[i][j][size_z - 1 - glue_index] += buff_lower[glue_index][i][j];
+                        }
                     }
                 }
             } else {
-                int length = 2 * size_x * size_y;
+                int length = glue_size * size_x * size_y;
 
-                #pragma omp barrier
                 #pragma omp single
                 {
                     MPI_Sendrecv_replace(buff_upper.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_SCALAR_UPPER, prev, TAG::SENDRECV_SCALAR_UPPER, comm, &s);
@@ -572,14 +557,25 @@ namespace MPIw {
                 }
                 // buff_lower に上側からの値が入る
 
-                #pragma omp for
-                for(int i = 0; i < size_x; ++i) {
-                    for(int j = 0; j < size_y; ++j) {
-                        tdValue[i][j][0] += buff_upper[0][i][j];
-                        tdValue[i][j][1] += buff_upper[1][i][j];
+                if (::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
+                    #pragma omp for
+                    for(int i = 0; i < size_x; ++i) {
+                        for(int j = 0; j < size_y; ++j) {
+                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                                tdValue[i][j][size_z - 1 - glue_index] += buff_lower[glue_index][i][j];
+                            }
+                        }
+                    }
+                }
 
-                        tdValue[i][j][size_z - 2] += buff_lower[0][i][j];
-                        tdValue[i][j][size_z - 1] += buff_lower[1][i][j];
+                if (::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
+                    #pragma omp for
+                    for(int i = 0; i < size_x; ++i) {
+                        for(int j = 0; j < size_y; ++j) {
+                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                                tdValue[i][j][(glue_size - 1) - glue_index] += buff_upper[glue_index][i][j];
+                            }
+                        }
                     }
                 }
             }

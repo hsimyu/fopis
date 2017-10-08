@@ -50,23 +50,45 @@ namespace MPIw {
         if (is_not_empty_comm) addNewComm(new_comm_name, new_comm);
     }
 
-    void Environment::sendRecvScalar(tdArray& x3D){
+    void Environment::sendRecvNodeScalar(tdArray& x3D){
         int prev, next;
+        constexpr unsigned int node_glue_size = 2;
 
         // 対応する方向の proc 数が 1 かつ周期境界でない場合には通信しなくてよい
         if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
             prev = 0; next = 1;
-            Comms["world"].sendRecvScalarX(x3D, adj[prev], adj[next]);
+            Comms["world"].sendRecvScalarX(x3D, adj[prev], adj[next], node_glue_size);
         }
 
         if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low) ) {
             prev = 2; next = 3;
-            Comms["world"].sendRecvScalarY(x3D, adj[prev], adj[next]);
+            Comms["world"].sendRecvScalarY(x3D, adj[prev], adj[next], node_glue_size);
         }
 
         if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low) ) {
             prev = 4; next = 5;
-            Comms["world"].sendRecvScalarZ(x3D, adj[prev], adj[next]);
+            Comms["world"].sendRecvScalarZ(x3D, adj[prev], adj[next], node_glue_size);
+        }
+    }
+
+    void Environment::sendRecvCellScalar(tdArray& x3D){
+        int prev, next;
+        constexpr unsigned int cell_glue_size = 1;
+
+        // 対応する方向の proc 数が 1 かつ周期境界でない場合には通信しなくてよい
+        if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
+            prev = 0; next = 1;
+            Comms["world"].sendRecvScalarX(x3D, adj[prev], adj[next], cell_glue_size);
+        }
+
+        if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low) ) {
+            prev = 2; next = 3;
+            Comms["world"].sendRecvScalarY(x3D, adj[prev], adj[next], cell_glue_size);
+        }
+
+        if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low) ) {
+            prev = 4; next = 5;
+            Comms["world"].sendRecvScalarZ(x3D, adj[prev], adj[next], cell_glue_size);
         }
     }
 

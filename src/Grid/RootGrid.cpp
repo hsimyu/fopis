@@ -637,7 +637,7 @@ void RootGrid::updateDensity(void) {
     }
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-        MPIw::Environment::sendRecvScalar(density[pid]);
+        MPIw::Environment::sendRecvCellScalar(density[pid]);
     }
 }
 
@@ -1010,7 +1010,7 @@ void RootGrid::updateRho() {
     //! rho を隣に送る
     time_counter->switchTo("updateRho/sendRhoAll");
     for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
-        MPIw::Environment::sendRecvScalar(rho[pid]);
+        MPIw::Environment::sendRecvNodeScalar(rho[pid]);
     }
 
     //! 物体が存在する場合、電荷再配分が必要になる
