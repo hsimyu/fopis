@@ -52,7 +52,7 @@ namespace MPIw {
 
     void Environment::sendRecvNodeScalar(tdArray& x3D){
         int prev, next;
-        constexpr unsigned int node_glue_size = 2;
+        constexpr int node_glue_size = 2;
 
         // 対応する方向の proc 数が 1 かつ周期境界でない場合には通信しなくてよい
         if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
@@ -73,7 +73,7 @@ namespace MPIw {
 
     void Environment::sendRecvCellScalar(tdArray& x3D){
         int prev, next;
-        constexpr unsigned int cell_glue_size = 1;
+        constexpr int cell_glue_size = 1;
 
         // 対応する方向の proc 数が 1 かつ周期境界でない場合には通信しなくてよい
         if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {

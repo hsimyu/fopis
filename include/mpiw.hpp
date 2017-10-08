@@ -73,9 +73,9 @@ namespace MPIw {
             void sendRecvFieldX(tdArray&, const int, const int);
             void sendRecvFieldY(tdArray&, const int, const int);
             void sendRecvFieldZ(tdArray&, const int, const int);
-            void sendRecvScalarX(tdArray&, const int, const int, const unsigned int);
-            void sendRecvScalarY(tdArray&, const int, const int, const unsigned int);
-            void sendRecvScalarZ(tdArray&, const int, const int, const unsigned int);
+            void sendRecvScalarX(tdArray&, const int, const int, const int);
+            void sendRecvScalarY(tdArray&, const int, const int, const int);
+            void sendRecvScalarZ(tdArray&, const int, const int, const int);
     };
 
     MPI_Datatype registerParticleType(void);

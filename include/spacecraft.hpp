@@ -149,7 +149,9 @@ public:
     void updateTotalCmatValue();
 
     // 判定用関数
-    bool isMyCmat(const unsigned int cmat_number) const { return (capacity_matrix_relation.count(cmat_number) > 0); }
+    template<typename T>
+    bool isMyCmat(const T cmat_number) const { return (capacity_matrix_relation.count(cmat_number) > 0); }
+
     bool isDefined(void) const { return is_defined_in_this_process; }
     bool isContaining(const Particle&) const;
     bool isContaining(const Position&) const;

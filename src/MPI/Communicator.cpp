@@ -20,7 +20,7 @@ namespace MPIw {
     }
 
     void Communicator::sendVector(std::vector<Particle> const& parray, const int dest) {
-        unsigned int len = parray.size();
+        int len = static_cast<int>(parray.size());
         MPI_Send(&len, 1, MPI_UNSIGNED, dest, TAG::SEND_PARTICLE_LENGTH, comm);
 
         if(len != 0) {
@@ -43,8 +43,8 @@ namespace MPIw {
     }
 
     void Communicator::sendRecvVector(std::vector<Particle> const& sendArray, std::vector<Particle>& recvArray, const int dest, const int src) {
-        const unsigned int sendlen = sendArray.size();
-        unsigned int recvlen;
+        const int sendlen = static_cast<int>(sendArray.size());
+        int recvlen;
 
         if ( (src == Environment::rank) && (dest == Environment::rank) ) {
             //! 自分との通信
@@ -115,7 +115,7 @@ namespace MPIw {
     }
 
     std::vector<float> Communicator::sum(std::vector<float>& values) {
-        const int size = values.size();
+        const int size = static_cast<int>(values.size());
 
         std::vector<float> res(size);
         MPI_Allreduce(values.data(), res.data(), size, MPI_FLOAT, MPI_SUM, comm);
@@ -177,7 +177,7 @@ namespace MPIw {
                 result += temporary_result;
             }
         } else {
-            MPI_Send(content.c_str(), content.size(), MPI_CHAR, target_rank, TAG::GATHER_STRINGS, comm);
+            MPI_Send(content.c_str(), static_cast<int>(content.size()), MPI_CHAR, target_rank, TAG::GATHER_STRINGS, comm);
         }
         return result;
     }
@@ -208,7 +208,7 @@ namespace MPIw {
                     }
                 }
             } else {
-                int length = tdValue.shape()[1] * tdValue.shape()[2];
+                int length = static_cast<int>(tdValue.shape()[1] * tdValue.shape()[2]);
 
                 #pragma omp barrier
                 #pragma omp single
@@ -265,7 +265,7 @@ namespace MPIw {
                     }
                 }
             } else {
-                int length = tdValue.shape()[0] * tdValue.shape()[2];
+                int length = static_cast<int>(tdValue.shape()[0] * tdValue.shape()[2]);
 
                 #pragma omp barrier
                 #pragma omp single
@@ -320,8 +320,7 @@ namespace MPIw {
                     }
                 }
             } else {
-
-                int length = tdValue.shape()[0] * tdValue.shape()[1];
+                int length = static_cast<int>(tdValue.shape()[0] * tdValue.shape()[1]);
 
                 #pragma omp barrier
                 #pragma omp single
@@ -353,7 +352,7 @@ namespace MPIw {
         }
     }
 
-    void Communicator::sendRecvScalarX(tdArray& tdValue, const int prev, const int next, const unsigned int glue_size) {
+    void Communicator::sendRecvScalarX(tdArray& tdValue, const int prev, const int next, const int glue_size) {
         MPI_Status s;
 
         const auto size_x = tdValue.shape()[0];
@@ -368,7 +367,7 @@ namespace MPIw {
             #pragma omp for
             for(int j = 0; j < size_y; ++j) {
                 for(int k = 0; k < size_z; ++k) {
-                    for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                    for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                         //! 下側の値をバッファへ詰める
                         buff_lower[glue_index][j][k] = tdValue[(glue_size - 1) - glue_index][j][k];
 
@@ -386,14 +385,14 @@ namespace MPIw {
                 #pragma omp for
                 for(int j = 0; j < size_y; ++j) {
                     for(int k = 0; k < size_z; ++k) {
-                        for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                        for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                             tdValue[(glue_size - 1) - glue_index][j][k] += buff_upper[glue_index][j][k];
                             tdValue[size_x - 1 - glue_index][j][k] += buff_lower[glue_index][j][k];
                         }
                     }
                 }
             } else {
-                unsigned int length = glue_size * size_y * size_z;
+                int length = static_cast<int>(glue_size * size_y * size_z);
 
                 #pragma omp single
                 {
@@ -411,7 +410,7 @@ namespace MPIw {
                     #pragma omp for
                     for(int j = 0; j < size_y; ++j) {
                         for(int k = 0; k < size_z; ++k) {
-                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                                 tdValue[size_x - 1 - glue_index][j][k] += buff_lower[glue_index][j][k];
                             }
                         }
@@ -422,7 +421,7 @@ namespace MPIw {
                     #pragma omp for
                     for(int j = 0; j < size_y; ++j) {
                         for(int k = 0; k < size_z; ++k) {
-                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                                 tdValue[(glue_size - 1) - glue_index][j][k] += buff_upper[glue_index][j][k];
                             }
                         }
@@ -432,7 +431,7 @@ namespace MPIw {
         }
     }
 
-    void Communicator::sendRecvScalarY(tdArray& tdValue, const int prev, const int next, const unsigned int glue_size) {
+    void Communicator::sendRecvScalarY(tdArray& tdValue, const int prev, const int next, const int glue_size) {
         MPI_Status s;
 
         const auto size_x = tdValue.shape()[0];
@@ -447,7 +446,7 @@ namespace MPIw {
             #pragma omp for
             for(int i = 0; i < size_x; ++i) {
                 for(int k = 0; k < size_z; ++k) {
-                    for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                    for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                         buff_lower[glue_index][i][k] = tdValue[i][(glue_size - 1) - glue_index][k];
                         buff_upper[glue_index][i][k] = tdValue[i][size_y - 1 - glue_index][k];
                     }
@@ -461,14 +460,14 @@ namespace MPIw {
                 #pragma omp for
                 for(int i = 0; i < size_x; ++i) {
                     for(int k = 0; k < size_z; ++k) {
-                        for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                        for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                             tdValue[i][(glue_size - 1) - glue_index][k] += buff_upper[glue_index][i][k];
                             tdValue[i][size_y - 1 - glue_index][k] += buff_lower[glue_index][i][k];
                         }
                     }
                 }
             } else {
-                int length = glue_size * size_x * size_z;
+                int length = static_cast<int>(glue_size * size_x * size_z);
 
                 #pragma omp barrier
                 #pragma omp single
@@ -487,7 +486,7 @@ namespace MPIw {
                     #pragma omp for
                     for(int i = 0; i < size_x; ++i) {
                         for(int k = 0; k < size_z; ++k) {
-                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                                 tdValue[i][size_y - 1 - glue_index][k] += buff_lower[glue_index][i][k];
                             }
                         }
@@ -498,7 +497,7 @@ namespace MPIw {
                     #pragma omp for
                     for(int i = 0; i < size_x; ++i) {
                         for(int k = 0; k < size_z; ++k) {
-                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                                 tdValue[i][(glue_size - 1) - glue_index][k] += buff_upper[glue_index][i][k];
                             }
                         }
@@ -508,7 +507,7 @@ namespace MPIw {
         }
     }
 
-    void Communicator::sendRecvScalarZ(tdArray& tdValue, const int prev, const int next, const unsigned int glue_size) {
+    void Communicator::sendRecvScalarZ(tdArray& tdValue, const int prev, const int next, const int glue_size) {
         MPI_Status s;
 
         const auto size_x = tdValue.shape()[0];
@@ -523,7 +522,7 @@ namespace MPIw {
             #pragma omp for
             for(int i = 0; i < size_x; ++i) {
                 for(int j = 0; j < size_y; ++j) {
-                    for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                    for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                         buff_lower[glue_index][i][j] = tdValue[i][j][(glue_size - 1) - glue_index];
                         buff_upper[glue_index][i][j] = tdValue[i][j][size_z - 1 - glue_index];
                     }
@@ -536,14 +535,14 @@ namespace MPIw {
                 #pragma omp for
                 for(int i = 0; i < size_x; ++i) {
                     for(int j = 0; j < size_y; ++j) {
-                        for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                        for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                             tdValue[i][j][(glue_size - 1) - glue_index] += buff_upper[glue_index][i][j];
                             tdValue[i][j][size_z - 1 - glue_index] += buff_lower[glue_index][i][j];
                         }
                     }
                 }
             } else {
-                int length = glue_size * size_x * size_y;
+                int length = static_cast<int>(glue_size * size_x * size_y);
 
                 #pragma omp single
                 {
@@ -561,7 +560,7 @@ namespace MPIw {
                     #pragma omp for
                     for(int i = 0; i < size_x; ++i) {
                         for(int j = 0; j < size_y; ++j) {
-                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                                 tdValue[i][j][size_z - 1 - glue_index] += buff_lower[glue_index][i][j];
                             }
                         }
@@ -572,7 +571,7 @@ namespace MPIw {
                     #pragma omp for
                     for(int i = 0; i < size_x; ++i) {
                         for(int j = 0; j < size_y; ++j) {
-                            for (auto glue_index = 0; glue_index < glue_size; ++glue_index) {
+                            for (int glue_index = 0; glue_index < glue_size; ++glue_index) {
                                 tdValue[i][j][(glue_size - 1) - glue_index] += buff_upper[glue_index][i][j];
                             }
                         }

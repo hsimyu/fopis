@@ -206,9 +206,9 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
     const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
 
-    const int cx_with_glue = phi.shape()[0];
-    const int cy_with_glue = phi.shape()[1];
-    const int cz_with_glue = phi.shape()[2];
+    const size_t cx_with_glue = phi.shape()[0];
+    const size_t cy_with_glue = phi.shape()[1];
+    const size_t cz_with_glue = phi.shape()[2];
 
     constexpr double required_error = 1.0e-7;
 
@@ -314,16 +314,16 @@ double RootGrid::checkPhiResidual() {
     auto& rho = field->getRho();
     auto& poisson_residual = field->getPoissonResidual();
 
-    const int cx_with_glue = phi.shape()[0];
-    const int cy_with_glue = phi.shape()[1];
-    const int cz_with_glue = phi.shape()[2];
+    const size_t cx_with_glue = phi.shape()[0];
+    const size_t cy_with_glue = phi.shape()[1];
+    const size_t cz_with_glue = phi.shape()[2];
 
     #pragma omp parallel for shared(poisson_residual) reduction(max: residual)
-    for(int k = 1; k < cz_with_glue - 1; ++k){
+    for(size_t k = 1; k < cz_with_glue - 1; ++k){
         if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
-            for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
                 if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                    for(int i = 1; i < cx_with_glue - 1; ++i){
+                    for(size_t i = 1; i < cx_with_glue - 1; ++i){
                         if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                             double source_value = rho[0][i][j][k]/normalized_eps;
                             double tmp_res = field->poissonOperator(phi, i, j, k) + source_value;
@@ -361,9 +361,9 @@ void RootGrid::solvePoissonCorrectionPSOR(const int loopnum) {
     const double omega = 2.0/(1.0 + sin(M_PI/(residual.shape()[0] - 2))); // spectral radius
     const double coeff = pow(dx, 2);
 
-    const int cx_with_glue = residual.shape()[0];
-    const int cy_with_glue = residual.shape()[1];
-    const int cz_with_glue = residual.shape()[2];
+    const size_t cx_with_glue = residual.shape()[0];
+    const size_t cy_with_glue = residual.shape()[1];
+    const size_t cz_with_glue = residual.shape()[2];
 
     constexpr double required_error = 1.0e-7;
 
@@ -381,11 +381,11 @@ void RootGrid::solvePoissonCorrectionPSOR(const int loopnum) {
         {
             //! 奇数グリッド更新
             #pragma omp for
-            for(int k = 1; k < cz_with_glue - 1; k += 2){
+            for(size_t k = 1; k < cz_with_glue - 1; k += 2){
                 if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
-                    for(int j = 1; j < cy_with_glue - 1; ++j){
+                    for(size_t j = 1; j < cy_with_glue - 1; ++j){
                         if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                            for(int i = 1; i < cx_with_glue - 1; ++i){
+                            for(size_t i = 1; i < cx_with_glue - 1; ++i){
                                 if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                                     poisson_error[i][j][k] = (1.0 - omega) * poisson_error[i][j][k] + omega * (poisson_error[i+1][j][k] + poisson_error[i-1][j][k] + poisson_error[i][j+1][k] + poisson_error[i][j-1][k] + poisson_error[i][j][k+1] + poisson_error[i][j][k-1] + coeff * residual[i][j][k])/6.0;
                                 }
@@ -397,11 +397,11 @@ void RootGrid::solvePoissonCorrectionPSOR(const int loopnum) {
 
             //! 偶数グリッド更新
             #pragma omp for
-            for(int k = 2; k < cz_with_glue - 1; k += 2){
+            for(size_t k = 2; k < cz_with_glue - 1; k += 2){
                 if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
-                    for(int j = 1; j < cy_with_glue - 1; ++j){
+                    for(size_t j = 1; j < cy_with_glue - 1; ++j){
                         if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                            for(int i = 1; i < cx_with_glue - 1; ++i){
+                            for(size_t i = 1; i < cx_with_glue - 1; ++i){
                                 if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                                     poisson_error[i][j][k] = (1.0 - omega) * poisson_error[i][j][k] + omega * (poisson_error[i+1][j][k] + poisson_error[i-1][j][k] + poisson_error[i][j+1][k] + poisson_error[i][j-1][k] + poisson_error[i][j][k+1] + poisson_error[i][j][k-1] + coeff * residual[i][j][k])/6.0;
                                 }
@@ -450,16 +450,16 @@ double RootGrid::checkPhiCorrectionResidual() {
     auto& poisson_error = field->getPoissonError();
     auto& poisson_residual = field->getPoissonResidual();
 
-    const int cx_with_glue = poisson_residual.shape()[0];
-    const int cy_with_glue = poisson_residual.shape()[1];
-    const int cz_with_glue = poisson_residual.shape()[2];
+    const size_t cx_with_glue = poisson_residual.shape()[0];
+    const size_t cy_with_glue = poisson_residual.shape()[1];
+    const size_t cz_with_glue = poisson_residual.shape()[2];
 
     #pragma omp parallel for reduction(max: residual)
-    for(int k = 1; k < cz_with_glue - 1; ++k){
+    for(size_t k = 1; k < cz_with_glue - 1; ++k){
         if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
-            for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
                 if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                    for(int i = 1; i < cx_with_glue - 1; ++i){
+                    for(size_t i = 1; i < cx_with_glue - 1; ++i){
                         if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                             double source_value = poisson_residual[i][j][k];
                             double tmp_res = field->poissonOperator(poisson_error, i, j, k) + source_value;
@@ -488,17 +488,17 @@ void RootGrid::updateEfield() {
     auto& ez = field->getEz();
     auto& phi = field->getPhi();
 
-    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
-    const int cy_with_glue = ey.shape()[1] + 1;
-    const int cz_with_glue = ez.shape()[2] + 1;
+    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const size_t cy_with_glue = ey.shape()[1] + 1;
+    const size_t cz_with_glue = ez.shape()[2] + 1;
     const double per_dx = 1.0 / dx;
 
     //! @note:隣と通信しなくてもいい
     //! phiが通信してあるため、端の要素を通信なしで計算可能
     #pragma omp parallel for shared(ex, ey, ez)
-    for(int i = 0; i < cx_with_glue; ++i){
-        for(int j = 0; j < cy_with_glue; ++j){
-            for(int k = 0; k < cz_with_glue; ++k){
+    for(size_t i = 0; i < cx_with_glue; ++i){
+        for(size_t j = 0; j < cy_with_glue; ++j){
+            for(size_t k = 0; k < cz_with_glue; ++k){
                 //! 各方向には1つ少ないのでcx-1まで
                 if(i < cx_with_glue - 1) ex[i][j][k] = (phi[i][j][k] - phi[i + 1][j][k]) * per_dx;
                 if(j < cy_with_glue - 1) ey[i][j][k] = (phi[i][j][k] - phi[i][j + 1][k]) * per_dx;
@@ -523,17 +523,17 @@ void RootGrid::updateReferenceEfield() {
     auto& exref = field->getExRef();
     auto& eyref = field->getEyRef();
     auto& ezref = field->getEzRef();
-    const int cx_with_glue = ex.shape()[0] + 1; // nx + 2
-    const int cy_with_glue = ey.shape()[1] + 1;
-    const int cz_with_glue = ez.shape()[2] + 1;
+    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const size_t cy_with_glue = ey.shape()[1] + 1;
+    const size_t cz_with_glue = ez.shape()[2] + 1;
 
     //! reference 更新
     #pragma omp parallel shared(ex, ey, ez, exref, eyref, ezref)
     {
         #pragma omp for
-        for(int i = 1; i < cx_with_glue - 1; ++i){
-            for(int j = 1; j < cy_with_glue - 1; ++j){
-                for(int k = 1; k < cz_with_glue - 1; ++k){
+        for(size_t i = 1; i < cx_with_glue - 1; ++i){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
+                for(size_t k = 1; k < cz_with_glue - 1; ++k){
                     exref[i][j][k] = 0.5 * (ex[i-1][j][k] + ex[i][j][k]);
                     eyref[i][j][k] = 0.5 * (ey[i][j-1][k] + ey[i][j][k]);
                     ezref[i][j][k] = 0.5 * (ez[i][j][k-1] + ez[i][j][k]);
@@ -544,8 +544,8 @@ void RootGrid::updateReferenceEfield() {
         //! 外側境界の条件設定
         if (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) {
             #pragma omp for
-            for(int j = 1; j < cy_with_glue - 1; ++j){
-                for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
+                for(size_t k = 1; k < cz_with_glue - 1; ++k){
                     exref[0][j][k] = 0.0;
 
                     // Boundary である場合、更新 (これ正しい??)
@@ -556,8 +556,8 @@ void RootGrid::updateReferenceEfield() {
 
         if (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) {
             #pragma omp for
-            for(int j = 1; j < cy_with_glue - 1; ++j){
-                for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
+                for(size_t k = 1; k < cz_with_glue - 1; ++k){
                     exref[cx_with_glue - 1][j][k] = 0.0;
                     exref[cx_with_glue - 2][j][k] = 0.5 * (-phi[cx_with_glue - 4][j][k] + 4.0 * phi[cx_with_glue - 3][j][k] - 3.0 * phi[cx_with_glue - 2][j][k]);
                 }
@@ -566,8 +566,8 @@ void RootGrid::updateReferenceEfield() {
 
         if (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) {
             #pragma omp for
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(size_t i = 1; i < cx_with_glue - 1; ++i){
+                for(size_t k = 1; k < cz_with_glue - 1; ++k){
                     eyref[i][0][k] = 0.0;
                     eyref[i][1][k] = 0.5 * (phi[i][3][k] - 4.0 * phi[i][2][k] + 3.0 * phi[i][1][k]);
                 }
@@ -576,8 +576,8 @@ void RootGrid::updateReferenceEfield() {
 
         if (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) {
             #pragma omp for
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                for(int k = 1; k < cz_with_glue - 1; ++k){
+            for(size_t i = 1; i < cx_with_glue - 1; ++i){
+                for(size_t k = 1; k < cz_with_glue - 1; ++k){
                     eyref[i][cy_with_glue - 1][k] = 0.0;
                     eyref[i][cy_with_glue - 2][k] = 0.5 * (-phi[i][cy_with_glue - 4][k] + 4.0 * phi[i][cy_with_glue - 3][k] - 3.0 * phi[i][cy_with_glue - 2][k]);
                 }
@@ -586,8 +586,8 @@ void RootGrid::updateReferenceEfield() {
 
         if (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) {
             #pragma omp for
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t i = 1; i < cx_with_glue - 1; ++i){
+                for(size_t j = 1; j < cy_with_glue - 1; ++j){
                     ezref[i][j][0] = 0.0;
                     ezref[i][j][1] = 0.5 * (phi[i][j][3] - 4.0 * phi[i][j][2] + 3.0 * phi[i][j][1]);
                 }
@@ -596,8 +596,8 @@ void RootGrid::updateReferenceEfield() {
 
         if (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) {
             #pragma omp for
-            for(int i = 1; i < cx_with_glue - 1; ++i){
-                for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t i = 1; i < cx_with_glue - 1; ++i){
+                for(size_t j = 1; j < cy_with_glue - 1; ++j){
                     ezref[i][j][cz_with_glue - 1] = 0.0;
                     ezref[i][j][cz_with_glue - 2] = 0.5 * (-phi[i][j][cz_with_glue - 4] + 4.0 * phi[i][j][cz_with_glue - 3] - 3.0 * phi[i][j][cz_with_glue - 2]);
                 }
@@ -649,7 +649,7 @@ void RootGrid::initializeObject(void) {
         //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
         ObjectDataFromFile object_data = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
 
-        unsigned int num_cmat = object_data.nodes.size();
+		size_t num_cmat = object_data.nodes.size();
         const auto& node_array = object_data.nodes;
 
         //! innerと判定されたやつだけ渡す
@@ -822,7 +822,7 @@ void RootGrid::injectParticlesFromBoundary(void) {
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;
-            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -841,7 +841,7 @@ void RootGrid::injectParticlesFromBoundary(void) {
 
         if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
             const int index = 1;
-            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -859,7 +859,7 @@ void RootGrid::injectParticlesFromBoundary(void) {
 
         if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
             const int index = 2;
-            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -876,7 +876,7 @@ void RootGrid::injectParticlesFromBoundary(void) {
 
         if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
             const int index = 3;
-            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -893,7 +893,7 @@ void RootGrid::injectParticlesFromBoundary(void) {
 
         if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
             const int index = 4;
-            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
@@ -910,7 +910,7 @@ void RootGrid::injectParticlesFromBoundary(void) {
 
         if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
             const int index = 5;
-            const int inject_num = floor(dt * flux[index] + residual[itr][index]);
+            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {

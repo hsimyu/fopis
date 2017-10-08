@@ -65,7 +65,7 @@ namespace Utils {
 
         template<typename T>
         float progress(const T step) {
-            return 100.0 * static_cast<float>(step) / maximum_step;
+            return 100.0f * static_cast<float>(step) / maximum_step;
         }
 
         template<typename T>

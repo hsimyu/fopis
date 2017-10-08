@@ -283,12 +283,12 @@ namespace IO {
 
     void plotParticleDistribution(ParticleArray const& particles, const std::string type, const std::string filename_header) {
         constexpr int dist_size = 200;
-        const int ptypes = particles.size();
+        const size_t ptypes = particles.size();
         std::vector<double> max_value(ptypes);
 
         //! 最大値を取得
-        for(int pid = 0; pid < ptypes; ++pid) {
-            for(int i = 0; i < particles[pid].size(); ++i){
+        for(size_t pid = 0; pid < ptypes; ++pid) {
+            for(size_t i = 0; i < particles[pid].size(); ++i){
                 if(particles[pid][i].isValid) {
                     double val;
                     if(type == "velocity") {
@@ -304,20 +304,20 @@ namespace IO {
         std::vector<double> unit_value(ptypes);
 
         if(type == "velocity") {
-            for(int pid = 0; pid < ptypes; ++pid) {
+            for(size_t pid = 0; pid < ptypes; ++pid) {
                 unit_value[pid] = max_value[pid]/dist_size; //! m/s
             }
         } else {
-            for(int pid = 0; pid < ptypes; ++pid) {
+            for(size_t pid = 0; pid < ptypes; ++pid) {
                 unit_value[pid] = max_value[pid]/dist_size; //! eV
             }
         }
 
         std::vector< std::vector<int> > pdist(ptypes);
 
-        for(int pid = 0; pid < ptypes; ++pid) {
+        for(size_t pid = 0; pid < ptypes; ++pid) {
             pdist[pid].resize(dist_size + 1);
-            for(int i = 0; i < particles[pid].size(); ++i){
+            for(size_t i = 0; i < particles[pid].size(); ++i){
                 if(particles[pid][i].isValid) {
                     double val;
                     if(type == "velocity") {
@@ -325,7 +325,7 @@ namespace IO {
                     } else {
                         val = particles[pid][i].getEnergy();
                     }
-                    int index = floor(val/unit_value[pid]);
+                    size_t index = static_cast<size_t>(floor(val/unit_value[pid]));
                     pdist[pid][index] += 1;
                 }
             }
@@ -366,23 +366,23 @@ namespace IO {
     }
 
     void print3DArray(const tdArray& data){
-        const int nx = data.shape()[0];
-        const int ny = data.shape()[1];
-        const int nz = data.shape()[2];
+        const size_t nx = data.shape()[0];
+        const size_t ny = data.shape()[1];
+        const size_t nz = data.shape()[2];
 
-        for (int k = 0; k < nz; ++k ) {
+        for (size_t k = 0; k < nz; ++k ) {
             cout << "[z:" << k << "] " << endl;
 
-            for ( int i = 0 ; i < nx; ++i ) {
+            for (size_t i = 0 ; i < nx; ++i ) {
                     if(i == 0) {
                         cout << "     [x/y]";
-                        for ( int j = 0 ; j < ny; ++j ) {
+                        for (size_t j = 0 ; j < ny; ++j ) {
                             cout << "[" << j << "]";
                         }
                         cout << endl;
                     }
                     cout << "     [" << i << "]  ";
-                for ( int j = 0 ; j < ny; ++j ) {
+                for (size_t j = 0 ; j < ny; ++j ) {
                     cout << " " << data[i][j][k] << " ";
                 }
                 cout << endl;
