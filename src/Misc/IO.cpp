@@ -233,7 +233,9 @@ namespace IO {
     void plotObjectsData(std::shared_ptr<Grid> g) {
         for(const auto& object : g->getObjects()) {
             if ( object.isDefined() ) {
-                object.plotPotentialMapping(Environment::timestep, g->getPhi());
+                if ( object.isPlotTiming(Environment::timestep) ) {
+                    object.plotPotentialMapping(Environment::timestep, g->getPhi());
+                }
 
                 if ( MPIw::Environment::isRootNode(object.getName()) ) {
                     std::string filename = "data/object_" + object.getName() + ".txt";

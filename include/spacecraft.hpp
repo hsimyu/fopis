@@ -40,6 +40,7 @@ private:
     std::string surface_type;
     size_t num_cmat;
     bool is_defined_in_this_process;
+    unsigned int plot_history_width;
     double potential;
     double potential_fix;
     double total_charge;
@@ -161,6 +162,8 @@ public:
     bool isContaining(const Particle&) const;
     bool isContaining(const Position&) const;
     bool isDielectricSurface() const { return (surface_type == "dielectric"); }
+
+    bool isPlotTiming(const unsigned int timestep) const { return (timestep % plot_history_width == 0); }
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);

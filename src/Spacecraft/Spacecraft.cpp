@@ -19,6 +19,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
     ++num_of_spacecraft;
     potential = 0.0;
     total_charge = 0.0;
+    plot_history_width = obj_info.history_width;
     file_name = Utils::extractFileName(obj_info.file_name);
     potential_fix = Normalizer::normalizePotential(obj_info.potential_fix);
 
