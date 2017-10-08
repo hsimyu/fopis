@@ -97,8 +97,8 @@ void RootGrid::updateParticlePositionES(void) {
         auto& parray = particles[pid];
         const auto size = parray.size();
 
-        #pragma omp parallel for shared(parray, pbuff)
-        for(int i = 0; i < size; ++i) {
+        #pragma omp parallel for
+        for(size_t i = 0; i < size; ++i) {
             auto& p = parray[i];
 
             if(p.isValid) {

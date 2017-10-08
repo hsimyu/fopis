@@ -991,9 +991,9 @@ void RootGrid::updateRho() {
 
     time_counter->switchTo("updateRho/totalCharge Computation");
     for(int pid = 1; pid < Environment::num_of_particle_types + 1; ++pid) {
-        for(int i = 1; i < nx + 2; ++i) {
-            for(int j = 1; j < ny + 2; ++j) {
-                for(int k = 1; k < nz + 2; ++k) {
+        for(int i = 0; i < nx + 2; ++i) {
+            for(int j = 0; j < ny + 2; ++j) {
+                for(int k = 0; k < nz + 2; ++k) {
                     rho[0][i][j][k] += rho[pid][i][j][k];
                 }
             }
