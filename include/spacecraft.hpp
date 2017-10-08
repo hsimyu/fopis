@@ -67,6 +67,9 @@ private:
     //! 自分が担当するキャパシタンス行列の番号と対応する物体の位置を格納する
     std::map<size_t, Position> capacity_matrix_relation;
 
+    //! Glueキャパシタンス行列の番号と対応する物体の位置を格納する
+    std::map<size_t, Position> glue_capacity_matrix_relation;
+
     //! 全体のキャパシタンス行列の番号と対応する物体の位置を格納する (RootNode用)
     std::map<size_t, Position> whole_capacity_matrix_relation;
 
@@ -77,7 +80,7 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectCells&, const ObjectNodeTextures&, const ObjectConnectivityList&);
+    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectNodes&, const ObjectCells&, const ObjectNodeTextures&, const ObjectConnectivityList&);
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
@@ -110,6 +113,7 @@ public:
         const unsigned int _num_cmat,
         const ObjectInfo_t& obj_info,
         const ObjectNodes& nodes,
+        const ObjectNodes& glue_nodes,
         const ObjectCells& cells,
         const ObjectNodeTextures& textures,
         const ObjectConnectivityList& clist) :
@@ -124,9 +128,10 @@ public:
         charge_map{},
         capacity_matrix(0, 0),
         capacity_matrix_relation{},
+        glue_capacity_matrix_relation{},
         whole_capacity_matrix_relation{},
         capacitance_map{} {
-        construct(nx, ny, nz, obj_info, nodes, cells, textures, clist);
+        construct(nx, ny, nz, obj_info, nodes, glue_nodes, cells, textures, clist);
     }
 
     // アクセサ

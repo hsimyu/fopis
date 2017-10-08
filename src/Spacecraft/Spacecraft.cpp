@@ -13,7 +13,7 @@
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectCells& cells, const ObjectNodeTextures& textures, const ObjectConnectivityList& clist) {
+void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells, const ObjectNodeTextures& textures, const ObjectConnectivityList& clist) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -47,6 +47,17 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
             const auto k = node_pos[2];
 
             capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
+        }
+
+        //! applyChargeで使うためにGlueノード上のCmatPositionも覚えておく
+        for(const auto& node_pair : glue_nodes) {
+            const auto cmat_itr = node_pair.first;
+            const auto& node_pos = node_pair.second;
+            const auto i = node_pos[0];
+            const auto j = node_pos[1];
+            const auto k = node_pos[2];
+
+            glue_capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
         }
 
         //! キャパシタンス行列のサイズを物体サイズに変更
@@ -341,14 +352,19 @@ inline void Spacecraft::distributeInnerParticleChargeToZsurface(const Position& 
 }
 
 void Spacecraft::applyCharge(RhoArray& rho) const {
-    //! 電荷分布を場に印加する
-    for(const auto& one_node : whole_capacity_matrix_relation) {
-        const auto& pos = one_node.second;
+    //! 電荷を場に印加する
+    for(const auto& node : capacity_matrix_relation) {
+        const auto& pos = node.second;
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
+        }
+    }
 
-        if (Environment::isValidPosition(pos)) {
-            for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-                rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
-            }
+    //! Glueノード上の電荷
+    for(const auto& node : glue_capacity_matrix_relation) {
+        const auto& pos = node.second;
+        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
         }
     }
 }

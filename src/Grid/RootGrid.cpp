@@ -654,6 +654,7 @@ void RootGrid::initializeObject(void) {
 
         //! innerと判定されたやつだけ渡す
         ObjectNodes inner_node_array;
+        ObjectNodes glue_node_array;
         bool is_object_in_this_node = false;
 
         for(const auto& node_pair : node_array) {
@@ -667,6 +668,8 @@ void RootGrid::initializeObject(void) {
             if (isInnerNode(i, j, k)) {
                 is_object_in_this_node = true;
                 inner_node_array[cmat_itr] = Environment::getRelativePositionOnRootWithGlue(i, j, k);
+            } else if (isGlueNode(i, j, k)) {
+                glue_node_array[cmat_itr] = Environment::getRelativePositionOnRootWithGlue(i, j, k);
             }
         }
 
@@ -681,7 +684,7 @@ void RootGrid::initializeObject(void) {
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, inner_cell_array, object_data.textures, object_data.connected_list);
+        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, glue_node_array, inner_cell_array, object_data.textures, object_data.connected_list);
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
