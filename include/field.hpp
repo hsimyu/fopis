@@ -6,8 +6,9 @@ using RhoArray = std::vector<tdArray>;
 
 class Field {
     private:
-        //! rho のみ粒子種で必要な行列数が変わる
+        //! rhoとdensityのみ粒子種で必要な行列数が変わる
         RhoArray rho;
+        RhoArray density;
 
         //! マルチグリッド Poisson 計算用
         tdArray poisson_residual;
@@ -37,6 +38,7 @@ class Field {
     public:
         Field(void) :
             rho{},
+            density{},
             poisson_residual(boost::extents[0][0][0], boost::fortran_storage_order()),
             poisson_error(boost::extents[0][0][0], boost::fortran_storage_order()),
             phi(boost::extents[0][0][0], boost::fortran_storage_order()),
@@ -72,6 +74,9 @@ class Field {
         // charge density
         void setRho(RhoArray& _rho){ rho = _rho; }
         RhoArray& getRho(){ return rho; }
+
+        // density
+        RhoArray& getDensity(){ return density; }
 
         // electric fields
         void setEx(tdArray& _ex){ ex = _ex; }

@@ -8,6 +8,20 @@
 class Particle;
 
 namespace MPIw {
+    enum TAG {
+        SEND_PARTICLE = 1,
+        SEND_PARTICLE_LENGTH,
+        RECV_PARTICLE,
+        RECV_PARTICLE_LENGTH,
+        SENDRECV_PARTICLE,
+        SENDRECV_PARTICLE_LENGTH,
+        SENDRECV_FIELD,
+        SENDRECV_SCALAR_UPPER,
+        SENDRECV_SCALAR_LOWER,
+        PARTICIPATE_NEW_COMM,
+        GATHER_STRINGS,
+    };
+
     //! MPI通信をラップするためのクラス
     class Communicator {
         //! 内部的に持つcommunicatorを使って通信する
@@ -59,6 +73,9 @@ namespace MPIw {
             void sendRecvFieldX(tdArray&, const int, const int);
             void sendRecvFieldY(tdArray&, const int, const int);
             void sendRecvFieldZ(tdArray&, const int, const int);
+            void sendRecvScalarX(tdArray&, const int, const int);
+            void sendRecvScalarY(tdArray&, const int, const int);
+            void sendRecvScalarZ(tdArray&, const int, const int);
     };
 
     MPI_Datatype registerParticleType(void);
@@ -118,6 +135,7 @@ namespace MPIw {
             static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&, const int, const int, std::string);
 
             static void sendRecvField(tdArray&);
+            static void sendRecvScalar(tdArray&);
     };
 
 };

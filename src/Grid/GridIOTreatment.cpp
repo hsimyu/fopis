@@ -5,28 +5,25 @@
 #define USE_BOOST
 #include "simple_vtk.hpp"
 
-//! for DATA IO
-//! 粒子の位置から密度を計算する
-boost::multi_array<float, 3> Grid::getDensity(const int pid) const {
+//! Glueセルを含まないデータを生成
+boost::multi_array<float, 3> Grid::getTrueCells(const tdArray& x3D, const double unnorm) const {
     // ZONECENTなので-1する
     const int xsize = this->getXNodeSize() - 1;
     const int ysize = this->getYNodeSize() - 1;
     const int zsize = this->getZNodeSize() - 1;
 
-    boost::multi_array<float, 3> zones(boost::extents[xsize][ysize][zsize]);
-    const auto size = static_cast<float>(Normalizer::unnormalizeDensity(Environment::getParticleType(pid)->getSize()));
+    boost::multi_array<float, 3> true_cells(boost::extents[xsize][ysize][zsize]);
 
-    for(int pnum = 0; pnum < particles[pid].size(); ++pnum){
-        const Particle& p = particles[pid][pnum];
-
-        if(p.isValid) {
-            Position pos(p);
-            // zones[pos.i - 1][pos.j - 1][pos.k - 1] += size;
+    for(int k = 1; k < zsize + 1; ++k){
+        for(int j = 1; j < ysize + 1; ++j){
+            for(int i = 1; i < xsize + 1; ++i){
+                true_cells[i - 1][j - 1][k - 1] = static_cast<float>(x3D[i][j][k] * unnorm);
+            }
         }
     }
 
     // RVO
-    return zones;
+    return true_cells;
 }
 
 //! Glueノードを含まないデータを生成
@@ -140,9 +137,12 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                     if (pid != Environment::num_of_particle_types - 1) pnames += " ";
                 }
                 gen.setScalars(pnames);
+                const auto& density = field->getDensity();
+                const auto unnorm = Normalizer::unnormalizeDensity(1.0);
+
                 for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
                     gen.beginDataArray(Environment::getParticleType(pid)->getName(), "Float32", "ascii");
-                        auto values = this->getDensity(pid);
+                        auto values = this->getTrueCells(density[pid], unnorm);
                         gen.addMultiArray(values);
                     gen.endDataArray();
                 }

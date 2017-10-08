@@ -398,6 +398,10 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
     capacity_times_phi = MPIw::Environment::Comms[name].sum(capacity_times_phi);
 
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << format("[INFO] [%s] Capacity x Potential: %16.7e") % name % capacity_times_phi << endl;
+    }
+
     if (potential_fix != 0.0) {
         potential = potential_fix;
     } else {

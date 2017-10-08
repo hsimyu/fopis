@@ -9,7 +9,7 @@ namespace Utils {
     TimeCounter* TimeCounter::instance = nullptr;
 
     void initialize3DArray(tdArray& x) {
-        #pragma omp parallel for shared(x)
+        #pragma omp parallel for
         for(int i = 0; i < x.shape()[0]; ++i) {
             for(int j = 0; j < x.shape()[1]; ++j) {
                 for(int k = 0; k < x.shape()[2]; ++k) {
@@ -20,7 +20,7 @@ namespace Utils {
     }
 
     void initializeRhoArray(std::vector<tdArray>& x) {
-        #pragma omp parallel shared(x)
+        #pragma omp parallel
         for(int id = 0; id < x.size(); ++id) {
             #pragma omp for
             for(int i = 0; i < x[0].shape()[0]; ++i) {

@@ -68,7 +68,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         boost::multi_array<float, 3> getTrueNodes(const tdArray& x3D, const double unnorm = 1.0) const;
         boost::multi_array<float, 3> getTrueNodes(const RhoArray& rho, const int pid, const double unnorm = 1.0) const;
         boost::multi_array<float, 4> getTrueNodeVectors(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const;
-        boost::multi_array<float, 3> getDensity(const int) const;
+        boost::multi_array<float, 3> getTrueCells(const tdArray& x3D, const double unnorm) const;
 
         //! データ出力用のnodesの数を返す
         virtual int getXNodeSize(void) const = 0;
@@ -215,6 +215,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         virtual void updateReferenceEfield() = 0;
         virtual void updateEfieldFDTD(void) = 0;
         virtual void updateBfield(void) = 0;
+        virtual void updateDensity(void) = 0;
 
         // update particles
         void updateParticleVelocity(void);
@@ -276,6 +277,7 @@ class RootGrid : public Grid {
         virtual void updateReferenceEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
+        virtual void updateDensity(void) override;
 
         //! 粒子更新
         virtual void updateParticlePositionES(void) override;
@@ -442,6 +444,7 @@ class ChildGrid : public Grid {
         virtual void updateReferenceEfield(void) override;
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
+        virtual void updateDensity(void) override;
 
         //! 粒子更新
         virtual void updateParticlePositionES(void) override;

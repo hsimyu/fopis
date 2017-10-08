@@ -100,7 +100,7 @@ void RootGrid::mainLoopES() {
     // -- timing: dt --
     // 速度更新
     time_counter->switchTo("updateParticleVelocity");
-    this->updateParticleVelocity();
+    // this->updateParticleVelocity();
 
     // 粒子放出
     time_counter->switchTo("emitParticlesFromObjects");
@@ -108,11 +108,15 @@ void RootGrid::mainLoopES() {
 
     // 粒子位置更新
     time_counter->switchTo("updateParticlePosition");
-    this->updateParticlePosition(); // jx, jy, jz もここで update される
+    this->updateParticlePosition();
 
     // 粒子注入
     time_counter->switchTo("injectParticleFromBoundary");
     this->injectParticlesFromBoundary();
+
+    // 密度更新
+    time_counter->switchTo("updateDensity");
+    this->updateDensity();
 
     // 静電計算の場合
     // 新しい位置に対応する電荷密度算出
@@ -614,6 +618,28 @@ void RootGrid::updateBfield(void) {
     field->updateBfield(dx, nx, ny, nz, dt);
 }
 
+void RootGrid::updateDensity(void) {
+    auto& density = field->getDensity();
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        const auto& parray = particles[pid];
+        const auto size = Environment::getParticleType(pid)->getSize();
+
+        for(int pnum = 0; pnum < parray.size(); ++pnum){
+            const Particle& p = parray[pnum];
+
+            if (p.isValid) {
+                Position pos(p);
+                density[pid][pos.i][pos.j][pos.k] += size;
+            }
+        }
+    }
+
+    for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        MPIw::Environment::sendRecvScalar(density[pid]);
+    }
+}
+
 void RootGrid::initializeObject(void) {
     if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
 
@@ -924,7 +950,7 @@ void RootGrid::updateRho() {
     Utils::initializeRhoArray(rho);
 
     time_counter->switchTo("updateRho/mainLoop");
-    #pragma omp parallel for shared(rho)
+    #pragma omp parallel for
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid){
         double q = Environment::getParticleType(pid)->getChargeOfSuperParticle();
         const auto rho_idx = pid + 1;
@@ -957,7 +983,7 @@ void RootGrid::updateRho() {
     time_counter->switchTo("updateRho/applyCharge");
     for(auto& obj : objects) {
         if (obj.isDefined()) {
-            //! 物体に配分された電荷を現在の rho に印加する
+            //! 物体に配分された電荷を現在のrhoに印加する
             obj.applyCharge(rho);
         }
     }
@@ -983,7 +1009,7 @@ void RootGrid::updateRho() {
     //! rho を隣に送る
     time_counter->switchTo("updateRho/sendRhoAll");
     for(int pid = 0; pid < Environment::num_of_particle_types + 1; ++pid) {
-        MPIw::Environment::sendRecvField(rho[pid]);
+        MPIw::Environment::sendRecvScalar(rho[pid]);
     }
 
     //! 物体が存在する場合、電荷再配分が必要になる
@@ -998,6 +1024,7 @@ void RootGrid::updateRho() {
         }
 
         time_counter->switchTo("updateRho/sendRhoZero");
+        //! 既に隣のFieldとRhoが同期しているため、再配分後のrhoの送信はField形式でいい
         MPIw::Environment::sendRecvField(rho[0]);
     }
 

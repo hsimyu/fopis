@@ -149,6 +149,11 @@ void Grid::initializeField(void){
         rho.emplace_back(tdExtents[cx][cy][cz], boost::fortran_storage_order());
     }
 
+    auto& density = field->getDensity();
+    for(int i = 0; i < Environment::num_of_particle_types; ++i) {
+        density.emplace_back(tdExtents[cx - 1][cy - 1][cz - 1]);
+    }
+
     field->getEx().resize(tdExtents[cx-1][cy][cz]);
     field->getEy().resize(tdExtents[cx][cy-1][cz]);
     field->getEz().resize(tdExtents[cx][cy][cz-1]);

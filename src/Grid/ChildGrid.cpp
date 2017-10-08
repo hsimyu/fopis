@@ -272,6 +272,10 @@ void ChildGrid::updateBfield(void) {
     field->updateBfield(dx, nx, ny, nz, dt);
 }
 
+void ChildGrid::updateDensity(void) {
+
+}
+
 void ChildGrid::moveParticleToParent(Particle& p) {
     Particle new_particle = p; // コピー演算
 

@@ -1,139 +1,9 @@
 #include "global.hpp"
 #include "mpiw.hpp"
-#include "environment.hpp"
 #include "particle.hpp"
 #include <cstddef>
 
 namespace MPIw {
-    enum TAG {
-        SEND_PARTICLE = 1,
-        SEND_PARTICLE_LENGTH,
-        RECV_PARTICLE,
-        RECV_PARTICLE_LENGTH,
-        SENDRECV_PARTICLE,
-        SENDRECV_PARTICLE_LENGTH,
-        SENDRECV_FIELD,
-        PARTICIPATE_NEW_COMM,
-        GATHER_STRINGS,
-    };
-
-    // Environmentのstatic変数の実体
-    int Environment::rank = -1;
-    int Environment::numprocs = -1;
-    int Environment::xrank = -1;
-    int Environment::yrank = -1;
-    int Environment::zrank = -1;
-
-    // 各方向への隣接プロセスランク
-    int Environment::adj[6];
-
-    std::map<std::string, Communicator> Environment::Comms;
-    MPI_Datatype Environment::MPI_PARTICLE;
-
-    Environment::Environment(int argc, char* argv[]) {
-        MPI_Init(&argc, &argv);
-        MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        addNewComm("world", MPI_COMM_WORLD);
-        MPI_PARTICLE = registerParticleType();
-    }
-
-    void Environment::finalize(void) {
-        static bool finalized = false;
-
-        if(!finalized) {
-            MPI_Finalize();
-            finalized = true;
-        }
-    }
-
-    void Environment::abort(const int code) {
-        MPI_Abort(MPI_COMM_WORLD, code);
-    }
-
-    void Environment::addNewComm(const std::string& new_comm_name, const MPI_Comm new_comm) {
-        Comms.emplace(std::piecewise_construct, std::make_tuple(new_comm_name), std::make_tuple(new_comm));
-    }
-
-    void Environment::makeNewComm(const std::string& new_comm_name, const bool is_not_empty_comm) {
-        auto source_comm = Comms["world"].getComm();
-        MPI_Comm new_comm;
-        int color = (is_not_empty_comm ? 0 : MPI_UNDEFINED);
-        MPI_Comm_split(source_comm, color, rank, &new_comm);
-        if (is_not_empty_comm) addNewComm(new_comm_name, new_comm);
-    }
-
-    void Environment::sendRecvField(tdArray& x3D){
-        int prev, next;
-
-        // 対応する方向の proc 数が 1 かつ周期境界でない場合には通信しなくてよい
-        if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
-            prev = 0; next = 1;
-            Comms["world"].sendRecvFieldX(x3D, adj[prev], adj[next]);
-        }
-
-        if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low) ) {
-            prev = 2; next = 3;
-            Comms["world"].sendRecvFieldY(x3D, adj[prev], adj[next]);
-        }
-
-        if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low) ) {
-            prev = 4; next = 5;
-            Comms["world"].sendRecvFieldZ(x3D, adj[prev], adj[next]);
-        }
-    }
-
-    //! -- Particle Communication --
-    void Environment::sendRecvParticles(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv, const int prev, const int next, std::string commName){
-        Comms[commName].sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);
-        Comms[commName].sendRecvVector(pbuff[next], pbuffRecv[prev], adj[next], adj[prev]);
-    }
-
-    void Environment::sendRecvParticlesX(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
-        //! X-axis
-        int prev = 0; int next = 1;
-        sendRecvParticles(pbuff, pbuffRecv, prev, next, "world");
-    }
-
-    void Environment::sendRecvParticlesY(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
-        //! Y-axis
-        int prev = 2; int next = 3;
-        sendRecvParticles(pbuff, pbuffRecv, prev, next, "world");
-    }
-
-    void Environment::sendRecvParticlesZ(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv){
-        //! Z-axis
-        int prev = 4; int next = 5;
-        sendRecvParticles(pbuff, pbuffRecv, prev, next, "world");
-    }
-
-    MPI_Datatype registerParticleType() {
-        const size_t num_members = 8;
-        int lengths[num_members] = {1, 1, 1, 1, 1, 1, 1, 1};
-
-        MPI_Aint offsets[num_members] = {
-            offsetof(Particle, typeId),
-            offsetof(Particle, isValid),
-            offsetof(Particle, x),
-            offsetof(Particle, y),
-            offsetof(Particle, z),
-            offsetof(Particle, vx),
-            offsetof(Particle, vy),
-            offsetof(Particle, vz)
-        };
-        MPI_Datatype types[num_members] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
-
-        MPI_Datatype newType;
-        MPI_Type_create_struct(num_members, lengths, offsets, types, &newType);
-        MPI_Type_commit(&newType);
-
-        return newType;
-    }
-
-    void deregisterMpiType(MPI_Datatype type){
-        MPI_Type_free(&type);
-    }
-
     // Communicator クラス
     Communicator::Communicator(MPI_Comm _comm) {
         comm = _comm;
@@ -477,6 +347,239 @@ namespace MPIw {
                 for(int i = 0; i < tdValue.shape()[0]; ++i) {
                     for(int j = 0; j < tdValue.shape()[1]; ++j) {
                         tdValue[i][j][0] = buff[i][j];
+                    }
+                }
+            }
+        }
+    }
+
+    void Communicator::sendRecvScalarX(tdArray& tdValue, const int prev, const int next) {
+        MPI_Status s;
+
+        const auto size_x = tdValue.shape()[0];
+        const auto size_y = tdValue.shape()[1];
+        const auto size_z = tdValue.shape()[2];
+
+        boost::multi_array<double, 3> buff_upper(boost::extents[2][size_y][size_z]);
+        boost::multi_array<double, 3> buff_lower(boost::extents[2][size_y][size_z]);
+
+        #pragma omp parallel
+        {
+            #pragma omp for
+            for(int j = 0; j < size_y; ++j) {
+                for(int k = 0; k < size_z; ++k) {
+                    //! 下側の値をバッファへ詰める
+                    buff_lower[0][j][k] = tdValue[0][j][k];
+                    buff_lower[1][j][k] = tdValue[1][j][k];
+
+                    //! 上側の値をバッファへ詰める
+                    buff_upper[0][j][k] = tdValue[size_x - 2][j][k];
+                    buff_upper[1][j][k] = tdValue[size_x - 1][j][k];
+                }
+            }
+
+            #pragma omp barrier
+
+            if ( (prev == Environment::rank) && (next == Environment::rank) ) {
+                //! 自分自身への通信
+                //! std::swapのが速いかも
+                #pragma omp for
+                for(int j = 0; j < size_y; ++j) {
+                    for(int k = 0; k < size_z; ++k) {
+                        tdValue[0][j][k] += buff_upper[0][j][k];
+                        tdValue[1][j][k] += buff_upper[1][j][k];
+
+                        tdValue[size_x - 2][j][k] += buff_lower[0][j][k];
+                        tdValue[size_x - 1][j][k] += buff_lower[1][j][k];
+                    }
+                }
+            } else {
+                int length = 2 * size_y * size_z;
+
+                #pragma omp single
+                {
+                    MPI_Sendrecv_replace(buff_upper.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_SCALAR_UPPER, prev, TAG::SENDRECV_SCALAR_UPPER, comm, &s);
+                }
+                // buff_upper に下側からの値が入る
+
+                #pragma omp single
+                {
+                    MPI_Sendrecv_replace(buff_lower.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_SCALAR_LOWER, next, TAG::SENDRECV_SCALAR_LOWER, comm, &s);
+                }
+                // buff_lower に上側からの値が入る
+
+                if (::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
+                    #pragma omp for
+                    for(int j = 0; j < size_y; ++j) {
+                        for(int k = 0; k < size_z; ++k) {
+                            tdValue[size_x - 2][j][k] += buff_lower[0][j][k];
+                            tdValue[size_x - 1][j][k] += buff_lower[1][j][k];
+                        }
+                    }
+                }
+
+                if (::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
+                    #pragma omp for
+                    for(int j = 0; j < size_y; ++j) {
+                        for(int k = 0; k < size_z; ++k) {
+                            tdValue[0][j][k] += buff_upper[0][j][k];
+                            tdValue[1][j][k] += buff_upper[1][j][k];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void Communicator::sendRecvScalarY(tdArray& tdValue, const int prev, const int next) {
+        MPI_Status s;
+
+        const auto size_x = tdValue.shape()[0];
+        const auto size_y = tdValue.shape()[1];
+        const auto size_z = tdValue.shape()[2];
+
+        boost::multi_array<double, 3> buff_upper(boost::extents[2][size_x][size_z]);
+        boost::multi_array<double, 3> buff_lower(boost::extents[2][size_x][size_z]);
+
+        #pragma omp parallel
+        {
+            //! 下側の値をバッファへ詰める
+            #pragma omp for
+            for(int i = 0; i < size_x; ++i) {
+                for(int k = 0; k < size_z; ++k) {
+                    buff_lower[0][i][k] = tdValue[i][0][k];
+                    buff_lower[1][i][k] = tdValue[i][1][k];
+                }
+            }
+
+            //! 上側の値をバッファへ詰める
+            #pragma omp for
+            for(int i = 0; i < size_x; ++i) {
+                for(int k = 0; k < size_z; ++k) {
+                    buff_upper[0][i][k] = tdValue[i][size_y - 2][k];
+                    buff_upper[1][i][k] = tdValue[i][size_y - 1][k];
+                }
+            }
+
+            if ( (prev == Environment::rank) && (next == Environment::rank) ) {
+                //! 自分自身への通信
+                //! std::swapのが速いかも
+                #pragma omp barrier
+                #pragma omp for
+                for(int i = 0; i < size_x; ++i) {
+                    for(int k = 0; k < size_z; ++k) {
+                        tdValue[i][0][k] += buff_upper[0][i][k];
+                        tdValue[i][1][k] += buff_upper[1][i][k];
+
+                        tdValue[i][size_y - 2][k] += buff_lower[0][i][k];
+                        tdValue[i][size_y - 1][k] += buff_lower[1][i][k];
+                    }
+                }
+            } else {
+                int length = 2 * size_x * size_z;
+
+                #pragma omp barrier
+                #pragma omp single
+                {
+                    MPI_Sendrecv_replace(buff_upper.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_SCALAR_UPPER, prev, TAG::SENDRECV_SCALAR_UPPER, comm, &s);
+                }
+                // buff_upper に下側からの値が入る
+
+                #pragma omp single
+                {
+                    MPI_Sendrecv_replace(buff_lower.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_SCALAR_LOWER, next, TAG::SENDRECV_SCALAR_LOWER, comm, &s);
+                }
+                // buff_lower に上側からの値が入る
+
+                if (::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
+                    #pragma omp for
+                    for(int i = 0; i < size_x; ++i) {
+                        for(int k = 0; k < size_z; ++k) {
+                            tdValue[i][size_y - 2][k] += buff_lower[0][i][k];
+                            tdValue[i][size_y - 1][k] += buff_lower[1][i][k];
+                        }
+                    }
+                }
+
+                if (::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
+                    #pragma omp for
+                    for(int i = 0; i < size_x; ++i) {
+                        for(int k = 0; k < size_z; ++k) {
+                            tdValue[i][0][k] += buff_upper[0][i][k];
+                            tdValue[i][1][k] += buff_upper[1][i][k];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void Communicator::sendRecvScalarZ(tdArray& tdValue, const int prev, const int next) {
+        MPI_Status s;
+
+        const auto size_x = tdValue.shape()[0];
+        const auto size_y = tdValue.shape()[1];
+        const auto size_z = tdValue.shape()[2];
+
+        boost::multi_array<double, 3> buff_upper(boost::extents[2][size_x][size_y]);
+        boost::multi_array<double, 3> buff_lower(boost::extents[2][size_x][size_y]);
+
+        #pragma omp parallel
+        {
+            //! 下側の値をバッファへ詰める
+            #pragma omp for
+            for(int i = 0; i < size_x; ++i) {
+                for(int j = 0; j < size_y; ++j) {
+                    buff_lower[0][i][j] = tdValue[i][j][0];
+                    buff_lower[1][i][j] = tdValue[i][j][1];
+                }
+            }
+
+            //! 上側の値をバッファへ詰める
+            #pragma omp for
+            for(int i = 0; i < size_x; ++i) {
+                for(int j = 0; j < size_y; ++j) {
+                    buff_upper[0][i][j] = tdValue[i][j][size_z - 2];
+                    buff_upper[1][i][j] = tdValue[i][j][size_z - 1];
+                }
+            }
+
+            if ( (prev == Environment::rank) && (next == Environment::rank) ) {
+                #pragma omp barrier
+                #pragma omp for
+                for(int i = 0; i < size_x; ++i) {
+                    for(int j = 0; j < size_y; ++j) {
+                        tdValue[i][j][0] += buff_upper[0][i][j];
+                        tdValue[i][j][1] += buff_upper[1][i][j];
+
+                        tdValue[i][j][size_z - 2] += buff_lower[0][i][j];
+                        tdValue[i][j][size_z - 1] += buff_lower[1][i][j];
+                    }
+                }
+            } else {
+                int length = 2 * size_x * size_y;
+
+                #pragma omp barrier
+                #pragma omp single
+                {
+                    MPI_Sendrecv_replace(buff_upper.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_SCALAR_UPPER, prev, TAG::SENDRECV_SCALAR_UPPER, comm, &s);
+                }
+                // buff_upper に下側からの値が入る
+
+                #pragma omp single
+                {
+                    MPI_Sendrecv_replace(buff_lower.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_SCALAR_LOWER, next, TAG::SENDRECV_SCALAR_LOWER, comm, &s);
+                }
+                // buff_lower に上側からの値が入る
+
+                #pragma omp for
+                for(int i = 0; i < size_x; ++i) {
+                    for(int j = 0; j < size_y; ++j) {
+                        tdValue[i][j][0] += buff_upper[0][i][j];
+                        tdValue[i][j][1] += buff_upper[1][i][j];
+
+                        tdValue[i][j][size_z - 2] += buff_lower[0][i][j];
+                        tdValue[i][j][size_z - 1] += buff_lower[1][i][j];
                     }
                 }
             }
