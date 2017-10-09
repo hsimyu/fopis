@@ -94,6 +94,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         ObjectChargeMap::extent_gen cm_extent;
         //! @note: 物体の電荷配列マップは総和用の要素(index = 0)を持たない
         charge_map.resize(cm_extent[Environment::num_of_particle_types][static_cast<int>(num_cmat)]);
+        temporary_charge_map.resize(cm_extent[Environment::num_of_particle_types][static_cast<int>(num_cmat)]);
 
         //! セルベースの物体定義 (物体内部判定用)
         for(const auto& cell_pos : cells) {
@@ -323,29 +324,37 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
 }
 
 inline void Spacecraft::distributeInnerParticleChargeToXsurface(const Position& pos, const int id, const double charge) {
-    charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k    )] += charge * pos.dy2 * pos.dz2;
-    charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k    )] += charge * pos.dy1 * pos.dz2;
-    charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k + 1)] += charge * pos.dy2 * pos.dz1;
-    charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k + 1)] += charge * pos.dy1 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k    )] += charge * pos.dy2 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k    )] += charge * pos.dy1 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k + 1)] += charge * pos.dy2 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k + 1)] += charge * pos.dy1 * pos.dz1;
 }
 
 inline void Spacecraft::distributeInnerParticleChargeToYsurface(const Position& pos, const int id, const double charge) {
-    charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k    )] += charge * pos.dx2 * pos.dz2;
-    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k    )] += charge * pos.dx1 * pos.dz2;
-    charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k + 1)] += charge * pos.dx2 * pos.dz1;
-    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k + 1)] += charge * pos.dx1 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k    )] += charge * pos.dx2 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k    )] += charge * pos.dx1 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k + 1)] += charge * pos.dx2 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k + 1)] += charge * pos.dx1 * pos.dz1;
 }
 
 inline void Spacecraft::distributeInnerParticleChargeToZsurface(const Position& pos, const int id, const double charge) {
-    charge_map[id][this->getCmatNumber(pos.i    , pos.j    , pos.k)] += charge * pos.dx2 * pos.dy2;
-    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j    , pos.k)] += charge * pos.dx1 * pos.dy2;
-    charge_map[id][this->getCmatNumber(pos.i    , pos.j + 1, pos.k)] += charge * pos.dx2 * pos.dy1;
-    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j + 1, pos.k)] += charge * pos.dx1 * pos.dy1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j    , pos.k)] += charge * pos.dx2 * pos.dy2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j    , pos.k)] += charge * pos.dx1 * pos.dy2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j + 1, pos.k)] += charge * pos.dx2 * pos.dy1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j + 1, pos.k)] += charge * pos.dx1 * pos.dy1;
 }
 
 void Spacecraft::sumWholeCharge() {
     //! 多分ムーブ演算なのでそんなに高コストではないはず
-    charge_map = MPIw::Environment::Comms[name].sum(charge_map);
+    temporary_charge_map = MPIw::Environment::Comms[name].sum(temporary_charge_map);
+
+    #pragma omp parallel for
+    for (unsigned int cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
+        for (unsigned int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            charge_map[pid][cmat_itr] += temporary_charge_map[pid][cmat_itr];
+            temporary_charge_map[pid][cmat_itr] = 0.0;
+        }
+    }
 }
 
 void Spacecraft::applyCharge(RhoArray& rho) const {
@@ -532,28 +541,28 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
 }
 
 inline void Spacecraft::subtractChargeOfParticleFromXsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k    )] -= charge * pos.dy2 * pos.dz2;
-    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k    )] -= charge * pos.dy1 * pos.dz2;
-    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k + 1)] -= charge * pos.dy2 * pos.dz1;
-    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k + 1)] -= charge * pos.dy1 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k    )] -= charge * pos.dy2 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k    )] -= charge * pos.dy1 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k + 1)] -= charge * pos.dy2 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k + 1)] -= charge * pos.dy1 * pos.dz1;
 
     current[id] -= charge;
 }
 
 inline void Spacecraft::subtractChargeOfParticleFromYsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k    )]-= charge * pos.dx2 * pos.dz2;
-    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k    )]-= charge * pos.dx1 * pos.dz2;
-    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx2 * pos.dz1;
-    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx1 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k    )]-= charge * pos.dx2 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k    )]-= charge * pos.dx1 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx2 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx1 * pos.dz1;
 
     current[id] -= charge;
 }
 
 inline void Spacecraft::subtractChargeOfParticleFromZsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j    , emission_pos.k)] -= charge * pos.dx2 * pos.dy2;
-    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j    , emission_pos.k)] -= charge * pos.dx1 * pos.dy2;
-    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx2 * pos.dy1;
-    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx1 * pos.dy1;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j    , emission_pos.k)] -= charge * pos.dx2 * pos.dy2;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j    , emission_pos.k)] -= charge * pos.dx1 * pos.dy2;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx2 * pos.dy1;
+    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx1 * pos.dy1;
 
     current[id] -= charge;
 }

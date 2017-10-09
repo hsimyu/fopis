@@ -61,6 +61,7 @@ private:
 
     //! 電荷定義マップ([particle_id, cmat_index])
     ObjectChargeMap charge_map;
+    ObjectChargeMap temporary_charge_map;
 
     //! キャパシタンス行列
     using Cmatrix = Eigen::MatrixXd;
@@ -133,6 +134,7 @@ public:
         material_capacitances{},
         object_cell_map(boost::extents[0][0][0]),
         charge_map{},
+        temporary_charge_map{},
         capacity_matrix(0, 0),
         capacity_matrix_relation{},
         glue_capacity_matrix_relation{},
