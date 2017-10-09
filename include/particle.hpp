@@ -72,6 +72,9 @@ class Particle {
         double getYMoveRatio() const;
         double getZMoveRatio() const;
 
+        //! グリッドを横切る際の座標を羅列して返す
+        std::vector<Position> computeCrossPoints() const;
+
         //! 電流配分
         void distributeCurrentAtOldPosition(const double, tdArray&, tdArray&, tdArray&) const;
         void distributeCurrentAtNewPosition(const double, tdArray&, tdArray&, tdArray&) const;

@@ -58,6 +58,130 @@ double Particle::getZMoveRatio() const {
     }
 }
 
+std::vector<Position> Particle::computeCrossPoints() const {
+    std::vector<Position> cross_points;
+
+    const auto pos = getPosition();
+    const auto old_pos = getOldPosition();
+
+    //! 次の表面までの距離(速度で正規化)
+    const double mvx = 1.0 - getXMoveRatio();
+    const double mvy = 1.0 - getYMoveRatio();
+    const double mvz = 1.0 - getZMoveRatio();
+
+    unsigned int count = 0;
+
+    Position xcross_point;
+    bool move_along_x = (pos.i != old_pos.i);
+    if (move_along_x) {
+        if (vx > 0.0) {
+            xcross_point.setXYZ(old_pos.x + old_pos.dx2, old_pos.y + vy * mvx, old_pos.z + vz * mvx);
+        } else {
+            xcross_point.setXYZ(old_pos.x - old_pos.dx1, old_pos.y + vy * mvx, old_pos.z + vz * mvx);
+        }
+        ++count;
+    }
+
+    Position ycross_point;
+    bool move_along_y = (pos.j != old_pos.j);
+    if (move_along_y) {
+        if (vy > 0.0) {
+            ycross_point.setXYZ(old_pos.x + vx * mvy, old_pos.y + old_pos.dy2, old_pos.z + vz * mvy);
+        } else {
+            ycross_point.setXYZ(old_pos.x + vx * mvy, old_pos.y - old_pos.dy1, old_pos.z + vz * mvy);
+        }
+        ++count;
+    }
+
+    Position zcross_point;
+    bool move_along_z = (pos.k != old_pos.k);
+    if (move_along_z) {
+        if (vz > 0.0) {
+            zcross_point.setXYZ(old_pos.x + vx * mvz, old_pos.y + vy * mvz, old_pos.z + old_pos.dz2);
+        } else {
+            zcross_point.setXYZ(old_pos.x + vx * mvz, old_pos.y + vy * mvz, old_pos.z - old_pos.dz1);
+        }
+        ++count;
+    }
+
+    if (count == 3) {
+        if (mvx <= mvy) {
+            if (mvx <= mvz) {
+                cross_points.push_back( std::move(xcross_point) );
+
+                if (mvy <= mvz) {
+                    cross_points.push_back( std::move(ycross_point) );
+                    cross_points.push_back( std::move(zcross_point) );
+                } else {
+                    cross_points.push_back( std::move(zcross_point) );
+                    cross_points.push_back( std::move(ycross_point) );
+                }
+            } else {
+                cross_points.push_back( std::move(zcross_point) );
+                cross_points.push_back( std::move(xcross_point) );
+                cross_points.push_back( std::move(ycross_point) );
+            }
+        } else {
+            if (mvy <= mvz) {
+                cross_points.push_back( std::move(ycross_point) );
+
+                if (mvx <= mvz) {
+                    cross_points.push_back( std::move(xcross_point) );
+                    cross_points.push_back( std::move(zcross_point) );
+                } else {
+                    cross_points.push_back( std::move(zcross_point) );
+                    cross_points.push_back( std::move(xcross_point) );
+                }
+            } else {
+                cross_points.push_back( std::move(zcross_point) );
+                cross_points.push_back( std::move(ycross_point) );
+                cross_points.push_back( std::move(xcross_point) );
+            }
+        }
+    } else if (count == 2) {
+        if (move_along_x) {
+            if (move_along_y) {
+                // xy
+                if (mvx <= mvy) {
+                    cross_points.push_back( std::move(xcross_point) );
+                    cross_points.push_back( std::move(ycross_point) );
+                } else {
+                    cross_points.push_back( std::move(ycross_point) );
+                    cross_points.push_back( std::move(xcross_point) );
+                }
+            } else {
+                // xz
+                if (mvx <= mvx) {
+                    cross_points.push_back( std::move(xcross_point) );
+                    cross_points.push_back( std::move(zcross_point) );
+                } else {
+                    cross_points.push_back( std::move(zcross_point) );
+                    cross_points.push_back( std::move(xcross_point) );
+                }
+            }
+        } else {
+            // yz
+            if (mvy <= mvz) {
+                cross_points.push_back( std::move(ycross_point) );
+                cross_points.push_back( std::move(zcross_point) );
+            } else {
+                cross_points.push_back( std::move(zcross_point) );
+                cross_points.push_back( std::move(ycross_point) );
+            }
+        }
+    } else if (count == 1) {
+        if (move_along_x) {
+            cross_points.push_back( std::move(xcross_point) );
+        } else if (move_along_y) {
+            cross_points.push_back( std::move(ycross_point) );
+        } else {
+            cross_points.push_back( std::move(zcross_point) );
+        }
+    }
+
+    return cross_points;
+}
+
 //! 電流配分
 void Particle::distributeCurrentAtOldPosition(const double q_per_dt, tdArray& jx, tdArray& jy, tdArray& jz) const {
     const Position old_pos = getPosition();
