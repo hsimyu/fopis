@@ -202,8 +202,12 @@ void Environment::checkPlasmaInfo(void) {
             << ((((nz * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
 }
 
-bool Environment::isValidPosition(const Position& pos) {
+bool Environment::isValidNodePosition(const Position& pos) {
     return ((pos.i >= 0) && (pos.i < cell_x + 2) && (pos.j >= 0) && (pos.j < cell_y + 2) && (pos.k >= 0) && (pos.k < cell_z + 2));
+}
+
+bool Environment::isValidCellPosition(const Position& pos) {
+    return ((pos.i >= 0) && (pos.i < cell_x + 1) && (pos.j >= 0) && (pos.j < cell_y + 1) && (pos.k >= 0) && (pos.k < cell_z + 1));
 }
 
 //! インデックスを探して使う

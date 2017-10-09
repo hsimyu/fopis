@@ -237,7 +237,7 @@ bool Spacecraft::isContaining(const Particle& p) const {
 inline bool Spacecraft::isContaining(const Position& pos) const {
     if (!is_defined_in_this_process) return false;
 
-    if (Environment::isValidPosition(pos)) {
+    if (Environment::isValidCellPosition(pos)) {
         return object_cell_map[pos.i][pos.j][pos.k];
     } else {
         return false;
@@ -497,26 +497,36 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
         const auto id = pinfo.first;
         const auto& info = pinfo.second;
 
-        if (Environment::isValidPosition(info.relative_emission_position)) {
+        if (Environment::isValidNodePosition(info.relative_emission_position)) {
             const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
             const auto max_amount = emit_ptype_ptr->getEmissionAmount();
 
             //! 放出時に呼び出すメンバ関数ポインタ
             std::function<void(Position&, const int, const double)> emission_func;
+            std::function<Position(Particle&)> get_next_position_func;
 
             //! 放出時の座標修正子
             if (fabs(info.emission_vector[0]) == 1.0) {
+
                 emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
                     this->subtractChargeOfParticleFromXsurface(rel_pos, pos, id, charge);
                 };
+                get_next_position_func = [](const Particle& p) { return p.getNextXCrossPoint(); };
+
             } else if (fabs(info.emission_vector[1]) == 1.0) {
+
                 emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
                     this->subtractChargeOfParticleFromYsurface(rel_pos, pos, id, charge);
                 };
+                get_next_position_func = [](const Particle& p) { return p.getNextYCrossPoint(); };
+
             } else if (fabs(info.emission_vector[2]) == 1.0) {
+
                 emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
                     this->subtractChargeOfParticleFromZsurface(rel_pos, pos, id, charge);
                 };
+                get_next_position_func = [](const Particle& p) { return p.getNextZCrossPoint(); };
+
             } else {
                 std::string error_message = (format("[ERROR] At Spacecraft::emitParticles: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
                 throw std::invalid_argument(error_message);
@@ -530,7 +540,10 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
                     Particle p = beam_ptype_ptr->generateNewParticle(info.relative_emission_position, info.emission_vector);
 
                     if (this->isValidEmission(p)) {
-                        auto pos = p.getPosition();
+                        auto pos = get_next_position_func(p);
+                        if (i <= 5) {
+                            cout << pos << endl;
+                        }
                         emission_func(pos, id, charge);
                         parray[id].push_back( std::move(p) );
                     }

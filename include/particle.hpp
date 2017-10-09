@@ -74,6 +74,9 @@ class Particle {
 
         //! グリッドを横切る際の座標を羅列して返す
         std::vector<Position> computeCrossPoints() const;
+        Position getNextXCrossPoint() const;
+        Position getNextYCrossPoint() const;
+        Position getNextZCrossPoint() const;
 
         //! 電流配分
         void distributeCurrentAtOldPosition(const double, tdArray&, tdArray&, tdArray&) const;

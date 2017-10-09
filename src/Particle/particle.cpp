@@ -182,6 +182,57 @@ std::vector<Position> Particle::computeCrossPoints() const {
     return cross_points;
 }
 
+Position Particle::getNextXCrossPoint() const {
+    Position pos = getPosition();
+
+    if (vx > 0.0) {
+        const double mvx = pos.dx2 / vx;
+        pos.setXYZ(pos.x + pos.dx2, pos.y + vy * mvx, pos.z + vz * mvx);
+        return pos;
+    } else if (vx < 0.0) {
+        const double mvx = pos.dx1 / (-vx);
+        pos.setXYZ(pos.x - pos.dx1, pos.y + vy * mvx, pos.z + vz * mvx);
+        return pos;
+    } else {
+        std::cerr << "[WARNING] Vx of this particle is equal to 0.0 at Particle::getNextXCrossPoint()." << endl;
+        return pos;
+    }
+}
+
+Position Particle::getNextYCrossPoint() const {
+    Position pos = getPosition();
+
+    if (vy > 0.0) {
+        const double mvy = pos.dy2 / vy;
+        pos.setXYZ(pos.x + vx * mvy, pos.y + pos.dy2, pos.z + vz * mvy);
+        return pos;
+    } else if (vy < 0.0) {
+        const double mvy = pos.dy1 / (-vy);
+        pos.setXYZ(pos.x + vx * mvy, pos.y - pos.dy1 , pos.z + vz * mvy);
+        return pos;
+    } else {
+        std::cerr << "[WARNING] Vy of this particle is equal to 0.0 at Particle::getNextYCrossPoint()." << endl;
+        return pos;
+    }
+}
+
+Position Particle::getNextZCrossPoint() const {
+    Position pos = getPosition();
+
+    if (vz > 0.0) {
+        const double mvz = pos.dz2 / vz;
+        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, pos.z + pos.dz2);
+        return pos;
+    } else if (vz < 0.0) {
+        const double mvz = pos.dz1 / (-vz);
+        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, pos.z - pos.dz1);
+        return pos;
+    } else {
+        std::cerr << "[WARNING] Vz of this particle is equal to 0.0 at Particle::getNeztZCrossPoint()." << endl;
+        return pos;
+    }
+}
+
 //! 電流配分
 void Particle::distributeCurrentAtOldPosition(const double q_per_dt, tdArray& jx, tdArray& jy, tdArray& jz) const {
     const Position old_pos = getPosition();
