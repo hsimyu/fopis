@@ -243,6 +243,39 @@ inline bool Spacecraft::isContaining(const Position& pos) const {
     }
 }
 
+inline bool Spacecraft::isXsurfacePoint(const Position& pos, const int sign) const {
+    constexpr double possible_error = 1e-10;
+    if (pos.dx1 >= possible_error) return false;
+
+    if (sign > 0) {
+        return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i - 1][pos.j][pos.k]);
+    } else {
+        return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i - 1][pos.j][pos.k];
+    }
+}
+
+inline bool Spacecraft::isYsurfacePoint(const Position& pos, const int sign) const {
+    constexpr double possible_error = 1e-10;
+    if (pos.dy1 >= possible_error) return false;
+
+    if (sign > 0) {
+        return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j - 1][pos.k]);
+    } else {
+        return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j - 1][pos.k];
+    }
+}
+
+inline bool Spacecraft::isZsurfacePoint(const Position& pos, const int sign) const {
+    constexpr double possible_error = 1e-10;
+    if (pos.dz1 >= possible_error) return false;
+
+    if (sign > 0) {
+        return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j][pos.k - 1]);
+    } else {
+        return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j][pos.k - 1];
+    }
+}
+
 void Spacecraft::removeInnerParticle(Particle& p) const {
     if (isContaining(p)) { p.makeInvalid(); }
 }
@@ -251,97 +284,37 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
     if (isContaining(p)) {
         const auto id = p.typeId;
         const auto q = p.getChargeOfSuperParticle();
-        auto pos = p.getPosition();
-        const auto old_pos = p.getOldPosition();
 
-        bool move_along_x = (pos.i != old_pos.i);
-        bool move_along_y = (pos.j != old_pos.j);
-        bool move_along_z = (pos.k != old_pos.k);
+        const int isign = (p.vx > 0.0) ? 1 : -1;
+        const int jsign = (p.vy > 0.0) ? 1 : -1;
+        const int ksign = (p.vz > 0.0) ? 1 : -1;
+        bool surface_is_found = false;
 
-        if (move_along_x && move_along_y && move_along_z) {
-            const double mvx = fabs(p.vx);
-            const double mvy = fabs(p.vy);
-            const double mvz = fabs(p.vz);
+        auto cross_points = p.computeCrossPoints();
+        for(auto& cross_point : cross_points) {
+            if (isXsurfacePoint(cross_point, isign)) {
+                distributeInnerParticleChargeToXsurface(cross_point, id, q);
+                surface_is_found = true;
+                break;
+            } else if (isYsurfacePoint(cross_point, jsign)) {
+                distributeInnerParticleChargeToYsurface(cross_point, id, q);
+                surface_is_found = true;
+                break;
+            } else if (isZsurfacePoint(cross_point, ksign)) {
+                distributeInnerParticleChargeToZsurface(cross_point, id, q);
+                surface_is_found = true;
+                break;
+            }
+        }
 
-            if (mvx >= mvy) {
-                if (mvx >= mvz) {
-                    const int di = (p.vx > 0.0) ? 0 : 1;
-                    const int dj = (p.vy > 0.0) ? -1 : 1;
-                    const int dk = (p.vz > 0.0) ? -1 : 1;
-                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
-                    this->distributeInnerParticleChargeToXsurface(pos, id, q);
-                } else {
-                    const int di = (p.vx > 0.0) ? -1 : 1;
-                    const int dj = (p.vy > 0.0) ? -1 : 1;
-                    const int dk = (p.vz > 0.0) ? 0 : 1;
-                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
-                    this->distributeInnerParticleChargeToZsurface(pos, id, q);
-                }
-            } else {
-                if (mvy >= mvz) {
-                    const int di = (p.vx > 0.0) ? -1 : 1;
-                    const int dj = (p.vy > 0.0) ? 0 : 1;
-                    const int dk = (p.vz > 0.0) ? -1 : 1;
-                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
-                    this->distributeInnerParticleChargeToYsurface(pos, id, q);
-                } else {
-                    const int di = (p.vx > 0.0) ? -1 : 1;
-                    const int dj = (p.vy > 0.0) ? -1 : 1;
-                    const int dk = (p.vz > 0.0) ? 0 : 1;
-                    pos.setIJK(pos.i + di, pos.j + dj, pos.k + dk);
-                    this->distributeInnerParticleChargeToZsurface(pos, id, q);
-                }
+        if (!surface_is_found) {
+            cout << "[ERROR] Surface cannot detect on Spacecraft::distributeInnerParticleCharge():\n";
+            cout << p << endl;
+            cout << "Cross Points:\n";
+            for(auto& cross_point : cross_points) {
+                cout << cross_point << "\n";
             }
-        } else if (move_along_x && move_along_y) {
-            if (fabs(p.vx) >= fabs(p.vy)) {
-                const int di = (p.vx > 0.0) ? 0 : 1;
-                const int dj = (p.vy > 0.0) ? -1 : 1;
-                pos.setIJK(pos.i + di, pos.j + dj, pos.k);
-                this->distributeInnerParticleChargeToXsurface(pos, id, q);
-            } else {
-                const int di = (p.vx > 0.0) ? -1 : 1;
-                const int dj = (p.vy > 0.0) ? 0 : 1;
-                pos.setIJK(pos.i + di, pos.j + dj, pos.k);
-                this->distributeInnerParticleChargeToYsurface(pos, id, q);
-            }
-        } else if (move_along_x && move_along_z) {
-            if (fabs(p.vx) >= fabs(p.vz)) {
-                const int di = (p.vx > 0.0) ? 0 : 1;
-                const int dk = (p.vz > 0.0) ? -1 : 1;
-                pos.setIJK(pos.i + di, pos.j, pos.k + dk);
-                this->distributeInnerParticleChargeToXsurface(pos, id, q);
-            } else {
-                const int di = (p.vx > 0.0) ? -1 : 1;
-                const int dk = (p.vz > 0.0) ? 0 : 1;
-                pos.setIJK(pos.i + di, pos.j, pos.k + dk);
-                this->distributeInnerParticleChargeToZsurface(pos, id, q);
-            }
-        } else if (move_along_y && move_along_z) {
-            if (fabs(p.vy) >= fabs(p.vz)) {
-                const int dj = (p.vy > 0.0) ? 0 : 1;
-                const int dk = (p.vz > 0.0) ? -1 : 1;
-                pos.setIJK(pos.i, pos.j + dj, pos.k + dk);
-                this->distributeInnerParticleChargeToYsurface(pos, id, q);
-            } else {
-                const int dj = (p.vy > 0.0) ? -1 : 1;
-                const int dk = (p.vz > 0.0) ? 0 : 1;
-                pos.setIJK(pos.i, pos.j + dj, pos.k + dk);
-                this->distributeInnerParticleChargeToZsurface(pos, id, q);
-            }
-        } else if (move_along_x) {
-            const int di = (p.vx > 0.0) ? 0 : 1;
-            pos.setIJK(pos.i + di, pos.j, pos.k);
-            this->distributeInnerParticleChargeToXsurface(pos, id, q);
-        } else if (move_along_y) {
-            const int dj = (p.vy > 0.0) ? 0 : 1;
-            pos.setIJK(pos.i, pos.j + dj, pos.k);
-            this->distributeInnerParticleChargeToYsurface(pos, id, q);
-        } else if (move_along_z) {
-            const int dk = (p.vz > 0.0) ? 0 : 1;
-            pos.setIJK(pos.i, pos.j, pos.k + dk);
-            this->distributeInnerParticleChargeToZsurface(pos, id, q);
-        } else {
-            throw std::logic_error("[ERROR] An Invalid Logic on Particle Collection!!!!!");
+            cout << endl;
         }
 
         current[id] += q;

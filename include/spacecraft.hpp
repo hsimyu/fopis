@@ -110,6 +110,11 @@ private:
     template<typename T>
     std::vector<T> getWholePotentialMap(const tdArray& phi) const;
 
+    //! 表面上の点かどうかを確認する
+    bool isXsurfacePoint(const Position& pos, const int sign) const;
+    bool isYsurfacePoint(const Position& pos, const int sign) const;
+    bool isZsurfacePoint(const Position& pos, const int sign) const;
+
 public:
     Spacecraft(const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat,

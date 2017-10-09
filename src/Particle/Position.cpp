@@ -10,7 +10,10 @@ Velocity::Velocity(const Particle& p){
 }
 
 std::ostream& operator<<(std::ostream& ost, Position const& pos) {
-    ost << format("ipos = %d, %d, %d") % pos.i % pos.j % pos.k << endl;
-    ost << format("dpos = %d, %d, %d") % pos.x % pos.y % pos.z << endl;
+    ost << format("ipos = %d, %d, %d\n") % pos.i % pos.j % pos.k;
+    ost << format("dpos = %s, %s, %s\n") % pos.x % pos.y % pos.z;
+    ost << format("dx1 = %e, dx2 = %e\n") % pos.dx1 % pos.dx2;
+    ost << format("dy1 = %e, dy2 = %e\n") % pos.dy1 % pos.dy2;
+    ost << format("dz1 = %e, dz2 = %e") % pos.dz1 % pos.dz2 << endl;
     return ost;
 }
