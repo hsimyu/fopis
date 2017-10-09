@@ -67,6 +67,11 @@ class Particle {
         Position getOldPosition(void) const;
         Position getNewPosition(void) const;
 
+        //! グリッド上の現在位置が旧位置からどの程度離れているかを返す(衝突面判定用)
+        double getXMoveRatio() const;
+        double getYMoveRatio() const;
+        double getZMoveRatio() const;
+
         //! 電流配分
         void distributeCurrentAtOldPosition(const double, tdArray&, tdArray&, tdArray&) const;
         void distributeCurrentAtNewPosition(const double, tdArray&, tdArray&, tdArray&) const;

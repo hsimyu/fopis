@@ -28,6 +28,36 @@ Position Particle::getNewPosition(void) const {
     return Position{x + vx, y + vy, z + vz};
 }
 
+double Particle::getXMoveRatio() const {
+    auto pos = this->getPosition();
+
+    if (vx > 0.0) {
+        return pos.dx1 / fabs(vx);
+    } else {
+        return pos.dx2 / fabs(vx);
+    }
+}
+
+double Particle::getYMoveRatio() const {
+    auto pos = this->getPosition();
+
+    if (vy > 0.0) {
+        return pos.dy1 / fabs(vy);
+    } else {
+        return pos.dy2 / fabs(vy);
+    }
+}
+
+double Particle::getZMoveRatio() const {
+    auto pos = this->getPosition();
+
+    if (vz > 0.0) {
+        return pos.dz1 / fabs(vz);
+    } else {
+        return pos.dz2 / fabs(vz);
+    }
+}
+
 //! 電流配分
 void Particle::distributeCurrentAtOldPosition(const double q_per_dt, tdArray& jx, tdArray& jy, tdArray& jz) const {
     const Position old_pos = getPosition();
