@@ -66,8 +66,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
         tdArray::extent_gen tdExtents;
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            //! Node ベース, glue cell ありの電荷密度マップを生成
-            charge_map.emplace_back(tdExtents[nx + 2][ny + 2][nz + 2]);
 
             //! 電流 in/out を記録する要素を初期化
             current.push_back(0.0);
@@ -93,16 +91,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         }
 
         //! 電荷配列初期化
+        ObjectChargeMap::extent_gen cm_extent;
         //! @note: 物体の電荷配列マップは総和用の要素(index = 0)を持たない
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            for(size_t i = 0; i < nx + 2; ++i) {
-                for (size_t j = 0; j < ny + 2; ++j) {
-                    for (size_t k = 0; k < nz + 2; ++k) {
-                        charge_map[pid][i][j][k] = 0.0;
-                    }
-                }
-            }
-        }
+        charge_map.resize(cm_extent[Environment::num_of_particle_types][static_cast<int>(num_cmat)]);
 
         //! セルベースの物体定義 (物体内部判定用)
         for(const auto& cell_pos : cells) {
@@ -165,6 +156,33 @@ Position Spacecraft::getCmatPos(const unsigned int cmat_itr) {
     } else {
         throw std::invalid_argument("Invalid Cmat number passed to Spacecraft::getCmatPos().");
     }
+}
+
+inline unsigned int Spacecraft::getCmatNumber(const Position& pos) const {
+    return this->getCmatNumber(pos.i, pos.j, pos.k);
+}
+
+unsigned int Spacecraft::getCmatNumber(const int i, const int j, const int k) const {
+    for(const auto& node : capacity_matrix_relation) {
+        const auto& pos = node.second;
+
+        // cout << Environment::rankStr() << format("cmat_pos = %d, %d, %d") % pos.i % pos.j % pos.k << endl;
+        if (pos.i == i && pos.j == j && pos.k == k) return node.first;
+    }
+
+    //! Glueノード上の電荷
+    for(const auto& node : glue_capacity_matrix_relation) {
+        const auto& pos = node.second;
+
+        // cout << Environment::rankStr() << format("cmat_pos = %d, %d, %d") % pos.i % pos.j % pos.k << endl;
+        if (pos.i == i && pos.j == j && pos.k == k) return node.first;
+    }
+
+    std::string error_message = (format("%sInvalid Cmat Position (%d, %d, %d) passed to Spacecraft::getCmatNumber().") % Environment::rankStr() % i % j % k).str();
+    std::cerr << error_message << endl;
+    // throw std::invalid_argument(error_message);
+
+    return 0;
 }
 
 auto Spacecraft::getTotalCharge(const RhoArray& rho) const {
@@ -332,24 +350,29 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
 }
 
 inline void Spacecraft::distributeInnerParticleChargeToXsurface(const Position& pos, const int id, const double charge) {
-    charge_map[id][pos.i][pos.j    ][pos.k    ] += charge * pos.dy2 * pos.dz2;
-    charge_map[id][pos.i][pos.j + 1][pos.k    ] += charge * pos.dy1 * pos.dz2;
-    charge_map[id][pos.i][pos.j    ][pos.k + 1] += charge * pos.dy2 * pos.dz1;
-    charge_map[id][pos.i][pos.j + 1][pos.k + 1] += charge * pos.dy1 * pos.dz1;
+    charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k    )] += charge * pos.dy2 * pos.dz2;
+    charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k    )] += charge * pos.dy1 * pos.dz2;
+    charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k + 1)] += charge * pos.dy2 * pos.dz1;
+    charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k + 1)] += charge * pos.dy1 * pos.dz1;
 }
 
 inline void Spacecraft::distributeInnerParticleChargeToYsurface(const Position& pos, const int id, const double charge) {
-    charge_map[id][pos.i    ][pos.j][pos.k    ] += charge * pos.dx2 * pos.dz2;
-    charge_map[id][pos.i + 1][pos.j][pos.k    ] += charge * pos.dx1 * pos.dz2;
-    charge_map[id][pos.i    ][pos.j][pos.k + 1] += charge * pos.dx2 * pos.dz1;
-    charge_map[id][pos.i + 1][pos.j][pos.k + 1] += charge * pos.dx1 * pos.dz1;
+    charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k    )] += charge * pos.dx2 * pos.dz2;
+    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k    )] += charge * pos.dx1 * pos.dz2;
+    charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k + 1)] += charge * pos.dx2 * pos.dz1;
+    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k + 1)] += charge * pos.dx1 * pos.dz1;
 }
 
 inline void Spacecraft::distributeInnerParticleChargeToZsurface(const Position& pos, const int id, const double charge) {
-    charge_map[id][pos.i    ][pos.j    ][pos.k] += charge * pos.dy2 * pos.dx2;
-    charge_map[id][pos.i    ][pos.j + 1][pos.k] += charge * pos.dy1 * pos.dx2;
-    charge_map[id][pos.i + 1][pos.j    ][pos.k] += charge * pos.dy2 * pos.dx1;
-    charge_map[id][pos.i + 1][pos.j + 1][pos.k] += charge * pos.dy1 * pos.dx1;
+    charge_map[id][this->getCmatNumber(pos.i    , pos.j    , pos.k)] += charge * pos.dx2 * pos.dy2;
+    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j    , pos.k)] += charge * pos.dx1 * pos.dy2;
+    charge_map[id][this->getCmatNumber(pos.i    , pos.j + 1, pos.k)] += charge * pos.dx2 * pos.dy1;
+    charge_map[id][this->getCmatNumber(pos.i + 1, pos.j + 1, pos.k)] += charge * pos.dx1 * pos.dy1;
+}
+
+void Spacecraft::sumWholeCharge() {
+    //! 多分ムーブ演算なのでそんなに高コストではないはず
+    charge_map = MPIw::Environment::Comms[name].sum(charge_map);
 }
 
 void Spacecraft::applyCharge(RhoArray& rho) const {
@@ -357,15 +380,7 @@ void Spacecraft::applyCharge(RhoArray& rho) const {
     for(const auto& node : capacity_matrix_relation) {
         const auto& pos = node.second;
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
-        }
-    }
-
-    //! Glueノード上の電荷
-    for(const auto& node : glue_capacity_matrix_relation) {
-        const auto& pos = node.second;
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][pos.i][pos.j][pos.k];
+            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][node.first];
         }
     }
 }
@@ -383,16 +398,16 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
     if (this->isDielectricSurface()) {
         //! 誘電体の場合
-        for(const auto& one_node : capacity_matrix_relation) {
-            const auto j = one_node.first;
-            const auto& pos = one_node.second;
+        for(const auto& node : capacity_matrix_relation) {
+            const auto j = node.first;
+            const auto& pos = node.second;
             const auto capacitance = capacitance_map[j];
 
             if (capacitance > 0.0) {
                 for(size_t i = 0; i < num_cmat; ++i) {
                     double node_charge = 0.0;
                     for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-                        node_charge += charge_map[pid][pos.i][pos.j][pos.k];
+                        node_charge += charge_map[pid][j];
                     }
                     capacity_times_phi += capacity_matrix(i, j) * (phi[pos.i][pos.j][pos.k] - node_charge / capacitance);
                 }
@@ -443,7 +458,7 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
                     if (capacitance > 0.0) {
                         double node_charge = 0.0;
                         for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-                            node_charge += charge_map[pid][pos.i][pos.j][pos.k];
+                            node_charge += charge_map[pid][j];
                         }
                         delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + node_charge / capacitance_map[j]);
                     } else {
@@ -544,28 +559,28 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
 }
 
 inline void Spacecraft::subtractChargeOfParticleFromXsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    charge_map[id][emission_pos.i][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dy2 * pos.dz2;
-    charge_map[id][emission_pos.i][emission_pos.j + 1][emission_pos.k    ] -= charge * pos.dy1 * pos.dz2;
-    charge_map[id][emission_pos.i][emission_pos.j    ][emission_pos.k + 1] -= charge * pos.dy2 * pos.dz1;
-    charge_map[id][emission_pos.i][emission_pos.j + 1][emission_pos.k + 1] -= charge * pos.dy1 * pos.dz1;
+    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k    )] -= charge * pos.dy2 * pos.dz2;
+    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k    )] -= charge * pos.dy1 * pos.dz2;
+    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k + 1)] -= charge * pos.dy2 * pos.dz1;
+    charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k + 1)] -= charge * pos.dy1 * pos.dz1;
 
     current[id] -= charge;
 }
 
 inline void Spacecraft::subtractChargeOfParticleFromYsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    charge_map[id][emission_pos.i    ][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx2 * pos.dz2;
-    charge_map[id][emission_pos.i + 1][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx1 * pos.dz2;
-    charge_map[id][emission_pos.i    ][emission_pos.j    ][emission_pos.k + 1] -= charge * pos.dx2 * pos.dz1;
-    charge_map[id][emission_pos.i + 1][emission_pos.j    ][emission_pos.k + 1] -= charge * pos.dx1 * pos.dz1;
+    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k    )]-= charge * pos.dx2 * pos.dz2;
+    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k    )]-= charge * pos.dx1 * pos.dz2;
+    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx2 * pos.dz1;
+    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx1 * pos.dz1;
 
     current[id] -= charge;
 }
 
 inline void Spacecraft::subtractChargeOfParticleFromZsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    charge_map[id][emission_pos.i    ][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx2 * pos.dy2;
-    charge_map[id][emission_pos.i + 1][emission_pos.j    ][emission_pos.k    ] -= charge * pos.dx1 * pos.dy2;
-    charge_map[id][emission_pos.i    ][emission_pos.j + 1][emission_pos.k    ] -= charge * pos.dx2 * pos.dy1;
-    charge_map[id][emission_pos.i + 1][emission_pos.j + 1][emission_pos.k    ] -= charge * pos.dx1 * pos.dy1;
+    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j    , emission_pos.k)] -= charge * pos.dx2 * pos.dy2;
+    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j    , emission_pos.k)] -= charge * pos.dx1 * pos.dy2;
+    charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx2 * pos.dy1;
+    charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx1 * pos.dy1;
 
     current[id] -= charge;
 }

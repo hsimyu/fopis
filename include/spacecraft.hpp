@@ -10,6 +10,7 @@ using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
 using ObjectDefinedMapInt = boost::multi_array<int, 3>;
 using ObjectNodes = std::map< unsigned int, std::array<int, 3> >;
 using ObjectNodeTextures = std::map< unsigned int, std::vector<int> >;
+using ObjectChargeMap = boost::multi_array<double, 2>;
 using ObjectConnectivityList = std::vector< std::vector<unsigned int> >;
 using ObjectCells = std::vector<std::array<int, 3>>;
 using PropertyPair = std::map<std::string, double>;
@@ -58,8 +59,8 @@ private:
     //! セルベースのオブジェクト定義マップ
     ObjectDefinedMapBool object_cell_map;
 
-    //! ノードベースの電荷定義マップ
-    RhoArray charge_map;
+    //! 電荷定義マップ([particle_id, cmat_index])
+    ObjectChargeMap charge_map;
 
     //! キャパシタンス行列
     using Cmatrix = Eigen::MatrixXd;
@@ -147,6 +148,8 @@ public:
     void saveWholeNodePositions(const ObjectNodes& whole_nodes);
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
+    unsigned int getCmatNumber(const int i, const int j, const int k) const;
+    unsigned int getCmatNumber(const Position& pos) const;
 
     auto getCmatValue(const unsigned int col, const unsigned int row) const { return capacity_matrix(col, row); }
     void setCmatValue(const unsigned int col, const unsigned int row, const double value) {
@@ -174,6 +177,7 @@ public:
     void makeCmatrixInvert(void);
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
+    void sumWholeCharge();
     void applyCharge(RhoArray&) const;
     void redistributeCharge(RhoArray&, const tdArray&);
     void resetCurrent();
