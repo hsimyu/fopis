@@ -127,8 +127,8 @@ class BeamParticleType : public EmissionParticleType {
     public:
         BeamParticleType() : EmissionParticleType(), emission_radius(0.0) {}
 
-        void setEmissionType(const std::string& type) {
-            emission_type = type;
+        void setEmissionType(const std::string& emiss_type) {
+            emission_type = emiss_type;
         }
 
         std::string getEmissionType() const {return emission_type;}

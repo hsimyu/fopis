@@ -123,6 +123,14 @@ namespace MPIw {
         return res;
     }
 
+    boost::multi_array<double, 2> Communicator::sum(boost::multi_array<double, 2>& values) {
+        boost::multi_array<double, 2> results(boost::extents[ values.shape()[0] ][ values.shape()[1] ]);
+        const int size = static_cast<int>(values.num_elements());
+
+        MPI_Allreduce(values.data(), results.data(), size, MPI_DOUBLE, MPI_SUM, comm);
+        return results;
+    }
+
     int Communicator::sum(int value) {
         int res = 0;
         MPI_Allreduce(&value, &res, 1, MPI_INT, MPI_SUM, comm);

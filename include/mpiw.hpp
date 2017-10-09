@@ -60,6 +60,7 @@ namespace MPIw {
             int    min(int);
 
             std::vector<float> sum(std::vector<float>&);
+            boost::multi_array<double, 2> sum(boost::multi_array<double, 2>&);
 
             // treats strings
             std::string gatherStringsTo(int target_rank, std::string& content) const;
