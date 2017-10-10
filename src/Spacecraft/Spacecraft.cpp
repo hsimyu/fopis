@@ -2,6 +2,7 @@
 #include "particle.hpp"
 #include "normalizer.hpp"
 #include "utils.hpp"
+#include "mpiw.hpp"
 #include <fstream>
 #include <stdexcept>
 #include <regex>
@@ -17,8 +18,10 @@ void Spacecraft::construct(
     const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info,
     const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectNodes& whole_nodes,
     const ObjectCells& cells, const ObjectNodeTextures& textures, const ObjectConnectivityList& clist) {
+
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
+
     ++num_of_spacecraft;
     potential = 0.0;
     total_charge = 0.0;
@@ -140,6 +143,11 @@ void Spacecraft::construct(
             }
         }
     }
+}
+
+void Spacecraft::initializeAfterMakeComm() {
+    //! Comm作成後に必要な初期化
+    this->initializeEmissionParticleInfo();
 }
 
 void Spacecraft::saveWholeNodePositions(const ObjectNodes& whole_nodes) {
@@ -495,8 +503,20 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     }
 
     total_charge = getTotalCharge(rho);
+
     // update total current for output
     sumCurrent();
+}
+
+void Spacecraft::initializeEmissionParticleInfo() {
+    for(auto& pinfo : emit_particle_info) {
+        auto& info = pinfo.second;
+
+        //! 粒子放出に参加するプロセス数を計算する
+        double is_valid_node_position = 0.0;
+        if (Environment::isValidNodePosition(info.relative_emission_position)) is_valid_node_position = 1.0;
+        info.emission_process_number = MPIw::Environment::Comms[name].sum(is_valid_node_position);
+    }
 }
 
 //! 粒子放出関連
@@ -507,7 +527,7 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
 
         if (Environment::isValidNodePosition(info.relative_emission_position)) {
             const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
-            const auto max_amount = emit_ptype_ptr->getEmissionAmount();
+            const auto max_amount = emit_ptype_ptr->getEmissionAmount() / info.emission_process_number;
 
             //! 放出時に呼び出すメンバ関数ポインタ
             std::function<void(Position&, const int, const double)> emission_func;

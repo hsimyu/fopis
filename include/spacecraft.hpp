@@ -50,6 +50,7 @@ private:
     struct LocalParticleEmissionInfo {
         Position relative_emission_position;
         std::array<double, 3> emission_vector;
+        double emission_process_number = -1.0;
     };
 
     std::map<int, LocalParticleEmissionInfo> emit_particle_info;
@@ -102,6 +103,9 @@ private:
     void subtractChargeOfParticleFromYsurface(const Position& pos, const int id, const double charge);
     void subtractChargeOfParticleFromZsurface(const Position& pos, const int id, const double charge);
 
+    //! 粒子放出に参加するプロセスの数を計算
+    void initializeEmissionParticleInfo();
+
     //! 接続リストは物体が定義されたプロセスが持つことにしてしまう
     ObjectConnectivityList connected_list;
 
@@ -148,6 +152,9 @@ public:
         capacitance_map{} {
         construct(nx, ny, nz, obj_info, nodes, glue_nodes, whole_nodes, cells, textures, clist);
     }
+
+    //! MPI Comm 生成後に呼び出す必要がある初期化
+    void initializeAfterMakeComm();
 
     // アクセサ
     void setName(const std::string _name) { name = _name; }

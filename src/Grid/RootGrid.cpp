@@ -692,9 +692,15 @@ void RootGrid::initializeObject(void) {
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
-        if (MPIw::Environment::isRootNode(obj_name)) {
-            cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
-            cout << objects[ objects.size() - 1 ] << endl;
+
+        auto& obj = objects[ objects.size() - 1 ];
+        if (obj.isDefined()) {
+            obj.initializeAfterMakeComm();
+
+            if (MPIw::Environment::isRootNode(obj_name)) {
+                cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
+                cout << obj << endl;
+            }
         }
     }
 }
