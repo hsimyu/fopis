@@ -225,10 +225,14 @@ namespace Initializer {
                         obj.file_name = it->second.to_str();
                     } else if (it->first == "surface_type") {
                         obj.surface_type = it->second.to_str();
-                    } else if (it->first == "history_width") {
-                        obj.history_width = static_cast<unsigned int>(it->second.get<double>());
-                    } else if (it->first == "potential_fix") {
-                        obj.potential_fix = it->second.get<double>();
+                    } else if (it->first == "plot_potential_mapping_width") {
+                        obj.plot_potential_mapping_width = static_cast<unsigned int>(it->second.get<double>());
+                    } else if (it->first == "is_potential_fixed") {
+                        obj.is_potential_fixed = it->second.get<bool>();
+                    } else if (it->first == "fixed_potential") {
+                        obj.fixed_potential = it->second.get<double>();
+                    } else if (it->first == "initial_potential_offset") {
+                        obj.initial_potential_offset = it->second.get<double>();
                     } else if (it->first == "emit_particles") {
                         auto particle_names = it->second.get<picojson::object>();
 

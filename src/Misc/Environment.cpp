@@ -122,7 +122,7 @@ void Environment::printInfo(void) {
         cout << "    [" << object_info.name << "]" << endl;
         cout << "      file_name: " << object_info.file_name << endl;
         cout << "      surface_type: " << object_info.surface_type << endl;
-        cout << "      history_width: " << object_info.history_width << endl;
+        cout << "      potential_mapping_width: " << object_info.plot_potential_mapping_width << endl;
         cout << "      emit_particle: " << endl;
 
         for(const auto& emit_pinfo : object_info.emit_particle_info) {

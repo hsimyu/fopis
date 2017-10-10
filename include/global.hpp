@@ -43,8 +43,10 @@ struct ObjectInfo_t {
     std::string name;
     std::string file_name;
     std::string surface_type;
-    unsigned int history_width;
-    double potential_fix;
+    unsigned int plot_potential_mapping_width;
+    bool is_potential_fixed;
+    double fixed_potential;
+    double initial_potential_offset;
     std::map<std::string, ParticleEmissionInfo> emit_particle_info;
     std::map<int, std::string> materials;
 };

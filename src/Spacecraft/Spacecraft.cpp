@@ -25,9 +25,11 @@ void Spacecraft::construct(
     ++num_of_spacecraft;
     potential = 0.0;
     total_charge = 0.0;
-    plot_history_width = obj_info.history_width;
+    plot_potential_mapping_width = obj_info.plot_potential_mapping_width;
     file_name = Utils::extractFileName(obj_info.file_name);
-    potential_fix = Normalizer::normalizePotential(obj_info.potential_fix);
+
+    is_potential_fixed = obj_info.is_potential_fixed;
+    fixed_potential = Normalizer::normalizePotential(obj_info.fixed_potential);
 
     if (is_defined_in_this_process) {
         connected_list = clist;
@@ -432,8 +434,8 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
         cout << format("[INFO] [%s] Capacity x Potential: %16.7e") % name % capacity_times_phi << endl;
     }
 
-    if (potential_fix != 0.0) {
-        potential = potential_fix;
+    if (is_potential_fixed) {
+        potential = fixed_potential;
     } else {
         potential = (capacity_times_phi + q) / total_cmat_value;
     }

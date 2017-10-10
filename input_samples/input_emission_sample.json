@@ -46,19 +46,20 @@
         }
     },
     "Object": {
-        "Spacecraft_0": {
+        "Spacecraft": {
             "file_name": "objects/cube.obj",
             "surface_type": "perfect",
-            "history_width": 1,
-            "potential_fix": 0.0,
             "emit_particles": {
                 "ElectronBeam1": {
                     "emission_position": [15.0, 17.5, 16.5],
                     "emission_vector": [-1.0, 0.0, 0.0]
                 }
             },
-            "materials": {
-            }
+            "materials": {},
+            "plot_potential_mapping_width": 5,
+            "is_potential_fixed": false,
+            "fixed_potential": 0.0,
+            "initial_potential_offset": 0.0
         }
     },
     "IO": {

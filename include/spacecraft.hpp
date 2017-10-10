@@ -41,11 +41,13 @@ private:
     std::string surface_type;
     size_t num_cmat;
     bool is_defined_in_this_process;
-    unsigned int plot_history_width;
+    unsigned int plot_potential_mapping_width;
     double potential;
-    double potential_fix;
     double total_charge;
     std::vector<double> current;
+
+    bool is_potential_fixed;
+    double fixed_potential;
 
     struct LocalParticleEmissionInfo {
         Position relative_emission_position;
@@ -162,8 +164,8 @@ public:
     std::string getFileName() const { return file_name; }
 
     auto getPotential(void) const { return potential; }
-    auto getPotentialFix(void) const { return potential_fix; }
-    void setPotentialFix(const double val) { potential_fix = val; }
+    auto getFixedPotential(void) const { return fixed_potential; }
+    void setFixedPotential(const double val) { fixed_potential = val; }
 
     void saveWholeNodePositions(const ObjectNodes& whole_nodes);
     auto getCmatSize(void) const { return num_cmat; }
@@ -186,7 +188,7 @@ public:
     bool isContaining(const Position&) const;
     bool isDielectricSurface() const { return (surface_type == "dielectric"); }
 
-    bool isPlotTiming(const unsigned int timestep) const { return (timestep % plot_history_width == 0); }
+    bool isPlotTiming(const unsigned int timestep) const { return (timestep % plot_potential_mapping_width == 0); }
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);
