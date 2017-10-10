@@ -342,7 +342,6 @@ void ChildGrid::updateRho() {
 
 void ChildGrid::copyPhiToParent(){
     tdArray& phi = field->getPhi();
-    RhoArray& rho = field->getRho();
     tdArray& residual = field->getPoissonResidual();
     tdArray& parentPhi = parent->getPhi();
     RhoArray& parentRho = parent->getRho();

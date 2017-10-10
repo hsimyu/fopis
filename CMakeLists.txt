@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(TDPIC)
 
+message(STATUS "GENERATOR = ${CMAKE_GENERATOR}")
+
 # options
 option(COPY_SAMPLE_INPUT "Copy input.json to build dir." ON)
 option(DEBUG "Build in Debug Mode." ON)
@@ -93,6 +95,7 @@ IF(DOXYGEN_FOUND)
 ENDIF(DOXYGEN_FOUND)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "CrayLinuxEnvironment")
+    message(STATUS "Target: Linux or CrayLinuxEnvironment Build")
     set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wwrite-strings -Wpointer-arith -Winit-self")
 
     if(OLD_CRAY_ENV)
@@ -108,6 +111,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "CrayL
 
     endif()
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    message(STATUS "Target: Windows Build")
     set(CXX_WARNING_FLAGS "/W4")
 
     # MS MPI
@@ -133,16 +137,22 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         "</PropertyGroup>\n"
         "</Project>\n")
 else()
+    message(STATUS "Target: Darwin Build")
     # Flags for Darwin build
-    set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-align -Wwrite-strings -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
+    set(CXX_WARNING_FLAGS "-Wimplicit -Wreturn-type -Wswitch -Wcomment -Wformat=2 -Wuninitialized -Wcast-align -Wpointer-arith -Winit-self -Wno-unused-local-typedefs")
 
     # OpenMPI compilers
     set(CMAKE_CXX_COMPILER /usr/local/opt/llvm/bin/clang++)
     link_directories(/usr/local/opt/llvm/lib)
 
     # CXX Flags
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64 -fopenmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -m64 -fopenmp")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 ${CXX_WARNING_FLAGS} -m64")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -m64")
+
+    if (NOT ${CMAKE_GENERATOR} STREQUAL "Xcode")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fopenmp")
+    endif()
 
     # MPI LIBRARIES
     find_library(MPI_LIBS mpi HINTS /usr/local/lib)
@@ -198,8 +208,10 @@ install(
     DESTINATION .
 )
 
-add_executable(mpirun_tdpic EXCLUDE_FROM_ALL ${SRCS})
-target_link_libraries(mpirun_tdpic ${CXX_REQUIRED_LIBS})
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    add_executable(mpirun_tdpic EXCLUDE_FROM_ALL ${SRCS})
+    target_link_libraries(mpirun_tdpic ${CXX_REQUIRED_LIBS})
+endif()
 
 if(${COPY_SAMPLE_INPUT})
     if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")

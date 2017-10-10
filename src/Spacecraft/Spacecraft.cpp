@@ -105,7 +105,6 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
         if ( this->isDielectricSurface() ) {
             for (const auto& one_node : capacity_matrix_relation) {
                 const auto& cmat_number = one_node.first;
-                const auto& pos = one_node.second;
                 const auto& texture = textures.at(cmat_number);
 
                 //! ノード周りのFaceに割り当てられたTextureの平均値から計算
@@ -155,7 +154,7 @@ Position Spacecraft::getCmatPos(const unsigned int cmat_itr) {
     if (isMyCmat(cmat_itr)) {
         return capacity_matrix_relation[cmat_itr];
     } else {
-        throw std::invalid_argument("Invalid Cmat number passed to Spacecraft::getCmatPos().");
+        throw std::invalid_argument("[ERROR] Invalid Cmat number passed to Spacecraft::getCmatPos().");
     }
 }
 
@@ -167,7 +166,6 @@ unsigned int Spacecraft::getCmatNumber(const int i, const int j, const int k) co
     for(const auto& node : capacity_matrix_relation) {
         const auto& pos = node.second;
 
-        // cout << Environment::rankStr() << format("cmat_pos = %d, %d, %d") % pos.i % pos.j % pos.k << endl;
         if (pos.i == i && pos.j == j && pos.k == k) return node.first;
     }
 
@@ -175,13 +173,11 @@ unsigned int Spacecraft::getCmatNumber(const int i, const int j, const int k) co
     for(const auto& node : glue_capacity_matrix_relation) {
         const auto& pos = node.second;
 
-        // cout << Environment::rankStr() << format("cmat_pos = %d, %d, %d") % pos.i % pos.j % pos.k << endl;
         if (pos.i == i && pos.j == j && pos.k == k) return node.first;
     }
 
-    std::string error_message = (format("%sInvalid Cmat Position (%d, %d, %d) passed to Spacecraft::getCmatNumber().") % Environment::rankStr() % i % j % k).str();
+    std::string error_message = (format("[ERROR] %sInvalid Cmat Position (%d, %d, %d) passed to Spacecraft::getCmatNumber().") % Environment::rankStr() % i % j % k).str();
     std::cerr << error_message << endl;
-    // throw std::invalid_argument(error_message);
 
     return 0;
 }
@@ -541,9 +537,6 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
 
                     if (this->isValidEmission(p)) {
                         auto pos = get_next_position_func(p);
-                        if (i <= 5) {
-                            cout << pos << endl;
-                        }
                         emission_func(pos, id, charge);
                         parray[id].push_back( std::move(p) );
                     }
