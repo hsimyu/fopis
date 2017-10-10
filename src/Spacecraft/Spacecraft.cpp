@@ -204,16 +204,15 @@ unsigned int Spacecraft::getCmatNumber(const int i, const int j, const int k) co
     throw std::invalid_argument(error_message);
 }
 
-auto Spacecraft::getTotalCharge(const RhoArray& rho) const {
+auto Spacecraft::getTotalCharge() const {
     double q = 0.0;
 
     for(size_t cmat_itr = 0; cmat_itr < num_cmat; ++cmat_itr) {
-        if (isMyCmat(cmat_itr)) {
-            const auto& pos = capacity_matrix_relation.at(cmat_itr);
-            q += rho[0][pos.i][pos.j][pos.k];
+        for(size_t pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+            //! charge_map は既に同期していると考えてよいので通信しなくてよい
+            q += charge_map[pid][cmat_itr];
         }
     }
-    q = MPIw::Environment::Comms[name].sum(q);
 
     return q;
 }
@@ -375,21 +374,11 @@ void Spacecraft::sumWholeCharge() {
     }
 }
 
-void Spacecraft::applyCharge(RhoArray& rho) const {
-    //! 電荷を場に印加する
-    for(const auto& node : capacity_matrix_relation) {
-        const auto& pos = node.second;
-        for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-            rho[pid + 1][pos.i][pos.j][pos.k] += charge_map[pid][node.first];
-        }
-    }
-}
-
 void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
-    auto q = getTotalCharge(rho);
+    total_charge = getTotalCharge();
 
     if (MPIw::Environment::isRootNode(name)) {
-        cout << format("[INFO] [%s] charge before redist: %16.7e") % name % q << endl;
+        cout << format("[INFO] [%s] charge before redist: %16.7e") % name % total_charge << endl;
     }
 
     double capacity_times_phi = 0.0;
@@ -437,7 +426,7 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
     if (is_potential_fixed) {
         potential = fixed_potential;
     } else {
-        potential = (capacity_times_phi + q) / total_cmat_value;
+        potential = (capacity_times_phi + total_charge) / total_cmat_value;
     }
 
     if (MPIw::Environment::isRootNode(name)) {
@@ -503,8 +492,6 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
             cout << format("[INFO] [%s] sum of redist charge: %16.7e") % name % sum_delta_rho << endl;
         }
     }
-
-    total_charge = getTotalCharge(rho);
 
     // update total current for output
     sumCurrent();

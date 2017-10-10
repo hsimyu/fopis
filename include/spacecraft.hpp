@@ -92,8 +92,8 @@ private:
         const ObjectCells&, const ObjectNodeTextures&, const ObjectConnectivityList&
     );
 
-    //! 電荷の総量が変化していないかの check 用
-    auto getTotalCharge(const RhoArray&) const;
+    //! 表面電荷の総量
+    auto getTotalCharge() const;
 
     //! 実際の電荷配分関数
     void distributeInnerParticleChargeToXsurface(const Position& pos, const int id, const double charge);
@@ -200,7 +200,6 @@ public:
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
     void sumWholeCharge();
-    void applyCharge(RhoArray&) const;
     void redistributeCharge(RhoArray&, const tdArray&);
     void resetCurrent();
     void sumCurrent();

@@ -993,12 +993,10 @@ void RootGrid::updateRho() {
         }
     }
 
-    time_counter->switchTo("updateRho/applyCharge");
+    time_counter->switchTo("updateRho/sumWholeCharge");
     for(auto& obj : objects) {
         if (obj.isDefined()) {
             obj.sumWholeCharge();
-            //! 物体に配分された電荷を現在のrhoに印加する
-            obj.applyCharge(rho);
         }
     }
 
