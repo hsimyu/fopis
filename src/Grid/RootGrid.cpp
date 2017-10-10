@@ -772,6 +772,11 @@ void RootGrid::initializeObjectsCmatrix(void) {
             IO::writeCmatrixData(obj);
         }
     }
+
+    for(auto& obj : objects) {
+        //! 初期電荷オフセットを付与する
+        obj.initializeChargeMapOffset(phi);
+    }
 }
 
 void RootGrid::resetObjects() {

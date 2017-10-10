@@ -123,6 +123,13 @@ void Environment::printInfo(void) {
         cout << "      file_name: " << object_info.file_name << endl;
         cout << "      surface_type: " << object_info.surface_type << endl;
         cout << "      potential_mapping_width: " << object_info.plot_potential_mapping_width << endl;
+        cout << "      is_potential_fixed: " << object_info.is_potential_fixed << endl;
+
+        if (object_info.is_potential_fixed)
+            cout << "        fixed_potential: " << object_info.fixed_potential << endl;
+
+        cout << "      initial_potential_offset: " << object_info.initial_potential_offset << endl;
+
         cout << "      emit_particle: " << endl;
 
         for(const auto& emit_pinfo : object_info.emit_particle_info) {

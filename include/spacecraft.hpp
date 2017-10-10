@@ -49,6 +49,8 @@ private:
     bool is_potential_fixed;
     double fixed_potential;
 
+    double initial_potential_offset;
+
     struct LocalParticleEmissionInfo {
         Position relative_emission_position;
         std::array<double, 3> emission_vector;
@@ -157,6 +159,9 @@ public:
 
     //! MPI Comm 生成後に呼び出す必要がある初期化
     void initializeAfterMakeComm();
+
+    //! 初期電荷オフセットを付与
+    void initializeChargeMapOffset(const tdArray& phi);
 
     // アクセサ
     void setName(const std::string _name) { name = _name; }

@@ -31,6 +31,8 @@ void Spacecraft::construct(
     is_potential_fixed = obj_info.is_potential_fixed;
     fixed_potential = Normalizer::normalizePotential(obj_info.fixed_potential);
 
+    initial_potential_offset = Normalizer::normalizePotential(obj_info.initial_potential_offset);
+
     if (is_defined_in_this_process) {
         connected_list = clist;
 
@@ -147,9 +149,35 @@ void Spacecraft::construct(
     }
 }
 
+//! Comm作成後に必要な初期化
 void Spacecraft::initializeAfterMakeComm() {
-    //! Comm作成後に必要な初期化
+    //! 粒子を放出するプロセス数を計算
     this->initializeEmissionParticleInfo();
+}
+
+void Spacecraft::initializeChargeMapOffset(const tdArray& phi) {
+    if (initial_potential_offset != 0.0) {
+        potential = initial_potential_offset;
+
+        if (MPIw::Environment::isRootNode(name)) {
+            cout << format("[INFO] [%s] offset_potential = %s V") % name % Normalizer::unnormalizePotential(potential) << endl;
+        }
+
+        for(unsigned int i = 0; i < num_cmat; ++i) {
+            double delta_rho = 0.0;
+
+            for(unsigned int j = 0; j < num_cmat; ++j) {
+                if (isMyCmat(j)) {
+                    const auto& pos = capacity_matrix_relation.at(j);
+                    delta_rho += capacity_matrix(i, j) * potential;
+                }
+            }
+            delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
+
+            //! charge_mapは全プロセス同じ値にしてよい
+            charge_map[0][i] += delta_rho;
+        }
+    }
 }
 
 void Spacecraft::saveWholeNodePositions(const ObjectNodes& whole_nodes) {
