@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <regex>
 #include <cassert>
-#include <Eigen/Dense>
 
 #define USE_BOOST
 #include <simple_vtk.hpp>
@@ -75,7 +74,7 @@ void Spacecraft::construct(
         this->saveWholeNodePositions(whole_nodes);
 
         //! キャパシタンス行列のサイズを物体サイズに変更
-        capacity_matrix.resize(num_cmat, num_cmat);
+        capacity_matrix.resize(num_cmat);
 
         tdArray::extent_gen tdExtents;
         for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
@@ -258,13 +257,8 @@ void Spacecraft::resetCurrent() {
 }
 
 void Spacecraft::updateTotalCmatValue() {
-    total_cmat_value = 0.0;
     //! C_ij の sum を計算して保存しておく
-    for(size_t col = 0; col < num_cmat; ++col) {
-        for(size_t row = 0; row < num_cmat; ++row) {
-            total_cmat_value += capacity_matrix(col, row);
-        }
-    }
+    total_cmat_value = capacity_matrix.total();
 }
 
 void Spacecraft::makeCmatrixInvert(void) {

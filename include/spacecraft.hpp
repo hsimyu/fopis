@@ -1,10 +1,11 @@
 #ifndef __TDPIC_SPACECRAFT_H_INCLUDED__
 #define __TDPIC_SPACECRAFT_H_INCLUDED__
+
 #include "global.hpp"
 #include <boost/numeric/ublas/matrix.hpp>
 #include "position.hpp"
 #include "field.hpp"
-#include <Eigen/Core>
+#include <Spacecraft/Cmatrix.hpp>
 
 using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
 using ObjectDefinedMapInt = boost::multi_array<int, 3>;
@@ -22,7 +23,6 @@ struct ObjectDataFromFile {
     ObjectConnectivityList connected_list;
 };
 
-class Matrix2d;
 class Particle;
 class SimpleVTK;
 
@@ -69,7 +69,6 @@ private:
     ObjectChargeMap temporary_charge_map;
 
     //! キャパシタンス行列
-    using Cmatrix = Eigen::MatrixXd;
     Cmatrix capacity_matrix;
 
     //! 自分が担当するキャパシタンス行列の番号と対応する物体の位置を格納する
@@ -122,6 +121,7 @@ private:
     //! 表面にマップするデータを物体定義済みプロセスから取得する
     template<typename T>
     std::vector<T> getWholePotentialMap(const tdArray& phi) const;
+    void saveWholeNodePositions(const ObjectNodes& whole_nodes);
 
     //! 表面上の点かどうかを確認する
     bool isXsurfacePoint(const Position& pos, const int sign) const;
@@ -149,7 +149,7 @@ public:
         object_cell_map(boost::extents[0][0][0]),
         charge_map{},
         temporary_charge_map{},
-        capacity_matrix(0, 0),
+        capacity_matrix{0},
         capacity_matrix_relation{},
         glue_capacity_matrix_relation{},
         whole_capacity_matrix_relation{},
@@ -172,13 +172,15 @@ public:
     auto getFixedPotential(void) const { return fixed_potential; }
     void setFixedPotential(const double val) { fixed_potential = val; }
 
-    void saveWholeNodePositions(const ObjectNodes& whole_nodes);
     auto getCmatSize(void) const { return num_cmat; }
     Position getCmatPos(const unsigned int);
     unsigned int getCmatNumber(const int i, const int j, const int k) const;
     unsigned int getCmatNumber(const Position& pos) const;
 
-    auto getCmatValue(const unsigned int col, const unsigned int row) const { return capacity_matrix(col, row); }
+    auto getCmatValue(const unsigned int col, const unsigned int row) const {
+        return capacity_matrix(col, row);
+    }
+
     void setCmatValue(const unsigned int col, const unsigned int row, const double value) {
         capacity_matrix(col, row) = value;
     };
