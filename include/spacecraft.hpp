@@ -73,7 +73,7 @@ private:
     //! Glueキャパシタンス行列の番号と対応する物体の位置を格納する
     std::map<size_t, Position> glue_capacity_matrix_relation;
 
-    //! 全体のキャパシタンス行列の番号と対応する物体の位置を格納する (RootNode用)
+    //! 全体のキャパシタンス行列の番号と対応する物体の位置を格納する
     std::map<size_t, Position> whole_capacity_matrix_relation;
 
     //! キャパシタンス行列の番号と対応する静電容量の値を格納する
@@ -83,7 +83,11 @@ private:
     double total_cmat_value;
 
     //! コンストラクタ内部処理共通化用
-    void construct(const size_t, const size_t, const size_t, const ObjectInfo_t&, const ObjectNodes&, const ObjectNodes&, const ObjectCells&, const ObjectNodeTextures&, const ObjectConnectivityList&);
+    void construct(
+        const size_t, const size_t, const size_t, const ObjectInfo_t&,
+        const ObjectNodes&, const ObjectNodes&, const ObjectNodes&,
+        const ObjectCells&, const ObjectNodeTextures&, const ObjectConnectivityList&
+    );
 
     //! 電荷の総量が変化していないかの check 用
     auto getTotalCharge(const RhoArray&) const;
@@ -94,9 +98,9 @@ private:
     void distributeInnerParticleChargeToZsurface(const Position& pos, const int id, const double charge);
 
     //! 粒子放出時の電荷計算用
-    void subtractChargeOfParticleFromXsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
-    void subtractChargeOfParticleFromYsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
-    void subtractChargeOfParticleFromZsurface(const Position& emission_pos, const Position& pos, const int id, const double charge);
+    void subtractChargeOfParticleFromXsurface(const Position& pos, const int id, const double charge);
+    void subtractChargeOfParticleFromYsurface(const Position& pos, const int id, const double charge);
+    void subtractChargeOfParticleFromZsurface(const Position& pos, const int id, const double charge);
 
     //! 接続リストは物体が定義されたプロセスが持つことにしてしまう
     ObjectConnectivityList connected_list;
@@ -117,11 +121,13 @@ private:
     bool isZsurfacePoint(const Position& pos, const int sign) const;
 
 public:
-    Spacecraft(const size_t nx, const size_t ny, const size_t nz,
+    Spacecraft(
+        const size_t nx, const size_t ny, const size_t nz,
         const unsigned int _num_cmat,
         const ObjectInfo_t& obj_info,
         const ObjectNodes& nodes,
         const ObjectNodes& glue_nodes,
+        const ObjectNodes& whole_nodes,
         const ObjectCells& cells,
         const ObjectNodeTextures& textures,
         const ObjectConnectivityList& clist) :
@@ -140,7 +146,7 @@ public:
         glue_capacity_matrix_relation{},
         whole_capacity_matrix_relation{},
         capacitance_map{} {
-        construct(nx, ny, nz, obj_info, nodes, glue_nodes, cells, textures, clist);
+        construct(nx, ny, nz, obj_info, nodes, glue_nodes, whole_nodes, cells, textures, clist);
     }
 
     // アクセサ

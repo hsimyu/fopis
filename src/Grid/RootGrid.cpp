@@ -649,15 +649,15 @@ void RootGrid::initializeObject(void) {
         //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
         ObjectDataFromFile object_data = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
 
-		size_t num_cmat = object_data.nodes.size();
-        const auto& node_array = object_data.nodes;
+        size_t num_cmat = object_data.nodes.size();
+        const auto& whole_node_array = object_data.nodes;
 
         //! innerと判定されたやつだけ渡す
         ObjectNodes inner_node_array;
         ObjectNodes glue_node_array;
         bool is_object_in_this_node = false;
 
-        for(const auto& node_pair : node_array) {
+        for(const auto& node_pair : whole_node_array) {
             const auto cmat_itr = node_pair.first;
             const auto& node_pos = node_pair.second;
 
@@ -684,14 +684,17 @@ void RootGrid::initializeObject(void) {
 
         //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
         //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(nx, ny, nz, num_cmat, object_info, inner_node_array, glue_node_array, inner_cell_array, object_data.textures, object_data.connected_list);
+        objects.emplace_back(
+            nx, ny, nz, num_cmat, object_info,
+            inner_node_array, glue_node_array, whole_node_array,
+            inner_cell_array, object_data.textures, object_data.connected_list
+        );
 
         //! Comm作成 (物体が入っていないならnullになる)
         MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
         if (MPIw::Environment::isRootNode(obj_name)) {
             cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
             cout << objects[ objects.size() - 1 ] << endl;
-            objects[ objects.size() - 1 ].saveWholeNodePositions(node_array);
         }
     }
 }

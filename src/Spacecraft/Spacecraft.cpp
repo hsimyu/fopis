@@ -13,7 +13,10 @@
 
 //! static 変数の実体
 unsigned int Spacecraft::num_of_spacecraft = 0;
-void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info, const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectCells& cells, const ObjectNodeTextures& textures, const ObjectConnectivityList& clist) {
+void Spacecraft::construct(
+    const size_t nx, const size_t ny, const size_t nz, const ObjectInfo_t& obj_info,
+    const ObjectNodes& nodes, const ObjectNodes& glue_nodes, const ObjectNodes& whole_nodes,
+    const ObjectCells& cells, const ObjectNodeTextures& textures, const ObjectConnectivityList& clist) {
     //! このオブジェクトがプロセス内で有効かどうかを保存しておく
     is_defined_in_this_process = (nodes.size() > 0);
     ++num_of_spacecraft;
@@ -60,6 +63,9 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 
             glue_capacity_matrix_relation.emplace(std::piecewise_construct, std::make_tuple(cmat_itr), std::make_tuple(i, j, k));
         }
+
+        //! whole_nodesも保持
+        this->saveWholeNodePositions(whole_nodes);
 
         //! キャパシタンス行列のサイズを物体サイズに変更
         capacity_matrix.resize(num_cmat, num_cmat);
@@ -137,8 +143,7 @@ void Spacecraft::construct(const size_t nx, const size_t ny, const size_t nz, co
 }
 
 void Spacecraft::saveWholeNodePositions(const ObjectNodes& whole_nodes) {
-    //! RootNodeのみ、全体のノード位置を出力用に保持する
-    //! 判定はGrid側で既に終わっているので必要なし
+    //! 全体のノード位置を出力用、放出用に保持する
     for(const auto& node_pair : whole_nodes) {
         const auto cmat_itr = node_pair.first;
         const auto& node_pos = node_pair.second;
@@ -163,23 +168,30 @@ inline unsigned int Spacecraft::getCmatNumber(const Position& pos) const {
 }
 
 unsigned int Spacecraft::getCmatNumber(const int i, const int j, const int k) const {
+    //! Innerノードを探索
     for(const auto& node : capacity_matrix_relation) {
         const auto& pos = node.second;
 
         if (pos.i == i && pos.j == j && pos.k == k) return node.first;
     }
 
-    //! Glueノード上の電荷
+    //! Glueノードを探索
     for(const auto& node : glue_capacity_matrix_relation) {
         const auto& pos = node.second;
 
         if (pos.i == i && pos.j == j && pos.k == k) return node.first;
     }
 
-    std::string error_message = (format("[ERROR] %sInvalid Cmat Position (%d, %d, %d) passed to Spacecraft::getCmatNumber().") % Environment::rankStr() % i % j % k).str();
-    std::cerr << error_message << endl;
+    //! それでも見つからなければ全体ノード上を探す
+    const auto abs_pos = Environment::getAbsolutePosition(i, j, k);
+    for(const auto& node : whole_capacity_matrix_relation) {
+        const auto& pos = node.second;
 
-    return 0;
+        if (pos.i == abs_pos[0] && pos.j == abs_pos[1] && pos.k == abs_pos[2]) return node.first;
+    }
+
+    std::string error_message = (format("[ERROR] %sInvalid Cmat Position (%d, %d, %d) passed to Spacecraft::getCmatNumber().") % Environment::rankStr() % i % j % k).str();
+    throw std::invalid_argument(error_message);
 }
 
 auto Spacecraft::getTotalCharge(const RhoArray& rho) const {
@@ -504,22 +516,22 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
             //! 放出時の座標修正子
             if (fabs(info.emission_vector[0]) == 1.0) {
 
-                emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
-                    this->subtractChargeOfParticleFromXsurface(rel_pos, pos, id, charge);
+                emission_func = [this](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromXsurface(pos, id, charge);
                 };
                 get_next_position_func = [](const Particle& p) { return p.getNextXCrossPoint(); };
 
             } else if (fabs(info.emission_vector[1]) == 1.0) {
 
-                emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
-                    this->subtractChargeOfParticleFromYsurface(rel_pos, pos, id, charge);
+                emission_func = [this](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromYsurface(pos, id, charge);
                 };
                 get_next_position_func = [](const Particle& p) { return p.getNextYCrossPoint(); };
 
             } else if (fabs(info.emission_vector[2]) == 1.0) {
 
-                emission_func = [this, &rel_pos = info.relative_emission_position](Position& pos, const int id, const double charge) {
-                    this->subtractChargeOfParticleFromZsurface(rel_pos, pos, id, charge);
+                emission_func = [this](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromZsurface(pos, id, charge);
                 };
                 get_next_position_func = [](const Particle& p) { return p.getNextZCrossPoint(); };
 
@@ -535,40 +547,38 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
                 for(int i = 0; i < max_amount; ++i) {
                     Particle p = beam_ptype_ptr->generateNewParticle(info.relative_emission_position, info.emission_vector);
 
-                    if (this->isValidEmission(p)) {
-                        auto pos = get_next_position_func(p);
-                        emission_func(pos, id, charge);
-                        parray[id].push_back( std::move(p) );
-                    }
+                    auto pos = get_next_position_func(p);
+                    emission_func(pos, id, charge);
+                    parray[id].push_back( std::move(p) );
                 }
             }
         }
     }
 }
 
-inline void Spacecraft::subtractChargeOfParticleFromXsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k    )] -= charge * pos.dy2 * pos.dz2;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k    )] -= charge * pos.dy1 * pos.dz2;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j    , emission_pos.k + 1)] -= charge * pos.dy2 * pos.dz1;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i, emission_pos.j + 1, emission_pos.k + 1)] -= charge * pos.dy1 * pos.dz1;
+inline void Spacecraft::subtractChargeOfParticleFromXsurface(const Position& pos, const int id, const double charge) {
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k    )] -= charge * pos.dy2 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k    )] -= charge * pos.dy1 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j    , pos.k + 1)] -= charge * pos.dy2 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i, pos.j + 1, pos.k + 1)] -= charge * pos.dy1 * pos.dz1;
 
     current[id] -= charge;
 }
 
-inline void Spacecraft::subtractChargeOfParticleFromYsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k    )]-= charge * pos.dx2 * pos.dz2;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k    )]-= charge * pos.dx1 * pos.dz2;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx2 * pos.dz1;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j, emission_pos.k + 1)]-= charge * pos.dx1 * pos.dz1;
+inline void Spacecraft::subtractChargeOfParticleFromYsurface(const Position& pos, const int id, const double charge) {
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k    )]-= charge * pos.dx2 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k    )]-= charge * pos.dx1 * pos.dz2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j, pos.k + 1)]-= charge * pos.dx2 * pos.dz1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j, pos.k + 1)]-= charge * pos.dx1 * pos.dz1;
 
     current[id] -= charge;
 }
 
-inline void Spacecraft::subtractChargeOfParticleFromZsurface(const Position& emission_pos, const Position& pos, const int id, const double charge) {
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j    , emission_pos.k)] -= charge * pos.dx2 * pos.dy2;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j    , emission_pos.k)] -= charge * pos.dx1 * pos.dy2;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i    , emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx2 * pos.dy1;
-    temporary_charge_map[id][this->getCmatNumber(emission_pos.i + 1, emission_pos.j + 1, emission_pos.k)] -= charge * pos.dx1 * pos.dy1;
+inline void Spacecraft::subtractChargeOfParticleFromZsurface(const Position& pos, const int id, const double charge) {
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j    , pos.k)] -= charge * pos.dx2 * pos.dy2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j    , pos.k)] -= charge * pos.dx1 * pos.dy2;
+    temporary_charge_map[id][this->getCmatNumber(pos.i    , pos.j + 1, pos.k)] -= charge * pos.dx2 * pos.dy1;
+    temporary_charge_map[id][this->getCmatNumber(pos.i + 1, pos.j + 1, pos.k)] -= charge * pos.dx1 * pos.dy1;
 
     current[id] -= charge;
 }
