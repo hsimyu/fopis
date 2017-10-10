@@ -21,4 +21,9 @@ const std::map<std::string, PropertyPair> Spacecraft::material_property_list = {
             {"RelativePermittivity", 5.0},
         })
     },
+    { "Aluminum1", 
+        PropertyPair({
+            {"RelativePermittivity", 5.0},
+        })
+    },
 };
