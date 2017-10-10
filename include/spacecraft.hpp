@@ -101,6 +101,10 @@ private:
     void distributeInnerParticleChargeToYsurface(const Position& pos, const int id, const double charge);
     void distributeInnerParticleChargeToZsurface(const Position& pos, const int id, const double charge);
 
+    //! 実際の電荷再配分関数
+    void redistributeChargeForPerfectConductor(RhoArray& rho, const tdArray& phi);
+    void redistributeChargeForDielectric(RhoArray& rho, const tdArray& phi);
+
     //! 粒子放出時の電荷計算用
     void subtractChargeOfParticleFromXsurface(const Position& pos, const int id, const double charge);
     void subtractChargeOfParticleFromYsurface(const Position& pos, const int id, const double charge);
@@ -207,7 +211,10 @@ public:
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
     void sumWholeCharge();
-    void redistributeCharge(RhoArray&, const tdArray&);
+
+    //! 電荷再配分
+    void redistributeCharge(RhoArray& rho, const tdArray& phi);
+
     void resetCurrent();
     void sumCurrent();
 

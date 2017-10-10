@@ -403,36 +403,36 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
         cout << format("[INFO] [%s] charge before redist: %16.7e") % name % total_charge << endl;
     }
 
+    if (this->isDielectricSurface()) {
+        this->redistributeChargeForDielectric(rho, phi);
+    } else {
+        this->redistributeChargeForPerfectConductor(rho, phi);
+    }
+
+    // update total current for output
+    sumCurrent();
+}
+
+void Spacecraft::redistributeChargeForDielectric(RhoArray& rho, const tdArray& phi) {
     double capacity_times_phi = 0.0;
     //! relationの中には元々内部ノードのPositionしか保存されていないので、
     //! 毎回判定しなくてよい
 
-    if (this->isDielectricSurface()) {
-        //! 誘電体の場合
-        for(const auto& node : capacity_matrix_relation) {
-            const auto j = node.first;
-            const auto& pos = node.second;
-            const auto capacitance = capacitance_map[j];
+    //! 誘電体の場合
+    for(const auto& node : capacity_matrix_relation) {
+        const auto j = node.first;
+        const auto& pos = node.second;
+        const auto capacitance = capacitance_map[j];
 
-            if (capacitance > 0.0) {
-                for(size_t i = 0; i < num_cmat; ++i) {
-                    double node_charge = 0.0;
-                    for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-                        node_charge += charge_map[pid][j];
-                    }
-                    capacity_times_phi += capacity_matrix(i, j) * (phi[pos.i][pos.j][pos.k] - node_charge / capacitance);
+        if (capacitance > 0.0) {
+            for(size_t i = 0; i < num_cmat; ++i) {
+                double node_charge = 0.0;
+                for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                    node_charge += charge_map[pid][j];
                 }
-            } else {
-                for(size_t i = 0; i < num_cmat; ++i) {
-                    capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
-                }
+                capacity_times_phi += capacity_matrix(i, j) * (phi[pos.i][pos.j][pos.k] - node_charge / capacitance);
             }
-        }
-    } else {
-        //! 完全導体の場合
-        for(const auto& one_node : capacity_matrix_relation) {
-            const auto j = one_node.first;
-            const auto& pos = one_node.second;
+        } else {
             for(size_t i = 0; i < num_cmat; ++i) {
                 capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
             }
@@ -455,68 +455,91 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
         cout << format("[INFO] [%s] potential = %s V") % name % Normalizer::unnormalizePotential(potential) << endl;
     }
 
-    if (this->isDielectricSurface()) {
-        //! 誘電体の場合
-        double sum_delta_rho = 0.0;
-        for(unsigned int i = 0; i < num_cmat; ++i) {
-            double delta_rho = 0.0;
+    //! 誘電体の場合
+    double sum_delta_rho = 0.0;
+    for(unsigned int i = 0; i < num_cmat; ++i) {
+        double delta_rho = 0.0;
 
-            for(unsigned int j = 0; j < num_cmat; ++j) {
-                if (isMyCmat(j)) {
-                    const auto capacitance = capacitance_map[j];
-                    const auto& pos = capacity_matrix_relation.at(j);
+        for(unsigned int j = 0; j < num_cmat; ++j) {
+            if (isMyCmat(j)) {
+                const auto capacitance = capacitance_map[j];
+                const auto& pos = capacity_matrix_relation.at(j);
 
-                    if (capacitance > 0.0) {
-                        double node_charge = 0.0;
-                        for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-                            node_charge += charge_map[pid][j];
-                        }
-                        delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + node_charge / capacitance_map[j]);
-                    } else {
-                        delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
+                if (capacitance > 0.0) {
+                    double node_charge = 0.0;
+                    for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                        node_charge += charge_map[pid][j];
                     }
-                }
-            }
-            delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
-            sum_delta_rho += delta_rho;
-
-            if (isMyCmat(i)) {
-                const auto& target_pos = capacity_matrix_relation.at(i);
-                rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
-            }
-        }
-
-        if (MPIw::Environment::isRootNode(name)) {
-            cout << format("[INFO] [%s] sum of redist charge: %16.7e") % name % sum_delta_rho << endl;
-        }
-    } else {
-        //! 完全導体の場合
-        double sum_delta_rho = 0.0;
-        for(unsigned int i = 0; i < num_cmat; ++i) {
-            double delta_rho = 0.0;
-
-            for(unsigned int j = 0; j < num_cmat; ++j) {
-                if (isMyCmat(j)) {
-                    const auto& pos = capacity_matrix_relation.at(j);
+                    delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + node_charge / capacitance_map[j]);
+                } else {
                     delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
                 }
             }
-            delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
-            sum_delta_rho += delta_rho;
-
-            if (isMyCmat(i)) {
-                const auto& target_pos = capacity_matrix_relation.at(i);
-                rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
-            }
         }
+        delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
+        sum_delta_rho += delta_rho;
 
-        if (MPIw::Environment::isRootNode(name)) {
-            cout << format("[INFO] [%s] sum of redist charge: %16.7e") % name % sum_delta_rho << endl;
+        if (isMyCmat(i)) {
+            const auto& target_pos = capacity_matrix_relation.at(i);
+            rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
         }
     }
 
-    // update total current for output
-    sumCurrent();
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << format("[INFO] [%s] sum of redist charge: %16.7e") % name % sum_delta_rho << endl;
+    }
+}
+
+void Spacecraft::redistributeChargeForPerfectConductor(RhoArray& rho, const tdArray& phi) {
+    double capacity_times_phi = 0.0;
+    //! 完全導体の場合
+    for(const auto& one_node : capacity_matrix_relation) {
+        const auto j = one_node.first;
+        const auto& pos = one_node.second;
+        for(size_t i = 0; i < num_cmat; ++i) {
+            capacity_times_phi += capacity_matrix(i, j) * phi[pos.i][pos.j][pos.k];
+        }
+    }
+
+    capacity_times_phi = MPIw::Environment::Comms[name].sum(capacity_times_phi);
+
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << format("[INFO] [%s] Capacity x Potential: %16.7e") % name % capacity_times_phi << endl;
+    }
+
+    if (is_potential_fixed) {
+        potential = fixed_potential;
+    } else {
+        potential = (capacity_times_phi + total_charge) / total_cmat_value;
+    }
+
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << format("[INFO] [%s] potential = %s V") % name % Normalizer::unnormalizePotential(potential) << endl;
+    }
+
+    //! 完全導体の場合
+    double sum_delta_rho = 0.0;
+    for(unsigned int i = 0; i < num_cmat; ++i) {
+        double delta_rho = 0.0;
+
+        for(unsigned int j = 0; j < num_cmat; ++j) {
+            if (isMyCmat(j)) {
+                const auto& pos = capacity_matrix_relation.at(j);
+                delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
+            }
+        }
+        delta_rho = MPIw::Environment::Comms[name].sum(delta_rho);
+        sum_delta_rho += delta_rho;
+
+        if (isMyCmat(i)) {
+            const auto& target_pos = capacity_matrix_relation.at(i);
+            rho[0][target_pos.i][target_pos.j][target_pos.k] += delta_rho;
+        }
+    }
+
+    if (MPIw::Environment::isRootNode(name)) {
+        cout << format("[INFO] [%s] sum of redist charge: %16.7e") % name % sum_delta_rho << endl;
+    }
 }
 
 void Spacecraft::initializeEmissionParticleInfo() {
