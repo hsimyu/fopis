@@ -415,8 +415,6 @@ void Spacecraft::redistributeCharge(RhoArray& rho, const tdArray& phi) {
 
 void Spacecraft::redistributeChargeForDielectric(RhoArray& rho, const tdArray& phi) {
     double capacity_times_phi = 0.0;
-    //! relationの中には元々内部ノードのPositionしか保存されていないので、
-    //! 毎回判定しなくてよい
 
     //! 誘電体の場合
     for(const auto& node : capacity_matrix_relation) {
@@ -425,11 +423,11 @@ void Spacecraft::redistributeChargeForDielectric(RhoArray& rho, const tdArray& p
         const auto capacitance = capacitance_map[j];
 
         if (capacitance > 0.0) {
+            double node_charge = 0.0;
+            for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+                node_charge += charge_map[pid][j];
+            }
             for(size_t i = 0; i < num_cmat; ++i) {
-                double node_charge = 0.0;
-                for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
-                    node_charge += charge_map[pid][j];
-                }
                 capacity_times_phi += capacity_matrix(i, j) * (phi[pos.i][pos.j][pos.k] - node_charge / capacitance);
             }
         } else {
@@ -470,7 +468,7 @@ void Spacecraft::redistributeChargeForDielectric(RhoArray& rho, const tdArray& p
                     for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
                         node_charge += charge_map[pid][j];
                     }
-                    delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + node_charge / capacitance_map[j]);
+                    delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k] + (node_charge / capacitance));
                 } else {
                     delta_rho += capacity_matrix(i, j) * (potential - phi[pos.i][pos.j][pos.k]);
                 }

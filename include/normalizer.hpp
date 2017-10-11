@@ -171,6 +171,11 @@ public:
         return raw_capacitance * V_unit / e_unit;
     }
 
+    //! 1 -> C / V = F
+    static double unnormalizeCapacitance(double normalized_capacitance) {
+        return normalized_capacitance * e_unit / V_unit;
+    }
+
     //! m kg / s^2 A^2 = m kg / C^2 -> 1
     static double normalizeMu(double raw_mu) {
         return raw_mu * pow(e_unit, 2) / (m_unit * x_unit);
