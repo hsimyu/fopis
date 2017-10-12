@@ -4,6 +4,7 @@
 #include "global.hpp"
 #include "position.hpp"
 #include <random>
+#include <array>
 
 class Grid;
 class Particle;
@@ -34,6 +35,25 @@ class ParticleType {
         std::mt19937 mt_vy;
         std::mt19937 mt_vz;
 
+        // 擬似乱数生成回数を保存しておく
+        using GeneratedCount_t = std::vector<size_t>;
+        GeneratedCount_t generated_counts{0, 0, 0, 0, 0, 0};
+        void incrementGeneratedCount(const unsigned int id) {
+            ++generated_counts[id];
+        }
+
+        void incrementPositionGeneratedCount() {
+            ++generated_counts[0];
+            ++generated_counts[1];
+            ++generated_counts[2];
+        }
+
+        void incrementVelocityGeneratedCount() {
+            ++generated_counts[3];
+            ++generated_counts[4];
+            ++generated_counts[5];
+        }
+
     public:
         ParticleType(void);
         ParticleType(ParticleType const& ptype) {
@@ -45,7 +65,6 @@ class ParticleType {
             temperature = ptype.getTemperature();
             size = ptype.getSize();
 
-            // particle_per_cell = ptype.getPcell();
             totalNumber = ptype.getTotalNumber();
         };
 
@@ -87,6 +106,12 @@ class ParticleType {
         double calcDeviation(void) const;
         double calcPlasmaFrequency(void) const;
         std::string calcMemory(void) const;
+
+        auto getGeneratedCounts() const {
+            return generated_counts;
+        }
+
+        void proceedGeneratedCounts(const GeneratedCount_t& target_counts);
 
         virtual void printInfo() const;
 };

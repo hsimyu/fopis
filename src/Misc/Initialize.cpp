@@ -45,11 +45,11 @@ namespace Initializer {
         }
 
         if( Environment::isRootNode ) {
-            cout << "---    [ TDPIC " << TDPIC_VERSION << " ]     --" << endl;
-            cout << "  Built date: " << TDPIC_DATE << endl;
-            cout << "  Git Revision: " << TDPIC_REVISION << endl;
-            cout << "  MPI processes: " << format("%d") % MPIw::Environment::numprocs << endl << endl;
-            cout << "  OpenMP processes: " << format("%d") % Environment::num_threads << endl << endl;
+            cout << "---    [ TDPIC " << TDPIC_VERSION << " ]     --" << "\n";
+            cout << "  Built date: " << TDPIC_DATE << "\n";
+            cout << "  Git Revision: " << TDPIC_REVISION << "\n";
+            cout << "  MPI processes: " << format("%d") % MPIw::Environment::numprocs << "\n";
+            cout << "  OpenMP processes: " << format("%d") % Environment::num_threads << "\n" << endl;
 
             Environment::printInfo();
             Environment::checkPlasmaInfo();

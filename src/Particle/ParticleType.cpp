@@ -74,6 +74,41 @@ std::string ParticleType::calcMemory() const {
     return Utils::prettyMemoryString(pmem);
 }
 
+void ParticleType::proceedGeneratedCounts(const ParticleType::GeneratedCount_t& target_counts) {
+    assert(target_counts.size() == generated_counts.size());
+
+    for(size_t i = 0; i < generated_counts.size(); ++i) {
+        const size_t discard_number = target_counts[i] - generated_counts[i];
+
+        if (discard_number > 0) {
+            switch(i) {
+                case 0:
+                    mt_x.discard(discard_number);
+                    break;
+                case 1:
+                    mt_y.discard(discard_number);
+                    break;
+                case 2:
+                    mt_z.discard(discard_number);
+                    break;
+                case 3:
+                    mt_vx.discard(discard_number);
+                    break;
+                case 4:
+                    mt_vy.discard(discard_number);
+                    break;
+                case 5:
+                    mt_vz.discard(discard_number);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        generated_counts[i] = target_counts[i];
+    }
+}
+
 // util
 void ParticleType::printInfo() const {
     cout << "[ParticleType : " << getName() << "]" << endl;
@@ -161,6 +196,7 @@ Position AmbientParticleType::generateNewPosition(
     std::uniform_real_distribution<> dist_z(min_z, max_z);
 
     Position p(dist_x(mt_x), dist_y(mt_y), dist_z(mt_z));
+    incrementPositionGeneratedCount();
     return p;
 }
 
@@ -171,5 +207,6 @@ Velocity AmbientParticleType::generateNewVelocity(void) {
     std::normal_distribution<> dist_vz(0.0, deviation);
 
     Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+    incrementVelocityGeneratedCount();
     return v;
 }

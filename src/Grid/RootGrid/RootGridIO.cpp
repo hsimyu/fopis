@@ -65,6 +65,14 @@ void RootGrid::loadResumeParticleData(HighFive::File& file) {
         }
 
         if (size > 0) {
+            //! 擬似乱数生成カウント
+            {
+                std::vector<size_t> counts;
+                auto data_set = group.getDataSet("generated_counts");
+                data_set.read(counts);
+                Environment::getParticleType(pid)->proceedGeneratedCounts(counts);
+            }
+
             std::vector<double> particle_x(size);
             std::vector<double> particle_y(size);
             std::vector<double> particle_z(size);
@@ -147,6 +155,11 @@ void RootGrid::saveResumeParticleData(HighFive::File& file) const {
         //! 粒子数
         auto data_set = group.createDataSet<double>("size", HighFive::DataSpace::From(size));
         data_set.write(size);
+
+        //! 擬似乱数生成カウント
+        auto counts = Environment::getParticleType(pid)->getGeneratedCounts();
+        data_set = group.createDataSet<size_t>("generated_counts", HighFive::DataSpace::From(counts));
+        data_set.write(counts);
 
         data_set = group.createDataSet<double>("x", HighFive::DataSpace::From(particle_x));
         data_set.write(particle_x);

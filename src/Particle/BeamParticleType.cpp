@@ -16,6 +16,7 @@ Particle BeamParticleType::generateNewParticle(const Position& relative_emission
 Position BeamParticleType::generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel) {
     std::uniform_real_distribution<> dist_t(0.0, 1.0);
     const double random_timewidth = dist_t(mt_x);
+    incrementGeneratedCount(0);
 
     if (fabs(emission_vector[0]) == 1.0) {
         //! 放出方向と直交する平面上に幅をもたせる
@@ -23,6 +24,8 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
         std::uniform_real_distribution<> dist_z(0.0, Normalizer::normalizeLength(emission_radius));
         const double random_ywidth = dist_y(mt_y);
         const double random_zwidth = dist_z(mt_z);
+        incrementGeneratedCount(1);
+        incrementGeneratedCount(2);
 
         //! 放出位置を -1 velocity しておくことで、粒子更新時に時間が同期するようにする
         return Position{
@@ -35,6 +38,8 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
         std::uniform_real_distribution<> dist_z(0.0, Normalizer::normalizeLength(emission_radius));
         const double random_xwidth = dist_x(mt_x);
         const double random_zwidth = dist_z(mt_z);
+        incrementGeneratedCount(0);
+        incrementGeneratedCount(2);
 
         return Position{
             relative_emission_position.x + (random_timewidth - 1.0) * vel.vx + random_xwidth,
@@ -47,6 +52,8 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
         std::uniform_real_distribution<> dist_y(0.0, Normalizer::normalizeLength(emission_radius));
         const double random_xwidth = dist_x(mt_x);
         const double random_ywidth = dist_y(mt_y);
+        incrementGeneratedCount(0);
+        incrementGeneratedCount(1);
 
         return Position{
             relative_emission_position.x + (random_timewidth - 1.0) * vel.vx + random_xwidth,
@@ -67,6 +74,8 @@ Velocity BeamParticleType::generateNewVelocity(const std::array<double, 3>& emis
 
     double emission_normal = sqrt(pow(emission_vector[0], 2) + pow(emission_vector[1], 2) + pow(emission_vector[2], 2));
     double velocity_coeff = getAcceleration() / emission_normal;
+
+    incrementVelocityGeneratedCount();
 
     return Velocity{
         dist_vx(mt_vx) + velocity_coeff * emission_vector[0],
