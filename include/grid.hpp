@@ -9,6 +9,10 @@
 class ChildGrid;
 class SimpleVTK;
 
+namespace HighFive {
+    class File;
+}
+
 //! @class Grid
 class Grid  : public std::enable_shared_from_this<Grid> {
     protected:
@@ -264,6 +268,10 @@ class RootGrid : public Grid {
 
         void injectParticlesFromBoundary(void);
 
+        //! 継続計算データのセーブとロード
+        void loadResumeData();
+        void saveResumeData();
+
         //! 物体定義初期化
         void initializeObject();
         void resetObjects();
@@ -432,6 +440,9 @@ class RootGrid : public Grid {
 
         void solvePoissonCorrectionPSOR(const int loopnum);
         double checkPhiCorrectionResidual();
+
+        void saveResumeParticleData(HighFive::File& file) const;
+        void saveResumeFieldData(HighFive::File& file) const;
 };
 
 class ChildGrid : public Grid {

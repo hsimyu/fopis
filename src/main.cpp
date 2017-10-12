@@ -54,6 +54,8 @@ int main(int argc, char* argv[]){
         time_counter->end();
     }
 
+    root_grid->saveResumeData();
+
     if( Environment::isRootNode ) {
         cout << "===== End Main Loop =====" << endl;
     }

@@ -53,7 +53,7 @@ namespace IO {
     }
 
     bool loadCmatrixData(Spacecraft& obj) {
-		using H5F = HighFive::File;
+        using H5F = HighFive::File;
         const std::string file_name = "resume/objects/" + obj.getFileName() + ".h5";
 
         if (MPIw::Environment::isRootNode(obj.getName())) {
