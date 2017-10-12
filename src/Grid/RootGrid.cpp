@@ -131,6 +131,13 @@ void RootGrid::mainLoopES() {
     time_counter->switchTo("updateEfield");
     this->updateEfield();
 
+    //! 不要な粒子を削除
+    constexpr unsigned int remove_invalid_particle_width = 50;
+    if (Environment::timestep % remove_invalid_particle_width == 0) {
+        time_counter->switchTo("removeInvalidParticles");
+        this->removeInvalidParticles();
+    }
+
     time_counter->end();
 }
 
@@ -170,6 +177,13 @@ void RootGrid::mainLoopEM() {
     // 磁場更新
     time_counter->switchTo("updateBfield");
     this->updateBfield();
+
+    //! 不要な粒子を削除
+    constexpr unsigned int remove_invalid_particle_width = 50;
+    if (Environment::timestep % remove_invalid_particle_width == 0) {
+        time_counter->switchTo("removeInvalidParticles");
+        this->removeInvalidParticles();
+    }
 
     time_counter->end();
 }

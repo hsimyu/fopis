@@ -83,6 +83,9 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void updateParticleVelocityES(void);
         void updateParticleVelocityEM(void);
 
+        //! 粒子削除
+        void removeInvalidParticles();
+
         //! 粒子はRootGridのみ通信が必要になるため仮想関数化する
         virtual void updateParticlePositionES(void) = 0;
         virtual void updateParticlePositionEM(void) = 0;

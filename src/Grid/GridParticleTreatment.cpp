@@ -90,6 +90,17 @@ void Grid::moveParticleToChild(int child_index, Particle& p) {
     child->addParticle( std::move(new_particle) );
 }
 
+void Grid::removeInvalidParticles() {
+    auto remove_func = [](const Particle& p) {
+        return (p.isValid == 0);
+    };
+
+    for(size_t pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        auto erase_iterator = std::remove_if(particles[pid].begin(), particles[pid].end(), remove_func);
+        particles[pid].erase(erase_iterator, particles[pid].end());
+    }
+}
+
 double Grid::getParticleEnergy(void) const {
     double res = 0.0;
 
