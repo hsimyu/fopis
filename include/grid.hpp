@@ -450,6 +450,7 @@ class RootGrid : public Grid {
         void loadResumeFieldData(HighFive::File& file);
         void saveResumeParticleData(HighFive::File& file) const;
         void saveResumeFieldData(HighFive::File& file) const;
+        void saveResumeObjectData(HighFive::File& file) const;
 };
 
 class ChildGrid : public Grid {

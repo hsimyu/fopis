@@ -44,21 +44,22 @@ void RootGrid::saveResumeData() {
     this->removeInvalidParticles();
     this->saveResumeParticleData(file);
     this->saveResumeFieldData(file);
+    this->saveResumeObjectData(file);
 }
 
 void RootGrid::loadResumeParticleData(HighFive::File& file) {
     for (size_t pid = 0; pid < particles.size(); ++pid) {
-        const std::string data_set_name = Environment::getParticleType(pid)->getName();
+        const std::string pname = Environment::getParticleType(pid)->getName();
+        auto group = file.getGroup(pname);
 
         auto& parray = particles[pid];
 
         //! 初期化時に入力された粒子は全てerase
         parray.erase(parray.begin(), parray.end());
 
-
         size_t size;
         {
-            auto dataset = file.getDataSet(data_set_name + "_size");
+            auto dataset = group.getDataSet("size");
             dataset.read(size);
         }
 
@@ -67,17 +68,17 @@ void RootGrid::loadResumeParticleData(HighFive::File& file) {
             std::vector<double> particle_y(size);
             std::vector<double> particle_z(size);
             {
-                auto dataset = file.getDataSet(data_set_name + "_x");
+                auto dataset = group.getDataSet("x");
                 dataset.read(particle_x);
             }
 
             {
-                auto dataset = file.getDataSet(data_set_name + "_y");
+                auto dataset = group.getDataSet("y");
                 dataset.read(particle_y);
             }
 
             {
-                auto dataset = file.getDataSet(data_set_name + "_z");
+                auto dataset = group.getDataSet("z");
                 dataset.read(particle_z);
             }
 
@@ -86,17 +87,17 @@ void RootGrid::loadResumeParticleData(HighFive::File& file) {
             std::vector<double> particle_vz(size);
 
             {
-                auto dataset = file.getDataSet(data_set_name + "_vx");
+                auto dataset = group.getDataSet("vx");
                 dataset.read(particle_vx);
             }
 
             {
-                auto dataset = file.getDataSet(data_set_name + "_vy");
+                auto dataset = group.getDataSet("vy");
                 dataset.read(particle_vy);
             }
 
             {
-                auto dataset = file.getDataSet(data_set_name + "_vz");
+                auto dataset = group.getDataSet("vz");
                 dataset.read(particle_vz);
             }
 
@@ -119,6 +120,9 @@ void RootGrid::saveResumeParticleData(HighFive::File& file) const {
     //! HighFiveはユーザー定義型の格納ができないようなので、
     //! 各粒子の位置速度の配列を抽出して格納する
     for (size_t pid = 0; pid < particles.size(); ++pid) {
+        const std::string pname = Environment::getParticleType(pid)->getName();
+        auto group = file.createGroup(pname);
+
         const auto& parray = particles[pid];
         const auto size = parray.size();
         std::vector<double> particle_x(size);
@@ -138,89 +142,107 @@ void RootGrid::saveResumeParticleData(HighFive::File& file) const {
             particle_vz[pnum] = parray[pnum].vz;
         }
 
-        const std::string data_set_name = Environment::getParticleType(pid)->getName();
-
         //! 粒子数
-        auto data_set = file.createDataSet<double>(data_set_name + "_size", HighFive::DataSpace::From(size));
+        auto data_set = group.createDataSet<double>("size", HighFive::DataSpace::From(size));
         data_set.write(size);
 
-        data_set = file.createDataSet<double>(data_set_name + "_x", HighFive::DataSpace::From(particle_x));
+        data_set = group.createDataSet<double>("x", HighFive::DataSpace::From(particle_x));
         data_set.write(particle_x);
-        data_set = file.createDataSet<double>(data_set_name + "_y", HighFive::DataSpace::From(particle_y));
+        data_set = group.createDataSet<double>("y", HighFive::DataSpace::From(particle_y));
         data_set.write(particle_y);
-        data_set = file.createDataSet<double>(data_set_name + "_z", HighFive::DataSpace::From(particle_z));
+        data_set = group.createDataSet<double>("z", HighFive::DataSpace::From(particle_z));
         data_set.write(particle_z);
 
-        data_set = file.createDataSet<double>(data_set_name + "_vx", HighFive::DataSpace::From(particle_vx));
+        data_set = group.createDataSet<double>("vx", HighFive::DataSpace::From(particle_vx));
         data_set.write(particle_vx);
-        data_set = file.createDataSet<double>(data_set_name + "_vy", HighFive::DataSpace::From(particle_vy));
+        data_set = group.createDataSet<double>("vy", HighFive::DataSpace::From(particle_vy));
         data_set.write(particle_vy);
-        data_set = file.createDataSet<double>(data_set_name + "_vz", HighFive::DataSpace::From(particle_vz));
+        data_set = group.createDataSet<double>("vz", HighFive::DataSpace::From(particle_vz));
         data_set.write(particle_vz);
     }
 }
 
 void RootGrid::loadResumeFieldData(HighFive::File& file) {
     {
-        auto& ex = field->getEx();
-        auto data_set = file.getDataSet("ex");
-        data_set.read(ex);
+        auto efield_group = file.getGroup("Efield");
+        {
+            auto& ex = field->getEx();
+            auto data_set = efield_group.getDataSet("ex");
+            data_set.read(ex);
+        }
+
+        {
+            auto& ey = field->getEy();
+            auto data_set = efield_group.getDataSet("ey");
+            data_set.read(ey);
+        }
+
+        {
+            auto& ez = field->getEz();
+            auto data_set = efield_group.getDataSet("ez");
+            data_set.read(ez);
+        }
     }
 
     {
-        auto& ey = field->getEy();
-        auto data_set = file.getDataSet("ey");
-        data_set.read(ey);
-    }
+        auto bfield_group = file.getGroup("Bfield");
 
-    {
-        auto& ez = field->getEz();
-        auto data_set = file.getDataSet("ez");
-        data_set.read(ez);
-    }
+        {
+            auto& bx = field->getBx();
+            auto data_set = bfield_group.getDataSet("bx");
+            data_set.read(bx);
+        }
 
-    {
-        auto& bx = field->getBx();
-        auto data_set = file.getDataSet("bx");
-        data_set.read(bx);
-    }
+        {
+            auto& by = field->getBy();
+            auto data_set = bfield_group.getDataSet("by");
+            data_set.read(by);
+        }
 
-    {
-        auto& by = field->getBy();
-        auto data_set = file.getDataSet("by");
-        data_set.read(by);
-    }
-
-    {
-        auto& bz = field->getBz();
-        auto data_set = file.getDataSet("bz");
-        data_set.read(bz);
+        {
+            auto& bz = field->getBz();
+            auto data_set = bfield_group.getDataSet("bz");
+            data_set.read(bz);
+        }
     }
 }
 
 void RootGrid::saveResumeFieldData(HighFive::File& file) const {
     {
+        auto efield_group = file.createGroup("Efield");
+
         auto& ex = field->getEx();
         auto& ey = field->getEy();
         auto& ez = field->getEz();
 
-        auto data_set = file.createDataSet<double>("ex", HighFive::DataSpace::From(ex));
+        auto data_set = efield_group.createDataSet<double>("ex", HighFive::DataSpace::From(ex));
         data_set.write(ex);
-        data_set = file.createDataSet<double>("ey", HighFive::DataSpace::From(ey));
+        data_set = efield_group.createDataSet<double>("ey", HighFive::DataSpace::From(ey));
         data_set.write(ey);
-        data_set = file.createDataSet<double>("ez", HighFive::DataSpace::From(ez));
+        data_set = efield_group.createDataSet<double>("ez", HighFive::DataSpace::From(ez));
         data_set.write(ez);
     }
 
     {
+        auto bfield_group = file.createGroup("Bfield");
+
         auto& bx = field->getBx();
         auto& by = field->getBy();
         auto& bz = field->getBz();
-        auto data_set = file.createDataSet<double>("bx", HighFive::DataSpace::From(bx));
+        auto data_set = bfield_group.createDataSet<double>("bx", HighFive::DataSpace::From(bx));
         data_set.write(bx);
-        data_set = file.createDataSet<double>("by", HighFive::DataSpace::From(by));
+        data_set = bfield_group.createDataSet<double>("by", HighFive::DataSpace::From(by));
         data_set.write(by);
-        data_set = file.createDataSet<double>("bz", HighFive::DataSpace::From(bz));
+        data_set = bfield_group.createDataSet<double>("bz", HighFive::DataSpace::From(bz));
         data_set.write(bz);
+    }
+}
+
+void RootGrid::saveResumeObjectData(HighFive::File& file) const {
+    for(const auto& object : objects) {
+        auto group = file.createGroup(object.getName());
+
+        auto data_set = group.createDataSet<double>("charge_map", HighFive::DataSpace::From(object.getChargeMap()));
+        data_set.write(object.getChargeMap());
     }
 }
