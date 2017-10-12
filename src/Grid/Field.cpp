@@ -198,62 +198,6 @@ void Field::setDampingBoundaryOnEfield(void) {
     }
 }
 
-//! @brief 磁場を更新する(FDTD)
-//!
-void Field::updateBfield(const double dx, const int nx, const int ny, const int nz, const double dt) {
-    const double dt_per_dx = dt / dx;
-
-    // const double epsilon_r = 1.0; //! 比誘電率
-    // const double sigma = 1.0; //! 導電率 (各Faceでの)
-    // const double mu_r = 1.0; //! 透磁率 (各Faceでの)
-    // const double sigma_m = 0.0; //! 導磁率?
-
-    // 磁束密度更新時の係数
-    // const double d1 = mu_r/(mu_r + sigma_m * dt / mu0);
-    // const double d2 = dt/(mu_r + sigma_m * dt / mu0);
-
-    const int cx_with_glue = nx + 1;
-    const int cy_with_glue = nx + 1;
-    const int cz_with_glue = nx + 1;
-
-    //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
-    for(int i = 1; i < cx_with_glue; ++i){
-        for(int j = 1; j < cy_with_glue; ++j){
-            for(int k = 1; k < cz_with_glue; ++k){
-                if (j != cy_with_glue - 1 && k != cz_with_glue - 1) {
-                    bx[i][j][k] = bx[i][j][k] - dt_per_dx * (ez[i][j - 1][k] - ez[i][j][k] - ey[i][j][k + 1] + ey[i][j][k]);
-                }
-
-                if (i != cx_with_glue - 1 && k != cz_with_glue - 1) {
-                    by[i][j][k] = by[i][j][k] - dt_per_dx * (ex[i][j][k + 1] - ex[i][j][k] - ez[i + 1][j][k] + ez[i][j][k]);
-                }
-
-                if (i != cx_with_glue - 1 && j != cy_with_glue - 1) {
-                    bz[i][j][k] = bz[i][j][k] - dt_per_dx * (ey[i + 1][j][k] - ey[i][j][k] - ex[i][j + 1][k] + ex[i][j][k]);
-                }
-            }
-        }
-    }
-    MPIw::Environment::sendRecvField(bx);
-    MPIw::Environment::sendRecvField(by);
-    MPIw::Environment::sendRecvField(bz);
-
-    //! reference 更新
-    for(int i = 1; i < cx_with_glue - 1; ++i){
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
-                bxref[i][j][k] = 0.25 * (bx[i][j][k] + bx[i][j-1][k] + bx[i][j][k-1] + bx[i][j-1][k-1]);
-                byref[i][j][k] = 0.25 * (by[i][j][k] + by[i-1][j][k] + by[i][j][k-1] + by[i-1][j][k-1]);
-                bzref[i][j][k] = 0.25 * (bz[i][j][k] + bz[i-1][j][k] + bz[i][j-1][k] + bz[i-1][j-1][k]);
-            }
-        }
-    }
-
-    MPIw::Environment::sendRecvField(bxref);
-    MPIw::Environment::sendRecvField(byref);
-    MPIw::Environment::sendRecvField(bzref);
-}
-
 void Field::initializeCurrent(const double dt) {
     Utils::initialize3DArray(jx);
     Utils::initialize3DArray(jy);

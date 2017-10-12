@@ -99,7 +99,6 @@ class Field {
         void updateEfieldFDTD(const double dx, const double dt);
         void setDampingBoundaryOnEfield(void);
 
-        void updateBfield(const double dx, const int, const int, const int, const double dt);
         void initializeCurrent(const double dt);
 
         double getEfieldEnergy(void) const;
