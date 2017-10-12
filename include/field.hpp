@@ -37,26 +37,13 @@ class Field {
 
     public:
         Field(void) :
-            rho{},
-            density{},
-            poisson_residual(boost::extents[0][0][0], boost::fortran_storage_order()),
-            poisson_error(boost::extents[0][0][0], boost::fortran_storage_order()),
-            phi(boost::extents[0][0][0], boost::fortran_storage_order()),
-            ex(boost::extents[0][0][0], boost::fortran_storage_order()),
-            ey(boost::extents[0][0][0], boost::fortran_storage_order()),
-            ez(boost::extents[0][0][0], boost::fortran_storage_order()),
-            exref(boost::extents[0][0][0], boost::fortran_storage_order()),
-            eyref(boost::extents[0][0][0], boost::fortran_storage_order()),
-            ezref(boost::extents[0][0][0], boost::fortran_storage_order()),
-            bx(boost::extents[0][0][0], boost::fortran_storage_order()),
-            by(boost::extents[0][0][0], boost::fortran_storage_order()),
-            bz(boost::extents[0][0][0], boost::fortran_storage_order()),
-            bxref(boost::extents[0][0][0], boost::fortran_storage_order()),
-            byref(boost::extents[0][0][0], boost::fortran_storage_order()),
-            bzref(boost::extents[0][0][0], boost::fortran_storage_order()),
-            jx(boost::extents[0][0][0], boost::fortran_storage_order()),
-            jy(boost::extents[0][0][0], boost::fortran_storage_order()),
-            jz(boost::extents[0][0][0], boost::fortran_storage_order()) {}
+            rho{}, density{},
+            poisson_residual{}, poisson_error{}, phi{},
+            ex{}, ey{}, ez{},
+            exref{}, eyref{}, ezref{},
+            bx{}, by{}, bz{},
+            bxref{}, byref{}, bzref{},
+            jx{}, jy{}, jz{} {}
 
         // destructor
         ~Field(){}

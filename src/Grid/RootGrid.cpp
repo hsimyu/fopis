@@ -247,12 +247,12 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         {
             //! 奇数グリッド更新
             #pragma omp for
-            for(int k = 1; k < cz_with_glue - 1; k += 2){
-                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                     for(int j = 1; j < cy_with_glue - 1; ++j){
                         if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                            for(int i = 1; i < cx_with_glue - 1; ++i){
-                                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                        for(int k = 1; k < cz_with_glue - 1; k += 2){
+                            if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
                                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                                 }
                             }
@@ -263,12 +263,12 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
 
             //! 偶数グリッド更新
             #pragma omp for
-            for(int k = 2; k < cz_with_glue - 1; k += 2){
-                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+            for(int i = 1; i < cx_with_glue - 1; ++i){
+                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                     for(int j = 1; j < cy_with_glue - 1; ++j){
                         if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                            for(int i = 1; i < cx_with_glue - 1; ++i){
-                                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                            for(int k = 2; k < cz_with_glue - 1; k += 2){
+                                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
                                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                                 }
                             }
@@ -297,9 +297,9 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     //! 全グリッド上のエラーを更新
     time_counter->switchTo("solvePoisson/updatePoissonErrorPost");
     #pragma omp parallel for
-    for(int k = 1; k < cz_with_glue - 1; ++k){
+    for(int i = 1; i < cx_with_glue - 1; ++i){
         for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
                 poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
             }
         }
@@ -329,13 +329,13 @@ double RootGrid::checkPhiResidual() {
     const size_t cy_with_glue = phi.shape()[1];
     const size_t cz_with_glue = phi.shape()[2];
 
-    #pragma omp parallel for shared(poisson_residual) reduction(max: residual)
-    for(size_t k = 1; k < cz_with_glue - 1; ++k){
-        if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
+    #pragma omp parallel for reduction(max: residual)
+    for(size_t i = 1; i < cx_with_glue - 1; ++i){
+        if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
             for(size_t j = 1; j < cy_with_glue - 1; ++j){
                 if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                    for(size_t i = 1; i < cx_with_glue - 1; ++i){
-                        if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
+                    for(size_t k = 1; k < cz_with_glue - 1; ++k){
+                        if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
                             double source_value = rho[0][i][j][k]/normalized_eps;
                             double tmp_res = field->poissonOperator(phi, i, j, k) + source_value;
                             poisson_residual[i][j][k] = tmp_res;
