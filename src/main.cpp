@@ -25,7 +25,7 @@ int main(int argc, char* argv[]){
         time_counter->enableReport();
     }
 
-    for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
+    for(; Environment::timestep <= Environment::getEndTimestep(); ++Environment::timestep) {
         if( Environment::isRootNode ) {
             cout << "====== Iteration " << Environment::timestep << " =====" << endl;
         }
@@ -50,6 +50,7 @@ int main(int argc, char* argv[]){
         time_counter->end();
     }
 
+    Environment::saveInfo();
     root_grid->saveResumeData();
 
     if( Environment::isRootNode ) {

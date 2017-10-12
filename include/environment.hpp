@@ -8,6 +8,7 @@ struct Environment {
     public:
         static int max_particle_num;
         static int num_of_particle_types;
+        static int initial_timestep;
         static int timestep;
         static int max_timestep;
         static int num_threads;
@@ -47,6 +48,7 @@ struct Environment {
             return (xrank + proc_x * yrank + proc_x * proc_y * zrank);
         }
 
+        static int getEndTimestep() { return initial_timestep + max_timestep; }
         static double getDataTime() { return static_cast<double>(timestep) * dt; }
 
         static void addAmbientParticleType(const std::shared_ptr<AmbientParticleType>& ptr) {
@@ -140,6 +142,10 @@ struct Environment {
         static bool plotEnergy(void)       { return isPlotTimestep("energy"); }
         static bool plotEnergyDist(void)   { return isPlotTimestep("energy_dist"); }
         static bool plotVelocityDist(void) { return isPlotTimestep("velocity_dist"); }
+
+        //! 継続計算用データのセーブとロード
+        static void saveInfo();
+        static void loadInfo();
 
     private:
         static bool isPlotTimestep(const std::string type) {

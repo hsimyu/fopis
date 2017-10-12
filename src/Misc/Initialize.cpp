@@ -39,6 +39,11 @@ namespace Initializer {
         // 粒子情報セット
         Initializer::loadParticleType(inputs);
 
+        //! 継続計算の場合はTimestepをロード
+        if (Environment::jobtype == "load") {
+            Environment::loadInfo();
+        }
+
         if( Environment::isRootNode ) {
             cout << "---    [ TDPIC " << TDPIC_VERSION << " ]     --" << endl;
             cout << "  Built date: " << TDPIC_DATE << endl;
@@ -75,7 +80,7 @@ namespace Initializer {
             root_grid = std::make_shared<RootGrid>();
 
             if (Environment::isRootNode) {
-                cout << "--  Resume Data Loading --" << endl;
+                cout << "--  Resume Data (t = " << Environment::timestep << ") Loading --" << endl;
             }
 
             root_grid->loadResumeData();
@@ -151,6 +156,7 @@ namespace Initializer {
     void loadEnvironment(picojson::object& inputs){
         //! 読み込まなくてよい部分
         Environment::max_particle_num = MAX_PARTICLE_NUM;
+        Environment::initial_timestep = 0;
         Environment::timestep = 1;
 
         //! Environment変数読み込み

@@ -5,9 +5,13 @@
 #include "normalizer.hpp"
 #include "mpiw.hpp"
 
+#define H5_USE_BOOST
+#include <highfive/H5File.hpp>
+
 // static variables
 int Environment::max_particle_num;
 int Environment::num_of_particle_types;
+int Environment::initial_timestep;
 int Environment::timestep;
 int Environment::max_timestep;
 bool Environment::useExistingCapacityMatrix = false;
@@ -92,12 +96,12 @@ bool Environment::isBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
     return !isNotBoundary(axis, low_or_up);
 }
 
-
 void Environment::printInfo(void) {
     cout << "[Environment]" << endl;
     cout << "  jobtype: " << jobtype << endl;
     cout << "  max pnum: " << max_particle_num << endl;
-    cout << "  max timestep: " << max_timestep << endl;
+    cout << "  initial timestep: " << initial_timestep << endl;
+    cout << "  end timestep: " << getEndTimestep() << endl;
     cout << "  boundary cond: " << boundary << endl;
     cout << "  dx: " << (format("%8.2f") % dx).str() << "   m" << endl;
     cout << "  dt: " << (format("%6.2e") % dt).str() << " sec" << endl;
@@ -246,4 +250,65 @@ Environment::BeamParticlePtr Environment::getBeamParticleType(const int pid) {
         if (ptype->getId() == pid) return ptype;
     }
     throw std::invalid_argument("[ERROR] The particle id passed to getBeamParticleType() didn't match any existing particle type.");
+}
+
+void Environment::loadInfo() {
+    const std::string file_name = "resume/environment.h5";
+
+    if (Utils::isExistingFile(file_name)) {
+        using H5F = HighFive::File;
+        H5F file(file_name, H5F::ReadWrite, HighFive::MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
+
+        //! brief validation
+        {
+            double temp_dx;
+            auto data_set = file.getDataSet("dx");
+            data_set.read(temp_dx);
+
+            if (dx != temp_dx) {
+                std::string error_message = (format("[ERROR] dx %s in the resume data does not match the dx %s from input.json.") % temp_dx % dx).str();
+                throw std::invalid_argument(error_message);
+            }
+        }
+
+        {
+            double temp_dt;
+            auto data_set = file.getDataSet("dt");
+            data_set.read(temp_dt);
+
+            if (dt != temp_dt) {
+                std::string error_message = (format("[ERROR] dt %s in the resume data does not match the dt %s from input.json.") % temp_dt % dt).str();
+                throw std::invalid_argument(error_message);
+            }
+        }
+
+        //! TimestepをLoad
+        {
+            auto data_set = file.getDataSet("timestep");
+            data_set.read(timestep);
+            initial_timestep = timestep - 1;
+        }
+
+    } else {
+        std::string error_message = (format("[ERROR] resume file_name %s does not exist.") % file_name).str();
+        throw std::invalid_argument(error_message);
+    }
+}
+
+void Environment::saveInfo() {
+    if (isRootNode) {
+        const std::string file_name = "resume/environment.h5";
+
+        using H5F = HighFive::File;
+        H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
+
+        auto data_set = file.createDataSet<double>("dx", HighFive::DataSpace::From(dx));
+        data_set.write(dx);
+
+        data_set = file.createDataSet<double>("dt", HighFive::DataSpace::From(dt));
+        data_set.write(dt);
+
+        data_set = file.createDataSet<int>("timestep", HighFive::DataSpace::From(timestep));
+        data_set.write(timestep);
+    }
 }
