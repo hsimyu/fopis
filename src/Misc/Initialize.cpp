@@ -68,20 +68,20 @@ namespace Initializer {
         if (Environment::jobtype == "new") {
             root_grid = std::make_shared<RootGrid>();
             if (Environment::isRootNode) {
-                cout << "--  New Computation Data Initializing --" << endl;
+                cout << "--  New Data Initializing --" << endl;
             }
             root_grid->initialize();
         } else if (Environment::jobtype == "load") {
             root_grid = std::make_shared<RootGrid>();
 
             if (Environment::isRootNode) {
-                cout << "--  Resume Computation Data Loading --" << endl;
+                cout << "--  Resume Data Loading --" << endl;
             }
 
             root_grid->loadResumeData();
 
             if (Environment::isRootNode) {
-                cout << "--  Resume Computation Data Initializing --" << endl;
+                cout << "--  Resume Data Initializing --" << endl;
             }
 
             root_grid->initializeForLoad();

@@ -27,7 +27,7 @@ void RootGrid::loadResumeData() {
     const std::string file_name = "resume/grid_id_" + std::to_string(id) + ".h5";
 
     if (Utils::isExistingFile(file_name)) {
-        H5F file(file_name, H5F::ReadWrite, HighFive::MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
+        H5F file(file_name, H5F::ReadWrite);
 
         this->loadResumeParticleData(file);
         this->loadResumeFieldData(file);
@@ -48,12 +48,13 @@ void RootGrid::saveResumeData() {
 
 void RootGrid::loadResumeParticleData(HighFive::File& file) {
     for (size_t pid = 0; pid < particles.size(); ++pid) {
+        const std::string data_set_name = Environment::getParticleType(pid)->getName();
+
         auto& parray = particles[pid];
 
         //! 初期化時に入力された粒子は全てerase
         parray.erase(parray.begin(), parray.end());
 
-        const std::string data_set_name = Environment::getParticleType(pid)->getName();
 
         size_t size;
         {
@@ -68,9 +69,15 @@ void RootGrid::loadResumeParticleData(HighFive::File& file) {
             {
                 auto dataset = file.getDataSet(data_set_name + "_x");
                 dataset.read(particle_x);
-                dataset = file.getDataSet(data_set_name + "_y");
+            }
+
+            {
+                auto dataset = file.getDataSet(data_set_name + "_y");
                 dataset.read(particle_y);
-                dataset = file.getDataSet(data_set_name + "_z");
+            }
+
+            {
+                auto dataset = file.getDataSet(data_set_name + "_z");
                 dataset.read(particle_z);
             }
 
@@ -81,9 +88,15 @@ void RootGrid::loadResumeParticleData(HighFive::File& file) {
             {
                 auto dataset = file.getDataSet(data_set_name + "_vx");
                 dataset.read(particle_vx);
-                dataset = file.getDataSet(data_set_name + "_vy");
+            }
+
+            {
+                auto dataset = file.getDataSet(data_set_name + "_vy");
                 dataset.read(particle_vy);
-                dataset = file.getDataSet(data_set_name + "_vz");
+            }
+
+            {
+                auto dataset = file.getDataSet(data_set_name + "_vz");
                 dataset.read(particle_vz);
             }
 
@@ -150,27 +163,37 @@ void RootGrid::saveResumeParticleData(HighFive::File& file) const {
 void RootGrid::loadResumeFieldData(HighFive::File& file) {
     {
         auto& ex = field->getEx();
-        auto& ey = field->getEy();
-        auto& ez = field->getEz();
-
         auto data_set = file.getDataSet("ex");
         data_set.read(ex);
-        data_set = file.getDataSet("ey");
+    }
+
+    {
+        auto& ey = field->getEy();
+        auto data_set = file.getDataSet("ey");
         data_set.read(ey);
-        data_set = file.getDataSet("ez");
+    }
+
+    {
+        auto& ez = field->getEz();
+        auto data_set = file.getDataSet("ez");
         data_set.read(ez);
     }
 
     {
         auto& bx = field->getBx();
-        auto& by = field->getBy();
-        auto& bz = field->getBz();
-
         auto data_set = file.getDataSet("bx");
         data_set.read(bx);
-        data_set = file.getDataSet("by");
+    }
+
+    {
+        auto& by = field->getBy();
+        auto data_set = file.getDataSet("by");
         data_set.read(by);
-        data_set = file.getDataSet("bz");
+    }
+
+    {
+        auto& bz = field->getBz();
+        auto data_set = file.getDataSet("bz");
         data_set.read(bz);
     }
 }
