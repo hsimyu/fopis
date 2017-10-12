@@ -247,11 +247,11 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
         {
             //! 奇数グリッド更新
             #pragma omp for
-            for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int i = 1; i < cx_with_glue - 1; i += 2){
                 if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                     for(int j = 1; j < cy_with_glue - 1; ++j){
                         if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                        for(int k = 1; k < cz_with_glue - 1; k += 2){
+                        for(int k = 1; k < cz_with_glue - 1; ++k){
                             if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
                                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                                 }
@@ -263,11 +263,11 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
 
             //! 偶数グリッド更新
             #pragma omp for
-            for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int i = 2; i < cx_with_glue - 1; i += 2){
                 if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
                     for(int j = 1; j < cy_with_glue - 1; ++j){
                         if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                            for(int k = 2; k < cz_with_glue - 1; k += 2){
+                            for(int k = 1; k < cz_with_glue - 1; ++k){
                                 if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
                                     phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
                                 }
