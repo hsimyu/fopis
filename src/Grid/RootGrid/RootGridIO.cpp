@@ -31,6 +31,7 @@ void RootGrid::loadResumeData() {
 
         this->loadResumeParticleData(file);
         this->loadResumeFieldData(file);
+        this->loadResumeObjectData(file);
     }
 }
 
@@ -111,6 +112,7 @@ void RootGrid::loadResumeParticleData(HighFive::File& file) {
                 parray[pnum].vx = particle_vx[pnum];
                 parray[pnum].vy = particle_vy[pnum];
                 parray[pnum].vz = particle_vz[pnum];
+                parray[pnum].makeValid();
             }
         }
     }
@@ -235,6 +237,15 @@ void RootGrid::saveResumeFieldData(HighFive::File& file) const {
         data_set.write(by);
         data_set = bfield_group.createDataSet<double>("bz", HighFive::DataSpace::From(bz));
         data_set.write(bz);
+    }
+}
+
+void RootGrid::loadResumeObjectData(HighFive::File& file) {
+    for(auto& object : objects) {
+        auto group = file.getGroup(object.getName());
+
+        auto data_set = group.getDataSet("charge_map");
+        data_set.read(object.getChargeMap());
     }
 }
 

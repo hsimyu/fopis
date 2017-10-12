@@ -194,6 +194,10 @@ public:
         return charge_map;
     }
 
+    auto& getChargeMap() {
+        return charge_map;
+    }
+
     // 判定用関数
     template<typename T>
     bool isMyCmat(const T cmat_number) const { return (capacity_matrix_relation.count(cmat_number) > 0); }
