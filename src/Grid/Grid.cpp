@@ -42,7 +42,6 @@ void Grid::initializeForLoad() {
     }
 
     this->updateRho();
-    this->solvePoisson();
     this->updateReferenceEfield();
 
     if (Environment::solver_type == "EM") {

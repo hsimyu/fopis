@@ -179,6 +179,15 @@ void RootGrid::saveResumeParticleData(HighFive::File& file) const {
 
 void RootGrid::loadResumeFieldData(HighFive::File& file) {
     {
+        auto phi_group = file.getGroup("Potential");
+        {
+            auto& phi = field->getPhi();
+            auto data_set = phi_group.getDataSet("phi");
+            data_set.read(phi);
+        }
+    }
+
+    {
         auto efield_group = file.getGroup("Efield");
         {
             auto& ex = field->getEx();
@@ -223,6 +232,14 @@ void RootGrid::loadResumeFieldData(HighFive::File& file) {
 }
 
 void RootGrid::saveResumeFieldData(HighFive::File& file) const {
+    {
+        auto phi_group = file.createGroup("Potential");
+
+        auto& phi = field->getPhi();
+        auto data_set = phi_group.createDataSet<double>("phi", HighFive::DataSpace::From(phi));
+        data_set.write(phi);
+    }
+
     {
         auto efield_group = file.createGroup("Efield");
 
