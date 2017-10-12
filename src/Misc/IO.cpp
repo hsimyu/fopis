@@ -24,7 +24,7 @@ namespace IO {
     void writeCmatrixData(const Spacecraft& obj) {
         using H5F = HighFive::File;
 
-        const std::string file_name = "data/objects/" + obj.getFileName() + ".h5";
+        const std::string file_name = "resume/objects/" + obj.getFileName() + ".h5";
         H5F file(file_name, H5F::ReadWrite | H5F::Create | H5F::Truncate);
 
         const auto num_of_cmatrix = obj.getCmatSize();
@@ -54,7 +54,7 @@ namespace IO {
 
     bool loadCmatrixData(Spacecraft& obj) {
 		using H5F = HighFive::File;
-        const std::string file_name = "data/objects/" + obj.getFileName() + ".h5";
+        const std::string file_name = "resume/objects/" + obj.getFileName() + ".h5";
 
         if (MPIw::Environment::isRootNode(obj.getName())) {
             cout << "-- Cmatrix Loading from existing file: " << file_name << " --" << endl;

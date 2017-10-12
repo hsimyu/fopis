@@ -96,7 +96,6 @@ bool Environment::isBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
 void Environment::printInfo(void) {
     cout << "[Environment]" << endl;
     cout << "  jobtype: " << jobtype << endl;
-    cout << "  threads: " << num_threads << endl;
     cout << "  max pnum: " << max_particle_num << endl;
     cout << "  max timestep: " << max_timestep << endl;
     cout << "  boundary cond: " << boundary << endl;

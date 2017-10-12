@@ -40,10 +40,11 @@ namespace Initializer {
         Initializer::loadParticleType(inputs);
 
         if( Environment::isRootNode ) {
-            cout << "---    [ TDPIC " << TDPIC_VERSION << " ]      --" << endl;
-            cout << "   Built date: " << TDPIC_DATE << endl;
-            cout << " Git Revision: " << TDPIC_REVISION << endl;
-            cout << "MPI processes: " << format("%d") % MPIw::Environment::numprocs << endl << endl;
+            cout << "---    [ TDPIC " << TDPIC_VERSION << " ]     --" << endl;
+            cout << "  Built date: " << TDPIC_DATE << endl;
+            cout << "  Git Revision: " << TDPIC_REVISION << endl;
+            cout << "  MPI processes: " << format("%d") % MPIw::Environment::numprocs << endl << endl;
+            cout << "  OpenMP processes: " << format("%d") % Environment::num_threads << endl << endl;
 
             Environment::printInfo();
             Environment::checkPlasmaInfo();
@@ -55,9 +56,11 @@ namespace Initializer {
 
             //! データ書き込み用ディレクトリを作成
             Utils::createDir("data");
-            Utils::createDir("data/resume");
-            Utils::createDir("data/objects");
             Utils::createDir("data/raw_data");
+
+            //! 継続計算データ用ディレクトリを作成
+            Utils::createDir("resume");
+            Utils::createDir("resume/objects");
         }
 
         std::shared_ptr<RootGrid> root_grid;
