@@ -25,10 +25,6 @@ int main(int argc, char* argv[]){
         time_counter->enableReport();
     }
 
-    // root_grid->makeGrandChildRecursive();
-    // root_grid->printInfo();
-    root_grid->initialize();
-
     for(; Environment::timestep <= Environment::max_timestep; ++Environment::timestep) {
         if( Environment::isRootNode ) {
             cout << "====== Iteration " << Environment::timestep << " =====" << endl;

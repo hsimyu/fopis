@@ -35,6 +35,20 @@ void Grid::initialize() {
     }
 }
 
+void Grid::initializeForLoad() {
+    //! 継続計算時用の初期化
+    for(auto& child : children) {
+        child->initializeForLoad();
+    }
+
+    this->updateRho();
+    this->solvePoisson();
+    this->updateReferenceEfield();
+
+    if (Environment::solver_type == "EM") {
+        this->updateReferenceBfield();
+    }
+}
 
 //! @note: childrenのエネルギーも取る?
 double Grid::getEFieldEnergy(void) const {

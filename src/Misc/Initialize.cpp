@@ -67,12 +67,24 @@ namespace Initializer {
 
         if (Environment::jobtype == "new") {
             root_grid = std::make_shared<RootGrid>();
+            if (Environment::isRootNode) {
+                cout << "--  New Computation Data Initializing --" << endl;
+            }
+            root_grid->initialize();
         } else if (Environment::jobtype == "load") {
             root_grid = std::make_shared<RootGrid>();
+
             if (Environment::isRootNode) {
                 cout << "--  Resume Computation Data Loading --" << endl;
             }
+
             root_grid->loadResumeData();
+
+            if (Environment::isRootNode) {
+                cout << "--  Resume Computation Data Initializing --" << endl;
+            }
+
+            root_grid->initializeForLoad();
         } else {
             if (Environment::isRootNode) {
                 cout << "[ERROR] Unknown jobtype, neither ``new'' or ``load'', was inputted." << endl;

@@ -118,6 +118,9 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         //! 場の値の初期化
         void initialize();
 
+        //! 継続計算用の初期化
+        void initializeForLoad();
+
         unsigned int getNextID(void) {
             return ++nextID;
         }
