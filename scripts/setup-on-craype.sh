@@ -13,7 +13,7 @@ cd build
 
 if [[ `hostname` =~ $hostname_new ]]; then
     module load cray-hdf5-parallel
-    cmake .. -DLOCAL_LIBRARYDIR=$INSTALL_LOCATION_A -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment -DCMAKE_PREFIX_PATH=""
+    cmake .. -DLOCAL_LIBRARYDIR=$INSTALL_LOCATION_A -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment -DCMAKE_INSTALL_PREFIX=""
 elif [[ `hostname` =~ $hostname_old ]]; then
     module load hdf5-parallel
     cmake .. -DLOCAL_LIBRARYDIR=$INSTALL_LOCATION_B -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment -DCMAKE_INSTALL_PREFIX="" -DOLD_CRAY_ENV=ON -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc
