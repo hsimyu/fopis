@@ -78,7 +78,7 @@ void RootGrid::initializeObjectsCmatrix(void) {
         Utils::initialize3DArray(phi);
 
         //! データを読み込み
-        if (Environment::useExistingCapacityMatrix) {
+        if (Environment::getOptions().useExistingCapacityMatrix()) {
             const auto is_valid_load = IO::loadCmatrixData(obj);
             if (is_valid_load) continue;
         }

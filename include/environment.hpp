@@ -4,6 +4,41 @@
 #include "particle_type.hpp"
 #include <array>
 
+class Options {
+    public:
+        Options(){}
+
+        using POISSON_LOOP_t = unsigned int;
+        POISSON_LOOP_t getMaximumPoissonPostLoop() const {
+            return maximum_poisson_post_loop;
+        }
+
+        void setMaximumPoissonPostLoop(const POISSON_LOOP_t _v) {
+            maximum_poisson_post_loop = _v;
+        }
+
+        POISSON_LOOP_t getMaximumPoissonPreLoop() const {
+            return maximum_poisson_pre_loop;
+        }
+
+        void setMaximumPoissonPreLoop(const POISSON_LOOP_t _v) {
+            maximum_poisson_pre_loop = _v;
+        }
+
+        auto useExistingCapacityMatrix() const {
+            return use_existing_capacity_matrix;
+        }
+
+        void setUseExistingCapacityMatrix(const bool _b) {
+            use_existing_capacity_matrix = _b;
+        }
+
+    private:
+        unsigned int maximum_poisson_post_loop = DEFAULT_POISSON_POST_LOOP;
+        unsigned int maximum_poisson_pre_loop = DEFAULT_POISSON_PRE_LOOP;
+        bool use_existing_capacity_matrix = false;
+};
+
 struct Environment {
     public:
         static int max_particle_num;
@@ -32,9 +67,6 @@ struct Environment {
         static std::string solver_type;
         static std::string boundary;
         static std::string dimension;
-
-        //! options
-        static bool useExistingCapacityMatrix;
 
         //! 物体情報
         static std::vector<ObjectInfo_t> objects_info;
@@ -147,6 +179,11 @@ struct Environment {
         static void saveInfo();
         static void loadInfo();
 
+        //! Options accesor
+        static Options& getOptions() {
+            return options;
+        }
+
     private:
         static bool isPlotTimestep(const std::string type) {
             if(type == "potential"     && plot_potential_width     != 0) return (timestep % plot_potential_width == 0);
@@ -164,5 +201,7 @@ struct Environment {
         //! 内部的には各粒子の種類毎にリストを持つ
         static AmbientParticleList ambient_particles;
         static BeamParticleList beam_particles;
+
+        static Options options;
 };
 #endif

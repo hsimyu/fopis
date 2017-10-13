@@ -112,8 +112,8 @@ void ChildGrid::mainLoopEM() {
 }
 
 void ChildGrid::solvePoisson(void) {
-    constexpr int PRE_LOOP_NUM = 100;
-    constexpr int POST_LOOP_NUM = 250;
+    const auto PRE_LOOP_NUM = Environment::getOptions().getMaximumPoissonPreLoop();
+    const auto POST_LOOP_NUM = Environment::getOptions().getMaximumPoissonPostLoop();
 
     if (this->getChildrenLength() > 0) {
         this->solvePoissonPSOR(PRE_LOOP_NUM);

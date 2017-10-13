@@ -201,7 +201,11 @@ namespace Initializer {
             auto options_inputs = inputs["Options"].get<picojson::object>();
             for(auto it = options_inputs.begin(); it != options_inputs.end(); ++it){
                 if (it->first == "use_existing_capacity_matrix") {
-                    Environment::useExistingCapacityMatrix = it->second.get<bool>();
+                    Environment::getOptions().setUseExistingCapacityMatrix(it->second.get<bool>());
+                } else if (it->first == "maximum_poisson_post_loop") {
+                    Environment::getOptions().setMaximumPoissonPostLoop( static_cast<unsigned int>(it->second.get<double>()) );
+                } else if (it->first == "maximum_poisson_pre_loop") {
+                    Environment::getOptions().setMaximumPoissonPreLoop( static_cast<unsigned int>(it->second.get<double>()) );
                 }
             }
         }

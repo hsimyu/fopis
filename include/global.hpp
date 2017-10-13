@@ -28,6 +28,10 @@ constexpr double me = 9.1093818872e-31;
 constexpr double c = 2.99792458e8;
 constexpr int MAX_PARTICLE_NUM = 100000000;
 
+//! default option constants
+constexpr unsigned int DEFAULT_POISSON_POST_LOOP = 1000;
+constexpr unsigned int DEFAULT_POISSON_PRE_LOOP = 400;
+
 //! Enumerators
 enum class AXIS {x, y, z};
 enum class AXIS_SIDE {low, up};

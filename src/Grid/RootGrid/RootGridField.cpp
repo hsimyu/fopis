@@ -4,8 +4,8 @@
 #include "utils.hpp"
 
 void RootGrid::solvePoisson(void) {
-    constexpr int PRE_LOOP_NUM = 100;
-    constexpr int POST_LOOP_NUM = 1000;
+    const auto PRE_LOOP_NUM = Environment::getOptions().getMaximumPoissonPreLoop();
+    const auto POST_LOOP_NUM = Environment::getOptions().getMaximumPoissonPostLoop();
 
     if (this->getChildrenLength() > 0) {
         this->solvePoissonPSOR(PRE_LOOP_NUM);
@@ -55,7 +55,8 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     time_counter->begin("solvePoisson/updatePoissonErrorPre");
     poisson_error = phi;
 
-    for(int loop = 1; loop <= loopnum; ++loop) {
+    size_t loop = 1;
+    for(; loop <= loopnum; ++loop) {
         time_counter->switchTo("solvePoisson/mainLoop");
         //! is_not_boundaryは各方向の境界について
         //! 「その境界は計算空間の境界でない」か「その境界が計算空間の境界であり、周期境界である」場合にtrueとなるため
@@ -102,11 +103,12 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
 
         time_counter->switchTo("solvePoisson/checkResidual");
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
-            if (Environment::isRootNode) {
-                cout << "[INFO] solve poisson: performed " << loop << " iterations." << endl;
-            }
             break;
         }
+    }
+
+    if (Environment::isRootNode) {
+        cout << "[INFO] solve poisson: performed " << (loop - 1) << " iterations." << endl;
     }
 
     time_counter->switchTo("solvePoisson/setBoundaryCondition");
