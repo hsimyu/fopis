@@ -5,7 +5,7 @@
 
 void RootGrid::solvePoisson(void) {
     constexpr int PRE_LOOP_NUM = 100;
-    constexpr int POST_LOOP_NUM = 250;
+    constexpr int POST_LOOP_NUM = 1000;
 
     if (this->getChildrenLength() > 0) {
         this->solvePoissonPSOR(PRE_LOOP_NUM);
@@ -155,11 +155,14 @@ double RootGrid::checkPhiResidual() {
                     for(size_t k = 1; k < cz_with_glue - 1; ++k){
                         if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
                             double source_value = rho[0][i][j][k]/normalized_eps;
-                            double tmp_res = field->poissonOperator(phi, i, j, k) + source_value;
-                            poisson_residual[i][j][k] = tmp_res;
 
-                            if (fabs(tmp_res / source_value) > residual) {
-                                residual = fabs(tmp_res / source_value);
+                            if (fabs(source_value) > 0.0) {
+                                double tmp_res = field->poissonOperator(phi, i, j, k) + source_value;
+                                poisson_residual[i][j][k] = tmp_res;
+
+                                if (fabs(tmp_res / source_value) > residual) {
+                                    residual = fabs(tmp_res / source_value);
+                                }
                             }
                         }
                     }
@@ -171,6 +174,7 @@ double RootGrid::checkPhiResidual() {
     if(MPIw::Environment::numprocs > 1) {
         residual = MPIw::Environment::Comms["world"].max(residual);
     }
+
     return residual;
 }
 
