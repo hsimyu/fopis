@@ -2,188 +2,6 @@
 #include "normalizer.hpp"
 #include "field.hpp"
 #include "utils.hpp"
-#include "dataio.hpp"
-
-RootGrid::RootGrid() : Grid() {
-    level = 0;
-
-    //! UniqueなIDをセット
-    constexpr int minimum_id_offset = 10;
-    id = minimum_id_offset * MPIw::Environment::rank + this->getNextID();
-
-    nx = Environment::cell_x;
-    ny = Environment::cell_y;
-    nz = Environment::cell_z;
-    dx = Normalizer::normalizeLength(Environment::dx);
-    dt = Normalizer::normalizeTime(Environment::dt);
-
-    //! @{
-    //! Root Gridの場合の親グリッドは、計算空間を全て統合した空間として、
-    //! その上にプロセス分割されたグリッドが乗っていると考える
-    from_ix = Environment::getAssignedXBegin();
-    from_iy = Environment::getAssignedYBegin();
-    from_iz = Environment::getAssignedZBegin();
-    to_ix = Environment::getAssignedXEnd();
-    to_iy = Environment::getAssignedYEnd();
-    to_iz = Environment::getAssignedZEnd();
-    //! @note: base_x, base_y, base_zは正規化された長さ
-    base_x = dx * static_cast<double>(from_ix);
-    base_y = dx * static_cast<double>(from_iy);
-    base_z = dx * static_cast<double>(from_iz);
-    //! @}
-
-    //! ChildMap初期化
-    this->initializeChildMap();
-
-    // Field初期化
-    this->initializeField();
-
-    // 物体初期化
-    this->initializeObject();
-    this->initializeObjectsCmatrix();
-
-    //! - 粒子位置の上限を設定
-    double max_x = static_cast<double>(Environment::cell_x);
-    double max_y = static_cast<double>(Environment::cell_y);
-    double max_z = static_cast<double>(Environment::cell_z);
-
-    //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
-
-    //! - particlesは空のstd::vector< std::vector<Particle> >として宣言されている
-    //! - particle types 分だけresize
-    particles.resize(Environment::num_of_particle_types);
-
-    for(int id = 0; id < Environment::num_of_particle_types; ++id){
-        //! 各粒子分のメモリをreserveしておく
-        particles[id].reserve(Environment::getParticleType(id)->getTotalNumber() * 2);
-
-        //! 初期化時は背景粒子のみ生成
-        if (Environment::getParticleType(id)->getType() == "ambient") {
-            auto ambient_particle_ptr = Environment::getAmbientParticleType(id);
-            int pnum = ambient_particle_ptr->getTotalNumber();
-
-            for(int i = 0; i < pnum; ++i){
-                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, 0.0, max_z);
-
-                //! 物体がある場合は生成時にチェックする
-                for(const auto& obj : objects) {
-                    if (obj.isDefined()) obj.removeInnerParticle(p);
-                }
-
-                if (p.isValid) particles[id].push_back( std::move(p) );
-            }
-        }
-    }
-}
-
-void RootGrid::mainLoopES() {
-    auto time_counter = Utils::TimeCounter::getInstance();
-
-    time_counter->begin("resetObjects");
-    this->resetObjects();
-
-    // -- timing: 0 --
-
-    //! 子グリッド上のループを1回分先に呼び出し、
-    //! 各関数においてももう一度呼び出すことで時間感覚を合わせる
-    for (auto& child : children) {
-        // -- timing: 0.5 dt --
-        child->mainLoop();
-    }
-
-    // -- timing: dt --
-    // 速度更新
-    time_counter->switchTo("updateParticleVelocity");
-    this->updateParticleVelocity();
-
-    // 粒子放出
-    time_counter->switchTo("emitParticlesFromObjects");
-    this->emitParticlesFromObjects();
-
-    // 粒子位置更新
-    time_counter->switchTo("updateParticlePosition");
-    this->updateParticlePosition();
-
-    // 粒子注入
-    time_counter->switchTo("injectParticleFromBoundary");
-    this->injectParticlesFromBoundary();
-
-    // 密度更新
-    time_counter->switchTo("updateDensity");
-    this->updateDensity();
-
-    // 静電計算の場合
-    // 新しい位置に対応する電荷密度算出
-    time_counter->switchTo("updateRho");
-    this->updateRho();
-
-    // Poisson を解く
-    time_counter->switchTo("solvePoisson");
-    this->solvePoisson();
-
-    // 電場更新
-    time_counter->switchTo("updateEfield");
-    this->updateEfield();
-
-    //! 不要な粒子を削除
-    constexpr unsigned int remove_invalid_particle_width = 50;
-    if (Environment::timestep % remove_invalid_particle_width == 0) {
-        time_counter->switchTo("removeInvalidParticles");
-        this->removeInvalidParticles();
-    }
-
-    time_counter->end();
-}
-
-void RootGrid::mainLoopEM() {
-    auto time_counter = Utils::TimeCounter::getInstance();
-
-    time_counter->begin("resetObjects");
-    this->resetObjects();
-
-    // -- timing: t + 0.5 dt --
-    // 速度更新
-    time_counter->switchTo("updateParticleVelocity");
-    this->updateParticleVelocity();
-
-    // 粒子放出
-    time_counter->switchTo("emitParticlesFromObjects");
-    this->emitParticlesFromObjects();
-
-    // 位置更新
-    time_counter->switchTo("updateParticlePosition");
-    this->updateParticlePosition(); // jx, jy, jz もここで update される
-
-    // 粒子注入
-    time_counter->switchTo("injectParticleFromBoundary");
-    this->injectParticlesFromBoundary();
-
-    // 新しい位置に対応する電荷密度算出
-    time_counter->switchTo("updateRho");
-    this->updateRho();
-
-    time_counter->switchTo("updateEfieldFDTD");
-    this->updateEfieldFDTD();
-
-    time_counter->switchTo("solvePoissonCorrection");
-    this->solvePoissonCorrection();
-
-    // 磁場更新
-    time_counter->switchTo("updateBfield");
-    this->updateBfield();
-
-    //! 不要な粒子を削除
-    constexpr unsigned int remove_invalid_particle_width = 50;
-    if (Environment::timestep % remove_invalid_particle_width == 0) {
-        time_counter->switchTo("removeInvalidParticles");
-        this->removeInvalidParticles();
-    }
-
-    time_counter->end();
-}
 
 void RootGrid::solvePoisson(void) {
     constexpr int PRE_LOOP_NUM = 100;
@@ -622,10 +440,113 @@ void RootGrid::updateReferenceEfield() {
 }
 
 void RootGrid::updateEfieldFDTD() {
-    field->updateEfieldFDTD(dx, dt);
+    this->updateEfieldFDTDMur1();
+}
+
+void RootGrid::updateEfieldFDTDMur1() {
+    auto& ex = field->getEx();
+    auto& ey = field->getEy();
+    auto& ez = field->getEz();
+    auto& bx = field->getBx();
+    auto& by = field->getBy();
+    auto& bz = field->getBz();
+    auto& jx = field->getJx();
+    auto& jy = field->getJy();
+    auto& jz = field->getJz();
+    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
+    const size_t cy_with_glue = ey.shape()[1] + 1;
+    const size_t cz_with_glue = ez.shape()[2] + 1;
+    const double dt_per_eps0 = dt / Normalizer::eps0;
+    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Normalizer::mu0 * dx);
+
+    static const bool is_boundary[6] = {
+        Environment::isBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::z, AXIS_SIDE::up),
+    };
+
+    const double mur_coeff = (Normalizer::c * dt - dx) / (Normalizer::c * dt + dx);
+
+    //! とりあえず Mur 1次
+    for(size_t i = 1; i < cx_with_glue - 1; ++i){
+        for(size_t j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t k = 1; k < cz_with_glue - 1; ++k){
+                //! 各方向には1つ少ないのでcx-1まで
+                if(i < cx_with_glue - 2) {
+                    if (i == 1 && is_boundary[0]) {
+                        const double new_value = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
+
+                        ex[i - 1][j][k] = ex[i][j][k] + mur_coeff * (new_value - ex[i - 1][j][k]);
+                        ex[i][j][k] = new_value;
+                    } else if (i == cx_with_glue - 2 && is_boundary[1]) {
+                        const double new_value = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
+
+                        ex[i + 1][j][k] = ex[i][j][k] + mur_coeff * (new_value - ex[i + 1][j][k]);
+                        ex[i][j][k] = new_value;
+                    } else {
+                        ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
+                    }
+                }
+                if(j < cy_with_glue - 2) {
+                    if (j == 1 && is_boundary[2]) {
+                        const double new_value = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+
+                        ey[i][j - 1][k] = ey[i][j][k] + mur_coeff * (new_value - ey[i][j - 1][k]);
+                        ey[i][j][k] = new_value;
+                    } else if (j == cy_with_glue - 2 && is_boundary[3]) {
+                        const double new_value = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+
+                        ey[i][j + 1][k] = ey[i][j][k] + mur_coeff * (new_value - ey[i][j + 1][k]);
+                        ey[i][j][k] = new_value;
+                    } else {
+                        ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+                    }
+                }
+                if(k < cz_with_glue - 2) {
+                    if (k == 1 && is_boundary[4]) {
+                        const double new_value = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+
+                        ez[i][j][k - 1] = ez[i][j][k] + mur_coeff * (new_value - ez[i][j][k - 1]);
+                        ez[i][j][k] = new_value;
+                    } else if (k == cz_with_glue - 2 && is_boundary[5]) {
+                        const double new_value = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+
+                        ez[i][j][k + 1] = ez[i][j][k] + mur_coeff * (new_value - ez[i][j][k + 1]);
+                        ez[i][j][k] = new_value;
+                    } else {
+                        ez[i][j][k] = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+                    }
+                }
+            }
+        }
+    }
+
+    // FDTDの場合は通信が必要になる
+    MPIw::Environment::sendRecvField(ex);
+    MPIw::Environment::sendRecvField(ey);
+    MPIw::Environment::sendRecvField(ez);
+
+    //! Reference 更新
+    this->updateReferenceEfield();
 }
 
 void RootGrid::updateBfield() {
+    this->updateBfieldMur1();
+}
+
+void RootGrid::updateBfieldMur1() {
     const double dt_per_dx = dt / dx;
 
     // const double epsilon_r = 1.0; //! 比誘電率
@@ -637,10 +558,6 @@ void RootGrid::updateBfield() {
     // const double d1 = mu_r/(mu_r + sigma_m * dt / mu0);
     // const double d2 = dt/(mu_r + sigma_m * dt / mu0);
 
-    const int cx_with_glue = nx + 1;
-    const int cy_with_glue = ny + 1;
-    const int cz_with_glue = nz + 1;
-
     auto& bx = field->getBx();
     auto& by = field->getBy();
     auto& bz = field->getBz();
@@ -648,20 +565,71 @@ void RootGrid::updateBfield() {
     auto& ey = field->getEy();
     auto& ez = field->getEz();
 
+    const size_t cx_with_glue = bx.shape()[0];
+    const size_t cy_with_glue = by.shape()[1];
+    const size_t cz_with_glue = bz.shape()[2];
+
+    static const bool is_boundary[6] = {
+        Environment::isBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::z, AXIS_SIDE::up),
+    };
+
+    const double mur_coeff = (Normalizer::c * dt - dx) / (Normalizer::c * dt + dx);
+
     //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
-    for(int i = 1; i < cx_with_glue; ++i){
-        for(int j = 1; j < cy_with_glue; ++j){
-            for(int k = 1; k < cz_with_glue; ++k){
-                if (j != cy_with_glue - 1 && k != cz_with_glue - 1) {
-                    bx[i][j][k] = bx[i][j][k] - dt_per_dx * (ez[i][j - 1][k] - ez[i][j][k] - ey[i][j][k + 1] + ey[i][j][k]);
+    for(int i = 1; i < cx_with_glue - 1; ++i){
+        for(int j = 1; j < cy_with_glue - 1; ++j){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                if (j != cy_with_glue - 2 && k != cz_with_glue - 2) {
+                    if (i == 1 && is_boundary[0]) {
+                        const double new_value = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
+
+                        bx[i - 1][j][k] = bx[i][j][k] + mur_coeff * (new_value - bx[i - 1][j][k]);
+                        bx[i][j][k] = new_value;
+                    } else if (i == cx_with_glue - 2 && is_boundary[1]) {
+                        const double new_value = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
+
+                        bx[i + 1][j][k] = bx[i][j][k] + mur_coeff * (new_value - bx[i + 1][j][k]);
+                        bx[i][j][k] = new_value;
+                    } else {
+                        bx[i][j][k] = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
+                    }
                 }
 
-                if (i != cx_with_glue - 1 && k != cz_with_glue - 1) {
-                    by[i][j][k] = by[i][j][k] - dt_per_dx * (ex[i][j][k + 1] - ex[i][j][k] - ez[i + 1][j][k] + ez[i][j][k]);
+                if (i != cx_with_glue - 2 && k != cz_with_glue - 2) {
+                    if (j == 1 && is_boundary[2]) {
+                        const double new_value = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
+
+                        by[i][j - 1][k] = by[i][j][k] + mur_coeff * (new_value - by[i][j - 1][k]);
+                        by[i][j][k] = new_value;
+                    } else if (j == cy_with_glue - 2 && is_boundary[3]) {
+                        const double new_value = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
+
+                        by[i][j + 1][k] = by[i][j][k] + mur_coeff * (new_value - by[i][j + 1][k]);
+                        by[i][j][k] = new_value;
+                    } else {
+                        by[i][j][k] = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
+                    }
                 }
 
-                if (i != cx_with_glue - 1 && j != cy_with_glue - 1) {
-                    bz[i][j][k] = bz[i][j][k] - dt_per_dx * (ey[i + 1][j][k] - ey[i][j][k] - ex[i][j + 1][k] + ex[i][j][k]);
+                if (i != cx_with_glue - 2 && j != cy_with_glue - 2) {
+                    if (k == 1 && is_boundary[4]) {
+                        const double new_value = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
+
+                        bz[i][j][k - 1] = bz[i][j][k] + mur_coeff * (new_value - bz[i][j][k - 1]);
+                        bz[i][j][k] = new_value;
+                    } else if (k == cz_with_glue - 2 && is_boundary[5]) {
+                        const double new_value = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
+
+                        bz[i][j][k + 1] = bz[i][j][k] + mur_coeff * (new_value - bz[i][j][k + 1]);
+                        bz[i][j][k] = new_value;
+                    } else {
+                        bz[i][j][k] = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
+                    }
                 }
             }
         }
@@ -684,6 +652,15 @@ void RootGrid::updateReferenceBfield() {
     const size_t cx_with_glue = bxref.shape()[0];
     const size_t cy_with_glue = bxref.shape()[1];
     const size_t cz_with_glue = bxref.shape()[2];
+
+    static const bool is_boundary[6] = {
+        Environment::isBoundary(AXIS::x, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::x, AXIS_SIDE::up),
+        Environment::isBoundary(AXIS::y, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::y, AXIS_SIDE::up),
+        Environment::isBoundary(AXIS::z, AXIS_SIDE::low),
+        Environment::isBoundary(AXIS::z, AXIS_SIDE::up),
+    };
 
     //! reference 更新
     for(int i = 1; i < cx_with_glue - 1; ++i){
@@ -721,317 +698,6 @@ void RootGrid::updateDensity(void) {
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         MPIw::Environment::sendRecvCellScalar(density[pid]);
-    }
-}
-
-void RootGrid::initializeObject(void) {
-    if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
-
-    for (const auto& object_info : Environment::objects_info) {
-        std::string obj_name = object_info.name;
-        //! 物体関連の設定を関連付けされた obj 形式ファイルから読み込む
-        ObjectDataFromFile object_data = ObjectUtils::getObjectNodesFromObjFile(object_info.file_name);
-
-        size_t num_cmat = object_data.nodes.size();
-        const auto& whole_node_array = object_data.nodes;
-
-        //! innerと判定されたやつだけ渡す
-        ObjectNodes inner_node_array;
-        ObjectNodes glue_node_array;
-        bool is_object_in_this_node = false;
-
-        for(const auto& node_pair : whole_node_array) {
-            const auto cmat_itr = node_pair.first;
-            const auto& node_pos = node_pair.second;
-
-            const auto i = node_pos[0];
-            const auto j = node_pos[1];
-            const auto k = node_pos[2];
-
-            if (isInnerNode(i, j, k)) {
-                is_object_in_this_node = true;
-                inner_node_array[cmat_itr] = Environment::getRelativePositionOnRootWithGlue(i, j, k);
-            } else if (isGlueNode(i, j, k)) {
-                glue_node_array[cmat_itr] = Environment::getRelativePositionOnRootWithGlue(i, j, k);
-            }
-        }
-
-        const auto& cell_array = object_data.cells;
-        ObjectCells inner_cell_array;
-        for(const auto& cell_pos : cell_array) {
-            if (isInnerCellWithGlue(cell_pos[0], cell_pos[1], cell_pos[2])) {
-                auto rel_pos = Environment::getRelativePositionOnRootWithGlue(cell_pos[0], cell_pos[1], cell_pos[2]);
-                inner_cell_array.push_back( {{rel_pos[0], rel_pos[1], rel_pos[2]}} );
-            }
-        }
-
-        //! 物体定義点がゼロでも Spacecraft オブジェクトだけは作成しておいた方がよい
-        //! emplace_back で Spacecraft object を直接構築
-        objects.emplace_back(
-            nx, ny, nz, num_cmat, object_info,
-            inner_node_array, glue_node_array, whole_node_array,
-            inner_cell_array, object_data.textures, object_data.connected_list
-        );
-
-        //! Comm作成 (物体が入っていないならnullになる)
-        MPIw::Environment::makeNewComm(obj_name, is_object_in_this_node);
-
-        auto& obj = objects[ objects.size() - 1 ];
-        if (obj.isDefined()) {
-            obj.initializeAfterMakeComm();
-
-            if (MPIw::Environment::isRootNode(obj_name)) {
-                cout << Environment::rankStr() << "is set to Root Node for " << obj_name << "." << endl;
-                cout << obj << endl;
-            }
-        }
-    }
-}
-
-void RootGrid::initializeObjectsCmatrix(void) {
-    if (Environment::isRootNode) cout << "-- Initializing Objects Capacity Matrix --" << endl;
-    RhoArray& rho = field->getRho();
-    tdArray& phi = field->getPhi();
-
-    for(auto& obj : objects) {
-        // rhoを初期化
-        Utils::initializeRhoArray(rho);
-        Utils::initialize3DArray(phi);
-
-        //! データを読み込み
-        if (Environment::useExistingCapacityMatrix) {
-            const auto is_valid_load = IO::loadCmatrixData(obj);
-            if (is_valid_load) continue;
-        }
-
-        //! データを使わずに初期化
-        const auto num_cmat = obj.getCmatSize();
-
-        std::unique_ptr<Utils::ProgressManager> pm;
-        if (MPIw::Environment::isRootNode(obj.getName())) {
-            std::unique_ptr<Utils::ProgressManager> tmp_pm(new Utils::ProgressManager(num_cmat, "cmat_solve"));
-            pm = std::move(tmp_pm);
-        }
-
-        for(unsigned int cmat_col_itr = 0; cmat_col_itr < num_cmat; ++cmat_col_itr ) {
-            if (MPIw::Environment::isRootNode(obj.getName())) pm->update(cmat_col_itr);
-
-            //! 該当する頂点に単位電荷を付与
-            if (obj.isMyCmat(cmat_col_itr)) {
-                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
-            }
-
-            Utils::initialize3DArray(phi);
-            solvePoisson();
-
-            //#pragma omp parallel for ordered shared(obj)
-            for(unsigned int cmat_row_itr = 0; cmat_row_itr < num_cmat; ++cmat_row_itr ) {
-                double value = 0.0;
-                if (obj.isMyCmat(cmat_row_itr)) {
-                    //! phiの値がB_{ij}の値になっている
-                    const auto& target_pos = obj.getCmatPos(cmat_row_itr);
-                    value = phi[target_pos.i][target_pos.j][target_pos.k];
-                }
-
-                if (obj.isDefined()) {
-                    //! bcastの代わりにsumしてしまう
-                    value = MPIw::Environment::Comms[obj.getName()].sum(value);
-                    obj.setCmatValue(cmat_col_itr, cmat_row_itr, value);
-                }
-            }
-
-            //! 付与した単位電荷を消去する
-            if (obj.isMyCmat(cmat_col_itr)) {
-                const auto& cmat_pos = obj.getCmatPos(cmat_col_itr);
-                rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 0.0;
-            }
-        }
-
-        //! 物体が有効でないなら解く必要なし
-        if (obj.isDefined()) obj.makeCmatrixInvert();
-
-        if (MPIw::Environment::isRootNode(obj.getName())) {
-            IO::writeCmatrixData(obj);
-        }
-    }
-
-    for(auto& obj : objects) {
-        //! 初期電荷オフセットを付与する
-        obj.initializeChargeMapOffset(phi);
-    }
-}
-
-void RootGrid::resetObjects() {
-    //! 物体上の一時的な情報を初期化
-    for(auto& obj : objects) {
-        if(obj.isDefined()) {
-            obj.resetCurrent();
-        }
-    }
-}
-
-int RootGrid::getXNodeSize(void) const {
-    //! 周期境界の場合は上側境界と下側境界の間の空間も有効な空間となるので、
-    //! 上側のノードを1つ増やす
-    return (level == 0 && Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) ? nx + 1 : nx;
-}
-
-int RootGrid::getYNodeSize(void) const {
-    return (level == 0 && Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) ? ny + 1 : ny;
-}
-
-int RootGrid::getZNodeSize(void) const {
-    return (level == 0 && Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) ? nz + 1 : nz;
-}
-
-void RootGrid::injectParticlesFromBoundary(void) {
-    static std::vector< std::vector<double> > residual;
-    static bool isFirstCall = true;
-
-    //! staticな残余変数の初期化
-    if(isFirstCall) {
-        residual.resize(Environment::getNumOfAmbientParticles());
-
-        for(int i = 0; i < residual.size(); ++i) {
-            residual[i].resize(6);
-            for(int j = 0; j < 6; ++j) {
-                residual[i][j] = 0.0;
-            }
-        }
-
-        isFirstCall = false;
-    }
-
-    //! - 粒子位置の上限を設定
-    double max_x = static_cast<double>(Environment::cell_x);
-    double max_y = static_cast<double>(Environment::cell_y);
-    double max_z = static_cast<double>(Environment::cell_z);
-
-    //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
-
-	auto ambient_ptype_ptr_list = Environment::getAmbientParticleTypes();
-    for(int itr = 0; itr < Environment::getNumOfAmbientParticles(); ++itr) {
-        auto ambient_particle_ptr = ambient_ptype_ptr_list[itr];
-
-        std::vector<double> flux = ambient_particle_ptr->calcFlux(*this);
-        const auto pid = ambient_particle_ptr->getId();
-
-        if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
-            const int index = 0;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
-
-            for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある?
-                while (vel.vx <= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
-                Particle p = ambient_particle_ptr->generateNewParticle(0.0, vel.vx * dt, 0.0, max_y, 0.0, max_z, vel);
-                particles[pid].push_back( std::move(p) );
-            }
-        }
-
-        if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
-            const int index = 1;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
-
-            for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vx >= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
-                //! 負方向速度をxの最大値から引いた点までがありうる範囲
-                Particle p = ambient_particle_ptr->generateNewParticle(max_x + vel.vx * dt, max_x, 0.0, max_y, 0.0, max_z, vel);
-                particles[pid].push_back( std::move(p) );
-            }
-        }
-
-        if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
-            const int index = 2;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
-
-            for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vy <= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
-                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, vel.vy * dt, 0.0, max_z, vel);
-                particles[pid].push_back( std::move(p) );
-            }
-        }
-
-        if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
-            const int index = 3;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
-
-            for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vy >= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
-                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, max_y + vel.vy * dt, max_y, 0.0, max_z, vel);
-                particles[pid].push_back( std::move(p) );
-            }
-        }
-
-        if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
-            const int index = 4;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
-
-            for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vz <= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
-                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, 0.0, vel.vz * dt, vel);
-                particles[pid].push_back( std::move(p) );
-            }
-        }
-
-        if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
-            const int index = 5;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
-
-            for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vz >= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
-                Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, max_z + vel.vz * dt, max_z, vel);
-                particles[pid].push_back( std::move(p) );
-            }
-        }
-    }
-}
-
-void RootGrid::emitParticlesFromObjects(void) {
-    for(auto& obj : objects) {
-        if (obj.isDefined() && obj.hasEmitParticles()) {
-            obj.emitParticles(particles);
-        }
     }
 }
 
@@ -1136,6 +802,3 @@ void RootGrid::updateRho() {
 
     time_counter->end();
 }
-
-inline void RootGrid::decrementSumOfChild() { --sumTotalNumOfChildGrids; }
-inline void RootGrid::incrementSumOfChild() { ++sumTotalNumOfChildGrids; }

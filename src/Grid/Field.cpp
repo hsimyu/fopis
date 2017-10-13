@@ -95,48 +95,6 @@ void Field::setDirichletPhi(const AXIS axis, const AXIS_SIDE low_or_up) {
     }
 }
 
-//! FDTD法ベースで電場を更新する
-void Field::updateEfieldFDTD(const double dx, const double dt) {
-    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
-    const size_t cy_with_glue = ey.shape()[1] + 1;
-    const size_t cz_with_glue = ez.shape()[2] + 1;
-    const double dt_per_eps0 = dt / Normalizer::eps0;
-    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Normalizer::mu0 * dx);
-
-    for(size_t i = 1; i < cx_with_glue - 1; ++i){
-        for(size_t j = 1; j < cy_with_glue - 1; ++j){
-            for(size_t k = 1; k < cz_with_glue - 1; ++k){
-                //! 各方向には1つ少ないのでcx-1まで
-                if(i < cx_with_glue - 2) {
-                    ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
-                        dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
-                }
-                if(j < cy_with_glue - 2) {
-                    ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
-                        dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
-                }
-                if(k < cz_with_glue - 2) {
-                    ez[i][j][k] = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
-                        dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
-                }
-            }
-        }
-    }
-
-    // FDTDの場合は通信が必要になる
-    MPIw::Environment::sendRecvField(ex);
-    MPIw::Environment::sendRecvField(ey);
-    MPIw::Environment::sendRecvField(ez);
-
-    //! 境界条件設定
-    this->setDampingBoundaryOnEfield();
-
-    //! phi correction?
-
-    //! Reference 更新
-    // this->updateReferenceEfield();
-}
-
 void Field::setDampingBoundaryOnEfield(void) {
     const size_t cx_with_glue = ex.shape()[0] + 1;
     const size_t cy_with_glue = ey.shape()[1] + 1;
@@ -208,18 +166,25 @@ void Field::initializeCurrent(const double dt) {
     const size_t cz_with_glue = jz.shape()[2] + 1;
 
     //! 背景電流などがある場合にはここで設定する
-
     //! Jz 方向に振動する電流
+
+    /*
     const auto now = dt * static_cast<double>(Environment::timestep);
     const double real_freq = 5e7; // Hz
-    // cout << "[NOTICE] " << 1.0 / Normalizer::normalizeFrequency(real_freq) << " step で 1周期です." << endl;
+
+    if (Environment::isRootNode) {
+        cout << "[NOTICE] " << 1.0 / Normalizer::normalizeFrequency(real_freq) << " step で 1周期です." << endl;
+    }
+
     const double freq = 2.0 * M_PI * Normalizer::normalizeFrequency(real_freq); // Hz
-    const double J0 = 10.0;
+    const double J0 = 100.0;
+
     const size_t half_x = cx_with_glue / 2;
     const size_t half_y = cy_with_glue / 2;
     for (size_t k = 0; k < cz_with_glue - 1; ++k) {
         jz[half_x][half_y][k] = J0 * std::sin(freq * now);
     }
+    */
 }
 
 double Field::getEfieldEnergy(void) const {

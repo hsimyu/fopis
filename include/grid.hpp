@@ -445,6 +445,8 @@ class RootGrid : public Grid {
 
         void solvePoissonCorrectionPSOR(const int loopnum);
         double checkPhiCorrectionResidual();
+        void updateEfieldFDTDMur1();
+        void updateBfieldMur1();
 
         void loadResumeParticleData(HighFive::File& file);
         void loadResumeFieldData(HighFive::File& file);

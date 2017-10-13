@@ -52,23 +52,18 @@ class Field {
         tdArray& getPhi(){ return phi; }
         tdArray& getPoissonResidual(){ return poisson_residual; }
         tdArray& getPoissonError(){ return poisson_error; }
-        void setBoundaryConditionPhi(void);
 
         double poissonOperator(const tdArray& phi, const size_t i, const size_t j, const size_t k) const {
             return (phi[i-1][j][k] + phi[i+1][j][k] + phi[i][j-1][k] + phi[i][j+1][k] + phi[i][j][k-1] + phi[i][j][k+1] - 6.0*phi[i][j][k]);
         }
 
         // charge density
-        void setRho(RhoArray& _rho){ rho = _rho; }
         RhoArray& getRho(){ return rho; }
 
         // density
         RhoArray& getDensity(){ return density; }
 
         // electric fields
-        void setEx(tdArray& _ex){ ex = _ex; }
-        void setEy(tdArray& _ey){ ey = _ey; }
-        void setEz(tdArray& _ez){ ez = _ez; }
         tdArray& getEx(){ return ex; }
         tdArray& getEy(){ return ey; }
         tdArray& getEz(){ return ez; }
@@ -79,9 +74,6 @@ class Field {
         tdArray& getEzRef(){ return ezref; }
 
         // magnetic fields
-        void setBx(tdArray& _bx){ bx = _bx; }
-        void setBy(tdArray& _by){ by = _by; }
-        void setBz(tdArray& _bz){ bz = _bz; }
         tdArray& getBx(){ return bx; }
         tdArray& getBy(){ return by; }
         tdArray& getBz(){ return bz; }
@@ -96,7 +88,9 @@ class Field {
         tdArray& getJy(){ return jy; }
         tdArray& getJz(){ return jz; }
 
-        void updateEfieldFDTD(const double dx, const double dt);
+        //! boundary conditions
+        void setBoundaryConditionPhi(void);
+        void setAbsorbingBoundaryOnEfield(void);
         void setDampingBoundaryOnEfield(void);
 
         void initializeCurrent(const double dt);
