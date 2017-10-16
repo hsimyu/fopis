@@ -216,8 +216,16 @@ bool Environment::isValidNodePosition(const Position& pos) {
     return ((pos.i >= 0) && (pos.i < cell_x + 2) && (pos.j >= 0) && (pos.j < cell_y + 2) && (pos.k >= 0) && (pos.k < cell_z + 2));
 }
 
+bool Environment::isValidNodePosition(const int i, const int j, const int k) {
+    return ((i >= 0) && (i < cell_x + 2) && (j >= 0) && (j < cell_y + 2) && (k >= 0) && (k < cell_z + 2));
+}
+
 bool Environment::isValidCellPosition(const Position& pos) {
     return ((pos.i >= 0) && (pos.i < cell_x + 1) && (pos.j >= 0) && (pos.j < cell_y + 1) && (pos.k >= 0) && (pos.k < cell_z + 1));
+}
+
+bool Environment::isValidCellPosition(const int i, const int j, const int k) {
+    return ((i >= 0) && (i < cell_x + 1) && (j >= 0) && (j < cell_y + 1) && (k >= 0) && (k < cell_z + 1));
 }
 
 //! インデックスを探して使う

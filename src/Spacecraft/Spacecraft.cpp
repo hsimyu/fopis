@@ -287,10 +287,15 @@ inline bool Spacecraft::isXsurfacePoint(const Position& pos, const int sign) con
     constexpr double possible_error = 1e-10;
     if (pos.dx1 >= possible_error) return false;
 
-    if (sign > 0) {
-        return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i - 1][pos.j][pos.k]);
+    if (Environment::isValidCellPosition(pos) && Environment::isValidCellPosition(pos.i - 1, pos.j, pos.k)) {
+        if (sign > 0) {
+            return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i - 1][pos.j][pos.k]);
+        } else {
+            return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i - 1][pos.j][pos.k];
+        }
     } else {
-        return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i - 1][pos.j][pos.k];
+        cout << Environment::rankStr() << "[WARNING] Invalid Cell Position was passed to Spacecraft::isXsurfacePoint().";
+        return false;
     }
 }
 
@@ -298,10 +303,15 @@ inline bool Spacecraft::isYsurfacePoint(const Position& pos, const int sign) con
     constexpr double possible_error = 1e-10;
     if (pos.dy1 >= possible_error) return false;
 
-    if (sign > 0) {
-        return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j - 1][pos.k]);
+    if (Environment::isValidCellPosition(pos) && Environment::isValidCellPosition(pos.i, pos.j - 1, pos.k)) {
+        if (sign > 0) {
+            return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j - 1][pos.k]);
+        } else {
+            return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j - 1][pos.k];
+        }
     } else {
-        return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j - 1][pos.k];
+        cout << Environment::rankStr() << "[WARNING] Invalid Cell Position was passed to Spacecraft::isYsurfacePoint().";
+        return false;
     }
 }
 
@@ -309,10 +319,15 @@ inline bool Spacecraft::isZsurfacePoint(const Position& pos, const int sign) con
     constexpr double possible_error = 1e-10;
     if (pos.dz1 >= possible_error) return false;
 
-    if (sign > 0) {
-        return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j][pos.k - 1]);
+    if (Environment::isValidCellPosition(pos) && Environment::isValidCellPosition(pos.i, pos.j, pos.k - 1)) {
+        if (sign > 0) {
+            return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j][pos.k - 1]);
+        } else {
+            return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j][pos.k - 1];
+        }
     } else {
-        return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j][pos.k - 1];
+        cout << Environment::rankStr() << "[WARNING] Invalid Cell Position was passed to Spacecraft::isZsurfacePoint().";
+        return false;
     }
 }
 

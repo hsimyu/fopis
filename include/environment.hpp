@@ -148,7 +148,9 @@ struct Environment {
         }
 
         static bool isValidNodePosition(const Position& pos);
+        static bool isValidNodePosition(const int i, const int j, const int k);
         static bool isValidCellPosition(const Position& pos);
+        static bool isValidCellPosition(const int i, const int j, const int k);
 
         //! 各方向の境界条件を取得する
         static std::string getBoundaryCondition(const AXIS, const AXIS_SIDE);
