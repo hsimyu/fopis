@@ -101,7 +101,6 @@ void RootGrid::initializeObjectsCmatrix(void) {
                 rho[0][cmat_pos.i][cmat_pos.j][cmat_pos.k] = 1.0;
             }
 
-            Utils::initialize3DArray(phi);
             solvePoisson();
 
             //#pragma omp parallel for ordered shared(obj)
