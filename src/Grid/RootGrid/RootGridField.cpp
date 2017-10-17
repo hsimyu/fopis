@@ -32,7 +32,8 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     auto& poisson_error = field->getPoissonError();
     auto& rho = field->getRho();
 
-    const double omega = 2.0/(1.0 + sin(M_PI/(phi.shape()[0] - 2))); // spectral radius
+    const int minimum_radius = std::min({Environment::nx, Environment::ny, Environment::nz});
+    const double omega = 2.0/(1.0 + sin(M_PI/minimum_radius)); // spectral radius
     const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
 
     const size_t cx_with_glue = phi.shape()[0];
