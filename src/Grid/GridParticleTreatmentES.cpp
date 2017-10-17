@@ -103,18 +103,9 @@ void RootGrid::updateParticlePositionES(void) {
 
             if(p.isValid) {
                 p.updatePosition();
-
-                // 物体への電荷配分は移動後すぐに判定してしまう
-                for(auto& obj : objects) {
-                    //! 物体中にいた場合には自動的に invalid になる
-                    obj.distributeInnerParticleCharge(p);
-                }
-
-                if (p.isValid) {
-                    checkXBoundary(pbuff, p, slx);
-                    checkYBoundary(pbuff, p, sly);
-                    checkZBoundary(pbuff, p, slz);
-                }
+                checkXBoundary(pbuff, p, slx);
+                checkYBoundary(pbuff, p, sly);
+                checkZBoundary(pbuff, p, slz);
             }
         }
     }

@@ -180,6 +180,7 @@ public:
     Position getCmatPos(const unsigned int);
     unsigned int getCmatNumber(const int i, const int j, const int k) const;
     unsigned int getCmatNumber(const Position& pos) const;
+    bool isCmatNode(const int i, const int j, const int k) const;
 
     auto getCmatValue(const unsigned int col, const unsigned int row) const {
         return capacity_matrix(col, row);

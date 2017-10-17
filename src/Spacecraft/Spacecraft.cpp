@@ -231,6 +231,17 @@ unsigned int Spacecraft::getCmatNumber(const int i, const int j, const int k) co
     throw std::invalid_argument(error_message);
 }
 
+bool Spacecraft::isCmatNode(const int i, const int j, const int k) const {
+    try {
+        Spacecraft::getCmatNumber(i, j, k);
+    } catch (std::invalid_argument& e) {
+        cout << Environment::rankStr() << format("It is not a cmat node: %d, %d, %d") % i % j % k << endl;
+        return false;
+    }
+
+    return true;
+}
+
 auto Spacecraft::getTotalCharge() const {
     double q = 0.0;
 
@@ -294,8 +305,8 @@ inline bool Spacecraft::isXsurfacePoint(const Position& pos, const int sign) con
             return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i - 1][pos.j][pos.k];
         }
     } else {
-        cout << Environment::rankStr() << "[WARNING] Invalid Cell Position was passed to Spacecraft::isXsurfacePoint().";
-        return false;
+        //! Cell Positionで判定できない場合はCmatが存在するかどうかで判定する
+        return isCmatNode(pos.i, pos.j, pos.k) && isCmatNode(pos.i, pos.j + 1, pos.k) && isCmatNode(pos.i, pos.j, pos.k + 1) && isCmatNode(pos.i, pos.j + 1, pos.k + 1);
     }
 }
 
@@ -310,8 +321,7 @@ inline bool Spacecraft::isYsurfacePoint(const Position& pos, const int sign) con
             return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j - 1][pos.k];
         }
     } else {
-        cout << Environment::rankStr() << "[WARNING] Invalid Cell Position was passed to Spacecraft::isYsurfacePoint().";
-        return false;
+        return isCmatNode(pos.i, pos.j, pos.k) && isCmatNode(pos.i + 1, pos.j, pos.k) && isCmatNode(pos.i, pos.j, pos.k + 1) && isCmatNode(pos.i + 1, pos.j, pos.k + 1);
     }
 }
 
@@ -326,8 +336,7 @@ inline bool Spacecraft::isZsurfacePoint(const Position& pos, const int sign) con
             return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j][pos.k - 1];
         }
     } else {
-        cout << Environment::rankStr() << "[WARNING] Invalid Cell Position was passed to Spacecraft::isZsurfacePoint().";
-        return false;
+        return isCmatNode(pos.i, pos.j, pos.k) && isCmatNode(pos.i + 1, pos.j, pos.k) && isCmatNode(pos.i, pos.j + 1, pos.k) && isCmatNode(pos.i + 1, pos.j + 1, pos.k);
     }
 }
 
