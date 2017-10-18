@@ -112,6 +112,43 @@ namespace MPIw {
         }
     }
 
+    // for PSOR
+    void Environment::sendRecvPartialPhi(tdArray& phi, const size_t i_begin, const size_t i_end, const size_t j_begin, const size_t j_end, const size_t k_begin, const size_t k_end){
+        if (i_begin == i_end) {
+            if (i_begin == 1) {
+                //! 下側へ送る
+                if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
+                    Comms["world"].sendRecvPartialFieldX(phi, i_begin, j_begin, j_end, k_begin, k_end, adj[0], adj[1]);
+                }
+            } else {
+                //! 上側へ送る
+                if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up) ) {
+                    Comms["world"].sendRecvPartialFieldX(phi, i_begin, j_begin, j_end, k_begin, k_end, adj[1], adj[0]);
+                }
+            }
+        } else if (j_begin == j_end) {
+            if (j_begin == 1) {
+                if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low) ) {
+                    Comms["world"].sendRecvPartialFieldY(phi, i_begin, i_end, j_begin, k_begin, k_end, adj[2], adj[3]);
+                }
+            } else {
+                if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up) ) {
+                    Comms["world"].sendRecvPartialFieldY(phi, i_begin, i_end, j_begin, k_begin, k_end, adj[3], adj[2]);
+                }
+            }
+        } else if (k_begin == k_end) {
+            if (k_begin == 1) {
+                if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low) ) {
+                    Comms["world"].sendRecvPartialFieldZ(phi, i_begin, i_end, j_begin, j_end, k_begin, adj[4], adj[5]);
+                }
+            } else {
+                if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up) ) {
+                    Comms["world"].sendRecvPartialFieldZ(phi, i_begin, i_end, j_begin, j_end, k_begin, adj[5], adj[4]);
+                }
+            }
+        }
+    }
+
     //! -- Particle Communication --
     void Environment::sendRecvParticles(std::vector< std::vector<Particle> > const& pbuff, std::vector< std::vector<Particle> >& pbuffRecv, const int prev, const int next, std::string commName){
         Comms[commName].sendRecvVector(pbuff[prev], pbuffRecv[next], adj[prev], adj[next]);

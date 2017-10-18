@@ -190,6 +190,78 @@ namespace MPIw {
         return result;
     }
 
+    void Communicator::sendRecvPartialFieldX(tdArray& tdValue, const size_t i_index, const size_t j_begin, const size_t j_end, const size_t k_begin, const size_t k_end, const int send_target, const int recv_target) {
+        MPI_Status s;
+        const size_t j_size = j_end - j_begin + 1;
+        const size_t k_size = k_end - k_begin + 1;
+        const size_t length = j_size * k_size;
+
+        boost::multi_array<double, 2> buff(boost::extents[j_size][k_size]);
+
+        for(int j = 0; j < j_size; ++j) {
+            for(int k = 0; k < k_size; ++k) {
+                buff[j][k] = tdValue[i_index][j + j_begin][k + k_begin];
+            }
+        }
+
+        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, send_target, TAG::SENDRECV_FIELD, recv_target, TAG::SENDRECV_FIELD, comm, &s);
+
+        const size_t i_index_inv = (i_index == 1) ? tdValue.shape()[0] - 1 : 0;
+        for(int j = 0; j < j_size; ++j) {
+            for(int k = 0; k < k_size; ++k) {
+                tdValue[i_index_inv][j + j_begin][k + k_begin] = buff[j][k];
+            }
+        }
+    }
+
+    void Communicator::sendRecvPartialFieldY(tdArray& tdValue, const size_t i_begin, const size_t i_end, const size_t j_index, const size_t k_begin, const size_t k_end, const int send_target, const int recv_target) {
+        MPI_Status s;
+        const size_t i_size = i_end - i_begin + 1;
+        const size_t k_size = k_end - k_begin + 1;
+        const size_t length = i_size * k_size;
+
+        boost::multi_array<double, 2> buff(boost::extents[i_size][k_size]);
+
+        for(int i = 0; i < i_size; ++i) {
+            for(int k = 0; k < k_size; ++k) {
+                buff[i][k] = tdValue[i + i_begin][j_index][k + k_begin];
+            }
+        }
+
+        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, send_target, TAG::SENDRECV_FIELD, recv_target, TAG::SENDRECV_FIELD, comm, &s);
+
+        const size_t j_index_inv = (j_index == 1) ? tdValue.shape()[1] - 1 : 0;
+        for(int i = 0; i < i_size; ++i) {
+            for(int k = 0; k < k_size; ++k) {
+                tdValue[i + i_begin][j_index_inv][k + k_begin] = buff[i][k];
+            }
+        }
+    }
+
+    void Communicator::sendRecvPartialFieldZ(tdArray& tdValue, const size_t i_begin, const size_t i_end, const size_t j_begin, const size_t j_end, const size_t k_index, const int send_target, const int recv_target) {
+        MPI_Status s;
+        const size_t i_size = i_end - i_begin + 1;
+        const size_t j_size = j_end - j_begin + 1;
+        const size_t length = i_size * j_size;
+
+        boost::multi_array<double, 2> buff(boost::extents[i_size][j_size]);
+
+        for(int i = 0; i < i_size; ++i) {
+            for(int j = 0; j < j_size; ++j) {
+                buff[i][j] = tdValue[i + i_begin][j + j_begin][k_index];
+            }
+        }
+
+        MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, send_target, TAG::SENDRECV_FIELD, recv_target, TAG::SENDRECV_FIELD, comm, &s);
+
+        const size_t k_index_inv = (k_index == 1) ? tdValue.shape()[2] - 1 : 0;
+        for(int i = 0; i < i_size; ++i) {
+            for(int j = 0; j < j_size; ++j) {
+                tdValue[i + i_begin][j + j_begin][k_index_inv] = buff[i][j];
+            }
+        }
+    }
+
     void Communicator::sendRecvFieldX(tdArray& tdValue, const int prev, const int next) {
         MPI_Status s;
         boost::multi_array<double, 2> buff(boost::extents[ tdValue.shape()[1] ][ tdValue.shape()[2] ]);

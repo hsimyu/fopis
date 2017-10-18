@@ -2,6 +2,7 @@
 #include "normalizer.hpp"
 #include "field.hpp"
 #include "utils.hpp"
+#include "dataio.hpp"
 
 void RootGrid::solvePoisson(void) {
     const auto PRE_LOOP_NUM = Environment::getOptions().getMaximumPoissonPreLoop();
@@ -28,30 +29,11 @@ void RootGrid::solvePoisson(void) {
 }
 
 void RootGrid::solvePoissonPSOR(const int loopnum) {
-    auto& phi = field->getPhi();
-    auto& poisson_error = field->getPoissonError();
-    auto& rho = field->getRho();
-
-    const int minimum_radius = std::min({Environment::nx, Environment::ny, Environment::nz});
-    const double omega = 2.0/(1.0 + sin(M_PI/minimum_radius)); // spectral radius
-    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
-
-    const size_t cx_with_glue = phi.shape()[0];
-    const size_t cy_with_glue = phi.shape()[1];
-    const size_t cz_with_glue = phi.shape()[2];
-
     constexpr double required_error = 1.0e-7;
 
-    const bool is_not_boundary[6] = {
-        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low),
-        Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up),
-        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low),
-        Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up),
-        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low),
-        Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up),
-    };
-
     auto time_counter = Utils::TimeCounter::getInstance();
+    auto& phi = field->getPhi();
+    auto& poisson_error = field->getPoissonError();
 
     time_counter->begin("solvePoisson/updatePoissonErrorPre");
     poisson_error = phi;
@@ -59,48 +41,7 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     size_t loop = 1;
     for(; loop <= loopnum; ++loop) {
         time_counter->switchTo("solvePoisson/mainLoop");
-        //! is_not_boundaryは各方向の境界について
-        //! 「その境界は計算空間の境界でない」か「その境界が計算空間の境界であり、周期境界である」場合にtrueとなるため
-        //! 各方向の端要素の計算をIterationで計算する場合にチェックする必要がある
-
-        #pragma omp parallel
-        {
-            //! 奇数グリッド更新
-            #pragma omp for
-            for(int i = 1; i < cx_with_glue - 1; i += 2){
-                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
-                    for(int j = 1; j < cy_with_glue - 1; ++j){
-                        if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                        for(int k = 1; k < cz_with_glue - 1; ++k){
-                            if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
-                                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            //! 偶数グリッド更新
-            #pragma omp for
-            for(int i = 2; i < cx_with_glue - 1; i += 2){
-                if((i != 1 || is_not_boundary[0]) && (i != cx_with_glue - 2 || is_not_boundary[1])) {
-                    for(int j = 1; j < cy_with_glue - 1; ++j){
-                        if((j != 1 || is_not_boundary[2]) && (j != cy_with_glue - 2 || is_not_boundary[3])) {
-                            for(int k = 1; k < cz_with_glue - 1; ++k){
-                                if((k != 1 || is_not_boundary[4]) && (k != cz_with_glue - 2 || is_not_boundary[5])) {
-                                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega*(phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        time_counter->switchTo("solvePoisson/sendPhi");
-        //! @note: 実際には部分部分をSORで計算して送信というのを繰り返す方が収束効率がよい
-        MPIw::Environment::sendRecvField(phi);
+        this->doPSOR();
 
         time_counter->switchTo("solvePoisson/checkResidual");
         if ( (loop % 10 == 0) && (this->checkPhiResidual() < required_error) ) {
@@ -111,21 +52,180 @@ void RootGrid::solvePoissonPSOR(const int loopnum) {
     if (Environment::isRootNode) {
         cout << "[INFO] solve poisson: performed " << (loop - 1) << " iterations." << endl;
     }
-
     time_counter->switchTo("solvePoisson/setBoundaryCondition");
     field->setBoundaryConditionPhi();
 
     //! 全グリッド上のエラーを更新
     time_counter->switchTo("solvePoisson/updatePoissonErrorPost");
     #pragma omp parallel for
-    for(int i = 1; i < cx_with_glue - 1; ++i){
-        for(int j = 1; j < cy_with_glue - 1; ++j){
-            for(int k = 1; k < cz_with_glue - 1; ++k){
+    for(int i = 1; i < phi.shape()[0] - 1; ++i){
+        for(int j = 1; j < phi.shape()[1] - 1; ++j){
+            for(int k = 1; k < phi.shape()[2] - 1; ++k){
                 poisson_error[i][j][k] = phi[i][j][k] - poisson_error[i][j][k];
             }
         }
     }
     time_counter->end();
+}
+
+void RootGrid::doPSOR() {
+    auto time_counter = Utils::TimeCounter::getInstance();
+
+    auto& phi = field->getPhi();
+    const int minimum_radius = std::min({Environment::nx, Environment::ny, Environment::nz});
+    const double omega = 2.0/(1.0 + sin(M_PI/minimum_radius)); // spectral radius
+    const double rho_coeff = pow(dx, 2) / Normalizer::eps0;
+
+    size_t i_begin = 1; size_t i_end = 1;
+    size_t j_begin = 1; size_t j_end = 1;
+    size_t k_begin = 1; size_t k_end = 1;
+
+    //! 最初の部分を計算して
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! prev-xに送る
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    const size_t cx_with_glue = phi.shape()[0];
+    const size_t cy_with_glue = phi.shape()[1];
+    const size_t cz_with_glue = phi.shape()[2];
+
+    //! x-edgeを更新して
+    i_begin = 2; i_end = cx_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! prev-yに送る
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin - 1, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! y-edgeを更新して
+    i_begin = 1; i_end = 1;
+    j_begin = 2; j_end = cy_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! prev-xに送る
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! xy面を更新して
+    i_begin = 2; i_end = cx_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! prev-zに送る
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin - 1, i_end, j_begin - 1, j_end, k_begin, k_end);
+
+    //! z-edgeを更新して
+    i_begin = 1; i_end = 1;
+    j_begin = 1; j_end = 1;
+    k_begin = 2; k_end = cz_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! prev-xに送る
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! xz面を更新して
+    i_begin = 2; i_end = cx_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! prev-yに送る
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! yz面を更新して
+    i_begin = 1; i_end = 1;
+    j_begin = 2; j_end = cy_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! prev-xに送る
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    //! 内部の値を更新
+    i_begin = 2; i_end = cx_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/doSORPartial");
+    #pragma omp parallel
+    {
+        this->doSORPartial(omega, rho_coeff, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+    }
+
+    // xy面をnext-zへ
+    i_begin = 1; i_end = cx_with_glue - 2;
+    j_begin = 1; j_end = cy_with_glue - 2;
+    k_begin = cz_with_glue - 2; k_end = cz_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    // xz面をnext-yへ
+    j_begin = cy_with_glue - 2; j_end = cy_with_glue - 2;
+    k_begin = 1; k_end = cz_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+
+    // yz面をnext-xへ
+    i_begin = cx_with_glue - 2; i_end = cx_with_glue - 2;
+    j_begin = 1; j_end = cy_with_glue - 2;
+    time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+}
+
+void RootGrid::doSORPartial(const double omega, const double rho_coeff, const size_t i_begin, const size_t i_end, const size_t j_begin, const size_t j_end, const size_t k_begin, const size_t k_end) {
+    auto& phi = field->getPhi();
+    auto& rho = field->getRho();
+
+    size_t i_begin_temp = 0; size_t i_end_temp = 0;
+    size_t j_begin_temp = 0; size_t j_end_temp = 0;
+    size_t k_begin_temp = 0; size_t k_end_temp = 0;
+
+    //! 境界は除く
+    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::low) && i_begin == 1) i_begin_temp = 1;
+    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::up) && i_end == phi.shape()[0] - 2) i_end_temp = -1;
+
+    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::low) && j_begin == 1) j_begin_temp = 1;
+    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::up) && j_end == phi.shape()[1] - 2) j_end_temp = -1;
+
+    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::low) && k_begin == 1) k_begin_temp = 1;
+    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::up) && k_end == phi.shape()[2] - 2) k_end_temp = -1;
+
+    size_t i_size = (i_end + i_end_temp) - (i_begin + i_begin_temp) + 1;
+
+    if (i_size > 2) {
+        // red-black
+        #pragma omp for
+        for(size_t i = i_begin + i_begin_temp; i <= i_end + i_end_temp; i += 2){
+            for(size_t j = j_begin + j_begin_temp; j <= j_end + j_end_temp; ++j){
+                for(size_t k = k_begin + k_begin_temp; k <= k_end + k_end_temp; ++k){
+                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega * (phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                }
+            }
+        }
+
+        #pragma omp for
+        for(size_t i = i_begin + i_begin_temp + 1; i <= i_end + i_end_temp; i += 2){
+            for(size_t j = j_begin + j_begin_temp; j <= j_end + j_end_temp; ++j){
+                for(size_t k = k_begin + k_begin_temp; k <= k_end + k_end_temp; ++k){
+                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega * (phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                }
+            }
+        }
+    } else {
+        for(size_t i = i_begin + i_begin_temp; i <= i_end + i_end_temp; ++i){
+            for(size_t j = j_begin + j_begin_temp; j <= j_end + j_end_temp; ++j){
+                for(size_t k = k_begin + k_begin_temp; k <= k_end + k_end_temp; ++k){
+                    phi[i][j][k] = (1.0 - omega) * phi[i][j][k] + omega * (phi[i+1][j][k] + phi[i-1][j][k] + phi[i][j+1][k] + phi[i][j-1][k] + phi[i][j][k+1] + phi[i][j][k-1] + rho_coeff * rho[0][i][j][k])/6.0;
+                }
+            }
+        }
+    }
 }
 
 //! 電位分布の残差の最大ノルムを返す
