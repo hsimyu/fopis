@@ -71,6 +71,9 @@ namespace MPIw {
             void sendVector(std::vector<Particle> const&, const int);
             void recvVector(std::vector<Particle>&, const int);
             void sendRecvVector(std::vector<Particle> const&, std::vector<Particle>&, const int, const int);
+            void sendRecvPartialFieldX(tdArray& tdValue, const size_t i_index, const size_t j_begin, const size_t j_end, const size_t k_begin, const size_t k_end, const int send_target, const int recv_target);
+            void sendRecvPartialFieldY(tdArray& tdValue, const size_t i_begin, const size_t i_end, const size_t j_index, const size_t k_begin, const size_t k_end, const int send_target, const int recv_target);
+            void sendRecvPartialFieldZ(tdArray& tdValue, const size_t i_begin, const size_t i_end, const size_t j_begin, const size_t j_end, const size_t k_index, const int send_target, const int recv_target);
             void sendRecvFieldX(tdArray&, const int, const int);
             void sendRecvFieldY(tdArray&, const int, const int);
             void sendRecvFieldZ(tdArray&, const int, const int);
@@ -135,6 +138,7 @@ namespace MPIw {
             static void sendRecvParticlesZ(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&);
             static void sendRecvParticles(std::vector< std::vector<Particle> > const&, std::vector< std::vector<Particle> >&, const int, const int, std::string);
 
+            static void sendRecvPartialPhi(tdArray& phi, const size_t i_begin, const size_t i_end, const size_t j_begin, const size_t j_end, const size_t k_begin, const size_t k_end);
             static void sendRecvField(tdArray&);
             static void sendRecvNodeScalar(tdArray&);
             static void sendRecvCellScalar(tdArray&);
