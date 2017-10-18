@@ -441,6 +441,9 @@ class RootGrid : public Grid {
         virtual int getZNodeSize(void) const override;
 
         virtual void solvePoissonPSOR(const int loopnum) override;
+
+        void doPSOR();
+        void doSORPartial(const double omega, const double rho_coeff, const size_t i_begin, const size_t i_end, const size_t j_begin, const size_t j_end, const size_t k_begin, const size_t k_end);
         virtual double checkPhiResidual() override;
 
         void solvePoissonCorrectionPSOR(const int loopnum);
