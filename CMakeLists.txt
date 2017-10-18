@@ -101,12 +101,12 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "CrayL
     if(OLD_CRAY_ENV)
 
         set(CMAKE_CXX_COMPILER mpiicpc)
-        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -shared-intel -qopenmp -static_mpi")
+        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -debug all -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -shared-intel -qopenmp -static_mpi")
         set(CMAKE_CXX_FLAGS_RELEASE "-O3 -parallel -mcmodel=medium -fpic -shared-intel -qopenmp -static_mpi")
 
     else()
 
-        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -qopenmp")
+        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -debug all -C -traceback ${CXX_WARNING_FLAGS} -mcmodel=medium -fpic -dynamic -shared-intel -qopenmp")
         set(CMAKE_CXX_FLAGS_RELEASE "-O3 -parallel -mcmodel=medium -fpic -shared-intel -dynamic -qopenmp")
 
     endif()
