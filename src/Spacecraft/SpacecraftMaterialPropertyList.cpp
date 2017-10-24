@@ -1,29 +1,34 @@
 #include "spacecraft.hpp"
 
 const std::map<std::string, PropertyPair> Spacecraft::material_property_list = {
-    { "PerfectConductor", 
+    { "Silicon", 
         PropertyPair({
-            {"RelativePermittivity", 1e11},
+            {"RelativePermittivity", 12.0},
         })
     },
-    { "Aluminum10", 
+    { "Aluminum", 
         PropertyPair({
-            {"RelativePermittivity", 10.0},
+            {"RelativePermittivity", 9.5},
         })
     },
-    { "Aluminum7.5", 
-        PropertyPair({
-            {"RelativePermittivity", 7.5},
-        })
-    },
-    { "Aluminum5", 
+    { "EpoxyGlass", 
         PropertyPair({
             {"RelativePermittivity", 5.0},
         })
     },
-    { "Aluminum1", 
+    { "Bakelite", 
         PropertyPair({
-            {"RelativePermittivity", 5.0},
+            {"RelativePermittivity", 4.8},
+        })
+    },
+    { "GlassReinforcedTeflon", 
+        PropertyPair({
+            {"RelativePermittivity", 2.32},
+        })
+    },
+    { "Teflon", 
+        PropertyPair({
+            {"RelativePermittivity", 2.1},
         })
     },
 };

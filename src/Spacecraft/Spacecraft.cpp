@@ -128,8 +128,10 @@ void Spacecraft::construct(
                         if (material_property_list.count( material_names[ texture_indicies ] ) > 0 ) {
                             //! 各ノードの capacitance = 真空の誘電率 * 比誘電率でいい?
                             material_capacitances[ texture_indicies ] = Normalizer::normalizeCapacitance(
-                                eps0 * material_property_list.at( material_names[ texture_indicies ] ).at("RelativePermittivity")
+                                4.0 * M_PI * eps0 * material_property_list.at( material_names[ texture_indicies ] ).at("RelativePermittivity")
                             );
+
+                            if (Environment::isRootNode) cout << format("  [INFO] Capacitance[%d] = %s F") % texture_indicies % Normalizer::unnormalizeCapacitance(material_capacitances[ texture_indicies ]) << endl;
                         } else {
                             //! material名の指定がおかしかった場合は落とす
                             std::string error_message = (format("Invalid material name %s is specified to be assigned the texture index %d.") % material_names[ texture_indicies ] % texture_indicies).str();
