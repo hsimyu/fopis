@@ -32,13 +32,16 @@ void RootGrid::injectParticlesFromBoundary(void) {
     for(int itr = 0; itr < Environment::getNumOfAmbientParticles(); ++itr) {
         auto ambient_particle_ptr = ambient_ptype_ptr_list[itr];
 
-        std::vector<double> flux = ambient_particle_ptr->calcFlux(*this);
+        std::vector<double> flux = ambient_particle_ptr->calcFlux();
         const auto pid = ambient_particle_ptr->getId();
 
         if(Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) {
+            const double injecting_area_size = dx * dx * (this->getZNodeSize() - 1) * (this->getYNodeSize() - 1);
+
             const int index = 0;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
+            const double inject_num_double = dt * injecting_area_size * flux[index];
+            const int inject_num = static_cast<int>(floor(inject_num_double + residual[itr][index]));
+            residual[itr][index] += inject_num_double - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::x, AXIS_SIDE::low);
@@ -48,9 +51,12 @@ void RootGrid::injectParticlesFromBoundary(void) {
         }
 
         if(Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) {
+            const double injecting_area_size = dx * dx * (this->getZNodeSize() - 1) * (this->getYNodeSize() - 1);
+
             const int index = 1;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
+            const double inject_num_double = dt * injecting_area_size * flux[index];
+            const int inject_num = static_cast<int>(floor(inject_num_double + residual[itr][index]));
+            residual[itr][index] += inject_num_double - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::x, AXIS_SIDE::up);
@@ -62,9 +68,12 @@ void RootGrid::injectParticlesFromBoundary(void) {
         }
 
         if(Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) {
+            const double injecting_area_size = dx * dx * (this->getZNodeSize() - 1) * (this->getXNodeSize() - 1);
+
             const int index = 2;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
+            const double inject_num_double = dt * injecting_area_size * flux[index];
+            const int inject_num = static_cast<int>(floor(inject_num_double + residual[itr][index]));
+            residual[itr][index] += inject_num_double - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::y, AXIS_SIDE::low);
@@ -74,9 +83,12 @@ void RootGrid::injectParticlesFromBoundary(void) {
         }
 
         if(Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) {
+            const double injecting_area_size = dx * dx * (this->getZNodeSize() - 1) * (this->getXNodeSize() - 1);
+
             const int index = 3;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
+            const double inject_num_double = dt * injecting_area_size * flux[index];
+            const int inject_num = static_cast<int>(floor(inject_num_double + residual[itr][index]));
+            residual[itr][index] += inject_num_double - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::y, AXIS_SIDE::up);
@@ -86,9 +98,12 @@ void RootGrid::injectParticlesFromBoundary(void) {
         }
 
         if(Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) {
+            const double injecting_area_size = dx * dx * (this->getXNodeSize() - 1) * (this->getYNodeSize() - 1);
+
             const int index = 4;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
+            const double inject_num_double = dt * injecting_area_size * flux[index];
+            const int inject_num = static_cast<int>(floor(inject_num_double + residual[itr][index]));
+            residual[itr][index] += inject_num_double - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::z, AXIS_SIDE::low);
@@ -98,9 +113,12 @@ void RootGrid::injectParticlesFromBoundary(void) {
         }
 
         if(Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) {
+            const double injecting_area_size = dx * dx * (this->getXNodeSize() - 1) * (this->getYNodeSize() - 1);
+
             const int index = 5;
-            const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
-            residual[itr][index] += dt * flux[index] - inject_num;
+            const double inject_num_double = dt * injecting_area_size * flux[index];
+            const int inject_num = static_cast<int>(floor(inject_num_double + residual[itr][index]));
+            residual[itr][index] += inject_num_double - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
                 Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::z, AXIS_SIDE::up);

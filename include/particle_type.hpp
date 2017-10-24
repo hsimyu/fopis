@@ -122,7 +122,7 @@ class AmbientParticleType : public ParticleType {
 
     public:
         AmbientParticleType() : ParticleType(){}
-        std::vector<double> calcFlux(Grid const&) const;
+        std::vector<double> calcFlux() const;
 
         //! factory関数
         Particle generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
