@@ -99,7 +99,8 @@ void RootGrid::doPSOR() {
 
     //! prev-yに送る
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
-    MPIw::Environment::sendRecvPartialPhi(phi, i_begin - 1, i_end, j_begin, j_end, k_begin, k_end);
+    //! Glueノード分も送るので, x座標の始点を-1, 終点を+1はする
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin - 1, i_end + 1, j_begin, j_end, k_begin, k_end);
 
     //! y-edgeを更新して
     i_begin = 1; i_end = 1;
@@ -109,7 +110,7 @@ void RootGrid::doPSOR() {
 
     //! prev-xに送る
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
-    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end + 1, k_begin, k_end);
 
     //! xy面を更新して
     i_begin = 2; i_end = cx_with_glue - 2;
@@ -118,7 +119,7 @@ void RootGrid::doPSOR() {
 
     //! prev-zに送る
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
-    MPIw::Environment::sendRecvPartialPhi(phi, i_begin - 1, i_end, j_begin - 1, j_end, k_begin, k_end);
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin - 1, i_end + 1, j_begin - 1, j_end + 1, k_begin, k_end);
 
     //! z-edgeを更新して
     i_begin = 1; i_end = 1;
@@ -129,7 +130,7 @@ void RootGrid::doPSOR() {
 
     //! prev-xに送る
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
-    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end + 1);
 
     //! xz面を更新して
     i_begin = 2; i_end = cx_with_glue - 2;
@@ -138,7 +139,7 @@ void RootGrid::doPSOR() {
 
     //! prev-yに送る
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
-    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin - 1, i_end + 1, j_begin, j_end, k_begin, k_end + 1);
 
     //! yz面を更新して
     i_begin = 1; i_end = 1;
@@ -148,7 +149,7 @@ void RootGrid::doPSOR() {
 
     //! prev-xに送る
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
-    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
+    MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end + 1, k_begin, k_end + 1);
 
     //! 内部の値を更新
     i_begin = 2; i_end = cx_with_glue - 2;
@@ -159,21 +160,21 @@ void RootGrid::doPSOR() {
     }
 
     // xy面をnext-zへ
-    i_begin = 1; i_end = cx_with_glue - 2;
-    j_begin = 1; j_end = cy_with_glue - 2;
+    i_begin = 0; i_end = cx_with_glue - 1;
+    j_begin = 0; j_end = cy_with_glue - 1;
     k_begin = cz_with_glue - 2; k_end = cz_with_glue - 2;
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
     MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
 
     // xz面をnext-yへ
     j_begin = cy_with_glue - 2; j_end = cy_with_glue - 2;
-    k_begin = 1; k_end = cz_with_glue - 2;
+    k_begin = 0; k_end = cz_with_glue - 1;
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
     MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
 
     // yz面をnext-xへ
     i_begin = cx_with_glue - 2; i_end = cx_with_glue - 2;
-    j_begin = 1; j_end = cy_with_glue - 2;
+    j_begin = 0; j_end = cy_with_glue - 1;
     time_counter->switchTo("solvePoisson/mainLoop/sendPhi");
     MPIw::Environment::sendRecvPartialPhi(phi, i_begin, i_end, j_begin, j_end, k_begin, k_end);
 }
