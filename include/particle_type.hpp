@@ -129,6 +129,7 @@ class AmbientParticleType : public ParticleType {
         Particle generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z, const Velocity& vel);
         Position generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
         Velocity generateNewVelocity(void);
+        Velocity generateNewInjectionVelocity(AXIS axis, AXIS_SIDE low_or_up);
 };
 
 //! 放出用プラズマ粒子クラス

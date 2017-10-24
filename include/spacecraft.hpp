@@ -208,7 +208,7 @@ public:
     bool isContaining(const Position&) const;
     bool isDielectricSurface() const { return (surface_type == "dielectric"); }
 
-    bool isPlotTiming(const unsigned int timestep) const { return (timestep % plot_potential_mapping_width == 0); }
+    bool isPlotTiming(const unsigned int timestep) const { return (plot_potential_mapping_width > 0 && (timestep % plot_potential_mapping_width == 0)); }
 
     //! 粒子放出用
     void emitParticles(ParticleArray& parray);

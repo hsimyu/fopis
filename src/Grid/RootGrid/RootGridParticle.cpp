@@ -24,9 +24,9 @@ void RootGrid::injectParticlesFromBoundary(void) {
     double max_z = static_cast<double>(Environment::cell_z);
 
     //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
+    if(Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
+    if(Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
+    if(Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
 	auto ambient_ptype_ptr_list = Environment::getAmbientParticleTypes();
     for(int itr = 0; itr < Environment::getNumOfAmbientParticles(); ++itr) {
@@ -35,36 +35,25 @@ void RootGrid::injectParticlesFromBoundary(void) {
         std::vector<double> flux = ambient_particle_ptr->calcFlux(*this);
         const auto pid = ambient_particle_ptr->getId();
 
-        if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
+        if(Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) {
             const int index = 0;
             const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                //! 流入方向速度に変換
-                //! 実際はフラックスを積分して割合を求める必要がある?
-                while (vel.vx <= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
+                Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::x, AXIS_SIDE::low);
                 Particle p = ambient_particle_ptr->generateNewParticle(0.0, vel.vx * dt, 0.0, max_y, 0.0, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
 
-        if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
+        if(Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) {
             const int index = 1;
             const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vx >= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
+                Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::x, AXIS_SIDE::up);
 
                 //! 負方向速度をxの最大値から引いた点までがありうる範囲
                 Particle p = ambient_particle_ptr->generateNewParticle(max_x + vel.vx * dt, max_x, 0.0, max_y, 0.0, max_z, vel);
@@ -72,69 +61,49 @@ void RootGrid::injectParticlesFromBoundary(void) {
             }
         }
 
-        if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
+        if(Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) {
             const int index = 2;
             const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vy <= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
+                Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::y, AXIS_SIDE::low);
                 Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, vel.vy * dt, 0.0, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
 
-        if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
+        if(Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) {
             const int index = 3;
             const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vy >= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
+                Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::y, AXIS_SIDE::up);
                 Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, max_y + vel.vy * dt, max_y, 0.0, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
 
-        if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
+        if(Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) {
             const int index = 4;
             const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vz <= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
+                Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::z, AXIS_SIDE::low);
                 Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, 0.0, vel.vz * dt, vel);
                 particles[pid].push_back( std::move(p) );
             }
         }
 
-        if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
+        if(Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) {
             const int index = 5;
             const int inject_num = static_cast<int>(floor(dt * flux[index] + residual[itr][index]));
             residual[itr][index] += dt * flux[index] - inject_num;
 
             for(int i = 0; i < inject_num; ++i) {
-                Velocity vel = ambient_particle_ptr->generateNewVelocity();
-
-                while (vel.vz >= 0.0) {
-                    vel = ambient_particle_ptr->generateNewVelocity();
-                }
-
+                Velocity vel = ambient_particle_ptr->generateNewInjectionVelocity(AXIS::z, AXIS_SIDE::up);
                 Particle p = ambient_particle_ptr->generateNewParticle(0.0, max_x, 0.0, max_y, max_z + vel.vz * dt, max_z, vel);
                 particles[pid].push_back( std::move(p) );
             }

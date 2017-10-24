@@ -36,12 +36,12 @@
             "mass": 1.0,
             "charge": -1.0,
             "density": 1.0e7,
-            "temperature": 1.0,
+            "temperature": 0.1,
             "particle_per_cell": 20,
             "emission_type": "beam",
             "emission_radius": 0.01,
-            "accel_potential": 50.0,
-            "beam_current": 1e-5,
+            "accel_potential": 1.0,
+            "beam_current": 1e-4,
             "beam_divergence": 0.0
         }
     },
@@ -51,8 +51,8 @@
             "surface_type": "perfect",
             "emit_particles": {
                 "ElectronBeam1": {
-                    "emission_position": [15.0, 17.5, 16.5],
-                    "emission_vector": [-1.0, 0.0, 0.0]
+                    "emission_position": [18.0, 16.0, 16.0],
+                    "emission_vector": [1.0, 0.0, 0.0]
                 }
             },
             "materials": {},

@@ -197,7 +197,7 @@ double Field::getEfieldEnergy(void) const {
     for(size_t i = 1; i < cx_with_glue - 1; ++i){
         for(size_t j = 1; j < cy_with_glue - 1; ++j){
             for(size_t k = 1; k < cz_with_glue - 1; ++k){
-                //! 各点のエネルギーを計算する(Yee格子内のエネルギーの計算方法は?)
+                //! 各エッジ上のエネルギーを計算する
                 if (i < cx_with_glue - 2) energy += pow(ex[i][j][k], 2);
                 if (j < cy_with_glue - 2) energy += pow(ey[i][j][k], 2);
                 if (k < cz_with_glue - 2) energy += pow(ez[i][j][k], 2);
