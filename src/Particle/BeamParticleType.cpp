@@ -84,6 +84,10 @@ Velocity BeamParticleType::generateNewVelocity(const std::array<double, 3>& emis
     };
 }
 
+double BeamParticleType::getAcceleration() const {
+    return sqrt(2.0 * accel_potential / mass);
+}
+
 double BeamParticleType::getEmissionAmount() const {
     return beam_current / (fabs(charge) * size);
 }

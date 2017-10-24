@@ -163,7 +163,7 @@ class BeamParticleType : public EmissionParticleType {
         }
 
         double getAcceleratingPotential() const {return accel_potential;}
-        double getAcceleration() const{return sqrt(2.0 * accel_potential / mass); }
+        double getAcceleration() const;
 
         void setBeamCurrent(const double value) { beam_current = value; }
         double getBeamCurrent() const {return beam_current;}
