@@ -521,3 +521,32 @@ void ChildGrid::insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_t
         child->insertAMRBlockInfo(vtk_gen, data_type_name, i_timestamp);
     }
 }
+
+//! Reference Current (ノード上で定義される電流) を更新する
+//! 計算には直接必要ないが、データ出力のため
+void ChildGrid::updateReferenceCurrent() {
+    auto& jx = field->getJx();
+    auto& jy = field->getJy();
+    auto& jz = field->getJz();
+    auto& jxref = field->getJxRef();
+    auto& jyref = field->getJyRef();
+    auto& jzref = field->getJzRef();
+    const size_t cx_with_glue = jx.shape()[0] + 1; // nx + 2
+    const size_t cy_with_glue = jy.shape()[1] + 1;
+    const size_t cz_with_glue = jz.shape()[2] + 1;
+
+    //! reference 更新
+    #pragma omp parallel
+    {
+        #pragma omp for
+        for(size_t i = 1; i < cx_with_glue - 1; ++i){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
+                for(size_t k = 1; k < cz_with_glue - 1; ++k){
+                    jxref[i][j][k] = 0.5 * (jx[i-1][j][k] + jx[i][j][k]);
+                    jyref[i][j][k] = 0.5 * (jy[i][j-1][k] + jy[i][j][k]);
+                    jzref[i][j][k] = 0.5 * (jz[i][j][k-1] + jz[i][j][k]);
+                }
+            }
+        }
+    }
+}

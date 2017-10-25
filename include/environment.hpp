@@ -54,7 +54,7 @@ struct Environment {
         static int cell_x, cell_y, cell_z;
         static int plot_energy_dist_width, plot_velocity_dist_width;
         static int plot_potential_width, plot_rho_width;
-        static int plot_efield_width, plot_bfield_width;
+        static int plot_efield_width, plot_bfield_width, plot_current_width;
         static int plot_particle_width, plot_energy_width;
         static int plot_density_width;
         static bool isRootNode;
@@ -171,6 +171,7 @@ struct Environment {
         static bool plotRho(void)          { return isPlotTimestep("rho"); }
         static bool plotEfield(void)       { return isPlotTimestep("efield"); }
         static bool plotBfield(void)       { return isPlotTimestep("bfield"); }
+        static bool plotCurrent(void)      { return isPlotTimestep("current"); }
         static bool plotDensity(void)      { return isPlotTimestep("density"); }
         static bool plotParticle(void)     { return isPlotTimestep("particle"); }
         static bool plotEnergy(void)       { return isPlotTimestep("energy"); }
@@ -192,6 +193,7 @@ struct Environment {
             if(type == "rho"           && plot_rho_width           != 0) return (timestep % plot_rho_width == 0);
             if(type == "efield"        && plot_efield_width        != 0) return (timestep % plot_efield_width == 0);
             if(type == "bfield"        && plot_bfield_width        != 0) return (timestep % plot_bfield_width == 0);
+            if(type == "current"       && plot_current_width       != 0) return (timestep % plot_current_width == 0);
             if(type == "density"       && plot_density_width       != 0) return (timestep % plot_density_width == 0);
             if(type == "particle"      && plot_particle_width      != 0) return (timestep % plot_particle_width == 0);
             if(type == "energy"        && plot_energy_width        != 0) return (timestep % plot_energy_width == 0);

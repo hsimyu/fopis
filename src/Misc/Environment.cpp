@@ -25,6 +25,7 @@ int Environment::plot_potential_width, Environment::plot_rho_width;
 int Environment::plot_efield_width, Environment::plot_bfield_width;
 int Environment::plot_energy_width, Environment::plot_particle_width;
 int Environment::plot_density_width;
+int Environment::plot_current_width = 0;
 bool Environment::isRootNode;
 bool Environment::onLowXedge, Environment::onHighXedge;
 bool Environment::onLowYedge, Environment::onHighYedge;

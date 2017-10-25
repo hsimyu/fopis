@@ -31,6 +31,9 @@ class Field {
         tdArray jx;
         tdArray jy;
         tdArray jz;
+        tdArray jxref;
+        tdArray jyref;
+        tdArray jzref;
 
         void setDirichletPhi(const AXIS, const AXIS_SIDE);
         void setNeumannPhi(const AXIS, const AXIS_SIDE);
@@ -43,7 +46,9 @@ class Field {
             exref{}, eyref{}, ezref{},
             bx{}, by{}, bz{},
             bxref{}, byref{}, bzref{},
-            jx{}, jy{}, jz{} {}
+            jx{}, jy{}, jz{},
+            jxref{}, jyref{}, jzref{}
+            {}
 
         // destructor
         ~Field(){}
@@ -87,6 +92,11 @@ class Field {
         tdArray& getJx(){ return jx; }
         tdArray& getJy(){ return jy; }
         tdArray& getJz(){ return jz; }
+
+        //! reference current density (for data output)
+        tdArray& getJxRef(){ return jxref; }
+        tdArray& getJyRef(){ return jyref; }
+        tdArray& getJzRef(){ return jzref; }
 
         //! boundary conditions
         void setBoundaryConditionPhi(void);

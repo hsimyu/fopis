@@ -37,17 +37,21 @@ int main(int argc, char* argv[]){
         root_grid->mainLoop();
 
         time_counter->begin("plotData");
-        if(Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
-        if(Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
-        if(Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
-        if(Environment::plotDensity())      IO::writeDataInParallel(root_grid, Environment::timestep, "density");
-        if(Environment::plotEnergy())       IO::plotEnergy(root_grid, Environment::timestep);
-        if(Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->getParticles());
-        if(Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->getParticles());
+        if (Environment::plotPotential())    IO::writeDataInParallel(root_grid, Environment::timestep, "potential");
+        if (Environment::plotRho())          IO::writeDataInParallel(root_grid, Environment::timestep, "rho");
+        if (Environment::plotEfield())       IO::writeDataInParallel(root_grid, Environment::timestep, "efield");
+        if (Environment::plotDensity())      IO::writeDataInParallel(root_grid, Environment::timestep, "density");
+        if (Environment::plotEnergy())       IO::plotEnergy(root_grid, Environment::timestep);
+        if (Environment::plotEnergyDist())   IO::plotParticleEnergyDistribution(root_grid->getParticles());
+        if (Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->getParticles());
 
-        // 磁場プロット
-        if(Environment::solver_type == "EM" && Environment::plotBfield()) {
-            IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
+        // 電磁計算時の追加プロット
+        if (Environment::solver_type == "EM") {
+            if (Environment::plotBfield()) IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
+            if (Environment::plotCurrent()) {
+                root_grid->updateReferenceCurrent();
+                IO::writeDataInParallel(root_grid, Environment::timestep, "current");
+            }
         }
 
         IO::plotObjectsData(root_grid);

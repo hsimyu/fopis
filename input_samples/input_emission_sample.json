@@ -69,6 +69,7 @@
         "plot_rho_width": 1,
         "plot_efield_width": 1,
         "plot_bfield_width": 1,
+        "plot_current_width": 1,
         "plot_density_width": 1,
         "plot_particle_width": 0,
         "plot_energy_width": 1

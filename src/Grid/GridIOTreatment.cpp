@@ -114,7 +114,7 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                         }
                     gen.endDataArray();
                 gen.endPointData();
-            } else if (data_type_name == "efield" || data_type_name == "bfield") {
+            } else if (data_type_name == "efield" || data_type_name == "bfield" || data_type_name == "current") {
                 gen.beginPointData();
                 gen.setVectors(data_type_name);
                     gen.beginDataArray(data_type_name, "Float32", "ascii");
@@ -122,8 +122,11 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                         if (data_type_name == "efield") {
                             auto values = this->getTrueNodeVectors(field->getExRef(), field->getEyRef(), field->getEzRef(), Normalizer::unnormalizeEfield(1.0));
                             gen.addMultiArray(values);
-                        } else {
+                        } else if (data_type_name == "bfield") {
                             auto values = this->getTrueNodeVectors(field->getBxRef(), field->getByRef(), field->getBzRef(), Normalizer::unnormalizeBfield(1.0));
+                            gen.addMultiArray(values);
+                        } else {
+                            auto values = this->getTrueNodeVectors(field->getJxRef(), field->getJyRef(), field->getJzRef(), Normalizer::unnormalizeCurrent(1.0));
                             gen.addMultiArray(values);
                         }
                     gen.endDataArray();
@@ -147,6 +150,7 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                     gen.endDataArray();
                 }
                 gen.endCellData();
+            } else if (data_type_name == "current") {
             }
         gen.endContentWithPiece();
     gen.endVTK();

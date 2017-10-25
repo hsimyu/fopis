@@ -226,6 +226,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         virtual void updateEfieldFDTD(void) = 0;
         virtual void updateBfield(void) = 0;
         virtual void updateReferenceBfield() = 0;
+        virtual void updateReferenceCurrent() = 0;
         virtual void updateDensity(void) = 0;
 
         // update particles
@@ -293,6 +294,7 @@ class RootGrid : public Grid {
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
         virtual void updateReferenceBfield(void) override;
+        virtual void updateReferenceCurrent(void) override;
         virtual void updateDensity(void) override;
 
         //! 粒子更新
@@ -473,6 +475,7 @@ class ChildGrid : public Grid {
         virtual void updateEfieldFDTD(void) override;
         virtual void updateBfield(void) override;
         virtual void updateReferenceBfield(void) override;
+        virtual void updateReferenceCurrent(void) override;
         virtual void updateDensity(void) override;
 
         //! 粒子更新
