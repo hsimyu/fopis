@@ -14,10 +14,15 @@
 
 #ifndef BUILD_TEST
 int main(int argc, char* argv[]){
+    std::string input_filename = "input.json";
+    if (argc > 1) {
+        input_filename = argv[1];
+    }
+
     //! MPI Environmentを初期化
     MPIw::Environment mpiEnv(argc, argv);
 
-    std::shared_ptr<RootGrid> root_grid = Initializer::initTDPIC();
+    std::shared_ptr<RootGrid> root_grid = Initializer::initTDPIC(input_filename);
     auto time_counter = Utils::TimeCounter::getInstance();
 
     if( Environment::isRootNode ) {

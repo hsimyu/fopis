@@ -5,7 +5,7 @@
 class RootGrid;
 
 namespace Initializer {
-    std::shared_ptr<RootGrid> initTDPIC();
+    std::shared_ptr<RootGrid> initTDPIC(const std::string& input_filename);
     void setMPIInfoToEnv(void);
     void loadEnvironment(picojson::object&);
     void loadParticleType(picojson::object&);

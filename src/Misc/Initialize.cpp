@@ -13,10 +13,9 @@
 #endif
 
 namespace Initializer {
-    std::shared_ptr<RootGrid> initTDPIC() {
+    std::shared_ptr<RootGrid> initTDPIC(const std::string& input_filename) {
         // load parameter from json
-        std::string filename = "input.json";
-        auto inputs = Utils::readJSONFile(filename);
+        auto inputs = Utils::readJSONFile(input_filename);
         Initializer::loadEnvironment(inputs);
 
         // EnvironmentにMPIw::Environment情報をセット
