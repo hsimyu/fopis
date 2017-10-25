@@ -277,7 +277,7 @@ namespace MPIw {
             }
 
             if ( (prev == Environment::rank) && (next == Environment::rank) ) {
-                //! 自分自身への通信
+                //! 自分自身への通信 == 周期境界
                 //! std::swapのが速いかも
                 #pragma omp barrier
                 #pragma omp for
@@ -296,11 +296,18 @@ namespace MPIw {
                     MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
                 }
 
+                if (::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
+                    #pragma omp for
+                    for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                        for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                            tdValue[tdValue.shape()[0] - 1][j][k] = buff[j][k];
+                        }
+                    }
+                }
+
                 #pragma omp for
                 for(int j = 0; j < tdValue.shape()[1]; ++j) {
                     for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                        tdValue[tdValue.shape()[0] - 1][j][k] = buff[j][k];
-
                         // 反対側の値を buff に詰める
                         buff[j][k] = tdValue[tdValue.shape()[0] - 2][j][k];
                     }
@@ -312,10 +319,12 @@ namespace MPIw {
                     MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
                 }
 
-                #pragma omp for
-                for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                    for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                        tdValue[0][j][k] = buff[j][k];
+                if (::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
+                    #pragma omp for
+                    for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                        for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                            tdValue[0][j][k] = buff[j][k];
+                        }
                     }
                 }
             }
@@ -353,10 +362,18 @@ namespace MPIw {
                     MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
                 }
 
+                if (::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) {
+                    #pragma omp for
+                    for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                        for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                            tdValue[i][tdValue.shape()[1] - 1][k] = buff[i][k];
+                        }
+                    }
+                }
+
                 #pragma omp for
                 for(int i = 0; i < tdValue.shape()[0]; ++i) {
                     for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                        tdValue[i][tdValue.shape()[1] - 1][k] = buff[i][k];
                         buff[i][k] = tdValue[i][tdValue.shape()[1] - 2][k];
                     }
                 }
@@ -367,10 +384,12 @@ namespace MPIw {
                     MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
                 }
 
-                #pragma omp for
-                for(int i = 0; i < tdValue.shape()[0]; ++i) {
-                    for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                        tdValue[i][0][k] = buff[i][k];
+                if (::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low)) {
+                    #pragma omp for
+                    for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                        for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                            tdValue[i][0][k] = buff[i][k];
+                        }
                     }
                 }
             }
@@ -408,10 +427,18 @@ namespace MPIw {
                     MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, prev, TAG::SENDRECV_FIELD, next, TAG::SENDRECV_FIELD, comm, &s);
                 }
 
+                if (::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) {
+                    #pragma omp for
+                    for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                        for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                            tdValue[i][j][tdValue.shape()[2] - 1] = buff[i][j];
+                        }
+                    }
+                }
+
                 #pragma omp for
                 for(int i = 0; i < tdValue.shape()[0]; ++i) {
                     for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                        tdValue[i][j][tdValue.shape()[2] - 1] = buff[i][j];
                         buff[i][j] = tdValue[i][j][tdValue.shape()[2] - 2];
                     }
                 }
@@ -422,10 +449,12 @@ namespace MPIw {
                     MPI_Sendrecv_replace(buff.data(), length, MPI_DOUBLE, next, TAG::SENDRECV_FIELD, prev, TAG::SENDRECV_FIELD, comm, &s);
                 }
 
-                #pragma omp for
-                for(int i = 0; i < tdValue.shape()[0]; ++i) {
-                    for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                        tdValue[i][j][0] = buff[i][j];
+                if (::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low)) {
+                    #pragma omp for
+                    for(int i = 0; i < tdValue.shape()[0]; ++i) {
+                        for(int j = 0; j < tdValue.shape()[1]; ++j) {
+                            tdValue[i][j][0] = buff[i][j];
+                        }
                     }
                 }
             }
