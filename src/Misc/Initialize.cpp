@@ -330,6 +330,12 @@ namespace Initializer {
                     ambient->setDriftVelocity(drift_velocity);
                 }
 
+                if (plasma.count("injection_axis") > 0) {
+                    ambient->setInjectionAxis(
+                        Utils::convertPicoJSONArrayToVectorBool( plasma["injection_axis"].get<picojson::array>())
+                    );
+                }
+
                 ambient->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
                 ambient->updateTotalNumber();
                 ambient->updateSize();

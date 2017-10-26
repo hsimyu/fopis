@@ -47,6 +47,12 @@ std::vector<double> AmbientParticleType::calcFlux() const {
         flux[2 * axis + 1] *= -1.0 * (thermal_velocity / sqrt(M_PI)) * normed_density / size;
     }
 
+    //! injection axis が false に設定されている場合は
+    //! その方向からの注入なしとする
+    for(int axis = 0; axis < flux.size(); ++axis) {
+        if (!injection_axis[axis]) flux[axis] = 0.0;
+    }
+
     return flux;
 }
 
@@ -157,5 +163,12 @@ void AmbientParticleType::printInfo() const {
     cout << format("  drift_velocity: %s km/s, %s km/s, %s km/s\n") %
         (drift_velocity.vx * velocity_unnorm * 1e-3) %
         (drift_velocity.vy * velocity_unnorm * 1e-3) %
-        (drift_velocity.vz * velocity_unnorm * 1e-3) << endl;
+        (drift_velocity.vz * velocity_unnorm * 1e-3);
+    cout << format("  injection_axis: -x: %s, +x: %s, -y: %s, +y: %s, -z: %s, +z: %s\n") %
+        (injection_axis[0] ? "ON" : "OFF") %
+        (injection_axis[1] ? "ON" : "OFF") %
+        (injection_axis[2] ? "ON" : "OFF") %
+        (injection_axis[3] ? "ON" : "OFF") %
+        (injection_axis[4] ? "ON" : "OFF") %
+        (injection_axis[5] ? "ON" : "OFF") << endl;
 }

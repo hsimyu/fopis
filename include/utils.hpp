@@ -18,6 +18,7 @@ namespace Utils {
 
     //! 保存用のデータ変換系
     std::vector<double> convertPicoJSONArrayToVectorDouble(const picojson::array& pico_array);
+    std::vector<bool> convertPicoJSONArrayToVectorBool(const picojson::array& pico_array);
     std::vector<std::string> convertPicoJSONArrayToVectorString(const picojson::array& pico_array);
     std::vector<std::string> split(const std::string& target, char delim);
 

@@ -151,7 +151,7 @@ namespace Utils {
         return o;
     }
 
-    //! convert picojson::array to std::vector
+    //! convert picojson::array to std::vector<double>
     std::vector<double> convertPicoJSONArrayToVectorDouble(const picojson::array& pico_array) {
         std::vector<double> vect;
         for(const auto& v : pico_array) {
@@ -164,6 +164,15 @@ namespace Utils {
         std::vector<std::string> vect;
         for(const auto& v : pico_array) {
             vect.push_back(v.to_str());
+        }
+        return vect;
+    }
+
+    //! convert picojson::array to std::vector<bool>
+    std::vector<bool> convertPicoJSONArrayToVectorBool(const picojson::array& pico_array) {
+        std::vector<bool> vect;
+        for(const auto& v : pico_array) {
+            vect.push_back(v.get<bool>());
         }
         return vect;
     }

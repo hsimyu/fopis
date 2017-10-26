@@ -1,9 +1,9 @@
 {
     "Environment": {
-        "max_timestep": 10,
+        "max_timestep": 100,
         "job_type": "new",
         "solver_type": "ES",
-        "boundary": "DDDDDD",
+        "boundary": "NNDDDD",
         "dimension": "3D",
         "nx": 32,
         "ny": 32,
@@ -11,7 +11,7 @@
         "proc_x": 1,
         "proc_y": 1,
         "proc_z": 1,
-        "dx": 1.0,
+        "dx": 0.1,
         "dt": 1e-8
     },
     "Plasma": {
@@ -21,8 +21,9 @@
             "charge": -1.0,
             "density": 1.0e7,
             "temperature": 1.0,
-            "drift_velocity": [0.0, 0.0, 0.0],
-            "particle_per_cell": 20
+            "drift_velocity": [400.0, 0.0, 0.0],
+            "injection_axis": [true, true, false, false, false, false],
+            "particle_per_cell": 40
         },
         "Proton": {
             "type": "ambient",
@@ -30,17 +31,19 @@
             "charge": 1.0,
             "density": 1.0e7,
             "temperature": 1.0,
-            "drift_velocity": [0.0, 0.0, 0.0],
-            "particle_per_cell": 20
+            "drift_velocity": [400.0, 0.0, 0.0],
+            "injection_axis": [true, true, false, false, false, false],
+            "particle_per_cell": 40
         }
     },
     "Object": {
         "Spacecraft": {
-            "file_name": "objects/cube.obj",
+            "file_name": "objects/4x4x4_Sphere.obj",
             "surface_type": "perfect",
-            "emit_particles": {},
+            "emit_particles": {
+            },
             "materials": {},
-            "plot_potential_mapping_width": 5,
+            "plot_potential_mapping_width": 1,
             "is_potential_fixed": false,
             "fixed_potential": 0.0,
             "initial_potential_offset": 0.0
@@ -50,15 +53,15 @@
         "plot_energy_dist_width": 0,
         "plot_velocity_dist_width": 0,
         "plot_potential_width": 1,
-        "plot_rho_width": 1,
-        "plot_efield_width": 1,
-        "plot_bfield_width": 1,
-        "plot_current_width": 1,
+        "plot_rho_width": 0,
+        "plot_efield_width": 0,
+        "plot_bfield_width": 0,
         "plot_density_width": 1,
         "plot_particle_width": 0,
         "plot_energy_width": 1
     },
     "Options": {
+        "maximum_poisson_post_loop": 500,
         "use_existing_capacity_matrix": true
     }
 }

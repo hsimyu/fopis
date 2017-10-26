@@ -120,6 +120,7 @@ class ParticleType {
 class AmbientParticleType : public ParticleType {
     protected:
         Velocity drift_velocity{0.0, 0.0, 0.0};
+        std::array<bool, 6> injection_axis{true, true, true, true, true, true};
 
     public:
         AmbientParticleType() : ParticleType(){}
@@ -130,6 +131,15 @@ class AmbientParticleType : public ParticleType {
             drift_velocity.vx = array[0];
             drift_velocity.vy = array[1];
             drift_velocity.vz = array[2];
+        };
+
+        template<typename T>
+        void setInjectionAxis(const T& array) {
+            assert(array.size() == 6);
+
+            for(int i = 0; i < 6; ++i) {
+                injection_axis[i] = array[i];
+            }
         };
 
         //! factory関数
