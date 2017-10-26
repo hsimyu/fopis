@@ -2,8 +2,11 @@
 #define __TDPIC_GLOBAL_H_INCLUDED__
 #include <iostream>
 #include <map>
+
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#include <cmath>
 #include <string>
 #include <vector>
 #include <fstream>

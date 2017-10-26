@@ -75,9 +75,9 @@ std::vector<Position> Particle::computeCrossPoints() const {
     bool move_along_x = (pos.i != old_pos.i);
     if (move_along_x) {
         if (vx > 0.0) {
-            xcross_point.setXYZ(old_pos.x + old_pos.dx2, old_pos.y + vy * mvx, old_pos.z + vz * mvx);
+            xcross_point.setXYZ(std::ceil(old_pos.x), old_pos.y + vy * mvx, old_pos.z + vz * mvx);
         } else {
-            xcross_point.setXYZ(old_pos.x - old_pos.dx1, old_pos.y + vy * mvx, old_pos.z + vz * mvx);
+            xcross_point.setXYZ(std::floor(old_pos.x), old_pos.y + vy * mvx, old_pos.z + vz * mvx);
         }
         ++count;
     }
@@ -86,9 +86,9 @@ std::vector<Position> Particle::computeCrossPoints() const {
     bool move_along_y = (pos.j != old_pos.j);
     if (move_along_y) {
         if (vy > 0.0) {
-            ycross_point.setXYZ(old_pos.x + vx * mvy, old_pos.y + old_pos.dy2, old_pos.z + vz * mvy);
+            ycross_point.setXYZ(old_pos.x + vx * mvy, std::ceil(old_pos.y), old_pos.z + vz * mvy);
         } else {
-            ycross_point.setXYZ(old_pos.x + vx * mvy, old_pos.y - old_pos.dy1, old_pos.z + vz * mvy);
+            ycross_point.setXYZ(old_pos.x + vx * mvy, std::floor(old_pos.y), old_pos.z + vz * mvy);
         }
         ++count;
     }
@@ -97,9 +97,9 @@ std::vector<Position> Particle::computeCrossPoints() const {
     bool move_along_z = (pos.k != old_pos.k);
     if (move_along_z) {
         if (vz > 0.0) {
-            zcross_point.setXYZ(old_pos.x + vx * mvz, old_pos.y + vy * mvz, old_pos.z + old_pos.dz2);
+            zcross_point.setXYZ(old_pos.x + vx * mvz, old_pos.y + vy * mvz, std::ceil(old_pos.z));
         } else {
-            zcross_point.setXYZ(old_pos.x + vx * mvz, old_pos.y + vy * mvz, old_pos.z - old_pos.dz1);
+            zcross_point.setXYZ(old_pos.x + vx * mvz, old_pos.y + vy * mvz, std::floor(old_pos.z));
         }
         ++count;
     }
@@ -187,11 +187,11 @@ Position Particle::getNextXCrossPoint() const {
 
     if (vx > 0.0) {
         const double mvx = pos.dx2 / vx;
-        pos.setXYZ(pos.x + pos.dx2, pos.y + vy * mvx, pos.z + vz * mvx);
+        pos.setXYZ(std::ceil(pos.x), pos.y + vy * mvx, pos.z + vz * mvx);
         return pos;
     } else if (vx < 0.0) {
         const double mvx = pos.dx1 / (-vx);
-        pos.setXYZ(pos.x - pos.dx1, pos.y + vy * mvx, pos.z + vz * mvx);
+        pos.setXYZ(std::floor(pos.x), pos.y + vy * mvx, pos.z + vz * mvx);
         return pos;
     } else {
         std::cerr << "[WARNING] Vx of this particle is equal to 0.0 at Particle::getNextXCrossPoint()." << endl;
@@ -204,11 +204,11 @@ Position Particle::getNextYCrossPoint() const {
 
     if (vy > 0.0) {
         const double mvy = pos.dy2 / vy;
-        pos.setXYZ(pos.x + vx * mvy, pos.y + pos.dy2, pos.z + vz * mvy);
+        pos.setXYZ(pos.x + vx * mvy, std::ceil(pos.y), pos.z + vz * mvy);
         return pos;
     } else if (vy < 0.0) {
         const double mvy = pos.dy1 / (-vy);
-        pos.setXYZ(pos.x + vx * mvy, pos.y - pos.dy1 , pos.z + vz * mvy);
+        pos.setXYZ(pos.x + vx * mvy, std::floor(pos.y), pos.z + vz * mvy);
         return pos;
     } else {
         std::cerr << "[WARNING] Vy of this particle is equal to 0.0 at Particle::getNextYCrossPoint()." << endl;
@@ -221,11 +221,11 @@ Position Particle::getNextZCrossPoint() const {
 
     if (vz > 0.0) {
         const double mvz = pos.dz2 / vz;
-        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, pos.z + pos.dz2);
+        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, std::ceil(pos.z));
         return pos;
     } else if (vz < 0.0) {
         const double mvz = pos.dz1 / (-vz);
-        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, pos.z - pos.dz1);
+        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, std::floor(pos.z));
         return pos;
     } else {
         std::cerr << "[WARNING] Vz of this particle is equal to 0.0 at Particle::getNeztZCrossPoint()." << endl;

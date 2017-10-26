@@ -280,9 +280,7 @@ void Spacecraft::makeCmatrixInvert(void) {
     this->updateTotalCmatValue();
 }
 
-bool Spacecraft::isContaining(const Particle& p) const {
-    if (!is_defined_in_this_process) return false;
-
+inline bool Spacecraft::isContaining(const Particle& p) const {
     return this->isContaining(p.getPosition());
 }
 
@@ -374,8 +372,9 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
         }
 
         if (!surface_is_found) {
-            cout << "[ERROR] Surface cannot detect on Spacecraft::distributeInnerParticleCharge():\n";
-            cout << p << endl;
+            cout << "[ERROR] " << Environment::rankStr() <<
+                "Surface cannot detect on Spacecraft::distributeInnerParticleCharge():\n";
+            cout << p << '\n';
             cout << "Cross Points:\n";
             for(auto& cross_point : cross_points) {
                 cout << cross_point << "\n";
