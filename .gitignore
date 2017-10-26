@@ -4,3 +4,4 @@ xcode
 .DS_Store
 libraries
 include/tdpic_configure.h
+bin/.tdpicrc

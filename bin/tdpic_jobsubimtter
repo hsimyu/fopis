@@ -1,0 +1,16 @@
+#/bin/sh
+if [ $# -ne 1 ]; then
+    echo "Too many arguments. (must be only one)" 1>&2
+    exit 1
+fi
+
+. load_tdpicrc
+
+WRKDIR="${TDPICDIR}/$1"
+
+if [ -d ${WRKDIR} ]; then
+    cd ${WRKDIR}
+    qsub < ./${JOB_SCRIPT}
+else
+    "Directory ${WRKDIR} is not found."
+fi
