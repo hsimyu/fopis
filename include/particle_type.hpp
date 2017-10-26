@@ -119,10 +119,18 @@ class ParticleType {
 //! 背景プラズマ
 class AmbientParticleType : public ParticleType {
     protected:
+        Velocity drift_velocity{0.0, 0.0, 0.0};
 
     public:
         AmbientParticleType() : ParticleType(){}
         std::vector<double> calcFlux() const;
+
+        template<typename T>
+        void setDriftVelocity(const T& array) {
+            drift_velocity.vx = array[0];
+            drift_velocity.vy = array[1];
+            drift_velocity.vz = array[2];
+        };
 
         //! factory関数
         Particle generateNewParticle(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
@@ -130,6 +138,8 @@ class AmbientParticleType : public ParticleType {
         Position generateNewPosition(const double min_x, const double max_x, const double min_y, const double max_y, const double min_z, const double max_z);
         Velocity generateNewVelocity(void);
         Velocity generateNewInjectionVelocity(AXIS axis, AXIS_SIDE low_or_up);
+
+        virtual void printInfo() const override;
 };
 
 //! 放出用プラズマ粒子クラス

@@ -318,6 +318,18 @@ namespace Initializer {
                 ambient->setCharge(plasma["charge"].get<double>());
                 ambient->setTemperature(plasma["temperature"].get<double>());
                 ambient->setDensity(plasma["density"].get<double>());
+
+                if (plasma.count("drift_velocity") > 0) {
+                    auto drift_velocity = Utils::convertPicoJSONArrayToVectorDouble( plasma["drift_velocity"].get<picojson::array>());
+
+                    //! ドリフト速度を正規化 / 1e3かけてkm/s単位からm/s単位に変換
+                    drift_velocity[0] *= 1e3 * Normalizer::normalizeVelocity(1.0);
+                    drift_velocity[1] *= 1e3 * Normalizer::normalizeVelocity(1.0);
+                    drift_velocity[2] *= 1e3 * Normalizer::normalizeVelocity(1.0);
+
+                    ambient->setDriftVelocity(drift_velocity);
+                }
+
                 ambient->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
                 ambient->updateTotalNumber();
                 ambient->updateSize();

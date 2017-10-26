@@ -6,44 +6,46 @@
 
 //! 背景プラズマ用
 std::vector<double> AmbientParticleType::calcFlux() const {
-    // const double ddv = 1e-3;
-    // const double nvx = 12.0 / ddv;
-    // const double drift_vx = 0.005 / (this->calcThermalVelocity()/sqrt(M_PI));
-
-    // double fluxx1 = 0.0;
-    // double fluxx2 = 0.0;
-
-    // //! -6.0から6.0まで積分
-    // //! x * exp(-x^2)?
-    // //! @note: これはv = 0を境目にして、どちらの方向へのフラックスが多いのかを計算する
-    // //! 完全に等方的 (drift速度がゼロ) の場合は0.5ずつ
-    // for(int i = 0; i < nvx - 1; ++i) {
-    //     double arg1 = i * ddv - 6.0 + drift_vx;
-    //     double argx1 = pow(arg1, 2);
-    
-    //     if(arg1 > 0.0f) {
-    //         fluxx1 += arg1 * exp(-argx1) * ddv;
-    //     } else {
-    //         fluxx2 += arg1 * exp(-argx1) * ddv;
-    //     }
-    // }
-    
-    // fluxx1 *= this->calcThermalVelocity()/sqrt(M_PI) * Normalizer::normalizeDensity(this->getDensity());
-    // fluxx2 *= -1.0 * this->calcThermalVelocity()/sqrt(M_PI) * Normalizer::normalizeDensity(this->getDensity());
+    const double ddv = 1e-3;
+    const double nvx = 12.0 / ddv;
 
     std::vector<double> flux(6);
-    //! 等方的なfluxを仮定
-    const double flux0 = 0.5 * this->calcThermalVelocity()/sqrt(M_PI) * Normalizer::normalizeDensity(this->getDensity());
+    const auto thermal_velocity = this->calcThermalVelocity();
+    const auto normed_density = Normalizer::normalizeDensity(this->getDensity());
+    const auto size = this->getSize();
 
-    // if (Environment::isRootNode)
-    //     cout << format("flux[0] = %s, flux0 = %s, flux[1] = %s") % fluxx1 % flux0 % fluxx2 << endl;
+    for(int axis = 0; axis < 3; ++axis) {
+        double drift_velocity_to_thermal_velocity;
+        switch(axis) {
+            case 0:
+                drift_velocity_to_thermal_velocity = drift_velocity.vx / thermal_velocity;
+                break;
+            case 1:
+                drift_velocity_to_thermal_velocity = drift_velocity.vy / thermal_velocity;
+                break;
+            case 2:
+                drift_velocity_to_thermal_velocity = drift_velocity.vz / thermal_velocity;
+                break;
+        }
 
-    flux[0] = flux0 / this->getSize();
-    flux[1] = flux0 / this->getSize();
-    flux[2] = flux0 / this->getSize();
-    flux[3] = flux0 / this->getSize();
-    flux[4] = flux0 / this->getSize();
-    flux[5] = flux0 / this->getSize();
+        //! @note: これはv = 0を境目にして、どちらの方向へのフラックスが多いのかを計算する
+        //! x * exp(-x^2) = \int x f(x) = 1方向への速度の平均速度 = |\hat{v_x}|
+        //! 暫定的に-6.0から6.0まで積分した割合
+        //! 完全に等方的 (drift速度がゼロ) の場合は0.5ずつになる
+        for(int i = 0; i < nvx - 1; ++i) {
+            double arg1 = i * ddv + (drift_velocity_to_thermal_velocity - 6.0);
+            double argx1 = pow(arg1 - drift_velocity_to_thermal_velocity, 2);
+        
+            if(arg1 > 0.0) {
+                flux[2 * axis] += arg1 * exp(-argx1) * ddv;
+            } else {
+                flux[2 * axis + 1] += arg1 * exp(-argx1) * ddv;
+            }
+        }
+
+        flux[2 * axis] *= (thermal_velocity / sqrt(M_PI)) * normed_density / size;
+        flux[2 * axis + 1] *= -1.0 * (thermal_velocity / sqrt(M_PI)) * normed_density / size;
+    }
 
     return flux;
 }
@@ -81,9 +83,9 @@ Position AmbientParticleType::generateNewPosition(
 
 Velocity AmbientParticleType::generateNewVelocity(void) {
     const double deviation = this->calcDeviation();
-    std::normal_distribution<> dist_vx(0.0, deviation);
-    std::normal_distribution<> dist_vy(0.0, deviation);
-    std::normal_distribution<> dist_vz(0.0, deviation);
+    std::normal_distribution<> dist_vx(drift_velocity.vx, deviation);
+    std::normal_distribution<> dist_vy(drift_velocity.vy, deviation);
+    std::normal_distribution<> dist_vz(drift_velocity.vz, deviation);
 
     Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
     incrementVelocityGeneratedCount();
@@ -99,9 +101,9 @@ Velocity AmbientParticleType::generateNewInjectionVelocity(AXIS axis, AXIS_SIDE 
     switch(axis) {
         case AXIS::x:
             {
-                std::normal_distribution<> dist_vx(0.0, thermal_velocity);
-                std::normal_distribution<> dist_vy(0.0, deviation);
-                std::normal_distribution<> dist_vz(0.0, deviation);
+                std::normal_distribution<> dist_vx(drift_velocity.vx, thermal_velocity);
+                std::normal_distribution<> dist_vy(drift_velocity.vy, deviation);
+                std::normal_distribution<> dist_vz(drift_velocity.vz, deviation);
 
                 Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
                 while ((v.vx * sign) < 0.0) {
@@ -114,9 +116,9 @@ Velocity AmbientParticleType::generateNewInjectionVelocity(AXIS axis, AXIS_SIDE 
             }
         case AXIS::y:
             {
-                std::normal_distribution<> dist_vx(0.0, deviation);
-                std::normal_distribution<> dist_vy(0.0, thermal_velocity);
-                std::normal_distribution<> dist_vz(0.0, deviation);
+                std::normal_distribution<> dist_vx(drift_velocity.vx, deviation);
+                std::normal_distribution<> dist_vy(drift_velocity.vy, thermal_velocity);
+                std::normal_distribution<> dist_vz(drift_velocity.vz, deviation);
 
                 Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
 
@@ -130,9 +132,9 @@ Velocity AmbientParticleType::generateNewInjectionVelocity(AXIS axis, AXIS_SIDE 
             }
         case AXIS::z:
             {
-                std::normal_distribution<> dist_vx(0.0, deviation);
-                std::normal_distribution<> dist_vy(0.0, deviation);
-                std::normal_distribution<> dist_vz(0.0, thermal_velocity);
+                std::normal_distribution<> dist_vx(drift_velocity.vx, deviation);
+                std::normal_distribution<> dist_vy(drift_velocity.vy, deviation);
+                std::normal_distribution<> dist_vz(drift_velocity.vz, thermal_velocity);
 
                 Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
 
@@ -146,4 +148,14 @@ Velocity AmbientParticleType::generateNewInjectionVelocity(AXIS axis, AXIS_SIDE 
             }
     }
     throw std::logic_error("[ERROR] Something wrong in AmbientParticleType::generateNewInjectionVelocity().");
+}
+
+void AmbientParticleType::printInfo() const {
+    ParticleType::printInfo();
+
+    const auto velocity_unnorm = Normalizer::unnormalizeVelocity(1.0);
+    cout << format("  drift_velocity: %s km/s, %s km/s, %s km/s\n") %
+        (drift_velocity.vx * velocity_unnorm * 1e-3) %
+        (drift_velocity.vy * velocity_unnorm * 1e-3) %
+        (drift_velocity.vz * velocity_unnorm * 1e-3) << endl;
 }
