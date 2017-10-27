@@ -245,6 +245,9 @@ namespace Initializer {
             }
         }
 
+        //! Static Field読み込み
+        loadStaticField(inputs);
+
         //! 物体情報
         {
             auto object_inputs = inputs["Object"].get<picojson::object>();
@@ -299,7 +302,26 @@ namespace Initializer {
         }
     }
 
-    void loadParticleType(picojson::object& inputs){
+    void loadStaticField(picojson::object& inputs) {
+        if (inputs.count("Field") > 0) {
+            auto field_inputs = inputs["Field"].get<picojson::object>();
+            auto& static_field = Environment::getStaticField();
+
+            for(auto it = field_inputs.begin(); it != field_inputs.end(); ++it){
+                if (it->first == "static_bfield") {
+                    static_field.setStaticBfield(
+                        Utils::convertPicoJSONArrayToVectorDouble( it->second.get<picojson::array>() )
+                    );
+                } else if (it->first == "shine_vector") {
+                    static_field.setShineVector(
+                        Utils::convertPicoJSONArrayToVectorDouble( it->second.get<picojson::array>() )
+                    );
+                }
+            }
+        }
+    }
+
+    void loadParticleType(picojson::object& inputs) {
         auto plasma_inputs = inputs["Plasma"].get<picojson::object>();
         std::vector<ParticleType*> ptype;
 

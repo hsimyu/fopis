@@ -3,6 +3,7 @@
 #include "mpiw.hpp"
 #include "particle_type.hpp"
 #include <array>
+#include <Eigen/Core>
 
 class Options {
     public:
@@ -37,6 +38,41 @@ class Options {
         unsigned int maximum_poisson_post_loop = DEFAULT_POISSON_POST_LOOP;
         unsigned int maximum_poisson_pre_loop = DEFAULT_POISSON_PRE_LOOP;
         bool use_existing_capacity_matrix = false;
+};
+
+class StaticField {
+    private:
+        Eigen::Vector3d static_bfield{0.0, 0.0, 0.0};
+        Eigen::Vector3d shine_vector{0.0, 0.0, 0.0};
+
+    public:
+        template<typename T>
+        void setStaticBfield(const T& array) {
+            assert(array.size() == 3);
+
+            static_bfield.x() = array[0];
+            static_bfield.y() = array[1];
+            static_bfield.z() = array[2];
+        }
+
+        auto getStaticBfield() const {
+            return static_bfield;
+        }
+
+        template<typename T>
+        void setShineVector(const T& array) {
+            assert(array.size() == 3);
+
+            shine_vector.x() = array[0];
+            shine_vector.y() = array[1];
+            shine_vector.z() = array[2];
+        }
+
+        auto getShineVector() const {
+            return shine_vector;
+        }
+
+        void printInfo() const;
 };
 
 struct Environment {
@@ -182,9 +218,14 @@ struct Environment {
         static void saveInfo();
         static void loadInfo();
 
-        //! Options accesor
+        //! Options accessor
         static Options& getOptions() {
             return options;
+        }
+
+        //! StaticField accessor
+        static StaticField& getStaticField() {
+            return static_field;
         }
 
     private:
@@ -207,5 +248,6 @@ struct Environment {
         static BeamParticleList beam_particles;
 
         static Options options;
+        static StaticField static_field;
 };
 #endif

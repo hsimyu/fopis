@@ -9,5 +9,6 @@ namespace Initializer {
     void setMPIInfoToEnv(void);
     void loadEnvironment(picojson::object&);
     void loadParticleType(picojson::object&);
+    void loadStaticField(picojson::object&);
 }
 #endif

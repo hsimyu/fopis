@@ -31,6 +31,7 @@ bool Environment::onLowXedge, Environment::onHighXedge;
 bool Environment::onLowYedge, Environment::onHighYedge;
 bool Environment::onLowZedge, Environment::onHighZedge;
 Options Environment::options;
+StaticField Environment::static_field;
 std::string Environment::jobtype;
 std::string Environment::solver_type;
 std::string Environment::boundary;
@@ -111,6 +112,8 @@ void Environment::printInfo(void) {
     cout << "  cell: " << format("%1%x%2%x%3%") % cell_x % cell_y % cell_z << " grids [/proc] " << endl;
     cout << "  cell(+): " << format("%1%x%2%x%3%") % (cell_x + 2) % (cell_y + 2) % (cell_z + 2) << " grids [/proc] (with glue cells) " << endl << endl;
 
+    static_field.printInfo();
+
     cout << "  [IO width]" << endl;
     cout << "    energy_dist: " << plot_energy_dist_width << endl;
     cout << "    velocity_dist: " << plot_velocity_dist_width << endl;
@@ -145,6 +148,12 @@ void Environment::printInfo(void) {
         }
     }
     cout << endl;
+}
+
+void StaticField::printInfo() const {
+    cout << "  [Static Field]\n";
+    cout << "    static_bfield: " << format("[%s, %s, %s]\n") % static_bfield[0] % static_bfield[1] % static_bfield[2];
+    cout << "    shine_vector: " << format("[%s, %s, %s]\n") % shine_vector[0] % shine_vector[1] % shine_vector[2] << endl;
 }
 
 void Environment::checkCFLCondition(void) {
