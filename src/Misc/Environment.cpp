@@ -196,10 +196,11 @@ void Environment::checkCFLCondition(void) {
     }
 }
 
-void Environment::checkPlasmaInfo(void) {
+void Environment::checkPlasmaInfo() {
     if (num_of_particle_types > 0) {
         cout << "[Plasma Info]" << endl;
 
+        bool is_valid_condition = true;
         double total_debye = 0.0;
 
         for (int pid = 0; pid < num_of_particle_types; pid++) {
@@ -212,6 +213,11 @@ void Environment::checkPlasmaInfo(void) {
             cout << "  [Debye Length]:" << endl;
             cout << "    Debye Length: " << debye << " m" << endl;
             cout << "    Debye / dx = "  << debye / dx << " > 1.0?: " << ((debye / dx > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
+
+            if (debye / dx < 1.0) {
+                is_valid_condition = false;
+            }
+
             cout << "    (nx * dx) / Debye = " << (nx * dx) / debye << " > 1.0?: "
                 << ((((nx     * dx) / debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
             cout << "    (ny * dx) / Debye = " << (ny * dx) / debye << " > 1.0?: "
@@ -224,7 +230,11 @@ void Environment::checkPlasmaInfo(void) {
 
             cout << "  [Thermal Velocity]" << endl;
             cout << "    Vth = " << pt->calcThermalVelocity() << " < 0.4?: "
-                << (pt->calcThermalVelocity() < 1.0 ? "OK" : "*NOT SATISFIED*") << endl << endl;
+                << (pt->calcThermalVelocity() < 0.4 ? "OK" : "*NOT SATISFIED*") << endl << endl;
+
+            if (pt->calcThermalVelocity() >= 0.4) {
+                is_valid_condition = false;
+            }
 
             cout << "  [Plasma Frequency]" << endl;
             double omega_p = pt->calcPlasmaFrequency();
@@ -249,6 +259,11 @@ void Environment::checkPlasmaInfo(void) {
                 << ((((ny * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
         cout << "  (nz * dx) / Total Debye = " << (nz * dx) / total_debye << " > 1.0?: "
                 << ((((nz * dx) / total_debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
+
+        if (!is_valid_condition) {
+            cout << "[ERROR] There are some critical Plasma constraints violations. Check your input." << endl;
+            MPIw::Environment::abort(1);
+        }
     }
 }
 
