@@ -95,10 +95,6 @@ struct Environment {
         static int plot_density_width;
         static bool isRootNode;
 
-        static bool onLowXedge, onHighXedge;
-        static bool onLowYedge, onHighYedge;
-        static bool onLowZedge, onHighZedge;
-
         static std::string jobtype;
         static std::string solver_type;
         static std::string boundary;
@@ -192,7 +188,9 @@ struct Environment {
         static std::string getBoundaryCondition(const AXIS, const AXIS_SIDE);
 
         //! 対応するEdgeに乗っているかどうかを返す
+        //! == onLowXedge, onHighXedgeなどへのアクセサ
         static bool isOnEdge(const AXIS, const AXIS_SIDE);
+        static void setOnEdge(const AXIS, const AXIS_SIDE, const bool value);
 
         //! 現在の領域の上限/下限が、計算空間全体の境界でないか、計算空間全体の境界だが周期境界かどうかをチェックする
         static bool isNotBoundary(const AXIS, const AXIS_SIDE);
@@ -249,5 +247,9 @@ struct Environment {
 
         static Options options;
         static StaticField static_field;
+
+        static bool onLowXedge, onHighXedge;
+        static bool onLowYedge, onHighYedge;
+        static bool onLowZedge, onHighZedge;
 };
 #endif

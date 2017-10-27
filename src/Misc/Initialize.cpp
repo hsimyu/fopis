@@ -141,12 +141,12 @@ namespace Initializer {
             }
         }
 
-        Environment::onLowXedge = (MPIw::Environment::xrank == 0);
-        Environment::onHighXedge = (MPIw::Environment::xrank == Environment::proc_x - 1);
-        Environment::onLowYedge = (MPIw::Environment::yrank == 0);
-        Environment::onHighYedge = (MPIw::Environment::yrank == Environment::proc_y - 1);
-        Environment::onLowZedge = (MPIw::Environment::zrank == 0);
-        Environment::onHighZedge = (MPIw::Environment::zrank == Environment::proc_z - 1);
+        Environment::setOnEdge(AXIS::x, AXIS_SIDE::low, (MPIw::Environment::xrank == 0));
+        Environment::setOnEdge(AXIS::x, AXIS_SIDE::up, (MPIw::Environment::xrank == Environment::proc_x - 1));
+        Environment::setOnEdge(AXIS::y, AXIS_SIDE::low, (MPIw::Environment::yrank == 0));
+        Environment::setOnEdge(AXIS::y, AXIS_SIDE::up, (MPIw::Environment::yrank == Environment::proc_y - 1));
+        Environment::setOnEdge(AXIS::z, AXIS_SIDE::low, (MPIw::Environment::zrank == 0));
+        Environment::setOnEdge(AXIS::z, AXIS_SIDE::up, (MPIw::Environment::zrank == Environment::proc_z - 1));
 
         // 0のノードをルートとして扱う
         Environment::isRootNode = (MPIw::Environment::rank == 0);

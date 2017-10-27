@@ -86,6 +86,35 @@ bool Environment::isOnEdge(const AXIS axis, const AXIS_SIDE low_or_up) {
     return false;
 }
 
+void Environment::setOnEdge(const AXIS axis, const AXIS_SIDE low_or_up, bool value) {
+    switch(axis) {
+        case AXIS::x:
+            if (low_or_up == AXIS_SIDE::low) {
+                onLowXedge = value;
+                return;
+            } else {
+                onHighXedge = value;
+                return;
+            }
+        case AXIS::y:
+            if (low_or_up == AXIS_SIDE::low) {
+                onLowYedge = value;
+                return;
+            } else {
+                onHighYedge = value;
+                return;
+            }
+        case AXIS::z:
+            if (low_or_up == AXIS_SIDE::low) {
+                onLowZedge = value;
+                return;
+            } else {
+                onHighZedge = value;
+                return;
+            }
+    }
+}
+
 //! 現在の領域の上限/下限が、
 //! 計算空間全体の境界でない or 計算空間全体の境界であるが周期境界である
 //! かどうかをチェックする。
