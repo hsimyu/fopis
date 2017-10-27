@@ -154,7 +154,6 @@ namespace Initializer {
 
     void loadEnvironment(picojson::object& inputs){
         //! 読み込まなくてよい部分
-        Environment::max_particle_num = MAX_PARTICLE_NUM;
         Environment::initial_timestep = 0;
         Environment::timestep = 1;
 

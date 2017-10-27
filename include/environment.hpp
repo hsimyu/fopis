@@ -77,7 +77,6 @@ class StaticField {
 
 struct Environment {
     public:
-        static int max_particle_num;
         static int num_of_particle_types;
         static int initial_timestep;
         static int timestep;

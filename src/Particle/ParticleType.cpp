@@ -43,13 +43,6 @@ size_t ParticleType::getTotalNumber() const {
     const size_t cellZ = (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) ? Environment::cell_z - 1 : Environment::cell_z;
     size_t totalNumber = cellX * cellY * cellZ * particle_per_cell;
 
-    if (totalNumber > Environment::max_particle_num) {
-        if (Environment::isRootNode) {
-            cout << format("[WARNING] total particle number %d for '%s' exceeds embedded max particle number %d.") % totalNumber % name % Environment::max_particle_num << endl;
-        }
-
-        totalNumber = Environment::max_particle_num;
-    }
     return totalNumber;
 }
 

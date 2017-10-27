@@ -9,7 +9,6 @@
 #include <highfive/H5File.hpp>
 
 // static variables
-int Environment::max_particle_num;
 int Environment::num_of_particle_types;
 int Environment::initial_timestep;
 int Environment::timestep;
@@ -130,7 +129,6 @@ bool Environment::isBoundary(const AXIS axis, const AXIS_SIDE low_or_up) {
 void Environment::printInfo(void) {
     cout << "[Environment]" << endl;
     cout << "  jobtype: " << jobtype << endl;
-    cout << "  max pnum: " << max_particle_num << endl;
     cout << "  initial timestep: " << initial_timestep << endl;
     cout << "  end timestep: " << getEndTimestep() << endl;
     cout << "  boundary cond: " << boundary << endl;
