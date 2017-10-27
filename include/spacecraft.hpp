@@ -211,8 +211,9 @@ public:
     bool isPlotTiming(const unsigned int timestep) const { return (plot_potential_mapping_width > 0 && (timestep % plot_potential_mapping_width == 0)); }
 
     //! 粒子放出用
-    void emitParticles(ParticleArray& parray);
+    void emitParticles(ParticleArray& parray, const double unit_length);
     bool hasEmitParticles() const {return (emit_particle_info.size() > 0);}
+
     bool isValidEmission(Particle& p) const;
 
     // その他ユーティリティ関数

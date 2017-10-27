@@ -4,8 +4,7 @@
 #include "normalizer.hpp"
 #include <random>
 
-/*
-Particle BeamParticleType::generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector) {
+Particle PhotoElectronParticleType::generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector) {
     Particle p(id);
     Velocity vel = this->generateNewVelocity(emission_vector);
     p.setVelocity(vel);
@@ -14,15 +13,15 @@ Particle BeamParticleType::generateNewParticle(const Position& relative_emission
     return p;
 }
 
-Position BeamParticleType::generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel) {
+Position PhotoElectronParticleType::generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel) {
     std::uniform_real_distribution<> dist_t(0.0, 1.0);
     const double random_timewidth = dist_t(mt_x);
     incrementGeneratedCount(0);
 
     if (fabs(emission_vector[0]) == 1.0) {
-        //! 放出方向と直交する平面上に幅をもたせる
-        std::uniform_real_distribution<> dist_y(0.0, Normalizer::normalizeLength(emission_radius));
-        std::uniform_real_distribution<> dist_z(0.0, Normalizer::normalizeLength(emission_radius));
+        //! 放出方向と直交する平面1グリッド分に均等に粒子を分布させる
+        std::uniform_real_distribution<> dist_y(0.0, 1.0);
+        std::uniform_real_distribution<> dist_z(0.0, 1.0);
         const double random_ywidth = dist_y(mt_y);
         const double random_zwidth = dist_z(mt_z);
         incrementGeneratedCount(1);
@@ -35,8 +34,8 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
             relative_emission_position.z + (random_timewidth - 1.0) * vel.vz + random_zwidth
         };
     } else if (fabs(emission_vector[1]) == 1.0) {
-        std::uniform_real_distribution<> dist_x(0.0, Normalizer::normalizeLength(emission_radius));
-        std::uniform_real_distribution<> dist_z(0.0, Normalizer::normalizeLength(emission_radius));
+        std::uniform_real_distribution<> dist_x(0.0, 1.0);
+        std::uniform_real_distribution<> dist_z(0.0, 1.0);
         const double random_xwidth = dist_x(mt_x);
         const double random_zwidth = dist_z(mt_z);
         incrementGeneratedCount(0);
@@ -49,8 +48,8 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
         };
 
     } else if (fabs(emission_vector[2]) == 1.0) {
-        std::uniform_real_distribution<> dist_x(0.0, Normalizer::normalizeLength(emission_radius));
-        std::uniform_real_distribution<> dist_y(0.0, Normalizer::normalizeLength(emission_radius));
+        std::uniform_real_distribution<> dist_x(0.0, 1.0);
+        std::uniform_real_distribution<> dist_y(0.0, 1.0);
         const double random_xwidth = dist_x(mt_x);
         const double random_ywidth = dist_y(mt_y);
         incrementGeneratedCount(0);
@@ -62,34 +61,70 @@ Position BeamParticleType::generateNewPosition(const Position& relative_emission
             relative_emission_position.z + (random_timewidth - 1.0) * vel.vz
         };
     } else {
-        std::string error_message = (format("[ERROR] At BeamParticleType::generateNewPosition: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
+        std::string error_message = (format("[ERROR] PhotoElectronParticleType::generateNewPosition: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
         throw std::invalid_argument(error_message);
     }
 }
 
-Velocity BeamParticleType::generateNewVelocity(const std::array<double, 3>& emission_vector) {
+Velocity PhotoElectronParticleType::generateNewVelocity(const std::array<double, 3>& emission_vector) {
     const double deviation = this->calcDeviation();
-    std::normal_distribution<> dist_vx(0.0, deviation);
-    std::normal_distribution<> dist_vy(0.0, deviation);
-    std::normal_distribution<> dist_vz(0.0, deviation);
+    const double thermal_velocity = this->calcThermalVelocity();
 
-    double emission_normal = sqrt(pow(emission_vector[0], 2) + pow(emission_vector[1], 2) + pow(emission_vector[2], 2));
-    double velocity_coeff = getAcceleration() / emission_normal;
+    if (fabs(emission_vector[0]) == 1.0) {
+        std::normal_distribution<> dist_vx(0.0, thermal_velocity);
+        std::normal_distribution<> dist_vy(0.0, deviation);
+        std::normal_distribution<> dist_vz(0.0, deviation);
 
-    incrementVelocityGeneratedCount();
+        Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+        incrementVelocityGeneratedCount();
 
-    return Velocity{
-        dist_vx(mt_vx) + velocity_coeff * emission_vector[0],
-        dist_vy(mt_vy) + velocity_coeff * emission_vector[1],
-        dist_vz(mt_vz) + velocity_coeff * emission_vector[2]
-    };
+        double sign = std::copysign(1.0, emission_vector[0]);
+        while ((v.vx * sign) < 0.0) {
+            v.vx = dist_vx(mt_vx);
+            v.vy = dist_vy(mt_vy);
+            v.vz = dist_vz(mt_vz);
+            incrementVelocityGeneratedCount();
+        }
+        return v;
+    } else if (fabs(emission_vector[1]) == 1.0) {
+        std::normal_distribution<> dist_vx(0.0, deviation);
+        std::normal_distribution<> dist_vy(0.0, thermal_velocity);
+        std::normal_distribution<> dist_vz(0.0, deviation);
+
+        Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+        incrementVelocityGeneratedCount();
+
+        double sign = std::copysign(1.0, emission_vector[1]);
+        while ((v.vy * sign) < 0.0) {
+            v.vx = dist_vx(mt_vx);
+            v.vy = dist_vy(mt_vy);
+            v.vz = dist_vz(mt_vz);
+            incrementVelocityGeneratedCount();
+        }
+        return v;
+    } else if (fabs(emission_vector[2]) == 1.0) {
+        std::normal_distribution<> dist_vx(0.0, deviation);
+        std::normal_distribution<> dist_vy(0.0, deviation);
+        std::normal_distribution<> dist_vz(0.0, thermal_velocity);
+
+        Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
+        incrementVelocityGeneratedCount();
+
+        double sign = std::copysign(1.0, emission_vector[2]);
+        while ((v.vz * sign) < 0.0) {
+            v.vx = dist_vx(mt_vx);
+            v.vy = dist_vy(mt_vy);
+            v.vz = dist_vz(mt_vz);
+            incrementVelocityGeneratedCount();
+        }
+        return v;
+    } else {
+        std::string error_message = (format("[ERROR] PhotoElectronParticleType::generateNewVelocity: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
+        throw std::invalid_argument(error_message);
+    }
 }
 
-double BeamParticleType::getAcceleration() const {
-    return sqrt(2.0 * accel_potential / mass);
-}
-*/
-
+//! @note: PhotoElectronの場合はCurrentDensityを返す
 double PhotoElectronParticleType::getEmissionAmount() const {
     return current_density / (fabs(charge) * size);
 }
@@ -97,5 +132,5 @@ double PhotoElectronParticleType::getEmissionAmount() const {
 void PhotoElectronParticleType::printInfo() const {
     ParticleType::printInfo();
     cout << "  current_density: " << Normalizer::unnormalizeCurrentDensity(this->getCurrentDensity()) << " A/m^2\n";
-    cout << "  emiss_amount: " << this->getEmissionAmount() << " particles / step" << endl;
+    cout << "  emiss_amount: " << this->getEmissionAmount() << " particles / (m^2 * step)" << endl;
 }

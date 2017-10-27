@@ -173,9 +173,9 @@ class PhotoElectronParticleType : public EmissionParticleType {
         }
 
         virtual double getEmissionAmount() const override;
-        // Particle generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector);
-        // Position generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel);
-        // Velocity generateNewVelocity(const std::array<double, 3>& emission_vector);
+        Particle generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector);
+        Position generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel);
+        Velocity generateNewVelocity(const std::array<double, 3>& emission_vector);
         virtual void printInfo() const override;
 };
 

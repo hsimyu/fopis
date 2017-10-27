@@ -158,7 +158,7 @@ void RootGrid::resetObjects() {
 void RootGrid::emitParticlesFromObjects(void) {
     for(auto& obj : objects) {
         if (obj.isDefined() && obj.hasEmitParticles()) {
-            obj.emitParticles(particles);
+            obj.emitParticles(particles, dx);
         }
     }
 }

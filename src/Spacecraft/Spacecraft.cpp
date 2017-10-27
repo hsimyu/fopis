@@ -576,48 +576,48 @@ void Spacecraft::initializeEmissionParticleInfo() {
     }
 }
 
-//! 粒子放出関連
-void Spacecraft::emitParticles(ParticleArray& parray) {
+//! 粒子放出
+void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
     for(const auto& pinfo : emit_particle_info) {
         const auto id = pinfo.first;
         const auto& info = pinfo.second;
+        const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
 
-        if (Environment::isValidNodePosition(info.relative_emission_position)) {
-            const auto emit_ptype_ptr = Environment::getEmissionParticleType(id);
-            const auto max_amount = emit_ptype_ptr->getEmissionAmount() / info.emission_process_number;
+        if (emit_ptype_ptr->getType() == "beam") {
+            //! ビーム粒子
+            if (Environment::isValidNodePosition(info.relative_emission_position)) {
+                //! 放出時に呼び出すメンバ関数ポインタ
+                std::function<void(Position&, const int, const double)> emission_func;
+                std::function<Position(Particle&)> get_next_position_func;
 
-            //! 放出時に呼び出すメンバ関数ポインタ
-            std::function<void(Position&, const int, const double)> emission_func;
-            std::function<Position(Particle&)> get_next_position_func;
+                //! 放出時の座標修正子
+                if (fabs(info.emission_vector[0]) == 1.0) {
 
-            //! 放出時の座標修正子
-            if (fabs(info.emission_vector[0]) == 1.0) {
+                    emission_func = [this](Position& pos, const int id, const double charge) {
+                        this->subtractChargeOfParticleFromXsurface(pos, id, charge);
+                    };
+                    get_next_position_func = [](const Particle& p) { return p.getNextXCrossPoint(); };
 
-                emission_func = [this](Position& pos, const int id, const double charge) {
-                    this->subtractChargeOfParticleFromXsurface(pos, id, charge);
-                };
-                get_next_position_func = [](const Particle& p) { return p.getNextXCrossPoint(); };
+                } else if (fabs(info.emission_vector[1]) == 1.0) {
 
-            } else if (fabs(info.emission_vector[1]) == 1.0) {
+                    emission_func = [this](Position& pos, const int id, const double charge) {
+                        this->subtractChargeOfParticleFromYsurface(pos, id, charge);
+                    };
+                    get_next_position_func = [](const Particle& p) { return p.getNextYCrossPoint(); };
 
-                emission_func = [this](Position& pos, const int id, const double charge) {
-                    this->subtractChargeOfParticleFromYsurface(pos, id, charge);
-                };
-                get_next_position_func = [](const Particle& p) { return p.getNextYCrossPoint(); };
+                } else if (fabs(info.emission_vector[2]) == 1.0) {
 
-            } else if (fabs(info.emission_vector[2]) == 1.0) {
+                    emission_func = [this](Position& pos, const int id, const double charge) {
+                        this->subtractChargeOfParticleFromZsurface(pos, id, charge);
+                    };
+                    get_next_position_func = [](const Particle& p) { return p.getNextZCrossPoint(); };
 
-                emission_func = [this](Position& pos, const int id, const double charge) {
-                    this->subtractChargeOfParticleFromZsurface(pos, id, charge);
-                };
-                get_next_position_func = [](const Particle& p) { return p.getNextZCrossPoint(); };
+                } else {
+                    std::string error_message = (format("[ERROR] At Spacecraft::emitParticles: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
+                    throw std::invalid_argument(error_message);
+                }
 
-            } else {
-                std::string error_message = (format("[ERROR] At Spacecraft::emitParticles: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
-                throw std::invalid_argument(error_message);
-            }
-
-            if (emit_ptype_ptr->getType() == "beam") {
+                const auto max_amount = emit_ptype_ptr->getEmissionAmount() / info.emission_process_number;
                 const auto beam_ptype_ptr = Environment::getBeamParticleType(id);
                 const auto charge = beam_ptype_ptr->getChargeOfSuperParticle();
 
@@ -627,6 +627,73 @@ void Spacecraft::emitParticles(ParticleArray& parray) {
                     auto pos = get_next_position_func(p);
                     emission_func(pos, id, charge);
                     parray[id].push_back( std::move(p) );
+                }
+            }
+        } else if (emit_ptype_ptr->getType() == "photoelectron") {
+            //! 光電子
+            std::function<void(Position&, const int, const double)> emission_func;
+            std::function<Position(Particle&)> get_next_position_func;
+            std::function<bool(const Position&)> is_surface_func;
+            const auto shine_vector = Environment::getStaticField().getShineVector();
+
+            //! 放出時の座標修正子
+            if (fabs(shine_vector[0]) == 1.0) {
+
+                emission_func = [this](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromXsurface(pos, id, charge);
+                };
+                get_next_position_func = [](const Particle& p) { return p.getNextXCrossPoint(); };
+
+                const int surface_sign = (shine_vector[0] > 0.0) ? 1 : -1;
+                is_surface_func = [this, sign = surface_sign](const Position& pos) { return this->isXsurfacePoint(pos, sign); };
+
+            } else if (fabs(shine_vector[1]) == 1.0) {
+
+                emission_func = [this](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromYsurface(pos, id, charge);
+                };
+                get_next_position_func = [](const Particle& p) { return p.getNextYCrossPoint(); };
+
+                const int surface_sign = (shine_vector[1] > 0.0) ? 1 : -1;
+                is_surface_func = [this, sign = surface_sign](const Position& pos) { return this->isYsurfacePoint(pos, sign); };
+
+            } else if (fabs(shine_vector[2]) == 1.0) {
+
+                emission_func = [this](Position& pos, const int id, const double charge) {
+                    this->subtractChargeOfParticleFromZsurface(pos, id, charge);
+                };
+                get_next_position_func = [](const Particle& p) { return p.getNextZCrossPoint(); };
+
+                const int surface_sign = (shine_vector[2] > 0.0) ? 1 : -1;
+                is_surface_func = [this, sign = surface_sign](const Position& pos) { return this->isZsurfacePoint(pos, sign); };
+
+            } else {
+
+                std::string error_message = (format("[ERROR] At Spacecraft::emitParticles: Now 'shine_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
+                throw std::invalid_argument(error_message);
+
+            }
+
+            const auto pe_ptype_ptr = Environment::getPhotoElectronParticleType(id);
+            const auto charge = emit_ptype_ptr->getChargeOfSuperParticle();
+            const auto area = dx * dx;
+            const auto emission_amount_per_area = area * pe_ptype_ptr->getEmissionAmount();
+            
+            //! emission_vectorはshine_vectorの逆
+            const std::array<double, 3> emission_vector{ -shine_vector[0], -shine_vector[1], -shine_vector[2] };
+
+            for(const auto& node : capacity_matrix_relation) {
+                const auto j = node.first;
+                const auto& pos = node.second;
+
+                if (is_surface_func(pos)) {
+                    for(int i = 0; i < emission_amount_per_area; ++i) {
+                        Particle p = pe_ptype_ptr->generateNewParticle(pos, emission_vector);
+
+                        auto emiss_pos = get_next_position_func(p);
+                        emission_func(emiss_pos, id, charge);
+                        parray[id].push_back( std::move(p) );
+                    }
                 }
             }
         }
