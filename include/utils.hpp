@@ -1,5 +1,6 @@
 #ifndef __TDPIC_UTILS_H_INCLUDED__
 #define __TDPIC_UTILS_H_INCLUDED__
+
 #include <picojson.h>
 #include "global.hpp"
 #include <chrono>

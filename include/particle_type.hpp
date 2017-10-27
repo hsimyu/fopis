@@ -3,6 +3,7 @@
 
 #include "global.hpp"
 #include "position.hpp"
+#include "random_distribution.hpp"
 #include <random>
 #include <array>
 
@@ -54,7 +55,8 @@ class ParticleType {
         }
 
     public:
-        ParticleType(void);
+        ParticleType();
+
         ParticleType(ParticleType const& ptype) {
             id = ptype.getId();
             type = ptype.getType();
@@ -160,9 +162,10 @@ class EmissionParticleType : public ParticleType {
 class PhotoElectronParticleType : public EmissionParticleType {
     protected:
         double current_density = 0.0;
+        RandomDistribution::CosineEmission angle_gen;
     
     public:
-        PhotoElectronParticleType() : EmissionParticleType() {}
+        PhotoElectronParticleType();
 
         double getCurrentDensity() const {
             return current_density;

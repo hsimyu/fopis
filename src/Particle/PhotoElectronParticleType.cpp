@@ -4,6 +4,8 @@
 #include "normalizer.hpp"
 #include <random>
 
+PhotoElectronParticleType::PhotoElectronParticleType() : EmissionParticleType{}, angle_gen{MPIw::Environment::rank} {}
+
 Particle PhotoElectronParticleType::generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector) {
     Particle p(id);
     Velocity vel = this->generateNewVelocity(emission_vector);
@@ -67,56 +69,30 @@ Position PhotoElectronParticleType::generateNewPosition(const Position& relative
 }
 
 Velocity PhotoElectronParticleType::generateNewVelocity(const std::array<double, 3>& emission_vector) {
-    const double deviation = this->calcDeviation();
     const double thermal_velocity = this->calcThermalVelocity();
+    const double depression_angle = angle_gen.genDepressionAngle();
+    const double azimuth_angle = angle_gen.genAzimuthAngle();
 
     if (fabs(emission_vector[0]) == 1.0) {
-        std::normal_distribution<> dist_vx(0.0, thermal_velocity);
-        std::normal_distribution<> dist_vy(0.0, deviation);
-        std::normal_distribution<> dist_vz(0.0, deviation);
-
-        Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
-        incrementVelocityGeneratedCount();
-
-        double sign = std::copysign(1.0, emission_vector[0]);
-        while ((v.vx * sign) < 0.0) {
-            v.vx = dist_vx(mt_vx);
-            v.vy = dist_vy(mt_vy);
-            v.vz = dist_vz(mt_vz);
-            incrementVelocityGeneratedCount();
-        }
+        Velocity v(
+            thermal_velocity * std::cos(depression_angle) * emission_vector[0],
+            thermal_velocity * std::sin(depression_angle) * std::cos(azimuth_angle),
+            thermal_velocity * std::sin(depression_angle) * std::sin(azimuth_angle)
+        );
         return v;
     } else if (fabs(emission_vector[1]) == 1.0) {
-        std::normal_distribution<> dist_vx(0.0, deviation);
-        std::normal_distribution<> dist_vy(0.0, thermal_velocity);
-        std::normal_distribution<> dist_vz(0.0, deviation);
-
-        Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
-        incrementVelocityGeneratedCount();
-
-        double sign = std::copysign(1.0, emission_vector[1]);
-        while ((v.vy * sign) < 0.0) {
-            v.vx = dist_vx(mt_vx);
-            v.vy = dist_vy(mt_vy);
-            v.vz = dist_vz(mt_vz);
-            incrementVelocityGeneratedCount();
-        }
+        Velocity v(
+            thermal_velocity * std::sin(depression_angle) * std::sin(azimuth_angle),
+            thermal_velocity * std::cos(depression_angle) * emission_vector[1],
+            thermal_velocity * std::sin(depression_angle) * std::cos(azimuth_angle)
+        );
         return v;
     } else if (fabs(emission_vector[2]) == 1.0) {
-        std::normal_distribution<> dist_vx(0.0, deviation);
-        std::normal_distribution<> dist_vy(0.0, deviation);
-        std::normal_distribution<> dist_vz(0.0, thermal_velocity);
-
-        Velocity v(dist_vx(mt_vx), dist_vy(mt_vy), dist_vz(mt_vz));
-        incrementVelocityGeneratedCount();
-
-        double sign = std::copysign(1.0, emission_vector[2]);
-        while ((v.vz * sign) < 0.0) {
-            v.vx = dist_vx(mt_vx);
-            v.vy = dist_vy(mt_vy);
-            v.vz = dist_vz(mt_vz);
-            incrementVelocityGeneratedCount();
-        }
+        Velocity v(
+            thermal_velocity * std::sin(depression_angle) * std::cos(azimuth_angle),
+            thermal_velocity * std::sin(depression_angle) * std::sin(azimuth_angle),
+            thermal_velocity * std::cos(depression_angle) * emission_vector[2]
+        );
         return v;
     } else {
         std::string error_message = (format("[ERROR] PhotoElectronParticleType::generateNewVelocity: Now 'emission_vector' must be [+-1,0,0] or [0,+-1,0] or [0,0,+-1].")).str();
