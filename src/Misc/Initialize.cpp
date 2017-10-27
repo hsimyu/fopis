@@ -325,7 +325,7 @@ namespace Initializer {
         std::vector<ParticleType*> ptype;
 
         int id = 0;
-        for(auto it = plasma_inputs.begin(); it != plasma_inputs.end(); ++it){
+        for(auto it = plasma_inputs.begin(); it != plasma_inputs.end(); ++it) {
             std::string name = it->first;
             auto plasma = it->second.get<picojson::object>();
             const auto& type = plasma["type"].to_str();
@@ -396,6 +396,9 @@ namespace Initializer {
 
             ++id;
         }
+
+        //! 粒子種の並び順をリセットする
+        Environment::resetParticleTypeOrder();
     }
 }
 

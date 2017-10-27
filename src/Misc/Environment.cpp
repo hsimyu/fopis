@@ -317,6 +317,22 @@ Environment::BeamParticlePtr Environment::getBeamParticleType(const int pid) {
     throw std::invalid_argument("[ERROR] The particle id passed to getBeamParticleType() didn't match any existing particle type.");
 }
 
+//! 粒子のID順を背景→光電子→二次電子→ビームの順に並び替える
+void Environment::resetParticleTypeOrder() {
+    int id = 0;
+    for(auto& ptype : ambient_particles) {
+        ptype->setId(id++);
+    }
+
+    for(auto& ptype : photoelectron_particles) {
+        ptype->setId(id++);
+    }
+
+    for(auto& ptype : beam_particles) {
+        ptype->setId(id++);
+    }
+}
+
 void Environment::loadInfo() {
     const std::string file_name = "resume/environment.h5";
 

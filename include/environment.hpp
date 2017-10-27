@@ -113,6 +113,8 @@ struct Environment {
 
         static int getEndTimestep() { return initial_timestep + max_timestep; }
         static double getDataTime() { return static_cast<double>(timestep) * dt; }
+        
+        static void resetParticleTypeOrder();
 
         static void addAmbientParticleType(const std::shared_ptr<AmbientParticleType>& ptr) {
             ambient_particles.push_back(ptr);
