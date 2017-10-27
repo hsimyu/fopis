@@ -126,6 +126,16 @@ public:
         return normalized_current * A_unit;
     }
 
+    //! C / s m^2 -> 1
+    static double normalizeCurrentDensity(double raw_current_density) {
+        return raw_current_density * (x_unit * x_unit) / A_unit;
+    }
+
+    //! 1 -> C / s m^2
+    static double unnormalizeCurrentDensity(double normalized_current_density) {
+        return normalized_current_density * A_unit / (x_unit * x_unit);
+    }
+
     //! 1 -> C / m^3
     static double unnormalizeRho(double normalized_rho) {
         return normalized_rho * e_unit / x_pow_3;

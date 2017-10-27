@@ -96,6 +96,6 @@ double PhotoElectronParticleType::getEmissionAmount() const {
 
 void PhotoElectronParticleType::printInfo() const {
     ParticleType::printInfo();
-    cout << "  current_density: " << this->getCurrentDensity() << endl;
+    cout << "  current_density: " << Normalizer::unnormalizeCurrentDensity(this->getCurrentDensity()) << " A/m^2\n";
     cout << "  emiss_amount: " << this->getEmissionAmount() << " particles / step" << endl;
 }

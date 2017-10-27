@@ -390,7 +390,7 @@ namespace Initializer {
                 photo->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
                 photo->updateSize();
 
-                photo->setCurrentDensity(Normalizer::normalizeCurrent(plasma["current_density"].get<double>()));
+                photo->setCurrentDensity(Normalizer::normalizeCurrentDensity(plasma["current_density"].get<double>()));
                 Environment::addPhotoElectronParticleType(photo);
             }
 
