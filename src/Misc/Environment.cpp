@@ -180,7 +180,10 @@ void Environment::printInfo(void) {
 
 void StaticField::printInfo() const {
     cout << "  [Static Field]\n";
-    cout << "    static_bfield: " << format("[%s, %s, %s]\n") % static_bfield[0] % static_bfield[1] % static_bfield[2];
+    cout << "    static_bfield: " << format("[%s nT, %s nT, %s nT]\n") %
+        (Normalizer::unnormalizeBfield(static_bfield[0]) * 1e9) %
+        (Normalizer::unnormalizeBfield(static_bfield[1]) * 1e9) %
+        (Normalizer::unnormalizeBfield(static_bfield[2]) * 1e9);
     cout << "    shine_vector: " << format("[%s, %s, %s]\n") % shine_vector[0] % shine_vector[1] % shine_vector[2] << endl;
 }
 

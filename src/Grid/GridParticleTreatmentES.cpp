@@ -16,12 +16,17 @@ void Grid::updateParticleVelocityES(void) {
     tdArray& ezref = field->getEzRef();
     const double time_factor = 1.0 / pow(2, level);
 
+    const auto static_bfield = Environment::getStaticField().getStaticBfield();
+    const double bx = static_bfield[0];
+    const double by = static_bfield[1];
+    const double bz = static_bfield[2];
+
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         double qm = 0.5 * (Environment::getParticleType(pid)->getCharge()) / (Environment::getParticleType(pid)->getMass());
         auto& parray = particles[pid];
         const auto size = parray.size();
 
-        #pragma omp parallel for shared(exref, eyref, ezref)
+        #pragma omp parallel for
         for(int pnum = 0; pnum < size; ++pnum){
             auto& p = parray[pnum];
 
@@ -64,9 +69,6 @@ void Grid::updateParticleVelocityES(void) {
                     + v7*ezref[i][j+1][k+1]
                     + v8*ezref[i+1][j+1][k+1];
 
-                const double bx = 0.0;
-                const double by = 0.0;
-                const double bz = 0.0;
                 double boris = 2.0/(1.0 + (bx*bx+by*by+bz*bz));
 
                 double vx1 = p.vx + ex;

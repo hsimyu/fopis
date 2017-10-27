@@ -151,9 +151,14 @@ public:
         return normalized_efield * V_unit / x_unit;
     }
 
+    //! T = kg / C s -> 1
+    static double normalizeBfield(double raw_bfield) {
+        return raw_bfield * (t_unit * e_unit) / m_unit;
+    }
+
     //! 1 -> T = kg / C s
     static double unnormalizeBfield(double normalized_bfield) {
-        return normalized_bfield * m_unit / (pow(t_unit, 2) * e_unit);
+        return normalized_bfield * m_unit / (t_unit * e_unit);
     }
 
     //! kg m^2 / s^2 -> 1

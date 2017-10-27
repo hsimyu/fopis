@@ -35,6 +35,9 @@ namespace Initializer {
         Normalizer::setMassUnit(me);
         Normalizer::setChargeUnit(e);
 
+        //! Static Field読み込み
+        loadStaticField(inputs);
+
         // 粒子情報セット
         Initializer::loadParticleType(inputs);
 
@@ -244,9 +247,6 @@ namespace Initializer {
             }
         }
 
-        //! Static Field読み込み
-        loadStaticField(inputs);
-
         //! 物体情報
         {
             auto object_inputs = inputs["Object"].get<picojson::object>();
@@ -308,9 +308,13 @@ namespace Initializer {
 
             for(auto it = field_inputs.begin(); it != field_inputs.end(); ++it){
                 if (it->first == "static_bfield") {
-                    static_field.setStaticBfield(
-                        Utils::convertPicoJSONArrayToVectorDouble( it->second.get<picojson::array>() )
-                    );
+                    auto static_bfield = Utils::convertPicoJSONArrayToVectorDouble( it->second.get<picojson::array>() );
+                    const auto bfield_norm = Normalizer::normalizeBfield(1.0);
+                    constexpr double bfield_input_unit = 1e-9; // nT
+                    static_bfield[0] *= bfield_norm * bfield_input_unit;
+                    static_bfield[1] *= bfield_norm * bfield_input_unit;
+                    static_bfield[2] *= bfield_norm * bfield_input_unit;
+                    static_field.setStaticBfield(static_bfield);
                 } else if (it->first == "shine_vector") {
                     static_field.setShineVector(
                         Utils::convertPicoJSONArrayToVectorDouble( it->second.get<picojson::array>() )
