@@ -156,6 +156,29 @@ class EmissionParticleType : public ParticleType {
         virtual double getEmissionAmount() const = 0;
 };
 
+//! 光電子
+class PhotoElectronParticleType : public EmissionParticleType {
+    protected:
+        double current_density = 0.0;
+    
+    public:
+        PhotoElectronParticleType() : EmissionParticleType() {}
+
+        double getCurrentDensity() const {
+            return current_density;
+        }
+
+        void setCurrentDensity(const double value) {
+            current_density = value;
+        }
+
+        virtual double getEmissionAmount() const override;
+        // Particle generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector);
+        // Position generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel);
+        // Velocity generateNewVelocity(const std::array<double, 3>& emission_vector);
+        virtual void printInfo() const override;
+};
+
 //! 放出されるビーム用クラス
 class BeamParticleType : public EmissionParticleType {
     protected:

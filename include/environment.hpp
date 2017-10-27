@@ -120,6 +120,12 @@ struct Environment {
         }
         static size_t getNumOfAmbientParticles() {return ambient_particles.size();}
 
+        static void addPhotoElectronParticleType(const std::shared_ptr<PhotoElectronParticleType>& ptr) {
+            photoelectron_particles.push_back(ptr);
+            ++num_of_particle_types;
+        }
+        static size_t getNumOfPhotoElectronParticles() {return photoelectron_particles.size();}
+
         static void addBeamParticleType(const std::shared_ptr<BeamParticleType>& ptr) {
             beam_particles.push_back(ptr);
             ++num_of_particle_types;
@@ -129,19 +135,23 @@ struct Environment {
         using ParticleTypePtr = std::shared_ptr<ParticleType>;
         using EmissionParticleTypePtr = std::shared_ptr<EmissionParticleType>;
         using AmbientParticlePtr = std::shared_ptr<AmbientParticleType>;
+        using PhotoElectronParticlePtr = std::shared_ptr<PhotoElectronParticleType>;
         using BeamParticlePtr = std::shared_ptr<BeamParticleType>;
 
         using AmbientParticleList = std::vector<AmbientParticlePtr>;
+        using PhotoElectronParticleList = std::vector<PhotoElectronParticlePtr>;
         using BeamParticleList = std::vector<BeamParticlePtr>;
 
         //! イテレータ経由で使う
         static AmbientParticleList getAmbientParticleTypes() { return ambient_particles; }
+        static PhotoElectronParticleList getPhotoElectronParticleTypes() { return photoelectron_particles; }
         static BeamParticleList getBeamParticleTypes() { return beam_particles; }
 
         //! インデックスを探して使う
         static ParticleTypePtr getParticleType(const int pid);
         static EmissionParticleTypePtr getEmissionParticleType(const int pid);
         static AmbientParticlePtr getAmbientParticleType(const int pid);
+        static PhotoElectronParticlePtr getPhotoElectronParticleType(const int pid);
         static BeamParticlePtr getBeamParticleType(const int pid);
 
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
@@ -242,6 +252,7 @@ struct Environment {
 
         //! 内部的には各粒子の種類毎にリストを持つ
         static AmbientParticleList ambient_particles;
+        static PhotoElectronParticleList photoelectron_particles;
         static BeamParticleList beam_particles;
 
         static Options options;

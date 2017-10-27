@@ -378,6 +378,20 @@ namespace Initializer {
                 beam->setEmissionRadius( plasma["emission_radius"].get<double>() );
                 beam->setEmissionType( plasma["emission_type"].to_str() );
                 Environment::addBeamParticleType(beam);
+            } else if (type == "photoelectron") {
+                auto photo = std::make_shared<PhotoElectronParticleType>();
+                photo->setId(id);
+                photo->setName(name);
+                photo->setType(type);
+                photo->setMass(plasma["mass"].get<double>());
+                photo->setCharge(plasma["charge"].get<double>());
+                photo->setTemperature(plasma["temperature"].get<double>());
+                photo->setDensity(plasma["density"].get<double>());
+                photo->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
+                photo->updateSize();
+
+                photo->setCurrentDensity(Normalizer::normalizeCurrent(plasma["current_density"].get<double>()));
+                Environment::addPhotoElectronParticleType(photo);
             }
 
             ++id;

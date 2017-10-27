@@ -38,6 +38,7 @@ std::string Environment::dimension;
 std::vector<ObjectInfo_t> Environment::objects_info;
 Environment::AmbientParticleList Environment::ambient_particles;
 Environment::BeamParticleList Environment::beam_particles;
+Environment::PhotoElectronParticleList Environment::photoelectron_particles;
 
 /*
 * @params
@@ -272,13 +273,23 @@ Environment::ParticleTypePtr Environment::getParticleType(const int pid) {
     for(auto& ptype : ambient_particles) {
         if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
     }
+
+    for(auto& ptype : photoelectron_particles) {
+        if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
+    }
+
     for(auto& ptype : beam_particles) {
         if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
     }
+
     throw std::invalid_argument("[ERROR] The particle id passed to getParticleType() didn't match any existing particle type.");
 }
 
 Environment::EmissionParticleTypePtr Environment::getEmissionParticleType(const int pid) {
+    for(auto& ptype : photoelectron_particles) {
+        if (ptype->getId() == pid) return std::static_pointer_cast<EmissionParticleType>(ptype);
+    }
+
     for(auto& ptype : beam_particles) {
         if (ptype->getId() == pid) return std::static_pointer_cast<EmissionParticleType>(ptype);
     }
@@ -290,6 +301,13 @@ Environment::AmbientParticlePtr Environment::getAmbientParticleType(const int pi
         if (ptype->getId() == pid) return ptype;
     }
     throw std::invalid_argument("[ERROR] The particle id passed to getAmbientParticleType() didn't match any existing particle type.");
+}
+
+Environment::PhotoElectronParticlePtr Environment::getPhotoElectronParticleType(const int pid) {
+    for(auto& ptype : photoelectron_particles) {
+        if (ptype->getId() == pid) return ptype;
+    }
+    throw std::invalid_argument("[ERROR] The particle id passed to getPhotoElectronParticleType() didn't match any existing particle type.");
 }
 
 Environment::BeamParticlePtr Environment::getBeamParticleType(const int pid) {
