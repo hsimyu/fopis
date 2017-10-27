@@ -25,7 +25,6 @@ class ParticleType {
 
         // 計算用
         int particle_per_cell;
-        int totalNumber;
 
         // random number generator
         std::mt19937 mt_x;
@@ -64,8 +63,6 @@ class ParticleType {
             density = ptype.getDensity();
             temperature = ptype.getTemperature();
             size = ptype.getSize();
-
-            totalNumber = ptype.getTotalNumber();
         };
 
         // setters
@@ -82,7 +79,6 @@ class ParticleType {
         void setType(std::string _type){ type = _type; }
         void setSize(int _size){ size = _size; }
         void setPcell(int _pcell){ particle_per_cell = _pcell; }
-        void setTotalNumber(int _num){ totalNumber = _num; }
 
         // getters
         int getId() const { return id; }
@@ -97,10 +93,9 @@ class ParticleType {
 
         int getSize() const { return size; }
         int getPcell() const { return particle_per_cell; }
-        int getTotalNumber() const { return totalNumber; }
+        size_t getTotalNumber() const;
 
         int updateSize(void);
-        int updateTotalNumber(void);
         double calcDebyeLength(void) const;
         double calcThermalVelocity(void) const;
         double calcDeviation(void) const;

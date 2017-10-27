@@ -35,13 +35,13 @@ int ParticleType::updateSize(void) {
     return size;
 }
 
-// initializer for ambient plasma
-int ParticleType::updateTotalNumber(void){
-    //! 担当するセルの数は上側境界にいるかどうかで変わる
-    int cellX = (Environment::onHighXedge) ? Environment::cell_x - 1 : Environment::cell_x;
-    int cellY = (Environment::onHighYedge) ? Environment::cell_y - 1 : Environment::cell_y;
-    int cellZ = (Environment::onHighZedge) ? Environment::cell_z - 1 : Environment::cell_z;
-    totalNumber = cellX * cellY * cellZ * particle_per_cell;
+//! total number は内部値を持たないで良い
+size_t ParticleType::getTotalNumber() const {
+    //! 上側が境界の場合はそのセル分の粒子は生成しない
+    const size_t cellX = (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) ? Environment::cell_x - 1 : Environment::cell_x;
+    const size_t cellY = (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) ? Environment::cell_y - 1 : Environment::cell_y;
+    const size_t cellZ = (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) ? Environment::cell_z - 1 : Environment::cell_z;
+    size_t totalNumber = cellX * cellY * cellZ * particle_per_cell;
 
     if (totalNumber > Environment::max_particle_num) {
         if (Environment::isRootNode) {

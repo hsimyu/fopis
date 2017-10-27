@@ -359,7 +359,6 @@ namespace Initializer {
                 }
 
                 ambient->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
-                ambient->updateTotalNumber();
                 ambient->updateSize();
                 Environment::addAmbientParticleType(ambient);
             } else if (type == "beam") {
@@ -372,7 +371,6 @@ namespace Initializer {
                 beam->setTemperature(plasma["temperature"].get<double>());
                 beam->setDensity(plasma["density"].get<double>());
                 beam->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
-                beam->updateTotalNumber();
                 beam->updateSize();
 
                 beam->setAcceleratingPotential( Normalizer::normalizePotential(plasma["accel_potential"].get<double>()) );

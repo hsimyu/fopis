@@ -48,9 +48,9 @@ RootGrid::RootGrid() : Grid() {
     double max_z = static_cast<double>(Environment::cell_z);
 
     //! - 上側境界にいる場合は外側にはみ出した粒子を生成しないようにする
-    if(!Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
-    if(!Environment::isNotBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
+    if (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) max_x -= 1.0;
+    if (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) max_y -= 1.0;
+    if (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) max_z -= 1.0;
 
     //! - particlesは空のstd::vector< std::vector<Particle> >として宣言されている
     //! - particle types 分だけresize
