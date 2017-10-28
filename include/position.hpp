@@ -1,5 +1,6 @@
 #ifndef __TDPIC_POSITION_H_INCLUDED__
 #define __TDPIC_POSITION_H_INCLUDED__
+
 #include <math.h>
 #include <iostream>
 #include <algorithm>
@@ -124,7 +125,7 @@ class Velocity {
         Velocity(Velocity&&) = default;
         Velocity& operator=(Velocity&&) = default;
 
-        double getMagnitude(void) {
+        double getMagnitude(void) const {
             return vx*vx + vy*vy + vz*vz;
         }
 };

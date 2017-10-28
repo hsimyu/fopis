@@ -1,6 +1,7 @@
 #ifndef __TDPIC_SPACECRAFT_INCIDENT_H_INCLUDED__
 #define __TDPIC_SPACECRAFT_INCIDENT_H_INCLUDED__
 
+#include "global.hpp"
 #include "position.hpp"
 
 //! 物体表面への衝突に関する情報を格納する構造体
@@ -8,33 +9,30 @@ class IncidentInfo_t {
     private:
         Position pos;
         Velocity vel;
-        std::array<bool, 3> surface_vector{false, false, false};
+        AXIS axis;
+        double mass;
+        double charge;
 
     public:
-        IncidentInfo_t(const Position& _pos, const Velocity& _vel) : pos{_pos}, vel{_vel} {}
+        IncidentInfo_t(const double mass, const double charge, const Position& _pos, const Velocity& _vel);
+        IncidentInfo_t(const double mass, const double charge, const Position& _pos, const Velocity& _vel, AXIS axis);
 
-        double energy;
-        double angle;
+        //! eV単位で返す
+        double getIncidentEnergyInElectronVolt() const;
+        double getIncidentAngle() const;
 
-        bool isXsurfaceIncident() const {
-            return surface_vector[0]; 
-        }
+        void setSurface(AXIS axis);
+        bool isXsurfaceIncident() const;
+        bool isYsurfaceIncident() const;
+        bool isZsurfaceIncident() const;
 
-        bool isYsurfaceIncident() const {
-            return surface_vector[1]; 
-        }
+        double getX() const;
+        double getY() const;
+        double getZ() const;
 
-        bool isZsurfaceIncident() const {
-            return surface_vector[2]; 
-        }
-
-        double getX() const {return pos.x;}
-        double getY() const {return pos.y;}
-        double getZ() const {return pos.z;}
-
-        double getVx() const {return vel.vx;}
-        double getVy() const {return vel.vy;}
-        double getVz() const {return vel.vz;}
+        double getVx() const;
+        double getVy() const;
+        double getVz() const;
 };
 
 #endif

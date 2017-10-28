@@ -4,6 +4,10 @@
 #include "environment.hpp"
 #include "utils.hpp"
 
+std::shared_ptr<ParticleType> Particle::getParticleTypePtr() const {
+    return Environment::getParticleType(typeId);
+}
+
 void Particle::setPosition(Position const& pos){
     x = pos.x;
     y = pos.y;

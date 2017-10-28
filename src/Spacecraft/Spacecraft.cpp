@@ -360,17 +360,17 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
             for(auto& cross_point : cross_points) {
                 if (isXsurfacePoint(cross_point, isign)) {
                     distributeInnerParticleChargeToXsurface(cross_point, id, q);
-                    this->addIncidentEvent(cross_point, p.getVelocity());
+                    this->addIncidentEvent(p.getParticleTypePtr(), cross_point, p.getVelocity(), AXIS::x);
                     surface_is_found = true;
                     break;
                 } else if (isYsurfacePoint(cross_point, jsign)) {
                     distributeInnerParticleChargeToYsurface(cross_point, id, q);
-                    this->addIncidentEvent(cross_point, p.getVelocity());
+                    this->addIncidentEvent(p.getParticleTypePtr(), cross_point, p.getVelocity(), AXIS::y);
                     surface_is_found = true;
                     break;
                 } else if (isZsurfacePoint(cross_point, ksign)) {
                     distributeInnerParticleChargeToZsurface(cross_point, id, q);
-                    this->addIncidentEvent(cross_point, p.getVelocity());
+                    this->addIncidentEvent(p.getParticleTypePtr(), cross_point, p.getVelocity(), AXIS::z);
                     surface_is_found = true;
                     break;
                 }

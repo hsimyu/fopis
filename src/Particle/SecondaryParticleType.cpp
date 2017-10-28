@@ -18,13 +18,15 @@ std::vector<Particle> SecondaryParticleType::generateNewParticles(const Incident
     // p.setVelocity(vel);
     // p.setPosition(this->generateNewPosition(relative_emission_position, emission_vector, vel));
 
-    const double r = this->getElasticBackscatterCoeff(material, incident.energy, incident.angle);
-    const double eta = this->getInelasticBackscatterCoeff(material, incident.energy, incident.angle);
-    double delta = this->getTrueSecondaryCoeff(material, incident.energy, incident.angle);
+    const auto energy = incident.getIncidentEnergyInElectronVolt();
+    const auto angle = incident.getIncidentAngle();
+    const double r = this->getElasticBackscatterCoeff(material, energy, angle);
+    const double eta = this->getInelasticBackscatterCoeff(material, energy, angle);
+    double delta = this->getTrueSecondaryCoeff(material, energy, angle);
 
     if (Environment::isRootNode) {
-        cout << format("incident energy = %s\n") % Normalizer::unnormalizeEnergy(incident.energy);
-        cout << format("incident angle = %s\n") % ((180.0 / M_PI) * incident.angle);
+        cout << format("incident energy = %s\n") % energy;
+        cout << format("incident angle = %s\n") % ((180.0 / M_PI) * angle);
         cout << format("r = %s\n") % r;
         cout << format("eta = %s\n") % eta;
         cout << format("delta = %s") % delta << endl;

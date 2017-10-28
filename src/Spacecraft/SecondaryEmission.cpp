@@ -1,5 +1,6 @@
 #include "spacecraft.hpp"
 #include "particle.hpp"
+#include "particle_type.hpp"
 
 bool Spacecraft::hasSecondaryParticles() const {
     for(const auto& pinfo : emit_particle_info) {
@@ -10,8 +11,15 @@ bool Spacecraft::hasSecondaryParticles() const {
     return false;
 }
 
-void Spacecraft::addIncidentEvent(const Position& incident_pos, const Velocity& incident_vel) {
-    IncidentInfo_t new_incident{incident_pos, incident_vel};
+void Spacecraft::addIncidentEvent(const std::shared_ptr<ParticleType> ptype_ptr, const Position& incident_pos, const Velocity& incident_vel, AXIS axis) {
+    IncidentInfo_t new_incident{
+        ptype_ptr->getMass(),
+        ptype_ptr->getCharge(),
+        incident_pos,
+        incident_vel,
+        axis
+    };
+
     incident_events.push_back( std::move(new_incident) );
 }
 
