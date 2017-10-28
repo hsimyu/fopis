@@ -174,7 +174,7 @@ public:
     //! 1 -> kg m^2 / s^2 = J, or eV (J / C)
     static double unnormalizeEnergy(double normalized_energy, std::string unit_type) {
         if (unit_type == "eV" || unit_type == "electronvolt" || unit_type == "ev") {
-            return normalized_energy / e_unit;
+            return normalized_energy * m_unit * pow(x_unit, 2) / (e_unit * pow(t_unit, 2));
         } else {
             return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2);
         }
