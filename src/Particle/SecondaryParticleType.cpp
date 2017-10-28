@@ -25,8 +25,10 @@ std::vector<Particle> SecondaryParticleType::generateNewParticles(const Incident
     double delta = this->getTrueSecondaryCoeff(material, energy, angle);
 
     if (Environment::isRootNode) {
-        cout << format("incident energy = %s\n") % energy;
+        cout << "incident position = " << incident.getPosition() << endl;
+        cout << "incident velocity = " << incident.getVelocity() << endl;
         cout << format("incident angle = %s\n") % ((180.0 / M_PI) * angle);
+        cout << format("incident energy = %s\n") % energy;
         cout << format("r = %s\n") % r;
         cout << format("eta = %s\n") % eta;
         cout << format("delta = %s") % delta << endl;

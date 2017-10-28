@@ -26,10 +26,12 @@ class IncidentInfo_t {
         bool isYsurfaceIncident() const;
         bool isZsurfaceIncident() const;
 
+        Position getPosition() const;
         double getX() const;
         double getY() const;
         double getZ() const;
 
+        Velocity getVelocity() const;
         double getVx() const;
         double getVy() const;
         double getVz() const;

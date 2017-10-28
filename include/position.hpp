@@ -1,7 +1,9 @@
 #ifndef __TDPIC_POSITION_H_INCLUDED__
 #define __TDPIC_POSITION_H_INCLUDED__
 
-#include <math.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include <iostream>
 #include <algorithm>
 class Particle;
@@ -59,9 +61,9 @@ class Position {
             y = _y;
             z = _z;
 
-            i = static_cast<int>(floor(x)) + 1;
-            j = static_cast<int>(floor(y)) + 1;
-            k = static_cast<int>(floor(z)) + 1;
+            i = static_cast<int>(std::floor(x)) + 1;
+            j = static_cast<int>(std::floor(y)) + 1;
+            k = static_cast<int>(std::floor(z)) + 1;
 
             this->updateDelta();
         }
@@ -93,7 +95,7 @@ class Position {
             };
         }
 
-        friend std::ostream& operator<<(std::ostream&, Position const&);
+        friend std::ostream& operator<<(std::ostream&, const Position&);
 };
 
 class Velocity {
@@ -125,8 +127,14 @@ class Velocity {
         Velocity(Velocity&&) = default;
         Velocity& operator=(Velocity&&) = default;
 
-        double getMagnitude(void) const {
+        double powered(void) const {
             return vx*vx + vy*vy + vz*vz;
         }
+
+        double abs(void) const {
+            return std::sqrt(vx*vx + vy*vy + vz*vz);
+        }
+
+        friend std::ostream& operator<<(std::ostream&, const Velocity&);
 };
 #endif
