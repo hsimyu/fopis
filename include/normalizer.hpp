@@ -171,6 +171,15 @@ public:
         return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2);
     }
 
+    //! 1 -> kg m^2 / s^2 = J, or eV (J / C)
+    static double unnormalizeEnergy(double normalized_energy, std::string unit_type) {
+        if (unit_type == "eV" || unit_type == "electronvolt" || unit_type == "ev") {
+            return normalized_energy / e_unit;
+        } else {
+            return normalized_energy * m_unit * pow(x_unit, 2) / pow(t_unit, 2);
+        }
+    }
+
     //! s^4 A^2 / kg m^3 = C^2 s^2 / kg m^3 -> 1
     static double normalizeEpsilon(double raw_epsilon) {
         return raw_epsilon * (x_pow_3 * m_unit) / (pow(e_unit, 2) * pow(t_unit, 2));

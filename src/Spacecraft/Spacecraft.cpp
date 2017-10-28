@@ -354,32 +354,66 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
         const int ksign = (p.vz > 0.0) ? 1 : -1;
         bool surface_is_found = false;
 
-        auto cross_points = p.computeCrossPoints();
-        for(auto& cross_point : cross_points) {
-            if (isXsurfacePoint(cross_point, isign)) {
-                distributeInnerParticleChargeToXsurface(cross_point, id, q);
-                surface_is_found = true;
-                break;
-            } else if (isYsurfacePoint(cross_point, jsign)) {
-                distributeInnerParticleChargeToYsurface(cross_point, id, q);
-                surface_is_found = true;
-                break;
-            } else if (isZsurfacePoint(cross_point, ksign)) {
-                distributeInnerParticleChargeToZsurface(cross_point, id, q);
-                surface_is_found = true;
-                break;
-            }
-        }
-
-        if (!surface_is_found) {
-            cout << "[ERROR] " << Environment::rankStr() <<
-                "Surface cannot detect on Spacecraft::distributeInnerParticleCharge():\n";
-            cout << p << '\n';
-            cout << "Cross Points:\n";
+        if (this->hasSecondaryParticles()) {
+            //! 二次電子がある場合はIncidentの情報保存を行う必要がある
+            auto cross_points = p.computeCrossPoints();
             for(auto& cross_point : cross_points) {
-                cout << cross_point << "\n";
+                if (isXsurfacePoint(cross_point, isign)) {
+                    distributeInnerParticleChargeToXsurface(cross_point, id, q);
+                    this->addIncidentEvent(cross_point, p.getVelocity());
+                    surface_is_found = true;
+                    break;
+                } else if (isYsurfacePoint(cross_point, jsign)) {
+                    distributeInnerParticleChargeToYsurface(cross_point, id, q);
+                    this->addIncidentEvent(cross_point, p.getVelocity());
+                    surface_is_found = true;
+                    break;
+                } else if (isZsurfacePoint(cross_point, ksign)) {
+                    distributeInnerParticleChargeToZsurface(cross_point, id, q);
+                    this->addIncidentEvent(cross_point, p.getVelocity());
+                    surface_is_found = true;
+                    break;
+                }
             }
-            cout << endl;
+
+            if (!surface_is_found) {
+                cout << "[ERROR] " << Environment::rankStr() <<
+                    "Surface cannot detect on Spacecraft::distributeInnerParticleCharge():\n";
+                cout << p << '\n';
+                cout << "Cross Points:\n";
+                for(auto& cross_point : cross_points) {
+                    cout << cross_point << "\n";
+                }
+                cout << endl;
+            }
+        } else {
+            auto cross_points = p.computeCrossPoints();
+            for(auto& cross_point : cross_points) {
+                if (isXsurfacePoint(cross_point, isign)) {
+                    distributeInnerParticleChargeToXsurface(cross_point, id, q);
+                    surface_is_found = true;
+                    break;
+                } else if (isYsurfacePoint(cross_point, jsign)) {
+                    distributeInnerParticleChargeToYsurface(cross_point, id, q);
+                    surface_is_found = true;
+                    break;
+                } else if (isZsurfacePoint(cross_point, ksign)) {
+                    distributeInnerParticleChargeToZsurface(cross_point, id, q);
+                    surface_is_found = true;
+                    break;
+                }
+            }
+
+            if (!surface_is_found) {
+                cout << "[ERROR] " << Environment::rankStr() <<
+                    "Surface cannot detect on Spacecraft::distributeInnerParticleCharge():\n";
+                cout << p << '\n';
+                cout << "Cross Points:\n";
+                for(auto& cross_point : cross_points) {
+                    cout << cross_point << "\n";
+                }
+                cout << endl;
+            }
         }
 
         current[id] += q;
@@ -617,8 +651,8 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
                     throw std::invalid_argument(error_message);
                 }
 
-                const auto max_amount = emit_ptype_ptr->getEmissionAmount() / info.emission_process_number;
                 const auto beam_ptype_ptr = Environment::getBeamParticleType(id);
+                const auto max_amount = beam_ptype_ptr->getEmissionAmount() / info.emission_process_number;
                 const auto charge = beam_ptype_ptr->getChargeOfSuperParticle();
 
                 for(int i = 0; i < max_amount; ++i) {
@@ -675,7 +709,7 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
             }
 
             const auto pe_ptype_ptr = Environment::getPhotoElectronParticleType(id);
-            const auto charge = emit_ptype_ptr->getChargeOfSuperParticle();
+            const auto charge = pe_ptype_ptr->getChargeOfSuperParticle();
             const auto area = dx * dx;
             const auto emission_amount_per_area = area * pe_ptype_ptr->getEmissionAmount();
             
@@ -696,7 +730,28 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
                     }
                 }
             }
+        } else if (emit_ptype_ptr->getType() == "secondary") {
+            const auto secondary_ptype_ptr = Environment::getSecondaryParticleType(id);
+            const auto charge = secondary_ptype_ptr->getChargeOfSuperParticle();
+
+            MaterialInfo_t test_material{"test"};
+            test_material.fermi_energy = 9.1;
+            test_material.delta_max = 3.0;
+            test_material.epsi_max = 420.0;
+            test_material.atomic_number = 13.0;
+
+            for(auto& incident : incident_events) {
+                auto parray = secondary_ptype_ptr->generateNewParticles(incident, test_material);
+                for(auto& new_particle : parray) {
+                    cout << "Generated: " << endl;
+                    cout << new_particle << endl;
+                }
+            }
         }
+    }
+
+    if (this->hasSecondaryParticles()) {
+        this->clearIncidentEvents();
     }
 }
 

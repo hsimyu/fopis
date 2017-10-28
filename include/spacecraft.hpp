@@ -6,6 +6,8 @@
 #include "position.hpp"
 #include "field.hpp"
 #include <Spacecraft/Cmatrix.hpp>
+#include <Spacecraft/Material.hpp>
+#include <Spacecraft/Incident.hpp>
 
 using ObjectDefinedMapBool = boost::multi_array<bool, 3>;
 using ObjectDefinedMapInt = boost::multi_array<int, 3>;
@@ -58,6 +60,7 @@ private:
     };
 
     std::map<int, LocalParticleEmissionInfo> emit_particle_info;
+    std::vector<IncidentInfo_t> incident_events;
     std::map<int, std::string> material_names;
     std::map<int, double> material_capacitances;
 
@@ -213,6 +216,11 @@ public:
     //! 粒子放出用
     void emitParticles(ParticleArray& parray, const double unit_length);
     bool hasEmitParticles() const {return (emit_particle_info.size() > 0);}
+    bool hasSecondaryParticles() const;
+
+    //! 二次電子管理系
+    void addIncidentEvent(const Position& incident_pos, const Velocity& incident_vel);
+    void clearIncidentEvents();
 
     bool isValidEmission(Particle& p) const;
 

@@ -396,6 +396,19 @@ namespace Initializer {
 
                 photo->setCurrentDensity(Normalizer::normalizeCurrentDensity(plasma["current_density"].get<double>()));
                 Environment::addPhotoElectronParticleType(photo);
+            } else if (type == "secondary") {
+                auto see = std::make_shared<SecondaryParticleType>();
+                see->setId(id);
+                see->setName(name);
+                see->setType(type);
+                see->setMass(plasma["mass"].get<double>());
+                see->setCharge(plasma["charge"].get<double>());
+                see->setTemperature(plasma["temperature"].get<double>());
+                see->setDensity(plasma["density"].get<double>());
+                see->setPcell(static_cast<int>((plasma["particle_per_cell"].get<double>())));
+                see->updateSize();
+
+                Environment::addSecondaryParticleType(see);
             }
 
             ++id;

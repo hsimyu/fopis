@@ -155,7 +155,6 @@ class EmissionParticleType : public ParticleType {
 
     public:
         EmissionParticleType() : ParticleType(){}
-        virtual double getEmissionAmount() const = 0;
 };
 
 //! 光電子
@@ -175,10 +174,38 @@ class PhotoElectronParticleType : public EmissionParticleType {
             current_density = value;
         }
 
-        virtual double getEmissionAmount() const override;
+        double getEmissionAmount() const;
         Particle generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector);
         Position generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel);
         Velocity generateNewVelocity(const std::array<double, 3>& emission_vector);
+        virtual void printInfo() const override;
+};
+
+//! 二次電子
+class MaterialInfo_t;
+class IncidentInfo_t;
+
+class SecondaryParticleType : public EmissionParticleType {
+    protected:
+        std::mt19937_64 mt_ptype_gen;
+        std::mt19937_64 mt_true_see_gen;
+        std::uniform_real_distribution<> dist_uniform{0.0, 1.0};
+
+        RandomDistribution::CosineEmission angle_gen;
+        double computeWhippleTrueSecondaryCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
+        double computeWhippleElasticCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
+        double computeWhippleInelasticCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
+
+        double getTrueSecondaryCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
+        double getElasticBackscatterCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
+        double getInelasticBackscatterCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
+
+    public:
+        SecondaryParticleType();
+
+        std::vector<Particle> generateNewParticles(const IncidentInfo_t& incident, const MaterialInfo_t& material);
+        // Position generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel);
+        // Velocity generateNewVelocity(const std::array<double, 3>& emission_vector);
         virtual void printInfo() const override;
 };
 
@@ -216,7 +243,7 @@ class BeamParticleType : public EmissionParticleType {
         void setEmissionRadius(const double value) { emission_radius = value; }
         double setEmissionRadius() const {return emission_radius;}
 
-        virtual double getEmissionAmount() const override;
+        double getEmissionAmount() const;
 
         Particle generateNewParticle(const Position& relative_emission_position, const std::array<double, 3>& emission_vector);
         Position generateNewPosition(const Position& relative_emission_position, const std::array<double, 3>& emission_vector, const Velocity& vel);

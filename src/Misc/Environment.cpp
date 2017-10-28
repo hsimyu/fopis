@@ -37,8 +37,9 @@ std::string Environment::boundary;
 std::string Environment::dimension;
 std::vector<ObjectInfo_t> Environment::objects_info;
 Environment::AmbientParticleList Environment::ambient_particles;
-Environment::BeamParticleList Environment::beam_particles;
 Environment::PhotoElectronParticleList Environment::photoelectron_particles;
+Environment::SecondaryParticleList Environment::secondary_particles;
+Environment::BeamParticleList Environment::beam_particles;
 
 /*
 * @params
@@ -296,6 +297,10 @@ Environment::ParticleTypePtr Environment::getParticleType(const int pid) {
         if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
     }
 
+    for(auto& ptype : secondary_particles) {
+        if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
+    }
+
     for(auto& ptype : beam_particles) {
         if (ptype->getId() == pid) return std::static_pointer_cast<ParticleType>(ptype);
     }
@@ -305,6 +310,10 @@ Environment::ParticleTypePtr Environment::getParticleType(const int pid) {
 
 Environment::EmissionParticleTypePtr Environment::getEmissionParticleType(const int pid) {
     for(auto& ptype : photoelectron_particles) {
+        if (ptype->getId() == pid) return std::static_pointer_cast<EmissionParticleType>(ptype);
+    }
+
+    for(auto& ptype : secondary_particles) {
         if (ptype->getId() == pid) return std::static_pointer_cast<EmissionParticleType>(ptype);
     }
 
@@ -328,6 +337,13 @@ Environment::PhotoElectronParticlePtr Environment::getPhotoElectronParticleType(
     throw std::invalid_argument("[ERROR] The particle id passed to getPhotoElectronParticleType() didn't match any existing particle type.");
 }
 
+Environment::SecondaryParticlePtr Environment::getSecondaryParticleType(const int pid) {
+    for(auto& ptype : secondary_particles) {
+        if (ptype->getId() == pid) return ptype;
+    }
+    throw std::invalid_argument("[ERROR] The particle id passed to getSecondaryParticleType() didn't match any existing particle type.");
+}
+
 Environment::BeamParticlePtr Environment::getBeamParticleType(const int pid) {
     for(auto& ptype : beam_particles) {
         if (ptype->getId() == pid) return ptype;
@@ -343,6 +359,10 @@ void Environment::resetParticleTypeOrder() {
     }
 
     for(auto& ptype : photoelectron_particles) {
+        ptype->setId(id++);
+    }
+
+    for(auto& ptype : secondary_particles) {
         ptype->setId(id++);
     }
 

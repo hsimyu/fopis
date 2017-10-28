@@ -128,6 +128,12 @@ struct Environment {
         }
         static size_t getNumOfPhotoElectronParticles() {return photoelectron_particles.size();}
 
+        static void addSecondaryParticleType(const std::shared_ptr<SecondaryParticleType>& ptr) {
+            secondary_particles.push_back(ptr);
+            ++num_of_particle_types;
+        }
+        static size_t getNumOfSecondaryParticles() {return secondary_particles.size();}
+
         static void addBeamParticleType(const std::shared_ptr<BeamParticleType>& ptr) {
             beam_particles.push_back(ptr);
             ++num_of_particle_types;
@@ -138,15 +144,18 @@ struct Environment {
         using EmissionParticleTypePtr = std::shared_ptr<EmissionParticleType>;
         using AmbientParticlePtr = std::shared_ptr<AmbientParticleType>;
         using PhotoElectronParticlePtr = std::shared_ptr<PhotoElectronParticleType>;
+        using SecondaryParticlePtr = std::shared_ptr<SecondaryParticleType>;
         using BeamParticlePtr = std::shared_ptr<BeamParticleType>;
 
         using AmbientParticleList = std::vector<AmbientParticlePtr>;
         using PhotoElectronParticleList = std::vector<PhotoElectronParticlePtr>;
+        using SecondaryParticleList = std::vector<SecondaryParticlePtr>;
         using BeamParticleList = std::vector<BeamParticlePtr>;
 
         //! イテレータ経由で使う
         static AmbientParticleList getAmbientParticleTypes() { return ambient_particles; }
         static PhotoElectronParticleList getPhotoElectronParticleTypes() { return photoelectron_particles; }
+        static SecondaryParticleList getSecondaryParticleTypes() { return secondary_particles; }
         static BeamParticleList getBeamParticleTypes() { return beam_particles; }
 
         //! インデックスを探して使う
@@ -154,6 +163,7 @@ struct Environment {
         static EmissionParticleTypePtr getEmissionParticleType(const int pid);
         static AmbientParticlePtr getAmbientParticleType(const int pid);
         static PhotoElectronParticlePtr getPhotoElectronParticleType(const int pid);
+        static SecondaryParticlePtr getSecondaryParticleType(const int pid);
         static BeamParticlePtr getBeamParticleType(const int pid);
 
         //! 現在のプロセスが担当する領域の実座標（glueセルなし）を返す
@@ -255,6 +265,7 @@ struct Environment {
         //! 内部的には各粒子の種類毎にリストを持つ
         static AmbientParticleList ambient_particles;
         static PhotoElectronParticleList photoelectron_particles;
+        static SecondaryParticleList secondary_particles;
         static BeamParticleList beam_particles;
 
         static Options options;
