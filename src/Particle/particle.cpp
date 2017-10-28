@@ -28,6 +28,10 @@ Position Particle::getNewPosition(void) const {
     return Position{x + vx, y + vy, z + vz};
 }
 
+Velocity Particle::getVelocity(void) const {
+    return Velocity{vx, vy, vz};
+}
+
 double Particle::getXMoveRatio() const {
     auto pos = this->getPosition();
 

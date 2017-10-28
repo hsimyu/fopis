@@ -67,6 +67,9 @@ class Particle {
         Position getOldPosition(void) const;
         Position getNewPosition(void) const;
 
+        //! Velocity生成
+        Velocity getVelocity(void) const;
+
         //! グリッド上の現在位置が旧位置からどの程度離れているかを返す(衝突面判定用)
         double getXMoveRatio() const;
         double getYMoveRatio() const;
