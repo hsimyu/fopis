@@ -99,13 +99,6 @@ class Position {
 };
 
 class Velocity {
-    private:
-        void set(const double _vx, const double _vy, const double _vz){
-            vx = _vx;
-            vy = _vy;
-            vz = _vz;
-        }
-
     public:
         double vx, vy, vz;
 
@@ -113,10 +106,15 @@ class Velocity {
             this->set(_vx, _vy, _vz);
         }
 
-        //! Particle用のコンストラクタはinlineで書けない
         Velocity(const Particle&);
 
-        Velocity(void) {}
+        void set(const double _vx, const double _vy, const double _vz){
+            vx = _vx;
+            vy = _vy;
+            vz = _vz;
+        }
+
+        Velocity() {}
         ~Velocity(){}
 
         //! コピー演算

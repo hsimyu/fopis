@@ -10,16 +10,19 @@ class IncidentInfo_t {
         Position pos;
         Velocity vel;
         AXIS axis;
+        double time;
         double mass;
         double charge;
 
     public:
-        IncidentInfo_t(const double mass, const double charge, const Position& _pos, const Velocity& _vel);
-        IncidentInfo_t(const double mass, const double charge, const Position& _pos, const Velocity& _vel, AXIS axis);
+        IncidentInfo_t(const double mass, const double charge, const double time, const Position& _pos, const Velocity& _vel);
+        IncidentInfo_t(const double mass, const double charge, const double time, const Position& _pos, const Velocity& _vel, AXIS axis);
 
         //! eV単位で返す
         double getIncidentEnergyInElectronVolt() const;
+        double getIncidentEnergy() const;
         double getIncidentAngle() const;
+        double getRemainingTime() const {return time;}
 
         void setSurface(AXIS axis);
         bool isXsurfaceIncident() const;

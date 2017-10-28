@@ -19,6 +19,7 @@ std::ostream& operator<<(std::ostream& ost, const Position& pos) {
 }
 
 std::ostream& operator<<(std::ostream& ost, const Velocity& vel) {
-    ost << format("velocity = %s, %s, %s\n") % vel.vx % vel.vy % vel.vz << endl;
+    ost << format("vel = %s, %s, %s\n") % vel.vx % vel.vy % vel.vz;
+    ost << format("|vel| = %s") % vel.abs() << endl;
     return ost;
 }

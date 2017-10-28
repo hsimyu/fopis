@@ -2,7 +2,6 @@
 #include "position.hpp"
 #include "particle.hpp"
 #include "environment.hpp"
-#include "utils.hpp"
 
 std::shared_ptr<ParticleType> Particle::getParticleTypePtr() const {
     return Environment::getParticleType(typeId);
@@ -39,30 +38,36 @@ Velocity Particle::getVelocity(void) const {
 double Particle::getXMoveRatio() const {
     auto pos = this->getPosition();
 
+    if (vx == 0.0) return 0.0;
+
     if (vx > 0.0) {
-        return pos.dx1 / fabs(vx);
+        return pos.dx1 / std::fabs(vx);
     } else {
-        return pos.dx2 / fabs(vx);
+        return pos.dx2 / std::fabs(vx);
     }
 }
 
 double Particle::getYMoveRatio() const {
     auto pos = this->getPosition();
 
+    if (vy == 0.0) return 0.0;
+
     if (vy > 0.0) {
-        return pos.dy1 / fabs(vy);
+        return pos.dy1 / std::fabs(vy);
     } else {
-        return pos.dy2 / fabs(vy);
+        return pos.dy2 / std::fabs(vy);
     }
 }
 
 double Particle::getZMoveRatio() const {
     auto pos = this->getPosition();
 
+    if (vz == 0.0) return 0.0;
+
     if (vz > 0.0) {
-        return pos.dz1 / fabs(vz);
+        return pos.dz1 / std::fabs(vz);
     } else {
-        return pos.dz2 / fabs(vz);
+        return pos.dz2 / std::fabs(vz);
     }
 }
 
@@ -325,7 +330,7 @@ void Particle::distributeCurrentAtNewPosition(const double q_per_dt, tdArray& jx
 }
 
 double Particle::getEnergy(void) const {
-    return 0.5 * (vx*vx + vy*vy + vz*vz) * (Environment::getParticleType(typeId)->getMass());
+    return 0.5 * (vx*vx + vy*vy + vz*vz) * (this->getParticleTypePtr()->getMass());
 }
 
 // util

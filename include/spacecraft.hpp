@@ -220,7 +220,7 @@ public:
     bool hasSecondaryParticles() const;
 
     //! 二次電子管理系
-    void addIncidentEvent(const std::shared_ptr<ParticleType> ptype_ptr, const Position& incident_pos, const Velocity& incident_vel, AXIS axis);
+    void addIncidentEvent(const std::shared_ptr<ParticleType> ptype_ptr, const double remaining_time, const Position& incident_pos, const Velocity& incident_vel, AXIS axis);
     void clearIncidentEvents();
 
     bool isValidEmission(Particle& p) const;

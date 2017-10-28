@@ -11,10 +11,16 @@ bool Spacecraft::hasSecondaryParticles() const {
     return false;
 }
 
-void Spacecraft::addIncidentEvent(const std::shared_ptr<ParticleType> ptype_ptr, const Position& incident_pos, const Velocity& incident_vel, AXIS axis) {
+void Spacecraft::addIncidentEvent(
+    const std::shared_ptr<ParticleType> ptype_ptr,
+    const double remaining_time,
+    const Position& incident_pos,
+    const Velocity& incident_vel,
+    AXIS axis) {
     IncidentInfo_t new_incident{
         ptype_ptr->getMass(),
         ptype_ptr->getCharge(),
+        remaining_time,
         incident_pos,
         incident_vel,
         axis

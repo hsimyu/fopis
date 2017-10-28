@@ -1,12 +1,16 @@
 #include "normalizer.hpp"
 #include <Spacecraft/Incident.hpp>
 
-IncidentInfo_t::IncidentInfo_t(const double _mass, const double _charge, const Position& _pos, const Velocity& _vel) : pos{_pos}, vel{_vel}, mass{_mass}, charge{_charge} {}
+IncidentInfo_t::IncidentInfo_t(const double _mass, const double _charge, const double _time, const Position& _pos, const Velocity& _vel) : pos{_pos}, vel{_vel}, time{_time}, mass{_mass}, charge{_charge} {}
 
-IncidentInfo_t::IncidentInfo_t(const double _mass, const double _charge, const Position& _pos, const Velocity& _vel, AXIS _axis) : pos{_pos}, vel{_vel}, axis{_axis}, mass{_mass}, charge{_charge} {}
+IncidentInfo_t::IncidentInfo_t(const double _mass, const double _charge, const double _time, const Position& _pos, const Velocity& _vel, AXIS _axis) : pos{_pos}, vel{_vel}, axis{_axis}, time{_time}, mass{_mass}, charge{_charge} {}
 
 double IncidentInfo_t::getIncidentEnergyInElectronVolt() const {
     return Normalizer::unnormalizeEnergy(0.5 * mass * vel.powered(), "eV");
+}
+
+double IncidentInfo_t::getIncidentEnergy() const {
+    return 0.5 * mass * vel.powered();
 }
 
 //! 法線からの角度を返す
@@ -38,12 +42,12 @@ bool IncidentInfo_t::isZsurfaceIncident() const {
     return (axis == AXIS::z); 
 }
 
-inline Position IncidentInfo_t::getPosition() const { return pos; }
-inline double IncidentInfo_t::getX() const {return pos.x;}
-inline double IncidentInfo_t::getY() const {return pos.y;}
-inline double IncidentInfo_t::getZ() const {return pos.z;}
+Position IncidentInfo_t::getPosition() const { return pos; }
+double IncidentInfo_t::getX() const {return pos.x;}
+double IncidentInfo_t::getY() const {return pos.y;}
+double IncidentInfo_t::getZ() const {return pos.z;}
 
-inline Velocity IncidentInfo_t::getVelocity()) const { return vel; }
-inline double IncidentInfo_t::getVx() const {return vel.vx;}
-inline double IncidentInfo_t::getVy() const {return vel.vy;}
-inline double IncidentInfo_t::getVz() const {return vel.vz;}
+Velocity IncidentInfo_t::getVelocity() const { return vel; }
+double IncidentInfo_t::getVx() const {return vel.vx;}
+double IncidentInfo_t::getVy() const {return vel.vy;}
+double IncidentInfo_t::getVz() const {return vel.vz;}

@@ -241,6 +241,14 @@ public:
     static double unnormalizeFrequency(double normalized_freq) {
         return normalized_freq / t_unit;
     }
+
+    static double convertEnergyToVelocity(const double normalized_energy) {
+        return std::sqrt(2.0 * normalized_energy);
+    }
+
+    static double convertEnergyToVelocity(const double normalized_energy, const double mass) {
+        return std::sqrt(2.0 * normalized_energy / mass);
+    }
 };
 
 #endif
