@@ -23,6 +23,8 @@ class IncidentInfo_t {
         double getIncidentEnergy() const;
         double getIncidentAngle() const;
         double getRemainingTime() const {return time;}
+        double getCharge() const;
+        AXIS getAxis() const;
 
         void setSurface(AXIS axis);
         bool isXsurfaceIncident() const;

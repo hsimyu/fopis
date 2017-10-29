@@ -26,6 +26,14 @@ double IncidentInfo_t::getIncidentAngle() const {
     throw std::logic_error("[ERROR] Incident Axis is set to Unknown value.");
 };
 
+double IncidentInfo_t::getCharge() const {
+    return charge;
+}
+
+AXIS IncidentInfo_t::getAxis() const {
+    return axis;
+}
+
 void IncidentInfo_t::setSurface(AXIS _axis) {
     axis = _axis;
 };

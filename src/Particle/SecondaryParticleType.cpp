@@ -7,7 +7,7 @@
 #include <random>
 
 SecondaryParticleType::SecondaryParticleType() : EmissionParticleType{},
-    angle_gen{MPIw::Environment::rank},
+    truesee_angle_gen{MPIw::Environment::rank},
     inelastic_angle_gen{851035553 + 5 * MPIw::Environment::rank},
     mt_ptype_gen(884751 + 2 * MPIw::Environment::rank),
     mt_inelastic_gen(985739508 + 13 * MPIw::Environment::rank),
@@ -16,36 +16,22 @@ SecondaryParticleType::SecondaryParticleType() : EmissionParticleType{},
 std::vector<Particle> SecondaryParticleType::generateNewParticles(const IncidentInfo_t& incident, const MaterialInfo_t& material) {
     std::vector<Particle> parray;
 
-    // Velocity vel = this->generateNewVelocity(emission_vector);
-    // p.setVelocity(vel);
-    // p.setPosition(this->generateNewPosition(relative_emission_position, emission_vector, vel));
-
     const auto energy = incident.getIncidentEnergyInElectronVolt();
     const auto angle = incident.getIncidentAngle();
-    const double r = this->getElasticBackscatterCoeff(material, energy, angle);
-    const double eta = this->getInelasticBackscatterCoeff(material, energy, angle);
+    const double r = (incident.getCharge() < 0.0) ? this->getElasticBackscatterCoeff(material, energy, angle) : 0.0;
+    const double eta = (incident.getCharge() < 0.0) ? this->getInelasticBackscatterCoeff(material, energy, angle) : 0.0;
     double delta = this->getTrueSecondaryCoeff(material, energy, angle);
 
-    if (Environment::isRootNode) {
-        cout << incident.getPosition() << endl;
-        cout << incident.getVelocity() << endl;
-        cout << format("incident angle = %s\n") % ((180.0 / M_PI) * angle);
-        cout << format("incident energy = %s\n") % energy;
-        cout << format("incident time = %s\n") % incident.getRemainingTime();
-        cout << format("r = %s\n") % r;
-        cout << format("eta = %s\n") % eta;
-        cout << format("delta = %s") % delta << endl;
-    }
-
     const double emission_type_random = dist_uniform(mt_ptype_gen);
+
+    //! 確率的二次電子放出の実装
+    //! K. Hoshi et al. IEEE Trans. on Plasma Science, 2017
     if (emission_type_random < r) {
         parray.push_back( this->generateElasticBackscatterParticle(incident, material) );
     } else if (emission_type_random < (r + eta)) {
         parray.push_back( this->generateInelasticBackscatterParticle(incident, material) );
     } else {
-        cout << format("This is true secondary emisssion.") << endl;
         //! deltaを "一時粒子に対する真の二次電子の数"から"吸収された（後方散乱されない）粒子の数に対する二次粒子の数に変換"
-        //! By K.Hoshi et al. 2017
         delta /= (1.0 - r - eta);
 
         unsigned int emission_count = std::floor(delta);
@@ -56,11 +42,9 @@ std::vector<Particle> SecondaryParticleType::generateNewParticles(const Incident
             emission_count++;
         }
 
-        cout << format("Delta = %s.\n") % delta;
-        cout << format("Emission Count = %s.\n") % emission_count << endl;
-
-        // for (unsigned int itr = 0; itr < emission_count; ++itr) {
-        // }
+        for (unsigned int itr = 0; itr < emission_count; ++itr) {
+            parray.push_back( this->generateTrueSecondaryParticle(incident, material) );
+        }
     }
 
     return parray;
@@ -125,9 +109,45 @@ Particle SecondaryParticleType::generateInelasticBackscatterParticle(const Incid
     return p;
 }
 
-std::vector<Particle> SecondaryParticleType::generateTrueSecondaryParticles(const IncidentInfo_t& incident, const MaterialInfo_t& material) {
-    std::vector<Particle> parray{};
-    return parray;
+Particle SecondaryParticleType::generateTrueSecondaryParticle(const IncidentInfo_t& incident, const MaterialInfo_t& material) {
+    Particle p(id);
+    Velocity v;
+
+    //! 二次電子の放出エネルギーは2eVの熱速度とする
+    const double emission_energy = Normalizer::normalizeEnergy(temperature);
+    const double emission_velocity = Normalizer::convertEnergyToVelocity(emission_energy, mass);
+    const double depression_angle = truesee_angle_gen.genDepressionAngle();
+    const double azimuth_angle = truesee_angle_gen.genAzimuthAngle();
+
+    if (incident.isXsurfaceIncident()) {
+        const double inverse_sign = (incident.getVx() > 0.0) ? -1.0 : 1.0;
+        v.set(
+            emission_velocity * std::cos(depression_angle) * inverse_sign,
+            emission_velocity * std::sin(depression_angle) * std::cos(azimuth_angle),
+            emission_velocity * std::sin(depression_angle) * std::sin(azimuth_angle)
+        );
+    } else if (incident.isYsurfaceIncident()) {
+        const double inverse_sign = (incident.getVy() > 0.0) ? -1.0 : 1.0;
+        v.set(
+            emission_velocity * std::sin(depression_angle) * std::sin(azimuth_angle),
+            emission_velocity * std::cos(depression_angle) * inverse_sign,
+            emission_velocity * std::sin(depression_angle) * std::cos(azimuth_angle)
+        );
+    } else {
+        const double inverse_sign = (incident.getVz() > 0.0) ? -1.0 : 1.0;
+        v.set(
+            emission_velocity * std::sin(depression_angle) * std::cos(azimuth_angle),
+            emission_velocity * std::sin(depression_angle) * std::sin(azimuth_angle),
+            emission_velocity * std::cos(depression_angle) * inverse_sign
+        );
+    }
+    p.setVelocity(v);
+
+    const double remain_time = incident.getRemainingTime();
+    const Position pos = incident.getPosition();
+    p.setPosition(pos.x + remain_time * p.vx, pos.y + remain_time * p.vy, pos.z + remain_time * p.vz);
+
+    return p;
 }
 
 void SecondaryParticleType::printInfo() const {

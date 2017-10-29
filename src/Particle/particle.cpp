@@ -27,8 +27,16 @@ Position Particle::getOldPosition(void) const {
     return Position{x - vx, y - vy, z - vz};
 }
 
-Position Particle::getNewPosition(void) const {
+Position Particle::getNextPosition(void) const {
     return Position{x + vx, y + vy, z + vz};
+}
+
+Particle Particle::getOldPositionParticle() const {
+    return Particle{typeId, x - vx, y - vy, z - vz, vx, vy, vz};
+}
+
+Particle Particle::getNextPositionParticle() const {
+    return Particle{typeId, x + vx, y + vy, z + vz, vx, vy, vz};
 }
 
 Velocity Particle::getVelocity(void) const {
@@ -234,11 +242,11 @@ Position Particle::getNextZCrossPoint() const {
 
     if (vz > 0.0) {
         const double mvz = pos.dz2 / vz;
-        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, std::ceil(pos.z));
+        pos.setXYZ(pos.x + vx * mvz, pos.y + vy * mvz, std::ceil(pos.z));
         return pos;
     } else if (vz < 0.0) {
         const double mvz = pos.dz1 / (-vz);
-        pos.setXYZ(pos.z + vx * mvz, pos.y + vy * mvz, std::floor(pos.z));
+        pos.setXYZ(pos.x + vx * mvz, pos.y + vy * mvz, std::floor(pos.z));
         return pos;
     } else {
         std::cerr << "[WARNING] Vz of this particle is equal to 0.0 at Particle::getNeztZCrossPoint()." << endl;
@@ -249,7 +257,7 @@ Position Particle::getNextZCrossPoint() const {
 //! 電流配分
 void Particle::distributeCurrentAtOldPosition(const double q_per_dt, tdArray& jx, tdArray& jy, tdArray& jz) const {
     const Position old_pos = getPosition();
-    const Position new_pos = getNewPosition();
+    const Position new_pos = getNextPosition();
     const Position ref_pos = new_pos.getReferencePosition(old_pos);
 
     // charge flux の計算

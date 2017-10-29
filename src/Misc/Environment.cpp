@@ -218,10 +218,6 @@ void Environment::checkPlasmaInfo() {
             cout << "    Debye Length: " << debye << " m" << endl;
             cout << "    Debye / dx = "  << debye / dx << " > 1.0?: " << ((debye / dx > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
 
-            if (debye / dx < 1.0) {
-                is_valid_condition = false;
-            }
-
             cout << "    (nx * dx) / Debye = " << (nx * dx) / debye << " > 1.0?: "
                 << ((((nx     * dx) / debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl;
             cout << "    (ny * dx) / Debye = " << (ny * dx) / debye << " > 1.0?: "
@@ -229,16 +225,10 @@ void Environment::checkPlasmaInfo() {
             cout << "    (nz * dx) / Debye = " << (nz * dx) / debye << " > 1.0?: "
                 << ((((nz * dx) / debye) > 1.0) ? "OK" : "*NOT SATISFIED*") << endl << endl;
 
-            // 1/ld_total^2 = \sigma 1/ld_i^2
-            if (pt->getType() == "ambient") total_debye += 1.0/pow(debye, 2);
-
             cout << "  [Thermal Velocity]" << endl;
             cout << "    Vth = " << pt->calcThermalVelocity() << " < 0.4?: "
                 << (pt->calcThermalVelocity() < 0.4 ? "OK" : "*NOT SATISFIED*") << endl << endl;
 
-            if (pt->calcThermalVelocity() >= 0.4) {
-                is_valid_condition = false;
-            }
 
             cout << "  [Plasma Frequency]" << endl;
             double omega_p = pt->calcPlasmaFrequency();
@@ -249,6 +239,19 @@ void Environment::checkPlasmaInfo() {
             cout << "    1 / (omega_p * dt) < total_timestep?: "
                 << ( (1.0 / (omega_p * dt)) < max_timestep ? "OK" : "*NOT SATISFIED*") << endl;
             cout << endl;
+
+            if (pt->getType() == "ambient") {
+                // 1/ld_total^2 = \sigma 1/ld_i^2
+                total_debye += 1.0/pow(debye, 2);
+
+                if (pt->calcThermalVelocity() >= 0.4) {
+                    is_valid_condition = false;
+                }
+
+                if (debye / dx < 1.0) {
+                    is_valid_condition = false;
+                }
+            }
         }
 
         // 1/ld_total^2 -> ld_total

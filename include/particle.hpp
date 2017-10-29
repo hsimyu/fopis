@@ -24,6 +24,8 @@ class Particle {
             isValid = 1;
         }
 
+        Particle(const int _typeId, const double _x, const double _y, const double _z, const double _vx, const double _vy, const double _vz) : x{_x}, y{_y}, z{_z}, vx{_vx}, vy{_vy}, vz{_vz}, typeId{_typeId}, isValid{1} {}
+
         Particle(void) { isValid = 0; }
 
         ~Particle(){};
@@ -36,13 +38,13 @@ class Particle {
         Particle(Particle&&) = default;
         Particle& operator=(Particle&&) = default;
 
-        void setPosition(const double _x, const double _y, const double _z){
+        void setPosition(const double _x, const double _y, const double _z) {
             x = _x;
             y = _y;
             z = _z;
         }
 
-        void setVelocity(const double _vx, const double _vy, const double _vz){
+        void setVelocity(const double _vx, const double _vy, const double _vz) {
             vx = _vx;
             vy = _vy;
             vz = _vz;
@@ -65,7 +67,11 @@ class Particle {
         //! Position生成
         Position getPosition(void) const;
         Position getOldPosition(void) const;
-        Position getNewPosition(void) const;
+        Position getNextPosition(void) const;
+
+        //! Particle生成
+        Particle getOldPositionParticle(void) const;
+        Particle getNextPositionParticle(void) const;
 
         //! Velocity生成
         Velocity getVelocity(void) const;

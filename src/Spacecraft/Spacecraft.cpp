@@ -742,10 +742,24 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
             test_material.atomic_number = 13.0;
 
             for(auto& incident : incident_events) {
-                auto parray = secondary_ptype_ptr->generateNewParticles(incident, test_material);
-                for(auto& new_particle : parray) {
-                    cout << "Generated: " << endl;
-                    cout << new_particle << endl;
+                auto generated_parray = secondary_ptype_ptr->generateNewParticles(incident, test_material);
+                for(auto& new_particle : generated_parray) {
+                    if (isContaining(new_particle)) {
+                        //! 放出後再度内部に入ってしまった場合を取り扱う
+                        this->distributeInnerParticleChargeForSecondary(new_particle, incident.getAxis());
+                    } else {
+                        if (incident.isXsurfaceIncident()) {
+                            auto cross_pos = new_particle.getOldPositionParticle().getNextXCrossPoint();
+                            this->subtractChargeOfParticleFromXsurface(cross_pos, id, charge);
+                        } else if (incident.isYsurfaceIncident()) {
+                            auto cross_pos = new_particle.getOldPositionParticle().getNextYCrossPoint();
+                            this->subtractChargeOfParticleFromYsurface(cross_pos, id, charge);
+                        } else {
+                            auto cross_pos = new_particle.getOldPositionParticle().getNextZCrossPoint();
+                            this->subtractChargeOfParticleFromZsurface(cross_pos, id, charge);
+                        }
+                        parray[id].push_back(new_particle);
+                    }
                 }
             }
         }
@@ -785,7 +799,7 @@ inline void Spacecraft::subtractChargeOfParticleFromZsurface(const Position& pos
 
 inline bool Spacecraft::isValidEmission(Particle& p) const {
     //! 放出前は内部、放出後は外部に入れば valid と見なす
-    return ( (isContaining(p)) && !isContaining(p.getNewPosition()) );
+    return ( (isContaining(p)) && !isContaining(p.getNextPosition()) );
 }
 
 //! I/O関連

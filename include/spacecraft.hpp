@@ -229,6 +229,7 @@ public:
     void makeCmatrixInvert(void);
     void removeInnerParticle(Particle&) const;
     void distributeInnerParticleCharge(Particle&);
+    void distributeInnerParticleChargeForSecondary(Particle& p, AXIS axis);
     void sumWholeCharge();
 
     //! 電荷再配分

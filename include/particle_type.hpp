@@ -188,14 +188,14 @@ class IncidentInfo_t;
 class SecondaryParticleType : public EmissionParticleType {
     protected:
         std::mt19937_64 mt_ptype_gen;
+        std::uniform_real_distribution<> dist_uniform{0.0, 1.0};
 
         std::mt19937_64 mt_inelastic_gen;
         RandomDistribution::CosineEmission inelastic_angle_gen;
 
         std::mt19937_64 mt_true_see_gen;
-        std::uniform_real_distribution<> dist_uniform{0.0, 1.0};
+        RandomDistribution::CosineEmission truesee_angle_gen;
 
-        RandomDistribution::CosineEmission angle_gen;
         double computeWhippleTrueSecondaryCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
         double computeWhippleElasticCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
         double computeWhippleInelasticCoeff(const MaterialInfo_t& material, const double incident_energy, const double incident_angle) const;
@@ -206,7 +206,7 @@ class SecondaryParticleType : public EmissionParticleType {
 
         Particle generateElasticBackscatterParticle(const IncidentInfo_t& incident, const MaterialInfo_t& material);
         Particle generateInelasticBackscatterParticle(const IncidentInfo_t& incident, const MaterialInfo_t& material);
-        std::vector<Particle> generateTrueSecondaryParticles(const IncidentInfo_t& incident, const MaterialInfo_t& material);
+        Particle generateTrueSecondaryParticle(const IncidentInfo_t& incident, const MaterialInfo_t& material);
 
     public:
         SecondaryParticleType();
