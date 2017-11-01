@@ -13,7 +13,7 @@ Grid::Grid(void) : child_map(boost::extents[0][0][0]) {
 }
 
 void Grid::mainLoop() {
-    if ( Environment::solver_type == "EM" ) {
+    if (Environment::isEMMode()) {
         this->mainLoopEM();
     } else {
         this->mainLoopES();
@@ -30,7 +30,7 @@ void Grid::initialize() {
     this->solvePoisson();
     this->updateEfield();
 
-    if (Environment::solver_type == "EM") {
+    if (Environment::isEMMode()) {
         this->updateBfield();
     }
 }
@@ -44,7 +44,7 @@ void Grid::initializeForLoad() {
     this->updateRho();
     this->updateReferenceEfield();
 
-    if (Environment::solver_type == "EM") {
+    if (Environment::isEMMode()) {
         this->updateReferenceBfield();
     }
 }

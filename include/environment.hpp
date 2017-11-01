@@ -94,10 +94,14 @@ struct Environment {
         static int plot_density_width;
         static bool isRootNode;
 
-        static std::string jobtype;
         static std::string solver_type;
+        static std::string jobtype;
         static std::string boundary;
         static std::string dimension;
+
+        //! ESかEMか
+        static bool isESMode() { return solver_type == "ES"; }
+        static bool isEMMode() { return solver_type == "EM"; }
 
         //! 物体情報
         static std::vector<ObjectInfo_t> objects_info;

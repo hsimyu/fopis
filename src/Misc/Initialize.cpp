@@ -46,7 +46,7 @@ namespace Initializer {
             Environment::loadInfo();
         }
 
-        if( Environment::isRootNode ) {
+        if (Environment::isRootNode) {
             cout << "---    [ TDPIC " << TDPIC_VERSION << " ]     --" << "\n";
             cout << "  Built date: " << TDPIC_DATE << "\n";
             cout << "  Git Revision: " << TDPIC_REVISION << "\n";
@@ -57,7 +57,7 @@ namespace Initializer {
             Environment::checkPlasmaInfo();
 
             //! EMの場合はFDTD用の安定性条件をチェック
-            if( Environment::solver_type == "EM" ) {
+            if (Environment::isEMMode()) {
                 Environment::checkCFLCondition();
             }
 

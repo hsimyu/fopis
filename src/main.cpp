@@ -46,7 +46,7 @@ int main(int argc, char* argv[]){
         if (Environment::plotVelocityDist()) IO::plotParticleVelocityDistribution(root_grid->getParticles());
 
         // 電磁計算時の追加プロット
-        if (Environment::solver_type == "EM") {
+        if (Environment::isEMMode()) {
             if (Environment::plotBfield()) IO::writeDataInParallel(root_grid, Environment::timestep, "bfield");
             if (Environment::plotCurrent()) {
                 root_grid->updateReferenceCurrent();
