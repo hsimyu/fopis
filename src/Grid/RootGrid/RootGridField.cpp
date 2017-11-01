@@ -615,15 +615,24 @@ void RootGrid::updateEfieldFDTDDamping() {
     //! 1以上、rx以下なら実領域（Glueエッジも自動的に除かれる）
     auto is_real_region = [rx = real_x_index, ry = real_y_index, rz = real_z_index](const int i, const int j, const int k)-> bool {
         return (
-            ((i > 0) && (i < rx)) &&
-            ((j > 0) && (j < ry)) &&
-            ((k > 0) && (k < rz))
+            ((i > 0) && (i < rx - 1)) &&
+            ((j > 0) && (j < ry - 1)) &&
+            ((k > 0) && (k < rz - 1))
         );
     };
 
     constexpr double masking_parameter = 1.0;
-    auto masking_factor = [](const int x, const int region_length) -> double {
-        return std::pow(masking_parameter * (static_cast<double>(x) / static_cast<double>(region_length)), 2);
+    auto one_masking_factor = [](const double r, const double damping_length, const int real_index) -> double {
+        double dist_r = (r <= 0) ? - r + 1: 
+            (r >= real_index - 1) ? r - static_cast<double>(real_index) + 2.0 : 0.0;
+        return 1.0 - std::pow(masking_parameter * dist_r / damping_length, 2);
+    };
+    auto x_masking_factor = [rx = real_x_index, dl = static_cast<double>(bases[0]), om = &one_masking_factor](const double x) -> double { return (*om)(x, dl, rx); };
+    auto y_masking_factor = [ry = real_y_index, dl = static_cast<double>(bases[1]), om = &one_masking_factor](const double y) -> double { return (*om)(y, dl, ry); };
+    auto z_masking_factor = [rz = real_z_index, dl = static_cast<double>(bases[2]), om = &one_masking_factor](const double z) -> double { return (*om)(z, dl, rz); };
+
+    auto masking_factor = [xm = &x_masking_factor, ym = &y_masking_factor, zm = &z_masking_factor](const int x, const int y, const int z) -> double {
+        return (*xm)(x) * (*ym)(y) * (*zm)(z);
     };
 
     for(int i = bases[0] + 1; i < max_x_index - 1; ++i){
@@ -634,32 +643,50 @@ void RootGrid::updateEfieldFDTDDamping() {
                     if(i < real_x_index - 2) {
                         ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
+                    } else {
+                        const double mask = 0.5 * (masking_factor(i, j, k) + masking_factor(i + 1, j, k));
+                        ex[i][j][k] = mask * (
+                            ex[i][j][k] + dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1])
+                        );
                     }
 
                     if(j < real_y_index - 2) {
                         ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+                    } else {
+                        const double mask = 0.5 * (masking_factor(i, j, k) + masking_factor(i, j + 1, k));
+                        ey[i][j][k] = mask * (
+                            ey[i][j][k] + dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k])
+                        );
                     }
 
                     if(k < real_z_index - 2) {
                         ez[i][j][k] = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+                    } else {
+                        const double mask = 0.5 * (masking_factor(i, j, k) + masking_factor(i, j, k + 1));
+                        ez[i][j][k] = mask * (
+                            ez[i][j][k] + dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k])
+                        );
                     }
                 } else {
                     if(i < max_x_index - 2) {
-                        ex[i][j][k] = masking_factor(i, bases[0]) * (
+                        const double mask = 0.5 * (masking_factor(i, j, k) + masking_factor(i + 1, j, k));
+                        ex[i][j][k] = mask * (
                             ex[i][j][k] + dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1])
                         );
                     }
 
                     if(j < max_y_index - 2) {
-                        ey[i][j][k] = masking_factor(j, bases[1]) * (
+                        const double mask = 0.5 * (masking_factor(i, j, k) + masking_factor(i, j + 1, k));
+                        ey[i][j][k] = mask * (
                             ey[i][j][k] + dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k])
                         );
                     }
 
                     if(k < max_z_index - 2) {
-                        ez[i][j][k] = masking_factor(k, bases[2]) * (
+                        const double mask = 0.5 * (masking_factor(i, j, k) + masking_factor(i, j, k + 1));
+                        ez[i][j][k] = mask * (
                             ez[i][j][k] + dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k])
                         );
                     }
@@ -703,15 +730,24 @@ void RootGrid::updateBfieldDamping() {
     //! 1以上、rx以下なら実領域（Glueエッジも自動的に除かれる）
     auto is_real_region = [rx = real_x_index, ry = real_y_index, rz = real_z_index](const int i, const int j, const int k)-> bool {
         return (
-            ((i > 0) && (i < rx)) &&
-            ((j > 0) && (j < ry)) &&
-            ((k > 0) && (k < rz))
+            ((i > 0) && (i < rx - 1)) &&
+            ((j > 0) && (j < ry - 1)) &&
+            ((k > 0) && (k < rz - 1))
         );
     };
 
     constexpr double masking_parameter = 1.0;
-    auto masking_factor = [](const int x, const int region_length) -> double {
-        return 1.0 - std::pow(masking_parameter * (static_cast<double>(x) / static_cast<double>(region_length)), 2);
+    auto one_masking_factor = [](const double r, const double damping_length, const int real_index) -> double {
+        double dist_r = (r <= 0) ? - r + 1: 
+            (r >= real_index - 1) ? r - static_cast<double>(real_index) + 2.0 : 0.0;
+        return 1.0 - std::pow(masking_parameter * dist_r / damping_length, 2);
+    };
+    auto x_masking_factor = [rx = real_x_index, dl = static_cast<double>(bases[0]), om = &one_masking_factor](const double x) -> double { return (*om)(x, dl, rx); };
+    auto y_masking_factor = [ry = real_y_index, dl = static_cast<double>(bases[1]), om = &one_masking_factor](const double y) -> double { return (*om)(y, dl, ry); };
+    auto z_masking_factor = [rz = real_z_index, dl = static_cast<double>(bases[2]), om = &one_masking_factor](const double z) -> double { return (*om)(z, dl, rz); };
+
+    auto masking_factor = [xm = &x_masking_factor, ym = &y_masking_factor, zm = &z_masking_factor](const int x, const int y, const int z) -> double {
+        return (*xm)(x) * (*ym)(y) * (*zm)(z);
     };
 
     for(int i = bases[0] + 1; i < max_x_index - 1; ++i){
@@ -721,30 +757,48 @@ void RootGrid::updateBfieldDamping() {
                 if (is_real_region(i, j, k)) {
                     if (j != real_y_index - 2 && k != real_z_index - 2) {
                         bx[i][j][k] = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
-                    }
-
-                    if (i != real_x_index - 2 && k != real_z_index - 2) {
-                        by[i][j][k] = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
-                    }
-
-                    if (i != real_x_index - 2 && j != real_y_index - 2) {
-                        bz[i][j][k] = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
-                    }
-                } else {
-                    if (j != real_y_index - 2 && k != real_z_index - 2) {
-                        bx[i][j][k] = masking_factor(i, bases[0]) * (
+                    } else {
+                        const double mask = 0.25 * (masking_factor(i, j, k) + masking_factor(i, j + 1, k) + masking_factor(i, j, k + 1) + masking_factor(i, j + 1, k + 1));
+                        bx[i][j][k] = mask * (
                             bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]))
                         );
                     }
 
                     if (i != real_x_index - 2 && k != real_z_index - 2) {
-                        by[i][j][k] = masking_factor(j, bases[1]) * (
+                        by[i][j][k] = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
+                    } else {
+                        const double mask = 0.25 * (masking_factor(i, j, k) + masking_factor(i + 1, j, k) + masking_factor(i, j, k + 1) + masking_factor(i + 1, j, k + 1));
+                        by[i][j][k] = mask * (
                             by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]))
                         );
                     }
 
                     if (i != real_x_index - 2 && j != real_y_index - 2) {
-                        bz[i][j][k] = masking_factor(k, bases[2]) * (
+                        bz[i][j][k] = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
+                    } else {
+                        const double mask = 0.25 * (masking_factor(i, j, k) + masking_factor(i + 1, j, k) + masking_factor(i, j + 1, k) + masking_factor(i + 1, j + 1, k));
+                        bz[i][j][k] = mask * (
+                            bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]))
+                        );
+                    }
+                } else {
+                    if (j != max_y_index - 2 && k != max_z_index - 2) {
+                        const double mask = 0.25 * (masking_factor(i, j, k) + masking_factor(i, j + 1, k) + masking_factor(i, j, k + 1) + masking_factor(i, j + 1, k + 1));
+                        bx[i][j][k] = mask * (
+                            bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]))
+                        );
+                    }
+
+                    if (i != max_x_index - 2 && k != max_z_index - 2) {
+                        const double mask = 0.25 * (masking_factor(i, j, k) + masking_factor(i + 1, j, k) + masking_factor(i, j, k + 1) + masking_factor(i + 1, j, k + 1));
+                        by[i][j][k] = mask * (
+                            by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]))
+                        );
+                    }
+
+                    if (i != max_x_index - 2 && j != max_y_index - 2) {
+                        const double mask = 0.25 * (masking_factor(i, j, k) + masking_factor(i + 1, j, k) + masking_factor(i, j + 1, k) + masking_factor(i + 1, j + 1, k));
+                        bz[i][j][k] = mask * (
                             bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]))
                         );
                     }
