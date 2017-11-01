@@ -98,7 +98,7 @@ class Grid  : public std::enable_shared_from_this<Grid> {
         void moveParticleToChild(int child_index, Particle& p);
 
         //! 場の初期化
-        void initializeField();
+        virtual void initializeField();
 
         //! ポアソンソルバの実体
         virtual void solvePoissonPSOR(const int loopnum) = 0;
@@ -396,6 +396,8 @@ class RootGrid : public Grid {
         virtual void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const override;
 
     private:
+        virtual void initializeField() override;
+
         //! 基本的には root_grid 中に対象の点(Object定義点)が含まれているかを判定するために呼ぶ
         //! i, j, k は整数座標(全体の計算空間上の)
         bool isInnerNode(const int i, const int j, const int k) const {
@@ -451,6 +453,7 @@ class RootGrid : public Grid {
         void solvePoissonCorrectionPSOR(const int loopnum);
         double checkPhiCorrectionResidual();
         void updateEfieldFDTDMur1();
+        void updateEfieldFDTDDamping();
         void updateBfieldMur1();
 
         void loadResumeParticleData(HighFive::File& file);

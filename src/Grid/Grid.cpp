@@ -145,7 +145,7 @@ void Grid::addIDToVector(std::vector< std::vector<int> >& idMap){
 }
 
 //! 場の resize を行う
-void Grid::initializeField(void){
+void Grid::initializeField() {
     tdArray::extent_gen tdExtents;
 
     const int cx = nx + 2;
@@ -171,28 +171,31 @@ void Grid::initializeField(void){
     field->getEy().resize(tdExtents[cx][cy-1][cz]);
     field->getEz().resize(tdExtents[cx][cy][cz-1]);
 
-    field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
-    field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
-    field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
-
     // reference fields have the same size as nodal size
     field->getExRef().resize(tdExtents[cx][cy][cz]);
     field->getEyRef().resize(tdExtents[cx][cy][cz]);
     field->getEzRef().resize(tdExtents[cx][cy][cz]);
-    field->getBxRef().resize(tdExtents[cx][cy][cz]);
-    field->getByRef().resize(tdExtents[cx][cy][cz]);
-    field->getBzRef().resize(tdExtents[cx][cy][cz]);
-    field->getJxRef().resize(tdExtents[cx][cy][cz]);
-    field->getJyRef().resize(tdExtents[cx][cy][cz]);
-    field->getJzRef().resize(tdExtents[cx][cy][cz]);
 
-    //! 電流密度は Edge 要素なので Efield と同じ要素数を持つ
-    field->getJx().resize(tdExtents[cx-1][cy][cz]);
-    field->getJy().resize(tdExtents[cx][cy-1][cz]);
-    field->getJz().resize(tdExtents[cx][cy][cz-1]);
+    if (Environment::isEMMode()) {
+        //! EMの場合のみB, Bref, J, Jrefをresizeする
+        field->getBx().resize(tdExtents[cx][cy-1][cz-1]);
+        field->getBy().resize(tdExtents[cx-1][cy][cz-1]);
+        field->getBz().resize(tdExtents[cx-1][cy-1][cz]);
+        field->getBxRef().resize(tdExtents[cx][cy][cz]);
+        field->getByRef().resize(tdExtents[cx][cy][cz]);
+        field->getBzRef().resize(tdExtents[cx][cy][cz]);
+
+        //! 電流密度は Edge 要素なので Efield と同じ要素数を持つ
+        field->getJx().resize(tdExtents[cx-1][cy][cz]);
+        field->getJy().resize(tdExtents[cx][cy-1][cz]);
+        field->getJz().resize(tdExtents[cx][cy][cz-1]);
+        field->getJxRef().resize(tdExtents[cx][cy][cz]);
+        field->getJyRef().resize(tdExtents[cx][cy][cz]);
+        field->getJzRef().resize(tdExtents[cx][cy][cz]);
+    }
 }
 
-Grid::~Grid(){
+Grid::~Grid() {
     //! delete all particles
     if (particles.size() > 0) {
         particles.erase(particles.begin(), particles.end());

@@ -4,6 +4,35 @@
 #include "utils.hpp"
 #include "dataio.hpp"
 
+void RootGrid::initializeField() {
+    Grid::initializeField();
+    
+    //! RootGridかつEMの場合、Dampingのための領域を
+    //! EとBに確保する必要がある
+    if (Environment::isEMMode()) {
+        const int cx = nx + 2;
+        const int cy = ny + 2;
+        const int cz = nz + 2;
+
+        int x_low = (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) ? -nx : 0;
+        int x_up = (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) ? cx - 1 + nx : cx - 1;
+        int y_low = (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) ? -ny : 0;
+        int y_up = (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) ? cy - 1 + ny : cy - 1;
+        int z_low = (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) ? -nz : 0;
+        int z_up = (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) ? cz - 1 + nz : cz - 1;
+
+        tdArray::extent_gen extents;
+        using range = tdArray::extent_range;
+        field->getEx().resize(extents[range(x_low, x_up - 1)][range(y_low, y_up    )][range(z_low, z_up    )]);
+        field->getEy().resize(extents[range(x_low, x_up    )][range(y_low, y_up - 1)][range(z_low, z_up    )]);
+        field->getEz().resize(extents[range(x_low, x_up    )][range(y_low, y_up    )][range(z_low, z_up - 1)]);
+
+        field->getBx().resize(extents[range(x_low, x_up    )][range(y_low, y_up - 1)][range(z_low, z_up - 1)]);
+        field->getBy().resize(extents[range(x_low, x_up - 1)][range(y_low, y_up    )][range(z_low, z_up - 1)]);
+        field->getBz().resize(extents[range(x_low, x_up - 1)][range(y_low, y_up - 1)][range(z_low, z_up    )]);
+    }
+}
+
 void RootGrid::solvePoisson(void) {
     const auto PRE_LOOP_NUM = Environment::getOptions().getMaximumPoissonPreLoop();
     const auto POST_LOOP_NUM = Environment::getOptions().getMaximumPoissonPostLoop();
@@ -425,14 +454,14 @@ void RootGrid::updateEfield() {
     auto& ez = field->getEz();
     auto& phi = field->getPhi();
 
-    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
-    const size_t cy_with_glue = ey.shape()[1] + 1;
-    const size_t cz_with_glue = ez.shape()[2] + 1;
+    const size_t cx_with_glue = phi.shape()[0]; // nx + 2
+    const size_t cy_with_glue = phi.shape()[1];
+    const size_t cz_with_glue = phi.shape()[2];
     const double per_dx = 1.0 / dx;
 
     //! @note:隣と通信しなくてもいい
     //! phiが通信してあるため、端の要素を通信なしで計算可能
-    #pragma omp parallel for shared(ex, ey, ez)
+    #pragma omp parallel
     for(size_t i = 0; i < cx_with_glue; ++i){
         for(size_t j = 0; j < cy_with_glue; ++j){
             for(size_t k = 0; k < cz_with_glue; ++k){
@@ -460,12 +489,12 @@ void RootGrid::updateReferenceEfield() {
     auto& exref = field->getExRef();
     auto& eyref = field->getEyRef();
     auto& ezref = field->getEzRef();
-    const size_t cx_with_glue = ex.shape()[0] + 1; // nx + 2
-    const size_t cy_with_glue = ey.shape()[1] + 1;
-    const size_t cz_with_glue = ez.shape()[2] + 1;
+    const size_t cx_with_glue = exref.shape()[0]; // nx + 2
+    const size_t cy_with_glue = eyref.shape()[1];
+    const size_t cz_with_glue = ezref.shape()[2];
 
     //! reference 更新
-    #pragma omp parallel shared(ex, ey, ez, exref, eyref, ezref)
+    #pragma omp parallel
     {
         #pragma omp for
         for(size_t i = 1; i < cx_with_glue - 1; ++i){
@@ -548,7 +577,92 @@ void RootGrid::updateReferenceEfield() {
 }
 
 void RootGrid::updateEfieldFDTD() {
-    this->updateEfieldFDTDMur1();
+    // this->updateEfieldFDTDMur1();
+    // this->updateEfieldFDTDDamping();
+}
+
+void RootGrid::updateEfieldFDTDDamping() {
+    auto& ex = field->getEx();
+    auto& ey = field->getEy();
+    auto& ez = field->getEz();
+    auto& bx = field->getBx();
+    auto& by = field->getBy();
+    auto& bz = field->getBz();
+    auto& jx = field->getJx();
+    auto& jy = field->getJy();
+    auto& jz = field->getJz();
+    const double dt_per_eps0 = dt / Normalizer::eps0;
+    const double dt_per_mu0_eps0_dx = dt_per_eps0 / (Normalizer::mu0 * dx);
+
+    auto bases = ex.index_bases();
+    auto shapes = ex.shape();
+
+    //! 実領域上端側のGlueのindex + 1
+    const size_t real_x_index = jx.shape()[0] + 1;
+    const size_t real_y_index = jy.shape()[1] + 1;
+    const size_t real_z_index = jz.shape()[2] + 1;
+
+    //! Damping 領域も含んだ領域上限のindex + 1
+    const size_t max_x_index = bases[0] + shapes[0] + 1; // ex.shape()を使っているのでx方向だけ+1する
+    const size_t max_y_index = bases[1] + shapes[1];
+    const size_t max_z_index = bases[2] + shapes[2];
+
+    //! 1以上、rx以下なら実領域（Glueエッジも自動的に除かれる）
+    auto is_real_region = [rx = real_x_index, ry = real_y_index, rz = real_z_index](const size_t i, const size_t j, const size_t k)-> bool {
+        return (
+            ((i > 0) && (i < rx)) &&
+            ((j > 0) && (j < ry)) &&
+            ((k > 0) && (k < rz))
+        );
+    };
+
+    auto damping_factor = [](const size_t x) {
+        return 1.0;
+    };
+
+    for(size_t i = bases[0] + 1; i < max_x_index; ++i){
+        for(size_t j = bases[1] + 1; j < max_y_index; ++j){
+            for(size_t k = bases[2] + 1; k < max_z_index; ++k){
+                if (is_real_region(i, j, k)) {
+                    //! Edge要素のため、各方向には1つ少ない = rx - 1 までしか要素がない = rx - 2 までの更新でいい
+                    if(i < real_x_index - 1) {
+                        ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
+                    }
+
+                    if(j < real_y_index - 1) {
+                        ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+                    }
+
+                    if(k < real_z_index - 1) {
+                        ez[i][j][k] = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
+                            dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+                    }
+                } else {
+                    if(i < max_x_index - 1) {
+                        ex[i][j][k] = ex[i][j][k] + damping_factor(i) * dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
+                    }
+
+                    if(j < max_y_index - 1) {
+                        ey[i][j][k] = ey[i][j][k] + damping_factor(j) * dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+                    }
+
+                    if(k < max_z_index - 1) {
+                        ez[i][j][k] = ez[i][j][k] + damping_factor(k) * dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+                    }
+                }
+            }
+        }
+    }
+
+    // FDTDの場合は通信が必要になる
+    // MPIw::Environment::sendRecvField(ex);
+    // MPIw::Environment::sendRecvField(ey);
+    // MPIw::Environment::sendRecvField(ez);
+
+    //! Reference 更新
+    this->updateReferenceEfield();
 }
 
 void RootGrid::updateEfieldFDTDMur1() {
@@ -578,61 +692,103 @@ void RootGrid::updateEfieldFDTDMur1() {
 
     const double mur_coeff = (Normalizer::c * dt - dx) / (Normalizer::c * dt + dx);
 
-    //! とりあえず Mur 1次
+    //! Mur 1次
+    //! x 下部境界
+    if (is_boundary[0]) {
+        int i = 1; int i_neighbor = i + 1;
+        for(size_t j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t k = 1; k < cz_with_glue - 1; ++k){
+                const double new_neighbor_value = ex[i_neighbor][j][k] - jx[i_neighbor][j][k] * dt_per_eps0 +
+                    dt_per_mu0_eps0_dx * (bz[i_neighbor][j][k] - bz[i_neighbor][j - 1][k] - by[i_neighbor][j][k] + by[i_neighbor][j][k - 1]);
+                ex[i][j][k] = ex[i_neighbor][j][k] + mur_coeff * (new_neighbor_value - ex[i][j][k]);
+            }
+        }
+    }
+
+    //! x 上部境界
+    if (is_boundary[1]) {
+        int i = cx_with_glue - 3; int i_neighbor = i - 1;
+        for(size_t j = 1; j < cy_with_glue - 1; ++j){
+            for(size_t k = 1; k < cz_with_glue - 1; ++k){
+                const double new_neighbor_value = ex[i_neighbor][j][k] - jx[i_neighbor][j][k] * dt_per_eps0 +
+                    dt_per_mu0_eps0_dx * (bz[i_neighbor][j][k] - bz[i_neighbor][j - 1][k] - by[i_neighbor][j][k] + by[i_neighbor][j][k - 1]);
+                ex[i][j][k] = ex[i_neighbor][j][k] + mur_coeff * (new_neighbor_value - ex[i][j][k]);
+            }
+        }
+    }
+
+    //! y下部境界
+    if (is_boundary[2]) {
+        int j = 1; int j_neighbor = j + 1;
+        for(size_t i = 1; i < cx_with_glue - 1; ++i){
+            for(size_t k = 1; k < cz_with_glue - 1; ++k){
+                const double new_neighbor_value = ey[i][j_neighbor][k] - jy[i][j_neighbor][k] * dt_per_eps0 +
+                    dt_per_mu0_eps0_dx * (bx[i][j_neighbor][k] - bx[i][j_neighbor][k - 1] - bz[i][j_neighbor][k] + bz[i - 1][j_neighbor][k]);
+
+                ey[i][j][k] = ey[i][j_neighbor][k] + mur_coeff * (new_neighbor_value - ey[i][j][k]);
+            }
+        }
+    }
+
+    //! y上部境界
+    if (is_boundary[3]) {
+        int j = cy_with_glue - 3; int j_neighbor = j - 1;
+        for(size_t i = 1; i < cx_with_glue - 1; ++i){
+            for(size_t k = 1; k < cz_with_glue - 1; ++k){
+                const double new_neighbor_value = ey[i][j_neighbor][k] - jy[i][j_neighbor][k] * dt_per_eps0 +
+                    dt_per_mu0_eps0_dx * (bx[i][j_neighbor][k] - bx[i][j_neighbor][k - 1] - bz[i][j_neighbor][k] + bz[i - 1][j_neighbor][k]);
+
+                ey[i][j][k] = ey[i][j_neighbor][k] + mur_coeff * (new_neighbor_value - ey[i][j][k]);
+            }
+        }
+    }
+
+    //! z下部境界
+    if (is_boundary[4]) {
+        int k = 1; int k_neighbor = k + 1;
+        for(size_t i = 1; i < cx_with_glue - 1; ++i){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
+                const double new_neighbor_value = ez[i][j][k_neighbor] - jz[i][j][k_neighbor] * dt_per_eps0 +
+                    dt_per_mu0_eps0_dx * (by[i][j][k_neighbor] - by[i - 1][j][k_neighbor] - bx[i][j][k_neighbor] + bx[i][j - 1][k_neighbor]);
+
+                ez[i][j][k] = ez[i][j][k_neighbor] + mur_coeff * (new_neighbor_value - ez[i][j][k]);
+            }
+        }
+    }
+
+    //! z上部境界
+    if (is_boundary[5]) {
+        int k = cz_with_glue - 3; int k_neighbor = k - 1;
+        for(size_t i = 1; i < cx_with_glue - 1; ++i){
+            for(size_t j = 1; j < cy_with_glue - 1; ++j){
+                const double new_neighbor_value = ez[i][j][k_neighbor] - jz[i][j][k_neighbor] * dt_per_eps0 +
+                    dt_per_mu0_eps0_dx * (by[i][j][k_neighbor] - by[i - 1][j][k_neighbor] - bx[i][j][k_neighbor] + bx[i][j - 1][k_neighbor]);
+
+                ez[i][j][k] = ez[i][j][k_neighbor] + mur_coeff * (new_neighbor_value - ez[i][j][k]);
+            }
+        }
+    }
+
     for(size_t i = 1; i < cx_with_glue - 1; ++i){
         for(size_t j = 1; j < cy_with_glue - 1; ++j){
             for(size_t k = 1; k < cz_with_glue - 1; ++k){
-                //! 各方向には1つ少ないのでcx-1まで
+                //! Edge要素のため、各方向には1つ少ない = cx - 2 までしか要素がない = cx - 3 までの更新でいい(Glue Edgeを除く)
                 if(i < cx_with_glue - 2) {
-                    if (i == 1 && is_boundary[0]) {
-                        const double new_value = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
-                            dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
-
-                        ex[i - 1][j][k] = ex[i][j][k] + mur_coeff * (new_value - ex[i - 1][j][k]);
-                        ex[i][j][k] = new_value;
-                    } else if (i == cx_with_glue - 2 && is_boundary[1]) {
-                        const double new_value = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
-                            dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
-
-                        ex[i + 1][j][k] = ex[i][j][k] + mur_coeff * (new_value - ex[i + 1][j][k]);
-                        ex[i][j][k] = new_value;
-                    } else {
+                    if (!( (i == 1 && is_boundary[0]) || (i == cx_with_glue - 3 && is_boundary[1]) )) {
                         ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
                     }
                 }
+
                 if(j < cy_with_glue - 2) {
-                    if (j == 1 && is_boundary[2]) {
-                        const double new_value = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
-                            dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
-
-                        ey[i][j - 1][k] = ey[i][j][k] + mur_coeff * (new_value - ey[i][j - 1][k]);
-                        ey[i][j][k] = new_value;
-                    } else if (j == cy_with_glue - 2 && is_boundary[3]) {
-                        const double new_value = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
-                            dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
-
-                        ey[i][j + 1][k] = ey[i][j][k] + mur_coeff * (new_value - ey[i][j + 1][k]);
-                        ey[i][j][k] = new_value;
-                    } else {
+                    if (!( (j == 1 && is_boundary[2]) && ((j == cy_with_glue - 3 && is_boundary[3])) )) {
                         ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
                     }
                 }
+
                 if(k < cz_with_glue - 2) {
-                    if (k == 1 && is_boundary[4]) {
-                        const double new_value = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
-                            dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
-
-                        ez[i][j][k - 1] = ez[i][j][k] + mur_coeff * (new_value - ez[i][j][k - 1]);
-                        ez[i][j][k] = new_value;
-                    } else if (k == cz_with_glue - 2 && is_boundary[5]) {
-                        const double new_value = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
-                            dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
-
-                        ez[i][j][k + 1] = ez[i][j][k] + mur_coeff * (new_value - ez[i][j][k + 1]);
-                        ez[i][j][k] = new_value;
-                    } else {
+                    if (!( (k == 1 && is_boundary[4]) && ((k == cz_with_glue - 3 && is_boundary[5])) )) {
                         ez[i][j][k] = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
                     }
@@ -651,7 +807,7 @@ void RootGrid::updateEfieldFDTDMur1() {
 }
 
 void RootGrid::updateBfield() {
-    this->updateBfieldMur1();
+    // this->updateBfieldMur1();
 }
 
 void RootGrid::updateBfieldMur1() {
@@ -688,54 +844,97 @@ void RootGrid::updateBfieldMur1() {
 
     const double mur_coeff = (Normalizer::c * dt - dx) / (Normalizer::c * dt + dx);
 
-    //! 0とcy + 1, 0とcz + 1はglueなので更新しなくてよい
+    //! x下部境界
+    /*
+    if (is_boundary[0]) {
+        int i = 1; int i_neighbor = i + 1;
+        for(int j = 1; j < cy_with_glue - 2; ++j){
+            for(int k = 1; k < cz_with_glue - 2; ++k){
+                const double new_neighbor_value = bx[i_neighbor][j][k] + dt_per_dx * ((ey[i_neighbor][j][k + 1] - ey[i_neighbor][j][k]) - (ez[i_neighbor][j + 1][k] - ez[i_neighbor][j][k]));
+
+                bx[i][j][k] = bx[i_neighbor][j][k] + mur_coeff * (new_neighbor_value - bx[i][j][k]);
+            }
+        }
+    }
+
+    //! x上部境界
+    if (is_boundary[1]) {
+        int i = cx_with_glue - 2; int i_neighbor = i - 1;
+        for(int j = 1; j < cy_with_glue - 2; ++j){
+            for(int k = 1; k < cz_with_glue - 2; ++k){
+                const double new_neighbor_value = bx[i_neighbor][j][k] + dt_per_dx * ((ey[i_neighbor][j][k + 1] - ey[i_neighbor][j][k]) - (ez[i_neighbor][j + 1][k] - ez[i_neighbor][j][k]));
+
+                bx[i][j][k] = bx[i_neighbor][j][k] + mur_coeff * (new_neighbor_value - bx[i][j][k]);
+            }
+        }
+    }
+
+    //! y下部境界
+    if (is_boundary[2]) {
+        int j = 1; int j_neighbor = j + 1;
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                const double new_neighbor_value = by[i][j_neighbor][k] + dt_per_dx * ((ez[i + 1][j_neighbor][k] - ez[i][j_neighbor][k]) - (ex[i][j_neighbor][k + 1] - ex[i][j_neighbor][k]));
+
+                by[i][j][k] = by[i][j_neighbor][k] + mur_coeff * (new_neighbor_value - by[i][j][k]);
+            }
+        }
+    }
+
+    //! y上部境界
+    if (is_boundary[3]) {
+        int j = cy_with_glue - 2; int j_neighbor = j - 1;
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int k = 1; k < cz_with_glue - 1; ++k){
+                const double new_neighbor_value = by[i][j_neighbor][k] + dt_per_dx * ((ez[i + 1][j_neighbor][k] - ez[i][j_neighbor][k]) - (ex[i][j_neighbor][k + 1] - ex[i][j_neighbor][k]));
+
+                by[i][j][k] = by[i][j_neighbor][k] + mur_coeff * (new_neighbor_value - by[i][j][k]);
+            }
+        }
+    }
+
+    //! z下部境界
+    if (is_boundary[4]) {
+        int k = 1; int k_neighbor = k + 1;
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                const double new_neighbor_value = bz[i][j][k_neighbor] + dt_per_dx * ((ex[i][j + 1][k_neighbor] - ex[i][j][k_neighbor]) - (ey[i + 1][j][k_neighbor] - ey[i][j][k_neighbor]));
+
+                bz[i][j][k] = bz[i][j][k_neighbor] + mur_coeff * (new_neighbor_value - bz[i][j][k]);
+            }
+        }
+    }
+
+    //! z上部境界
+    if (is_boundary[5]) {
+        int k = cz_with_glue - 2; int k_neighbor = k - 1;
+        for(int i = 1; i < cx_with_glue - 1; ++i){
+            for(int j = 1; j < cy_with_glue - 1; ++j){
+                const double new_neighbor_value = bz[i][j][k_neighbor] + dt_per_dx * ((ex[i][j + 1][k_neighbor] - ex[i][j][k_neighbor]) - (ey[i + 1][j][k_neighbor] - ey[i][j][k_neighbor]));
+
+                bz[i][j][k] = bz[i][j][k_neighbor] + mur_coeff * (new_neighbor_value - bz[i][j][k]);
+            }
+        }
+    }
+    */
+
     for(int i = 1; i < cx_with_glue - 1; ++i){
         for(int j = 1; j < cy_with_glue - 1; ++j){
             for(int k = 1; k < cz_with_glue - 1; ++k){
                 if (j != cy_with_glue - 2 && k != cz_with_glue - 2) {
-                    if (i == 1 && is_boundary[0]) {
-                        const double new_value = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
-
-                        bx[i - 1][j][k] = bx[i][j][k] + mur_coeff * (new_value - bx[i - 1][j][k]);
-                        bx[i][j][k] = new_value;
-                    } else if (i == cx_with_glue - 2 && is_boundary[1]) {
-                        const double new_value = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
-
-                        bx[i + 1][j][k] = bx[i][j][k] + mur_coeff * (new_value - bx[i + 1][j][k]);
-                        bx[i][j][k] = new_value;
-                    } else {
+                    if (!( (i == 1 && is_boundary[0]) && (i == cx_with_glue - 2 && is_boundary[1]) )) {
                         bx[i][j][k] = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
                     }
                 }
 
                 if (i != cx_with_glue - 2 && k != cz_with_glue - 2) {
-                    if (j == 1 && is_boundary[2]) {
-                        const double new_value = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
-
-                        by[i][j - 1][k] = by[i][j][k] + mur_coeff * (new_value - by[i][j - 1][k]);
-                        by[i][j][k] = new_value;
-                    } else if (j == cy_with_glue - 2 && is_boundary[3]) {
-                        const double new_value = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
-
-                        by[i][j + 1][k] = by[i][j][k] + mur_coeff * (new_value - by[i][j + 1][k]);
-                        by[i][j][k] = new_value;
-                    } else {
+                    if (!( (j == 1 && is_boundary[2]) && (j == cy_with_glue - 2 && is_boundary[3]) )) {
                         by[i][j][k] = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
                     }
                 }
 
                 if (i != cx_with_glue - 2 && j != cy_with_glue - 2) {
-                    if (k == 1 && is_boundary[4]) {
-                        const double new_value = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
-
-                        bz[i][j][k - 1] = bz[i][j][k] + mur_coeff * (new_value - bz[i][j][k - 1]);
-                        bz[i][j][k] = new_value;
-                    } else if (k == cz_with_glue - 2 && is_boundary[5]) {
-                        const double new_value = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
-
-                        bz[i][j][k + 1] = bz[i][j][k] + mur_coeff * (new_value - bz[i][j][k + 1]);
-                        bz[i][j][k] = new_value;
-                    } else {
+                    if (!( (k == 1 && is_boundary[4]) && (k == cz_with_glue - 2 && is_boundary[5]) )) {
                         bz[i][j][k] = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
                     }
                 }
@@ -760,15 +959,6 @@ void RootGrid::updateReferenceBfield() {
     const size_t cx_with_glue = bxref.shape()[0];
     const size_t cy_with_glue = bxref.shape()[1];
     const size_t cz_with_glue = bxref.shape()[2];
-
-    static const bool is_boundary[6] = {
-        Environment::isBoundary(AXIS::x, AXIS_SIDE::low),
-        Environment::isBoundary(AXIS::x, AXIS_SIDE::up),
-        Environment::isBoundary(AXIS::y, AXIS_SIDE::low),
-        Environment::isBoundary(AXIS::y, AXIS_SIDE::up),
-        Environment::isBoundary(AXIS::z, AXIS_SIDE::low),
-        Environment::isBoundary(AXIS::z, AXIS_SIDE::up),
-    };
 
     //! reference 更新
     for(int i = 1; i < cx_with_glue - 1; ++i){

@@ -168,29 +168,31 @@ void Field::initializeCurrent(const double dt) {
     //! 背景電流などがある場合にはここで設定する
     //! Jz 方向に振動する電流
 
-    /*
     const auto now = dt * static_cast<double>(Environment::timestep);
     const double real_freq = 5e7; // Hz
+    const int one_freq = static_cast<int>(1.0 / Normalizer::normalizeFrequency(real_freq));
 
     if (Environment::isRootNode) {
-        cout << "[NOTICE] " << 1.0 / Normalizer::normalizeFrequency(real_freq) << " step で 1周期です." << endl;
+        cout << "[NOTICE] " << one_freq << " step で 1周期です." << endl;
     }
 
     const double freq = 2.0 * M_PI * Normalizer::normalizeFrequency(real_freq); // Hz
     const double J0 = 100.0;
 
-    const size_t half_x = cx_with_glue / 2;
+    const size_t half_x = cx_with_glue / 4;
     const size_t half_y = cy_with_glue / 2;
-    for (size_t k = 0; k < cz_with_glue - 1; ++k) {
-        jz[half_x][half_y][k] = J0 * std::sin(freq * now);
+
+    if (Environment::isRootNode && Environment::timestep < one_freq) {
+        for (size_t k = 0; k < cz_with_glue - 1; ++k) {
+            jz[half_x][half_y][k] = J0 * std::sin(freq * now);
+        }
     }
-    */
 }
 
 double Field::getEfieldEnergy(void) const {
-    const size_t cx_with_glue = ey.shape()[0];
-    const size_t cy_with_glue = ex.shape()[1];
-    const size_t cz_with_glue = ex.shape()[2];
+    const size_t cx_with_glue = exref.shape()[0];
+    const size_t cy_with_glue = exref.shape()[1];
+    const size_t cz_with_glue = exref.shape()[2];
 
     double energy = 0.0;
 
@@ -209,9 +211,9 @@ double Field::getEfieldEnergy(void) const {
 }
 
 double Field::getBfieldEnergy(void) const {
-    const size_t cx_with_glue = bx.shape()[0];
-    const size_t cy_with_glue = by.shape()[1];
-    const size_t cz_with_glue = bz.shape()[2];
+    const size_t cx_with_glue = bxref.shape()[0];
+    const size_t cy_with_glue = byref.shape()[1];
+    const size_t cz_with_glue = bzref.shape()[2];
 
     double energy = 0.0;
 
