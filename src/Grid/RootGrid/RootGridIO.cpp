@@ -1,6 +1,7 @@
 #include "grid.hpp"
 #include "utils.hpp"
 #include "dataio.hpp"
+#include "normalizer.hpp"
 
 #define H5_USE_BOOST
 #include <highfive/H5File.hpp>
@@ -286,4 +287,85 @@ void RootGrid::saveResumeObjectData(HighFive::File& file) const {
         auto data_set = group.createDataSet<double>("charge_map", HighFive::DataSpace::From(object.getChargeMap()));
         data_set.write(object.getChargeMap());
     }
+}
+
+void RootGrid::plotFieldDataWithDampingRegion(const std::string& data_type_name, const std::string& i_timestamp) const {
+    assert(data_type_name == "efield" || data_type_name == "bfield");
+
+    SimpleVTK gen;
+    gen.enableExtentManagement();
+    auto bases = field->getEx().index_bases();
+    auto shapes = field->getEx().shape();
+    // -nxからnx-1までの2nxノード
+    gen.changeBaseExtent(
+        bases[0], bases[0] + shapes[0] - 2, // ex.shape()を使っているので -1 は要らない
+        bases[1], bases[1] + shapes[1] - 3,
+        bases[2], bases[2] + shapes[2] - 3
+    );
+    gen.changeBaseOrigin(Normalizer::unnormalizeLength(base_x), Normalizer::unnormalizeLength(base_y), Normalizer::unnormalizeLength(base_z));
+    const auto base_spacing = Normalizer::unnormalizeLength(dx);
+    gen.changeBaseSpacing(base_spacing, base_spacing, base_spacing);
+    gen.setInnerElementPerLine(100);
+
+    gen.beginVTK("ImageData");
+    gen.setVersion("0.1");
+    gen.setByteOrder("LittleEndian");
+        gen.beginContentWithPiece();
+            if (data_type_name == "efield" || data_type_name == "bfield") {
+                gen.beginPointData();
+                gen.setVectors(data_type_name);
+                    gen.beginDataArray(data_type_name, "Float32", "ascii");
+                    gen.setNumberOfComponents("3");
+                        if (data_type_name == "efield") {
+                            auto values = this->getTrueNodeVectorsWithDampingRegion(field->getEx(), field->getEy(), field->getEz(), Normalizer::unnormalizeEfield(1.0));
+                            gen.addMultiArray(values);
+                        } else if (data_type_name == "bfield") {
+                            auto values = this->getTrueNodeVectorsWithDampingRegion(field->getBx(), field->getBy(), field->getBz(), Normalizer::unnormalizeBfield(1.0));
+                            gen.addMultiArray(values);
+                        }
+                    gen.endDataArray();
+                gen.endPointData();
+            }
+        gen.endContentWithPiece();
+    gen.endVTK();
+
+    std::string file_name = "data/raw_data/" + data_type_name + "_damping_id_" + std::to_string(id) + "_" + i_timestamp;
+    gen.generate(file_name);
+}
+
+//! Glueノードを含まないデータを生成 + Damping領域
+boost::multi_array<float, 4> RootGrid::getTrueNodeVectorsWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const {
+    auto shapes = field->getEx().shape();
+    int xsize = shapes[0] - 1;
+    int ysize = shapes[1] - 2;
+    int zsize = shapes[2] - 2;
+
+    boost::multi_array<float, 4> true_nodes(boost::extents[3][xsize][ysize][zsize]);
+    auto bases = field->getEx().index_bases();
+
+    // #pragma omp parallel for
+    for(int i = 0; i < xsize; ++i){
+        const int i_index = i + bases[0] + 1;
+        for(int j = 0; j < ysize; ++j){
+            const int j_index = j + bases[1] + 1;
+            for(int k = 0; k < zsize; ++k){
+                const int k_index = k + bases[2] + 1;
+
+                if (i < xsize - 1) {
+                    true_nodes[0][i][j][k] = static_cast<float>(0.5 * (xvector[i_index - 1][j_index][k_index] + xvector[i_index][j_index][k_index]) * unnorm);
+                }
+
+                if (j < ysize - 1) {
+                    true_nodes[1][i][j][k] = static_cast<float>(0.5 * (yvector[i_index][j_index - 1][k_index] + yvector[i_index][j_index][k_index]) * unnorm);
+                }
+
+                if (k < zsize - 1) {
+                    true_nodes[2][i][j][k] = static_cast<float>(0.5 * (zvector[i_index][j_index][k_index - 1] + zvector[i_index][j_index][k_index]) * unnorm);
+                }
+            }
+        }
+    }
+
+    // RVO
+    return true_nodes;
 }

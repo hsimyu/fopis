@@ -19,6 +19,10 @@ namespace IO {
 
         generateVTKHierarchicalBoxDataSet(root_grid, i_timestamp, data_type_name);
         root_grid->plotFieldData(data_type_name, i_timestamp);
+
+        if (Environment::isEMMode() && data_type_name == "efield") {
+            root_grid->plotFieldDataWithDampingRegion(data_type_name, i_timestamp);
+        }
     }
 
     void writeCmatrixData(const Spacecraft& obj) {

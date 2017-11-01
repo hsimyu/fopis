@@ -395,6 +395,9 @@ class RootGrid : public Grid {
         //! AMR Block情報を書き込む
         virtual void insertAMRBlockInfo(SimpleVTK& vtk_gen, const std::string& data_type_name, const std::string& i_timestamp) const override;
 
+        //! Damping領域のデータも出力する
+        void plotFieldDataWithDampingRegion(const std::string& data_type_name, const std::string& i_timestamp) const;
+
     private:
         virtual void initializeField() override;
 
@@ -456,6 +459,9 @@ class RootGrid : public Grid {
         void updateEfieldFDTDDamping();
         void updateBfieldMur1();
         void updateBfieldDamping();
+
+        //! Damping Boundary出力用
+        boost::multi_array<float, 4> getTrueNodeVectorsWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const;
 
         void loadResumeParticleData(HighFive::File& file);
         void loadResumeFieldData(HighFive::File& file);

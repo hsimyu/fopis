@@ -150,7 +150,6 @@ void Grid::plotFieldData(const std::string& data_type_name, const std::string& i
                     gen.endDataArray();
                 }
                 gen.endCellData();
-            } else if (data_type_name == "current") {
             }
         gen.endContentWithPiece();
     gen.endVTK();
