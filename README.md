@@ -1,4 +1,4 @@
-# TDPIC: 三次元 EM Full Particle-in-cell code
+# TDPIC: Multigrid ES/EM Full Particle-in-cell Object-Plasma Interaction Simulator
 
 ## 概要
 マルチグリッド法による宇宙機帯電解析を目指して開発中の三次元電磁粒子コードです。
@@ -9,44 +9,73 @@
 - Boost
     - [boostjp](https://boostjp.github.io/) を参照
     - 環境変数 BOOST_ROOT にインストール場所を設定しておくこと
-- Silo
-    - 要HDF5とzlib
-        - zlib は Cmake を利用することで Visual Studio でビルド可能
-        - HDF5 も Cmake を利用することでビルド可能
-            - [https://www.hdfgroup.org/downloads/hdf5/source-code/](https://www.hdfgroup.org/downloads/hdf5/source-code/)
+- HDF5とzlib
+    - scripts/setup-on-local-unix.sh を利用するとよいです
+    - WindowsにおけるParallel HDF5ビルドは少し大変
+        - [https://www.hdfgroup.org/downloads/hdf5/source-code/](https://www.hdfgroup.org/downloads/hdf5/source-code/)
         - Cmake用のビルドファイルを落としてきて、VS2017用のビルド設定を追加する
-    - Siloを落としてきて, Copysilo.datを実行してsilo.h等を生成
-        - 新しいMSVCでコンパイルする場合、snprintfのdefineがstdio.h内の定義と衝突するため、silo_win32_compatibility.hの15行目をコメントアウトする(4.10.2)
-        - pdb_detect が perl を使って pdform.h を出力するため、perlがないとコンパイルが通らない
-    - DevPropsみたいなのを設定する必要あり？
 - MPIライブラリ
-    - MSMPI (Windows), インストールすれば自動的に環境変数が設定されるはず
-    - OpenMPI (Linux, macOS)
+    - Windowsの場合: MS MPIをインストールしてください
+        - インストールすれば自動的に環境変数が設定されるはず
+    - Unixの場合: OpenMPI (Linux, macOS)
+        - brew install openmpi
     - スパコン上では自動リンクされるため手動インストールは必要ない
 
 - Doxygen (ドキュメント生成用, Optional)
 
-## 初期ビルド
+## Installation (UNIX)
 
+### HDF5とzlibのインストールを自動でやる場合:
+
+```bash
+$ git clone https://snas1.rish.kuins.net:8787/gitlab/yamakawa-lab/tdpic.git ./tdpic
+$ cd tdpic
 ```
+
+インストール用のスクリプトがscripts/setup-on-local-unix.shにあります。
+
+デフォルトでは$HOME/localにインストールを行います。
+インストール先や、MPIコンパイラを変更したい場合はエディタで開いて先頭の5行の変数の値を変更してください。
+
+```bash
+$ ./scripts/setup-on-local-unix.sh
+```
+
+### HDF5とzlibのインストールが終わっている場合:
+
+```bash
 $ git clone https://snas1.rish.kuins.net:8787/gitlab/yamakawa-lab/tdpic.git ./tdpic
 $ cd tdpic
 $ git submodule init
-$ git submodule update # googletestとpicojsonをgithubから取ってくる
-$ mkdir build # cmakeでout-source ビルドするディレクトリ
+$ git submodule update
+$ mkdir build
 $ cd build
-$ cmake ..
+$ cmake .. -DLOCAL_LIBRARYDIR=$HOME/local -DCMAKE_INSTALL_PREFIX=""
 ```
 
-もしくは
-```
-$ git clone https://snas1.rish.kuins.net:8787/gitlab/yamakawa-lab/tdpic.git ./tdpic
-$ cd tdpic
-$ ./scripts/setup.sh
-```
-でzlib, hdf5, siloのダウンロードとビルドまでをやります。
+## ビルド & 実行方法
 
-## 実行方法
+current directoryがbuildだと仮定します。
+
+単一実行の場合:
+```bash
+$ make
+$ ./tdpic
+```
+または
+```bash
+$ ./tdpic your_configuration_file.json
+```
+で実行可能です。
+第一引数が与えられた場合、そのファイルを読み込み計算を行います。
+第一引数が与えられない場合、同ディレクトリのinput.jsonを読み込み計算を行います。
+
+別の場所へインストールする場合、make install時のDESTDIRで設定して下さい。
+
+例:
+```bash
+$ make install DESTDIR=$HOME/Documents/simulation
+```
 
 ## 物体定義について
 ボクセルベースのobjファイルをサポート.
