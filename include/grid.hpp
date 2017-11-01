@@ -455,6 +455,7 @@ class RootGrid : public Grid {
         void updateEfieldFDTDMur1();
         void updateEfieldFDTDDamping();
         void updateBfieldMur1();
+        void updateBfieldDamping();
 
         void loadResumeParticleData(HighFive::File& file);
         void loadResumeFieldData(HighFive::File& file);

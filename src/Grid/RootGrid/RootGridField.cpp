@@ -578,7 +578,12 @@ void RootGrid::updateReferenceEfield() {
 
 void RootGrid::updateEfieldFDTD() {
     // this->updateEfieldFDTDMur1();
-    // this->updateEfieldFDTDDamping();
+    this->updateEfieldFDTDDamping();
+}
+
+void RootGrid::updateBfield() {
+    // this->updateBfieldMur1();
+    this->updateBfieldDamping();
 }
 
 void RootGrid::updateEfieldFDTDDamping() {
@@ -598,17 +603,17 @@ void RootGrid::updateEfieldFDTDDamping() {
     auto shapes = ex.shape();
 
     //! 実領域上端側のGlueのindex + 1
-    const size_t real_x_index = jx.shape()[0] + 1;
-    const size_t real_y_index = jy.shape()[1] + 1;
-    const size_t real_z_index = jz.shape()[2] + 1;
+    const int real_x_index = jx.shape()[0] + 1;
+    const int real_y_index = jy.shape()[1] + 1;
+    const int real_z_index = jz.shape()[2] + 1;
 
     //! Damping 領域も含んだ領域上限のindex + 1
-    const size_t max_x_index = bases[0] + shapes[0] + 1; // ex.shape()を使っているのでx方向だけ+1する
-    const size_t max_y_index = bases[1] + shapes[1];
-    const size_t max_z_index = bases[2] + shapes[2];
+    const int max_x_index = bases[0] + shapes[0] + 1; // ex.shape()を使っているのでx方向だけ+1する
+    const int max_y_index = bases[1] + shapes[1];
+    const int max_z_index = bases[2] + shapes[2];
 
     //! 1以上、rx以下なら実領域（Glueエッジも自動的に除かれる）
-    auto is_real_region = [rx = real_x_index, ry = real_y_index, rz = real_z_index](const size_t i, const size_t j, const size_t k)-> bool {
+    auto is_real_region = [rx = real_x_index, ry = real_y_index, rz = real_z_index](const int i, const int j, const int k)-> bool {
         return (
             ((i > 0) && (i < rx)) &&
             ((j > 0) && (j < ry)) &&
@@ -616,40 +621,47 @@ void RootGrid::updateEfieldFDTDDamping() {
         );
     };
 
-    auto damping_factor = [](const size_t x) {
-        return 1.0;
+    constexpr double masking_parameter = 1.0;
+    auto masking_factor = [](const int x, const int region_length) -> double {
+        return std::pow(masking_parameter * (static_cast<double>(x) / static_cast<double>(region_length)), 2);
     };
 
-    for(size_t i = bases[0] + 1; i < max_x_index; ++i){
-        for(size_t j = bases[1] + 1; j < max_y_index; ++j){
-            for(size_t k = bases[2] + 1; k < max_z_index; ++k){
+    for(int i = bases[0] + 1; i < max_x_index - 1; ++i){
+        for(int j = bases[1] + 1; j < max_y_index - 1; ++j){
+            for(int k = bases[2] + 1; k < max_z_index - 1; ++k){
                 if (is_real_region(i, j, k)) {
-                    //! Edge要素のため、各方向には1つ少ない = rx - 1 までしか要素がない = rx - 2 までの更新でいい
-                    if(i < real_x_index - 1) {
+                    //! Edge要素のため、各方向には1つ少ない = rx - 2 までしか要素がない = rx - 3 までの更新でいい
+                    if(i < real_x_index - 2) {
                         ex[i][j][k] = ex[i][j][k] - jx[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
                     }
 
-                    if(j < real_y_index - 1) {
+                    if(j < real_y_index - 2) {
                         ey[i][j][k] = ey[i][j][k] - jy[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
                     }
 
-                    if(k < real_z_index - 1) {
+                    if(k < real_z_index - 2) {
                         ez[i][j][k] = ez[i][j][k] - jz[i][j][k] * dt_per_eps0 +
                             dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
                     }
                 } else {
-                    if(i < max_x_index - 1) {
-                        ex[i][j][k] = ex[i][j][k] + damping_factor(i) * dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1]);
+                    if(i < max_x_index - 2) {
+                        ex[i][j][k] = masking_factor(i, bases[0]) * (
+                            ex[i][j][k] + dt_per_mu0_eps0_dx * (bz[i][j][k] - bz[i][j - 1][k] - by[i][j][k] + by[i][j][k - 1])
+                        );
                     }
 
-                    if(j < max_y_index - 1) {
-                        ey[i][j][k] = ey[i][j][k] + damping_factor(j) * dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k]);
+                    if(j < max_y_index - 2) {
+                        ey[i][j][k] = masking_factor(j, bases[1]) * (
+                            ey[i][j][k] + dt_per_mu0_eps0_dx * (bx[i][j][k] - bx[i][j][k - 1] - bz[i][j][k] + bz[i - 1][j][k])
+                        );
                     }
 
-                    if(k < max_z_index - 1) {
-                        ez[i][j][k] = ez[i][j][k] + damping_factor(k) * dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k]);
+                    if(k < max_z_index - 2) {
+                        ez[i][j][k] = masking_factor(k, bases[2]) * (
+                            ez[i][j][k] + dt_per_mu0_eps0_dx * (by[i][j][k] - by[i - 1][j][k] - bx[i][j][k] + bx[i][j - 1][k])
+                        );
                     }
                 }
             }
@@ -663,6 +675,89 @@ void RootGrid::updateEfieldFDTDDamping() {
 
     //! Reference 更新
     this->updateReferenceEfield();
+}
+
+void RootGrid::updateBfieldDamping() {
+    const double dt_per_dx = dt / dx;
+
+    auto& bx = field->getBx();
+    auto& by = field->getBy();
+    auto& bz = field->getBz();
+    auto& ex = field->getEx();
+    auto& ey = field->getEy();
+    auto& ez = field->getEz();
+
+    auto bases = bx.index_bases();
+    auto shapes = bx.shape();
+
+    //! 実領域上端側のGlueのindex + 1
+    const int real_x_index = field->getBxRef().shape()[0];
+    const int real_y_index = field->getByRef().shape()[1];
+    const int real_z_index = field->getBzRef().shape()[2];
+
+    //! Damping 領域も含んだ領域上限のindex + 1
+    const int max_x_index = bases[0] + shapes[0]; // bx.shape()を使っているのでyz方向を+1する
+    const int max_y_index = bases[1] + shapes[1] + 1;
+    const int max_z_index = bases[2] + shapes[2] + 1;
+
+    //! 1以上、rx以下なら実領域（Glueエッジも自動的に除かれる）
+    auto is_real_region = [rx = real_x_index, ry = real_y_index, rz = real_z_index](const int i, const int j, const int k)-> bool {
+        return (
+            ((i > 0) && (i < rx)) &&
+            ((j > 0) && (j < ry)) &&
+            ((k > 0) && (k < rz))
+        );
+    };
+
+    constexpr double masking_parameter = 1.0;
+    auto masking_factor = [](const int x, const int region_length) -> double {
+        return 1.0 - std::pow(masking_parameter * (static_cast<double>(x) / static_cast<double>(region_length)), 2);
+    };
+
+    for(int i = bases[0] + 1; i < max_x_index - 1; ++i){
+        for(int j = bases[1] + 1; j < max_y_index - 1; ++j){
+            for(int k = bases[2] + 1; k < max_z_index - 1; ++k){
+
+                if (is_real_region(i, j, k)) {
+                    if (j != real_y_index - 2 && k != real_z_index - 2) {
+                        bx[i][j][k] = bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]));
+                    }
+
+                    if (i != real_x_index - 2 && k != real_z_index - 2) {
+                        by[i][j][k] = by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]));
+                    }
+
+                    if (i != real_x_index - 2 && j != real_y_index - 2) {
+                        bz[i][j][k] = bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]));
+                    }
+                } else {
+                    if (j != real_y_index - 2 && k != real_z_index - 2) {
+                        bx[i][j][k] = masking_factor(i, bases[0]) * (
+                            bx[i][j][k] + dt_per_dx * ((ey[i][j][k + 1] - ey[i][j][k]) - (ez[i][j + 1][k] - ez[i][j][k]))
+                        );
+                    }
+
+                    if (i != real_x_index - 2 && k != real_z_index - 2) {
+                        by[i][j][k] = masking_factor(j, bases[1]) * (
+                            by[i][j][k] + dt_per_dx * ((ez[i + 1][j][k] - ez[i][j][k]) - (ex[i][j][k + 1] - ex[i][j][k]))
+                        );
+                    }
+
+                    if (i != real_x_index - 2 && j != real_y_index - 2) {
+                        bz[i][j][k] = masking_factor(k, bases[2]) * (
+                            bz[i][j][k] + dt_per_dx * ((ex[i][j + 1][k] - ex[i][j][k]) - (ey[i + 1][j][k] - ey[i][j][k]))
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    // MPIw::Environment::sendRecvField(bx);
+    // MPIw::Environment::sendRecvField(by);
+    // MPIw::Environment::sendRecvField(bz);
+
+    this->updateReferenceBfield();
 }
 
 void RootGrid::updateEfieldFDTDMur1() {
@@ -804,10 +899,6 @@ void RootGrid::updateEfieldFDTDMur1() {
 
     //! Reference 更新
     this->updateReferenceEfield();
-}
-
-void RootGrid::updateBfield() {
-    // this->updateBfieldMur1();
 }
 
 void RootGrid::updateBfieldMur1() {
