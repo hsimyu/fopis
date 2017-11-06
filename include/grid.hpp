@@ -461,7 +461,8 @@ class RootGrid : public Grid {
         void updateBfieldDamping();
 
         //! Damping Boundary出力用
-        boost::multi_array<float, 4> getTrueNodeVectorsWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const;
+        boost::multi_array<float, 4> getTrueNodeVectorsFromEdgeWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const;
+        boost::multi_array<float, 4> getTrueNodeVectorsFromFaceWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const;
 
         void loadResumeParticleData(HighFive::File& file);
         void loadResumeFieldData(HighFive::File& file);

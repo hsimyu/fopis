@@ -168,6 +168,7 @@ void Field::initializeCurrent(const double dt) {
     //! 背景電流などがある場合にはここで設定する
     //! Jz 方向に振動する電流
 
+    /*
     const auto now = dt * static_cast<double>(Environment::timestep);
     const double real_freq = 5e7; // Hz
     const int one_freq = static_cast<int>(1.0 / Normalizer::normalizeFrequency(real_freq));
@@ -187,6 +188,7 @@ void Field::initializeCurrent(const double dt) {
             jz[half_x][half_y][k] = J0 * std::sin(freq * now);
         }
     }
+    */
 }
 
 double Field::getEfieldEnergy(void) const {

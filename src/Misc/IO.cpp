@@ -20,7 +20,7 @@ namespace IO {
         generateVTKHierarchicalBoxDataSet(root_grid, i_timestamp, data_type_name);
         root_grid->plotFieldData(data_type_name, i_timestamp);
 
-        if (Environment::isEMMode() && data_type_name == "efield") {
+        if (Environment::isEMMode() && (data_type_name == "efield" || data_type_name == "bfield")) {
             root_grid->plotFieldDataWithDampingRegion(data_type_name, i_timestamp);
         }
     }

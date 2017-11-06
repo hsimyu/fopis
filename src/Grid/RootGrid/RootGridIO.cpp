@@ -317,10 +317,10 @@ void RootGrid::plotFieldDataWithDampingRegion(const std::string& data_type_name,
                     gen.beginDataArray(data_type_name, "Float32", "ascii");
                     gen.setNumberOfComponents("3");
                         if (data_type_name == "efield") {
-                            auto values = this->getTrueNodeVectorsWithDampingRegion(field->getEx(), field->getEy(), field->getEz(), Normalizer::unnormalizeEfield(1.0));
+                            auto values = this->getTrueNodeVectorsFromEdgeWithDampingRegion(field->getEx(), field->getEy(), field->getEz(), Normalizer::unnormalizeEfield(1.0));
                             gen.addMultiArray(values);
                         } else if (data_type_name == "bfield") {
-                            auto values = this->getTrueNodeVectorsWithDampingRegion(field->getBx(), field->getBy(), field->getBz(), Normalizer::unnormalizeBfield(1.0));
+                            auto values = this->getTrueNodeVectorsFromFaceWithDampingRegion(field->getBx(), field->getBy(), field->getBz(), Normalizer::unnormalizeBfield(1.0));
                             gen.addMultiArray(values);
                         }
                     gen.endDataArray();
@@ -333,8 +333,8 @@ void RootGrid::plotFieldDataWithDampingRegion(const std::string& data_type_name,
     gen.generate(file_name);
 }
 
-//! Glueノードを含まないデータを生成 + Damping領域
-boost::multi_array<float, 4> RootGrid::getTrueNodeVectorsWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const {
+//! Glueノードを含まないデータを生成 + Damping領域 (辺要素)
+boost::multi_array<float, 4> RootGrid::getTrueNodeVectorsFromEdgeWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const {
     auto shapes = field->getEx().shape();
     int xsize = shapes[0] - 1;
     int ysize = shapes[1] - 2;
@@ -361,6 +361,52 @@ boost::multi_array<float, 4> RootGrid::getTrueNodeVectorsWithDampingRegion(const
 
                 if (k < zsize - 1) {
                     true_nodes[2][i][j][k] = static_cast<float>(0.5 * (zvector[i_index][j_index][k_index - 1] + zvector[i_index][j_index][k_index]) * unnorm);
+                }
+            }
+        }
+    }
+
+    // RVO
+    return true_nodes;
+}
+
+//! Glueノードを含まないデータを生成 + Damping領域 (面要素)
+boost::multi_array<float, 4> RootGrid::getTrueNodeVectorsFromFaceWithDampingRegion(const tdArray& xvector, const tdArray& yvector, const tdArray& zvector, const double unnorm) const {
+    auto shapes = field->getEx().shape();
+    int xsize = shapes[0] - 1;
+    int ysize = shapes[1] - 2;
+    int zsize = shapes[2] - 2;
+
+    boost::multi_array<float, 4> true_nodes(boost::extents[3][xsize][ysize][zsize]);
+    auto bases = field->getEx().index_bases();
+
+    // #pragma omp parallel for
+    for(int i = 0; i < xsize; ++i){
+        const int i_index = i + bases[0] + 1;
+        for(int j = 0; j < ysize; ++j){
+            const int j_index = j + bases[1] + 1;
+            for(int k = 0; k < zsize; ++k){
+                const int k_index = k + bases[2] + 1;
+
+                if ((j < ysize - 1) && (k < zsize - 1)) {
+                    true_nodes[0][i][j][k] = static_cast<float>(0.25 * (
+                        xvector[i_index][j_index][k_index] + xvector[i_index][j_index - 1][k_index] +
+                        xvector[i_index][j_index][k_index - 1] + xvector[i_index][j_index - 1][k_index - 1]) * unnorm
+                    );
+                }
+
+                if ((i < xsize - 1) && (k < zsize - 1)) {
+                    true_nodes[1][i][j][k] = static_cast<float>(0.25 * (
+                        yvector[i_index][j_index][k_index] + yvector[i_index - 1][j_index][k_index] +
+                        yvector[i_index][j_index][k_index - 1] + yvector[i_index - 1][j_index][k_index - 1]) * unnorm
+                    );
+                }
+
+                if ((i < xsize - 1) && (j < ysize - 1)) {
+                    true_nodes[2][i][j][k] = static_cast<float>(0.25 * (
+                        zvector[i_index][j_index][k_index] + zvector[i_index - 1][j_index][k_index] +
+                        zvector[i_index][j_index - 1][k_index] + zvector[i_index - 1][j_index - 1][k_index]) * unnorm
+                    );
                 }
             }
         }
