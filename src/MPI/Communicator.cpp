@@ -264,15 +264,20 @@ namespace MPIw {
 
     void Communicator::sendRecvFieldX(tdArray& tdValue, const int prev, const int next) {
         MPI_Status s;
-        boost::multi_array<double, 2> buff(boost::extents[ tdValue.shape()[1] ][ tdValue.shape()[2] ]);
+        auto shape = tdValue.shape();
+        auto bases = tdValue.index_bases();
+        int x_up_index = bases[0] + shape[0] - 1;
 
-        #pragma omp parallel shared(s, tdValue, buff)
+        boost::multi_array<double, 2> buff(boost::extents[ shape[1] ][ shape[2] ]);
+
+        #pragma omp parallel
         {
             //! 下側の値をバッファへ詰める
             #pragma omp for
-            for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                    buff[j][k] = tdValue[1][j][k];
+            for(int j = 0; j < shape[1]; ++j) {
+                int j_minus_base = j + bases[1];
+                for(int k = 0; k < shape[2]; ++k) {
+                    buff[j][k] = tdValue[1][j_minus_base][k + bases[2]];
                 }
             }
 
@@ -281,14 +286,14 @@ namespace MPIw {
                 //! std::swapのが速いかも
                 #pragma omp barrier
                 #pragma omp for
-                for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                    for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                        tdValue[0][j][k] = tdValue[tdValue.shape()[0] - 2][j][k];
-                        tdValue[tdValue.shape()[0] - 1][j][k] = buff[j][k];
+                for(int j = bases[1]; j < bases[1] + shape[1]; ++j) {
+                    for(int k = bases[2]; k < bases[2] + shape[2]; ++k) {
+                        tdValue[0][j][k] = tdValue[shape[0] - 2][j][k];
+                        tdValue[shape[0] - 1][j][k] = buff[j][k];
                     }
                 }
             } else {
-                int length = static_cast<int>(tdValue.shape()[1] * tdValue.shape()[2]);
+                int length = static_cast<int>(shape[1] * shape[2]);
 
                 #pragma omp barrier
                 #pragma omp single
@@ -298,18 +303,20 @@ namespace MPIw {
 
                 if (::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::up)) {
                     #pragma omp for
-                    for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                        for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                            tdValue[tdValue.shape()[0] - 1][j][k] = buff[j][k];
+                    for(int j = 0; j < shape[1]; ++j) {
+                        int j_minus_base = j + bases[1];
+                        for(int k = 0; k < shape[2]; ++k) {
+                            tdValue[x_up_index][j_minus_base][k + bases[2]] = buff[j][k];
                         }
                     }
                 }
 
                 #pragma omp for
-                for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                    for(int k = 0; k < tdValue.shape()[2]; ++k) {
+                for(int j = 0; j < shape[1]; ++j) {
+                    int j_minus_base = j + bases[1];
+                    for(int k = 0; k < shape[2]; ++k) {
                         // 反対側の値を buff に詰める
-                        buff[j][k] = tdValue[tdValue.shape()[0] - 2][j][k];
+                        buff[j][k] = tdValue[x_up_index - 1][j_minus_base][k + bases[2]];
                     }
                 }
 
@@ -321,9 +328,10 @@ namespace MPIw {
 
                 if (::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
                     #pragma omp for
-                    for(int j = 0; j < tdValue.shape()[1]; ++j) {
-                        for(int k = 0; k < tdValue.shape()[2]; ++k) {
-                            tdValue[0][j][k] = buff[j][k];
+                    for(int j = 0; j < shape[1]; ++j) {
+                        int j_minus_base = j + bases[1];
+                        for(int k = 0; k < shape[2]; ++k) {
+                            tdValue[0][j_minus_base][k + bases[2]] = buff[j][k];
                         }
                     }
                 }

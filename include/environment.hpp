@@ -75,6 +75,12 @@ class StaticField {
         void printInfo() const;
 };
 
+struct DampingLength {
+    int L_dx = 1;
+    int L_dy = 1;
+    int L_dz = 1;
+};
+
 struct Environment {
     public:
         static int num_of_particle_types;
@@ -251,6 +257,11 @@ struct Environment {
             return static_field;
         }
 
+        //! Damping Length
+        static DampingLength& getDampingLength() {
+            return damping_length;
+        }
+
     private:
         static bool isPlotTimestep(const std::string type) {
             if(type == "potential"     && plot_potential_width     != 0) return (timestep % plot_potential_width == 0);
@@ -274,6 +285,7 @@ struct Environment {
 
         static Options options;
         static StaticField static_field;
+        static DampingLength damping_length;
 
         static bool onLowXedge, onHighXedge;
         static bool onLowYedge, onHighYedge;

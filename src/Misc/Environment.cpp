@@ -41,6 +41,8 @@ Environment::PhotoElectronParticleList Environment::photoelectron_particles;
 Environment::SecondaryParticleList Environment::secondary_particles;
 Environment::BeamParticleList Environment::beam_particles;
 
+DampingLength Environment::damping_length;
+
 /*
 * @params
 * const std::string axis: "x", "y", or "z"

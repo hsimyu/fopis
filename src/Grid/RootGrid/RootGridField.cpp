@@ -14,12 +14,17 @@ void RootGrid::initializeField() {
         const int cy = ny + 2;
         const int cz = nz + 2;
 
-        int x_low = (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) ? -nx : 0;
-        int x_up = (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) ? cx - 1 + nx : cx - 1;
-        int y_low = (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) ? -ny : 0;
-        int y_up = (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) ? cy - 1 + ny : cy - 1;
-        int z_low = (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) ? -nz : 0;
-        int z_up = (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) ? cz - 1 + nz : cz - 1;
+        auto& damping_length = Environment::getDampingLength();
+        damping_length.L_dx = nx;
+        damping_length.L_dy = ny;
+        damping_length.L_dz = nz;
+
+        int x_low = (Environment::isBoundary(AXIS::x, AXIS_SIDE::low)) ? -(damping_length.L_dx) : 0;
+        int x_up = (Environment::isBoundary(AXIS::x, AXIS_SIDE::up)) ? cx + damping_length.L_dx : cx;
+        int y_low = (Environment::isBoundary(AXIS::y, AXIS_SIDE::low)) ? -(damping_length.L_dy) : 0;
+        int y_up = (Environment::isBoundary(AXIS::y, AXIS_SIDE::up)) ? cy + damping_length.L_dy : cy;
+        int z_low = (Environment::isBoundary(AXIS::z, AXIS_SIDE::low)) ? -(damping_length.L_dz) : 0;
+        int z_up = (Environment::isBoundary(AXIS::z, AXIS_SIDE::up)) ? cz + damping_length.L_dz : cz;
 
         tdArray::extent_gen extents;
         using range = tdArray::extent_range;
@@ -627,9 +632,9 @@ void RootGrid::updateEfieldFDTDDamping() {
             (r >= real_index - 1) ? r - static_cast<double>(real_index) + 2.0 : 0.0;
         return 1.0 - std::pow(masking_parameter * dist_r / damping_length, 2);
     };
-    auto x_masking_factor = [rx = real_x_index, dl = static_cast<double>(bases[0]), om = &one_masking_factor](const double x) -> double { return (*om)(x, dl, rx); };
-    auto y_masking_factor = [ry = real_y_index, dl = static_cast<double>(bases[1]), om = &one_masking_factor](const double y) -> double { return (*om)(y, dl, ry); };
-    auto z_masking_factor = [rz = real_z_index, dl = static_cast<double>(bases[2]), om = &one_masking_factor](const double z) -> double { return (*om)(z, dl, rz); };
+    auto x_masking_factor = [rx = real_x_index, dl = static_cast<double>(Environment::getDampingLength().L_dx), om = &one_masking_factor](const double x) -> double { return (*om)(x, dl, rx); };
+    auto y_masking_factor = [ry = real_y_index, dl = static_cast<double>(Environment::getDampingLength().L_dy), om = &one_masking_factor](const double y) -> double { return (*om)(y, dl, ry); };
+    auto z_masking_factor = [rz = real_z_index, dl = static_cast<double>(Environment::getDampingLength().L_dz), om = &one_masking_factor](const double z) -> double { return (*om)(z, dl, rz); };
 
     auto masking_factor = [xm = &x_masking_factor, ym = &y_masking_factor, zm = &z_masking_factor](const int x, const int y, const int z) -> double {
         return (*xm)(x) * (*ym)(y) * (*zm)(z);
@@ -696,9 +701,9 @@ void RootGrid::updateEfieldFDTDDamping() {
     }
 
     // FDTDの場合は通信が必要になる
-    // MPIw::Environment::sendRecvField(ex);
-    // MPIw::Environment::sendRecvField(ey);
-    // MPIw::Environment::sendRecvField(ez);
+    MPIw::Environment::sendRecvField(ex);
+    MPIw::Environment::sendRecvField(ey);
+    MPIw::Environment::sendRecvField(ez);
 
     //! Reference 更新
     this->updateReferenceEfield();
@@ -742,9 +747,9 @@ void RootGrid::updateBfieldDamping() {
             (r >= real_index - 1) ? r - static_cast<double>(real_index) + 2.0 : 0.0;
         return 1.0 - std::pow(masking_parameter * dist_r / damping_length, 2);
     };
-    auto x_masking_factor = [rx = real_x_index, dl = static_cast<double>(bases[0]), om = &one_masking_factor](const double x) -> double { return (*om)(x, dl, rx); };
-    auto y_masking_factor = [ry = real_y_index, dl = static_cast<double>(bases[1]), om = &one_masking_factor](const double y) -> double { return (*om)(y, dl, ry); };
-    auto z_masking_factor = [rz = real_z_index, dl = static_cast<double>(bases[2]), om = &one_masking_factor](const double z) -> double { return (*om)(z, dl, rz); };
+    auto x_masking_factor = [rx = real_x_index, dl = static_cast<double>(Environment::getDampingLength().L_dx), om = &one_masking_factor](const double x) -> double { return (*om)(x, dl, rx); };
+    auto y_masking_factor = [ry = real_y_index, dl = static_cast<double>(Environment::getDampingLength().L_dy), om = &one_masking_factor](const double y) -> double { return (*om)(y, dl, ry); };
+    auto z_masking_factor = [rz = real_z_index, dl = static_cast<double>(Environment::getDampingLength().L_dz), om = &one_masking_factor](const double z) -> double { return (*om)(z, dl, rz); };
 
     auto masking_factor = [xm = &x_masking_factor, ym = &y_masking_factor, zm = &z_masking_factor](const int x, const int y, const int z) -> double {
         return (*xm)(x) * (*ym)(y) * (*zm)(z);
@@ -807,9 +812,9 @@ void RootGrid::updateBfieldDamping() {
         }
     }
 
-    // MPIw::Environment::sendRecvField(bx);
-    // MPIw::Environment::sendRecvField(by);
-    // MPIw::Environment::sendRecvField(bz);
+    MPIw::Environment::sendRecvField(bx);
+    MPIw::Environment::sendRecvField(by);
+    MPIw::Environment::sendRecvField(bz);
 
     this->updateReferenceBfield();
 }
