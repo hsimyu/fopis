@@ -71,6 +71,64 @@ namespace MPIw {
         }
     }
 
+    void Environment::sendRecvEdgeScalar(tdArray& x3D, AXIS axis){
+        int prev, next;
+        constexpr int node_glue_size = 2;
+        constexpr int cell_glue_size = 1;
+
+        //! Edgeの場合、どの向きのベクトルかによってGlueサイズが変わる
+        if (axis == AXIS::x) {
+            //! x方向のみGlueサイズ = 1
+            if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
+                prev = 0; next = 1;
+                Comms["world"].sendRecvScalarX(x3D, adj[prev], adj[next], node_glue_size);
+            }
+
+            //! その他方向はGlueサイズ = 2
+            if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low) ) {
+                prev = 2; next = 3;
+                Comms["world"].sendRecvScalarY(x3D, adj[prev], adj[next], cell_glue_size);
+            }
+
+            if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low) ) {
+                prev = 4; next = 5;
+                Comms["world"].sendRecvScalarZ(x3D, adj[prev], adj[next], cell_glue_size);
+            }
+        } else if (axis == AXIS::y) {
+            if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
+                prev = 0; next = 1;
+                Comms["world"].sendRecvScalarX(x3D, adj[prev], adj[next], cell_glue_size);
+            }
+
+            //! y方向のみGlueサイズ = 1
+            if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low) ) {
+                prev = 2; next = 3;
+                Comms["world"].sendRecvScalarY(x3D, adj[prev], adj[next], node_glue_size);
+            }
+
+            if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low) ) {
+                prev = 4; next = 5;
+                Comms["world"].sendRecvScalarZ(x3D, adj[prev], adj[next], cell_glue_size);
+            }
+        } else {
+            if( (::Environment::proc_x > 1) || ::Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low) ) {
+                prev = 0; next = 1;
+                Comms["world"].sendRecvScalarX(x3D, adj[prev], adj[next], cell_glue_size);
+            }
+
+            //! y方向のみGlueサイズ = 1
+            if( (::Environment::proc_y > 1) || ::Environment::isNotBoundary(AXIS::y, AXIS_SIDE::low) ) {
+                prev = 2; next = 3;
+                Comms["world"].sendRecvScalarY(x3D, adj[prev], adj[next], cell_glue_size);
+            }
+
+            if( (::Environment::proc_z > 1) || ::Environment::isNotBoundary(AXIS::z, AXIS_SIDE::low) ) {
+                prev = 4; next = 5;
+                Comms["world"].sendRecvScalarZ(x3D, adj[prev], adj[next], node_glue_size);
+            }
+        }
+    }
+
     void Environment::sendRecvCellScalar(tdArray& x3D){
         int prev, next;
         constexpr int cell_glue_size = 1;

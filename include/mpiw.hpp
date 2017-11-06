@@ -142,6 +142,7 @@ namespace MPIw {
             static void sendRecvField(tdArray&);
             static void sendRecvNodeScalar(tdArray&);
             static void sendRecvCellScalar(tdArray&);
+            static void sendRecvEdgeScalar(tdArray&, AXIS);
     };
 
 };
