@@ -170,7 +170,11 @@ namespace IO {
     void plotEnergy(std::shared_ptr<const Grid> g, int timestep) {
         const auto receivedParticleEnergy = MPIw::Environment::Comms["world"].sum(g->getParticleEnergy(), 0);
         const auto receivedEFieldEnergy = MPIw::Environment::Comms["world"].sum(g->getEFieldEnergy(), 0);
-        const auto receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(g->getBFieldEnergy(), 0);
+        double receivedBFieldEnergy = 0.0;
+        
+        if (Environment::isEMMode()) {
+            receivedBFieldEnergy = MPIw::Environment::Comms["world"].sum(g->getBFieldEnergy(), 0);
+        }
 
         if(Environment::isRootNode) {
             std::string filename = "data/energy.txt";
