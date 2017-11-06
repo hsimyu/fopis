@@ -124,7 +124,7 @@ void RootGrid::updateParticlePositionEM(void) {
 
     for(int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
         //! note: 1/dxdydz 分を係数としてかけておく必要がある？
-        const double q_per_dt = Environment::getParticleType(pid)->getCharge() / dt;
+        const double q_per_dt = Environment::getParticleType(pid)->getChargeOfSuperParticle() / dt;
 
         for(int i = 0; i < particles[pid].size(); ++i){
             Particle& p = particles[pid][i];
@@ -143,11 +143,6 @@ void RootGrid::updateParticlePositionEM(void) {
             }
         }
     }
-
-    // 電流通信
-    MPIw::Environment::sendRecvField(jx);
-    MPIw::Environment::sendRecvField(jy);
-    MPIw::Environment::sendRecvField(jz);
 
     if( (Environment::proc_x > 1) || Environment::isNotBoundary(AXIS::x, AXIS_SIDE::low)) {
         MPIw::Environment::sendRecvParticlesX(pbuff, pbuffRecv);
@@ -214,6 +209,11 @@ void RootGrid::updateParticlePositionEM(void) {
             }
         }
     }
+
+    // 電流通信
+    MPIw::Environment::sendRecvEdgeScalar(jx, AXIS::x);
+    MPIw::Environment::sendRecvEdgeScalar(jy, AXIS::y);
+    MPIw::Environment::sendRecvEdgeScalar(jz, AXIS::z);
 
     if(this->getChildrenLength() > 0) this->moveParticlesIntoChildren();
 }
