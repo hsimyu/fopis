@@ -1,0 +1,98 @@
+{
+    "Environment": {
+        "max_timestep": 10,
+        "job_type": "new",
+        "solver_type": "ES",
+        "boundary": "DDDDDD",
+        "dimension": "3D",
+        "nx": 32,
+        "ny": 32,
+        "nz": 32,
+        "proc_x": 1,
+        "proc_y": 1,
+        "proc_z": 1,
+        "dx": 0.1,
+        "dt": 1e-8
+    },
+    "Field": {
+        "static_bfield": [0.0, 0.0, 0.0],
+        "shine_vector": [1.0, 0.0, 0.0]
+    },
+    "Plasma": {
+        "Electron": {
+            "type": "ambient",
+            "mass": 1.0,
+            "charge": -1.0,
+            "density": 1.0e7,
+            "temperature": 1.0,
+            "drift_velocity": [0.0, 0.0, 0.0],
+            "injection_axis": [true, true, true, true, true, true],
+            "particle_per_cell": 40
+        },
+        "Proton": {
+            "type": "ambient",
+            "mass": 1836.0,
+            "charge": 1.0,
+            "density": 1.0e7,
+            "temperature": 1.0,
+            "drift_velocity": [0.0, 0.0, 0.0],
+            "injection_axis": [true, true, true, true, true, true],
+            "particle_per_cell": 40
+        },
+        "Photoelectron": {
+            "type": "photoelectron",
+            "mass": 1.0,
+            "charge": -1.0,
+            "density": 1.0e7,
+            "temperature": 2.0,
+            "particle_per_cell": 40,
+            "current_density": 1e-5
+        },
+        "Secondary": {
+            "type": "secondary",
+            "mass": 1.0,
+            "charge": -1.0,
+            "density": 1.0e7,
+            "temperature": 2.0,
+            "particle_per_cell": 40
+        }
+    },
+    "Object": {
+        "Spacecraft": {
+            "file_name": "objects/solar_screen.obj",
+            "surface_type": "dielectric",
+            "emit_particles": {
+                "Photoelectron": {
+                    "emission_position": [0.0, 0.0, 0.0],
+                    "emission_vector": [0.0, 0.0, 0.0]
+                },
+                "Secondary": {
+                    "emission_position": [0.0, 0.0, 0.0],
+                    "emission_vector": [0.0, 0.0, 0.0]
+                }
+            },
+            "materials": {
+                "1": "Teflon"
+            },
+            "plot_potential_mapping_width": 5,
+            "is_potential_fixed": false,
+            "fixed_potential": 0.0,
+            "initial_potential_offset": 0.0
+        }
+    },
+    "IO": {
+        "plot_energy_dist_width": 0,
+        "plot_velocity_dist_width": 0,
+        "plot_potential_width": 5,
+        "plot_rho_width": 0,
+        "plot_efield_width": 0,
+        "plot_bfield_width": 0,
+        "plot_density_width": 5,
+        "plot_particle_width": 0,
+        "plot_energy_width": 1
+    },
+    "Options": {
+        "maximum_poisson_post_loop": 500,
+        "use_existing_capacity_matrix": true
+    }
+}

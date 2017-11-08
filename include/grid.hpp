@@ -215,28 +215,28 @@ class Grid  : public std::enable_shared_from_this<Grid> {
             sumTotalNumOfChildGrids = s;
         }
 
-        virtual void incrementSumOfChild(void) = 0;
-        virtual void decrementSumOfChild(void) = 0;
+        virtual void incrementSumOfChild() = 0;
+        virtual void decrementSumOfChild() = 0;
 
         // update fields は各Gridクラスで実装する
-        virtual void updateRho(void) = 0;
-        virtual void solvePoisson(void) = 0;
-        virtual void updateEfield(void) = 0;
+        virtual void updateRho() = 0;
+        virtual void solvePoisson() = 0;
+        virtual void updateEfield() = 0;
         virtual void updateReferenceEfield() = 0;
-        virtual void updateEfieldFDTD(void) = 0;
-        virtual void updateBfield(void) = 0;
+        virtual void updateEfieldFDTD() = 0;
+        virtual void updateBfield() = 0;
         virtual void updateReferenceBfield() = 0;
         virtual void updateReferenceCurrent() = 0;
-        virtual void updateDensity(void) = 0;
+        virtual void updateDensity() = 0;
 
         // update particles
-        void updateParticleVelocity(void);
-        void updateParticlePosition(void);
+        void updateParticleVelocity();
+        void updateParticlePosition();
 
         //! エネルギーを計算する
-        double getParticleEnergy(void) const;
-        double getEFieldEnergy(void) const;
-        double getBFieldEnergy(void) const;
+        double getParticleEnergy() const;
+        double getEFieldEnergy() const;
+        double getBFieldEnergy() const;
 
         // create mesh nodes array
         float** getMeshNodes(int);
@@ -282,27 +282,27 @@ class RootGrid : public Grid {
         void resetObjects();
 
         //! 物体のキャパシタンス行列初期化または読み込み
-        void initializeObjectsCmatrix(void);
-        void emitParticlesFromObjects(void);
+        void initializeObjectsCmatrix();
+        void emitParticlesFromObjects();
 
         //! 場の初期化 / 更新
-        virtual void updateRho(void) override;
-        virtual void solvePoisson(void) override;
-        void solvePoissonCorrection(void);
-        virtual void updateEfield(void) override;
-        virtual void updateReferenceEfield(void) override;
-        virtual void updateEfieldFDTD(void) override;
-        virtual void updateBfield(void) override;
-        virtual void updateReferenceBfield(void) override;
-        virtual void updateReferenceCurrent(void) override;
-        virtual void updateDensity(void) override;
+        virtual void updateRho() override;
+        virtual void solvePoisson() override;
+        void solvePoissonCorrection();
+        virtual void updateEfield() override;
+        virtual void updateReferenceEfield() override;
+        virtual void updateEfieldFDTD() override;
+        virtual void updateBfield() override;
+        virtual void updateReferenceBfield() override;
+        virtual void updateReferenceCurrent() override;
+        virtual void updateDensity() override;
 
         //! 粒子更新
-        virtual void updateParticlePositionES(void) override;
-        virtual void updateParticlePositionEM(void) override;
+        virtual void updateParticlePositionES() override;
+        virtual void updateParticlePositionEM() override;
 
-        virtual void incrementSumOfChild(void) override;
-        virtual void decrementSumOfChild(void) override;
+        virtual void incrementSumOfChild() override;
+        virtual void decrementSumOfChild() override;
 
         void checkXBoundary(ParticleArray& pbuff, Particle& p, const double slx) {
             if(p.x < 0.0) {

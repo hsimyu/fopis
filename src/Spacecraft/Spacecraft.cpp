@@ -257,6 +257,14 @@ auto Spacecraft::getTotalCharge() const {
     return q;
 }
 
+double Spacecraft::getNodeCharge(const unsigned int cmat_itr) const {
+    double node_charge = 0.0;
+    for (int pid = 0; pid < Environment::num_of_particle_types; ++pid) {
+        node_charge += charge_map[pid][cmat_itr];
+    }
+    return node_charge;
+}
+
 void Spacecraft::sumCurrent() {
     for(auto& v : current) {
         v = MPIw::Environment::Comms[name].sum(v);
@@ -294,15 +302,65 @@ inline bool Spacecraft::isContaining(const Position& pos) const {
     }
 }
 
+inline bool Spacecraft::isXsurfaceMinus(const int i, const int j, const int k) const {
+    return (object_cell_map[i][j][k]) && (!object_cell_map[i - 1][j][k]);
+}
+
+inline bool Spacecraft::isXsurfacePlus(const int i, const int j, const int k) const {
+    return (!object_cell_map[i][j][k]) && (object_cell_map[i - 1][j][k]);
+}
+
+inline bool Spacecraft::isYsurfaceMinus(const int i, const int j, const int k) const {
+    return (object_cell_map[i][j][k]) && (!object_cell_map[i][j - 1][k]);
+}
+
+inline bool Spacecraft::isYsurfacePlus(const int i, const int j, const int k) const {
+    return (!object_cell_map[i][j][k]) && (object_cell_map[i][j - 1][k]);
+}
+
+inline bool Spacecraft::isZsurfaceMinus(const int i, const int j, const int k) const {
+    return (object_cell_map[i][j][k]) && (!object_cell_map[i][j][k - 1]);
+}
+
+inline bool Spacecraft::isZsurfacePlus(const int i, const int j, const int k) const {
+    return (!object_cell_map[i][j][k]) && (object_cell_map[i][j][k - 1]);
+}
+
+//! Cmat NodeがXSurfaceかどうかを判定する
+//! @note:Inner Cmat Nodeに対して呼ぶ == CellPositionはValidである
+inline bool Spacecraft::isXsurfaceCmatNode(const Position& pos, const int sign) const {
+    if (sign > 0) {
+        return (
+            isXsurfaceMinus(pos.i, pos.j, pos.k) ||
+            isXsurfaceMinus(pos.i, pos.j - 1, pos.k) ||
+            isXsurfaceMinus(pos.i, pos.j, pos.k - 1) ||
+            isXsurfaceMinus(pos.i, pos.j - 1, pos.k - 1)
+        );
+    } else {
+        return (
+            isXsurfacePlus(pos.i, pos.j, pos.k) ||
+            isXsurfacePlus(pos.i, pos.j - 1, pos.k) ||
+            isXsurfacePlus(pos.i, pos.j, pos.k - 1) ||
+            isXsurfacePlus(pos.i, pos.j - 1, pos.k - 1)
+        );
+    }
+    return false;
+}
+
+inline bool Spacecraft::isXsurfaceCmatNode(const Position& pos) const {
+    return isXsurfaceCmatNode(pos, 1) || isXsurfaceCmatNode(pos, -1);
+}
+
+//! 中間点がXSurface上の点かどうかを判定する
 inline bool Spacecraft::isXsurfacePoint(const Position& pos, const int sign) const {
     constexpr double possible_error = 1e-10;
     if (pos.dx1 >= possible_error) return false;
 
     if (Environment::isValidCellPosition(pos) && Environment::isValidCellPosition(pos.i - 1, pos.j, pos.k)) {
         if (sign > 0) {
-            return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i - 1][pos.j][pos.k]);
+            return isXsurfaceMinus(pos.i, pos.j, pos.k);
         } else {
-            return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i - 1][pos.j][pos.k];
+            return isXsurfacePlus(pos.i, pos.j, pos.k);
         }
     } else {
         //! Cell Positionで判定できない場合はCmatが存在するかどうかで判定する
@@ -316,9 +374,9 @@ inline bool Spacecraft::isYsurfacePoint(const Position& pos, const int sign) con
 
     if (Environment::isValidCellPosition(pos) && Environment::isValidCellPosition(pos.i, pos.j - 1, pos.k)) {
         if (sign > 0) {
-            return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j - 1][pos.k]);
+            return isYsurfaceMinus(pos.i, pos.j, pos.k);
         } else {
-            return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j - 1][pos.k];
+            return isYsurfacePlus(pos.i, pos.j, pos.k);
         }
     } else {
         return isCmatNode(pos.i, pos.j, pos.k) && isCmatNode(pos.i + 1, pos.j, pos.k) && isCmatNode(pos.i, pos.j, pos.k + 1) && isCmatNode(pos.i + 1, pos.j, pos.k + 1);
@@ -331,9 +389,9 @@ inline bool Spacecraft::isZsurfacePoint(const Position& pos, const int sign) con
 
     if (Environment::isValidCellPosition(pos) && Environment::isValidCellPosition(pos.i, pos.j, pos.k - 1)) {
         if (sign > 0) {
-            return object_cell_map[pos.i][pos.j][pos.k] && (!object_cell_map[pos.i][pos.j][pos.k - 1]);
+            return isZsurfaceMinus(pos.i, pos.j, pos.k);
         } else {
-            return (!object_cell_map[pos.i][pos.j][pos.k]) && object_cell_map[pos.i][pos.j][pos.k - 1];
+            return isZsurfacePlus(pos.i, pos.j, pos.k);
         }
     } else {
         return isCmatNode(pos.i, pos.j, pos.k) && isCmatNode(pos.i + 1, pos.j, pos.k) && isCmatNode(pos.i, pos.j + 1, pos.k) && isCmatNode(pos.i + 1, pos.j + 1, pos.k);
@@ -713,7 +771,7 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
             const auto charge = pe_ptype_ptr->getChargeOfSuperParticle();
             const auto area = dx * dx;
             const auto emission_amount_per_area = area * pe_ptype_ptr->getEmissionAmount();
-            
+
             //! emission_vectorはshine_vectorの逆
             const std::array<double, 3> emission_vector{ -shine_vector[0], -shine_vector[1], -shine_vector[2] };
 
@@ -1004,7 +1062,7 @@ namespace ObjectUtils {
             using Face = std::array<int, 5>;
             std::vector<Vertex> vertices;
             std::vector<Face> faces;
-            
+
             std::map<int, int> texture_counts{};
 
             while (!file_input.eof()) {

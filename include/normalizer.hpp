@@ -200,6 +200,16 @@ public:
         return normalized_capacitance * e_unit / V_unit;
     }
 
+    //! 1 / Ωm = A / V m -> 1
+    static double normalizeConductivity(double raw_conductivity) {
+        return raw_conductivity * V_unit * x_unit / A_unit;
+    }
+
+    //! 1 -> A / V m
+    static double unnormalizeConductivity(double normalized_conductivity) {
+        return normalized_conductivity * A_unit / (V_unit * x_unit);
+    }
+
     //! m kg / s^2 A^2 = m kg / C^2 -> 1
     static double normalizeMu(double raw_mu) {
         return raw_mu * pow(e_unit, 2) / (m_unit * x_unit);

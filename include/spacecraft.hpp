@@ -99,6 +99,7 @@ private:
 
     //! 表面電荷の総量
     auto getTotalCharge() const;
+    double getNodeCharge(const unsigned int cmat_itr) const;
 
     //! 実際の電荷配分関数
     void distributeInnerParticleChargeToXsurface(const Position& pos, const int id, const double charge);
@@ -132,7 +133,17 @@ private:
     void saveWholeNodePositions(const ObjectNodes& whole_nodes);
 
     //! 表面上の点かどうかを確認する
+    bool isXsurfaceMinus(const int i, const int j, const int k) const;
+    bool isXsurfacePlus(const int i, const int j, const int k) const;
+    bool isYsurfaceMinus(const int i, const int j, const int k) const;
+    bool isYsurfacePlus(const int i, const int j, const int k) const;
+    bool isZsurfaceMinus(const int i, const int j, const int k) const;
+    bool isZsurfacePlus(const int i, const int j, const int k) const;
+
     bool isXsurfacePoint(const Position& pos, const int sign) const;
+    bool isXsurfaceCmatNode(const Position& pos, const int sign) const;
+    bool isXsurfaceCmatNode(const Position& pos) const;
+
     bool isYsurfacePoint(const Position& pos, const int sign) const;
     bool isZsurfacePoint(const Position& pos, const int sign) const;
 
