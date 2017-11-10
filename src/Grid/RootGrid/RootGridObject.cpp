@@ -58,6 +58,7 @@ void RootGrid::initializeObject(void) {
 
             auto& obj = objects[ objects.size() - 1 ];
             if (obj.isDefined()) {
+                obj.setParent(this);
                 obj.initializeAfterMakeComm();
 
                 if (MPIw::Environment::isRootNode(obj_name)) {

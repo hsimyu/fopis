@@ -1,10 +1,10 @@
 #ifndef __TDPIC_SPACECRAFT_H_INCLUDED__
 #define __TDPIC_SPACECRAFT_H_INCLUDED__
 
+#include <array>
 #include "global.hpp"
-#include <boost/numeric/ublas/matrix.hpp>
-#include "position.hpp"
 #include "field.hpp"
+#include "position.hpp"
 #include <Spacecraft/Cmatrix.hpp>
 #include <Spacecraft/Material.hpp>
 #include <Spacecraft/Incident.hpp>
@@ -28,10 +28,13 @@ struct ObjectDataFromFile {
 class ParticleType;
 class Particle;
 class SimpleVTK;
+class Grid;
 
 //! @class: Spacecraft
 class Spacecraft {
 private:
+    Grid* parent_grid;
+
     static const std::map<std::string, PropertyPair> material_property_list;
     static unsigned int num_of_spacecraft;
 
@@ -99,6 +102,8 @@ private:
 
     //! 表面電荷の総量
     auto getTotalCharge() const;
+    double getMaxPotential() const;
+    double getMinPotential() const;
     double getNodeCharge(const unsigned int cmat_itr) const;
 
     //! 実際の電荷配分関数
@@ -186,6 +191,7 @@ public:
     void setName(const std::string _name) { name = _name; }
     std::string getName() const { return name; }
     std::string getFileName() const { return file_name; }
+    void setParent(Grid* g) { parent_grid = g; }
 
     auto getPotential(void) const { return potential; }
     auto getFixedPotential(void) const { return fixed_potential; }

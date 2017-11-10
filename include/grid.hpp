@@ -4,6 +4,7 @@
 #include <map>
 #include "particle.hpp"
 #include "environment.hpp"
+#include "field.hpp"
 #include "spacecraft.hpp"
 
 class ChildGrid;
@@ -404,7 +405,7 @@ class RootGrid : public Grid {
         //! 基本的には root_grid 中に対象の点(Object定義点)が含まれているかを判定するために呼ぶ
         //! i, j, k は整数座標(全体の計算空間上の)
         bool isInnerNode(const int i, const int j, const int k) const {
-            return 
+            return
                 (i >= Environment::getAssignedXBegin()) &&
                 (i <= Environment::getAssignedXEnd()) &&
                 (j >= Environment::getAssignedYBegin()) &&
@@ -415,7 +416,7 @@ class RootGrid : public Grid {
 
         //! Glueノード込みで内部かどうかを判定する
         bool isInnerNodeWithGlue(const int i, const int j, const int k) const {
-            return 
+            return
                 (i >= (Environment::getAssignedXBegin() - 1)) &&
                 (i <= (Environment::getAssignedXEnd() + 1)) &&
                 (j >= (Environment::getAssignedYBegin() - 1)) &&
