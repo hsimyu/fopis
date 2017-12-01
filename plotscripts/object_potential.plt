@@ -1,5 +1,5 @@
 #!/gnuplot
-set terminal pdf color enhanced font "Arial,22" size 12,8
+set terminal pdf color enhanced font "Arial,30" size 12,8
 set grid
 set xlabel "Time [s]"
 set ylabel "Potential [V]"
@@ -14,7 +14,5 @@ unset output
 set ylabel "Current [A]"
 set output 'object_current_history.pdf'
 plot 'data/object_Spacecraft.txt' u 2:5 w l lw 3 ti "Electron" ,\
-'' u 2:6 w l lw 3 ti "ElectronBeam",\
-'' u 2:7 w l lw 3 ti "Proton",\
-'' u 2:8 w l lw 3 ti "ProtonBeam"
+'' u 2:6 w l lw 3 ti "Proton"
 unset output

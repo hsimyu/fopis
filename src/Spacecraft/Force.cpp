@@ -1,5 +1,6 @@
 #include "particle.hpp"
 #include "spacecraft.hpp"
+#include "mpiw.hpp"
 #include "normalizer.hpp"
 
 //! 推力計算関連
@@ -23,6 +24,10 @@ void Spacecraft::updateMaxwellTensorForce(const tdArray& exref, const tdArray& e
     }
 
     force += coulomb * Normalizer::eps0;
+
+    force.fx = MPIw::Environment::Comms[name].sum(force.fx);
+    force.fy = MPIw::Environment::Comms[name].sum(force.fy);
+    force.fz = MPIw::Environment::Comms[name].sum(force.fz);
 }
 
 void Spacecraft::resetForce() {
