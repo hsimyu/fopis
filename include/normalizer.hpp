@@ -90,6 +90,11 @@ public:
         return normalized_t * t_unit;
     }
 
+    //! 1 -> kg m / s^2 = N
+    static double unnormalizeForce(double normalized_force) {
+        return normalized_force * m_unit * x_unit / (t_unit * t_unit);
+    }
+
     static double normalizeCharge(double raw_e) {
         return raw_e / e_unit;
     }
@@ -121,7 +126,7 @@ public:
         return raw_current / A_unit;
     }
 
-    //! 1 -> C / s 
+    //! 1 -> C / s
     static double unnormalizeCurrent(double normalized_current) {
         return normalized_current * A_unit;
     }

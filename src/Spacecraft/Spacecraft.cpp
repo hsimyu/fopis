@@ -29,8 +29,9 @@ void Spacecraft::construct(
 
     is_potential_fixed = obj_info.is_potential_fixed;
     fixed_potential = Normalizer::normalizePotential(obj_info.fixed_potential);
-
     initial_potential_offset = Normalizer::normalizePotential(obj_info.initial_potential_offset);
+
+    force_computation = obj_info.force_computation;
 
     if (is_defined_in_this_process) {
         connected_list = clist;
@@ -884,6 +885,10 @@ std::string Spacecraft::getLogHeader() const {
         format_string += " %16s";
     }
 
+    if (this->forceComputationEnabled()) {
+        format_string += " %16.7e %16.7e %16.7e";
+    }
+
     auto format_base = format(std::move(format_string));
 
     if (this->isDielectricSurface()) {
@@ -898,6 +903,10 @@ std::string Spacecraft::getLogHeader() const {
         format_base = format_base % (Environment::getParticleType(i)->getName() + " [A]");
     }
 
+    if (this->forceComputationEnabled()) {
+        format_base = format_base % "Fx [N]" % "Fy [N]" % "Fz [N]";
+    }
+
     std::string header = format_base.str();
     return header;
 }
@@ -908,6 +917,10 @@ std::string Spacecraft::getLogEntry() const {
 
     for(int i = 0; i < Environment::num_of_particle_types; ++i) {
         format_string += " %16.7e";
+    }
+
+    if (this->forceComputationEnabled()) {
+        format_string += " %16.7e %16.7e %16.7e";
     }
 
     auto format_base = format(std::move(format_string));
@@ -922,6 +935,11 @@ std::string Spacecraft::getLogEntry() const {
     format_base = format_base % Normalizer::unnormalizeCharge(total_charge);
     for(int i = 0; i < Environment::num_of_particle_types; ++i) {
         format_base = format_base % Normalizer::unnormalizeCurrent(current[i]);
+    }
+
+    if (this->forceComputationEnabled()) {
+        auto norm = Normalizer::unnormalizeForce(1.0);
+        format_base = format_base % (norm * force.fx) % (norm * force.fy) % (norm * force.fz);
     }
 
     std::string entry = format_base.str();

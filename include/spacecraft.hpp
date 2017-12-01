@@ -25,6 +25,12 @@ struct ObjectDataFromFile {
     ObjectConnectivityList connected_list;
 };
 
+struct Force {
+    double fx;
+    double fy;
+    double fz;
+};
+
 class ParticleType;
 class Particle;
 class SimpleVTK;
@@ -54,8 +60,10 @@ private:
 
     bool is_potential_fixed;
     double fixed_potential;
-
     double initial_potential_offset;
+
+    bool force_computation;
+    Force force;
 
     struct LocalParticleEmissionInfo {
         Position relative_emission_position;
@@ -167,6 +175,7 @@ public:
         surface_type(obj_info.surface_type),
         num_cmat(_num_cmat),
         current{},
+        force{},
         emit_particle_info{},
         material_names{obj_info.materials},
         material_capacitances{},
@@ -228,6 +237,7 @@ public:
     bool isContaining(const Particle&) const;
     bool isContaining(const Position&) const;
     bool isDielectricSurface() const { return (surface_type == "dielectric"); }
+    bool forceComputationEnabled() const { return force_computation; }
 
     bool isPlotTiming(const unsigned int timestep) const { return (plot_potential_mapping_width > 0 && (timestep % plot_potential_mapping_width == 0)); }
 

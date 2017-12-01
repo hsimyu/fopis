@@ -270,6 +270,8 @@ namespace Initializer {
                         obj.fixed_potential = it->second.get<double>();
                     } else if (it->first == "initial_potential_offset") {
                         obj.initial_potential_offset = it->second.get<double>();
+                    } else if (it->first == "force_computation") {
+                        obj.force_computation = it->second.get<bool>();
                     } else if (it->first == "emit_particles") {
                         auto particle_names = it->second.get<picojson::object>();
 

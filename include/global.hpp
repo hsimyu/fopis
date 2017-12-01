@@ -53,6 +53,7 @@ struct ObjectInfo_t {
     bool is_potential_fixed;
     double fixed_potential;
     double initial_potential_offset;
+    bool force_computation;
     std::map<std::string, ParticleEmissionInfo> emit_particle_info;
     std::map<int, std::string> materials;
 };
