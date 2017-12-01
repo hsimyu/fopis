@@ -29,6 +29,21 @@ struct Force {
     double fx;
     double fy;
     double fz;
+
+    template<typename T>
+    Force& operator*(const T& rhs) {
+        fx *= rhs;
+        fy *= rhs;
+        fz *= rhs;
+
+        return (*this);
+    }
+
+    void operator+=(const Force& rhs) {
+        fx += rhs.fx;
+        fy += rhs.fy;
+        fz += rhs.fz;
+    }
 };
 
 class ParticleType;
@@ -153,12 +168,19 @@ private:
     bool isZsurfaceMinus(const int i, const int j, const int k) const;
     bool isZsurfacePlus(const int i, const int j, const int k) const;
 
-    bool isXsurfacePoint(const Position& pos, const int sign) const;
     bool isXsurfaceCmatNode(const Position& pos, const int sign) const;
     bool isXsurfaceCmatNode(const Position& pos) const;
+    bool isYsurfaceCmatNode(const Position& pos, const int sign) const;
+    bool isYsurfaceCmatNode(const Position& pos) const;
+    bool isZsurfaceCmatNode(const Position& pos, const int sign) const;
+    bool isZsurfaceCmatNode(const Position& pos) const;
 
+    bool isXsurfacePoint(const Position& pos, const int sign) const;
     bool isYsurfacePoint(const Position& pos, const int sign) const;
     bool isZsurfacePoint(const Position& pos, const int sign) const;
+
+    //! 表面の法線ベクトルを返す
+    std::array<double, 3> getSurfaceVector(const int cmat_number);
 
 public:
     Spacecraft(
@@ -251,6 +273,12 @@ public:
     void clearIncidentEvents();
 
     bool isValidEmission(Particle& p) const;
+
+    //! 推力計算系
+    void resetForce();
+    void updateMaxwellTensorForce(const tdArray& exref, const tdArray& eyref, const tdArray& ezref);
+    void accumulateIncidentForce(const Particle& p);
+    void subtractEmissionForce(const Particle& p);
 
     // その他ユーティリティ関数
     void makeCmatrixInvert(void);

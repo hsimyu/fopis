@@ -3,7 +3,7 @@
 #include "utils.hpp"
 #include "dataio.hpp"
 
-void RootGrid::initializeObject(void) {
+void RootGrid::initializeObjects(void) {
     if (Environment::isRootNode) cout << "-- Defining Objects -- " << endl;
 
     for (const auto& object_info : Environment::objects_info) {
@@ -147,11 +147,27 @@ void RootGrid::initializeObjectsCmatrix(void) {
     }
 }
 
+void RootGrid::updateObjects() {
+    //! 物体上で毎ステップ変化する情報を更新
+    for(auto& obj : objects) {
+        if(obj.isDefined()) {
+            if (obj.forceComputationEnabled()) {
+                obj.updateMaxwellTensorForce(field->getExRef(), field->getEyRef(), field->getEzRef());
+            }
+        }
+    }
+
+}
+
 void RootGrid::resetObjects() {
     //! 物体上の一時的な情報を初期化
     for(auto& obj : objects) {
         if(obj.isDefined()) {
             obj.resetCurrent();
+
+            if (obj.forceComputationEnabled()) {
+                obj.resetForce();
+            }
         }
     }
 }

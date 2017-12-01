@@ -39,7 +39,7 @@ RootGrid::RootGrid() : Grid() {
     this->initializeField();
 
     // 物体初期化
-    this->initializeObject();
+    this->initializeObjects();
     this->initializeObjectsCmatrix();
 
     //! - 粒子位置の上限を設定
@@ -127,6 +127,10 @@ void RootGrid::mainLoopES() {
     // 電場更新
     time_counter->switchTo("updateEfield");
     this->updateEfield();
+
+    // 物体情報更新
+    time_counter->switchTo("updateObjects");
+    this->updateObjects();
 
     //! 不要な粒子を削除
     constexpr unsigned int remove_invalid_particle_width = 50;

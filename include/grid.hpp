@@ -279,7 +279,8 @@ class RootGrid : public Grid {
         void saveResumeData();
 
         //! 物体定義初期化
-        void initializeObject();
+        void initializeObjects();
+        void updateObjects();
         void resetObjects();
 
         //! 物体のキャパシタンス行列初期化または読み込み

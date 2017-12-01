@@ -105,6 +105,7 @@ class Particle {
 
         //! ParticleTypeのメンバ関数呼び出しを中継
         std::shared_ptr<ParticleType> getParticleTypePtr() const;
+        double getMass(void) const { return Environment::getParticleType(typeId)->getMass(); }
         double getCharge(void) const { return Environment::getParticleType(typeId)->getCharge(); }
         double getChargeOfSuperParticle(void) const { return Environment::getParticleType(typeId)->getChargeOfSuperParticle(); }
 

@@ -357,20 +357,59 @@ inline bool Spacecraft::isZsurfacePlus(const int i, const int j, const int k) co
 
 //! Cmat NodeがXSurfaceかどうかを判定する
 //! @note:Inner Cmat Nodeに対して呼ぶ == CellPositionはValidである
+//! sign は surface vector の sign を表す
 inline bool Spacecraft::isXsurfaceCmatNode(const Position& pos, const int sign) const {
     if (sign > 0) {
+        return (
+            isXsurfacePlus(pos.i, pos.j, pos.k) ||
+            isXsurfacePlus(pos.i, pos.j - 1, pos.k) ||
+            isXsurfacePlus(pos.i, pos.j, pos.k - 1) ||
+            isXsurfacePlus(pos.i, pos.j - 1, pos.k - 1)
+        );
+    } else {
         return (
             isXsurfaceMinus(pos.i, pos.j, pos.k) ||
             isXsurfaceMinus(pos.i, pos.j - 1, pos.k) ||
             isXsurfaceMinus(pos.i, pos.j, pos.k - 1) ||
             isXsurfaceMinus(pos.i, pos.j - 1, pos.k - 1)
         );
+    }
+    return false;
+}
+
+inline bool Spacecraft::isYsurfaceCmatNode(const Position& pos, const int sign) const {
+    if (sign > 0) {
+        return (
+            isYsurfacePlus(pos.i, pos.j, pos.k) ||
+            isYsurfacePlus(pos.i - 1, pos.j, pos.k) ||
+            isYsurfacePlus(pos.i, pos.j, pos.k - 1) ||
+            isYsurfacePlus(pos.i - 1, pos.j, pos.k - 1)
+        );
     } else {
         return (
-            isXsurfacePlus(pos.i, pos.j, pos.k) ||
-            isXsurfacePlus(pos.i, pos.j - 1, pos.k) ||
-            isXsurfacePlus(pos.i, pos.j, pos.k - 1) ||
-            isXsurfacePlus(pos.i, pos.j - 1, pos.k - 1)
+            isYsurfaceMinus(pos.i, pos.j, pos.k) ||
+            isYsurfaceMinus(pos.i - 1, pos.j, pos.k) ||
+            isYsurfaceMinus(pos.i, pos.j, pos.k - 1) ||
+            isYsurfaceMinus(pos.i - 1, pos.j, pos.k - 1)
+        );
+    }
+    return false;
+}
+
+inline bool Spacecraft::isZsurfaceCmatNode(const Position& pos, const int sign) const {
+    if (sign > 0) {
+        return (
+            isZsurfacePlus(pos.i, pos.j, pos.k) ||
+            isZsurfacePlus(pos.i, pos.j - 1, pos.k) ||
+            isZsurfacePlus(pos.i - 1, pos.j, pos.k) ||
+            isZsurfacePlus(pos.i - 1, pos.j - 1, pos.k)
+        );
+    } else {
+        return (
+            isZsurfaceMinus(pos.i, pos.j, pos.k) ||
+            isZsurfaceMinus(pos.i, pos.j - 1, pos.k) ||
+            isZsurfaceMinus(pos.i - 1, pos.j, pos.k) ||
+            isZsurfaceMinus(pos.i - 1, pos.j - 1, pos.k)
         );
     }
     return false;
@@ -378,6 +417,45 @@ inline bool Spacecraft::isXsurfaceCmatNode(const Position& pos, const int sign) 
 
 inline bool Spacecraft::isXsurfaceCmatNode(const Position& pos) const {
     return isXsurfaceCmatNode(pos, 1) || isXsurfaceCmatNode(pos, -1);
+}
+
+inline bool Spacecraft::isYsurfaceCmatNode(const Position& pos) const {
+    return isYsurfaceCmatNode(pos, 1) || isYsurfaceCmatNode(pos, -1);
+}
+
+inline bool Spacecraft::isZsurfaceCmatNode(const Position& pos) const {
+    return isZsurfaceCmatNode(pos, 1) || isZsurfaceCmatNode(pos, -1);
+}
+
+std::array<double, 3> Spacecraft::getSurfaceVector(const int cmat_number) {
+    std::array<double, 3> srf{0.0, 0.0, 0.0};
+
+    auto pos = capacity_matrix_relation.at(cmat_number);
+
+    if (this->isXsurfaceCmatNode(pos, 1)) {
+        srf[0] = 1.0;
+    } else if (this->isXsurfaceCmatNode(pos, -1)) {
+        srf[0] = -1.0;
+    }
+
+    if (this->isYsurfaceCmatNode(pos, 1)) {
+        srf[1] = 1.0;
+    } else if (this->isYsurfaceCmatNode(pos, -1)) {
+        srf[1] = -1.0;
+    }
+
+    if (this->isZsurfaceCmatNode(pos, 1)) {
+        srf[2] = 1.0;
+    } else if (this->isZsurfaceCmatNode(pos, -1)) {
+        srf[2] = -1.0;
+    }
+
+    const double norm = std::sqrt(srf[0] * srf[0] + srf[1] * srf[1] + srf[2] * srf[2]);
+    srf[0] /= norm;
+    srf[1] /= norm;
+    srf[2] /= norm;
+
+    return srf;
 }
 
 //! 中間点がXSurface上の点かどうかを判定する
@@ -502,6 +580,10 @@ void Spacecraft::distributeInnerParticleCharge(Particle& p) {
                 }
                 cout << endl;
             }
+        }
+
+        if (this->forceComputationEnabled()) {
+            this->accumulateIncidentForce(p);
         }
 
         current[id] += q;
@@ -736,6 +818,11 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
 
                     auto pos = get_next_position_func(p);
                     emission_func(pos, id, charge);
+
+                    if (this->forceComputationEnabled()) {
+                        this->subtractEmissionForce(p);
+                    }
+
                     parray[id].push_back( std::move(p) );
                 }
             }
@@ -802,6 +889,11 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
 
                         auto emiss_pos = get_next_position_func(p);
                         emission_func(emiss_pos, id, charge);
+
+                        if (this->forceComputationEnabled()) {
+                            this->subtractEmissionForce(p);
+                        }
+
                         parray[id].push_back( std::move(p) );
                     }
                 }
@@ -833,6 +925,11 @@ void Spacecraft::emitParticles(ParticleArray& parray, const double dx) {
                             auto cross_pos = new_particle.getOldPositionParticle().getNextZCrossPoint();
                             this->subtractChargeOfParticleFromZsurface(cross_pos, id, charge);
                         }
+
+                        if (this->forceComputationEnabled()) {
+                            this->subtractEmissionForce(new_particle);
+                        }
+
                         parray[id].push_back(new_particle);
                     }
                 }
