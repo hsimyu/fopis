@@ -4,7 +4,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-. load_tdpicrc
+. load_fopisrc
 
 WRKDIR="${TDPICDIR}/$1"
 

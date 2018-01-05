@@ -1,0 +1,11 @@
+#/bin/sh
+if [ $# -ne 1 ]; then
+    echo "Too many arguments. (must be only one)" 1>&2
+    exit 1
+fi
+
+if [ -d $1 ]; then
+    tar czf $1.tar.gz --exclude resume ./$1
+else
+    "Directory $1 is not found."
+fi

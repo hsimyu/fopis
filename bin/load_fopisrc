@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+
+if [ -f "${SCRIPT_DIR}/.tdpicrc" ]; then
+    . ${SCRIPT_DIR}/.tdpicrc
+else
+    echo '.fopisrc does not exist.'
+    echo "Creating .tdpicrc"
+    echo "Input Fopis Install Dir (ex: /LARGE0/gr20001/...):"
+    read FOPISDIR
+    echo "FOPISDIR=${FOPISDIR}" > ${SCRIPT_DIR}/.fopisrc
+    echo "JOB_SCRIPT=pbs_job.sh" >> ${SCRIPT_DIR}/.fopisrc
+    echo "Input Your Group Name (ex: gr20001):"
+    read YOURGROUP
+    echo "GROUP_NAME=${YOURGROUP}" >> ${SCRIPT_DIR}/.fopisrc
+    echo ".fopisrc created. If you want to change install dir, change the FOPISDIR variable in ${SCRIPT_DIR}/.fopisrc."
+fi
