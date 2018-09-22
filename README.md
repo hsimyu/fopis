@@ -1,4 +1,4 @@
-# TDPIC: Multigrid ES/EM Full Particle-in-cell Object-Plasma Interaction Simulator
+# FOPIS: Multigrid ES/EM Full Particle-in-cell Object-Plasma Interaction Simulator
 
 ## 概要
 マルチグリッド法による宇宙機帯電解析を目指して開発中の三次元電磁粒子コードです。
